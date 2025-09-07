@@ -2,9 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository Information
+
+- **Owner**: ondatra-ai
+- **Repository**: awesome-claude-mcp
+- **Host**: GitHub (github.com)
+- **Clone URL**: git@github.com:ondatra-ai/awesome-claude-mcp.git
+- **GitHub User**: @killev
+
 ## Repository Overview
 
-This is currently an empty repository named "awesome-claude-mcp" with Go project configuration (.gitignore).
+This repository contains documentation and specifications for an MCP (Model Context Protocol) Google Docs Editor integration.
 
 ## Development Setup
 
