@@ -29,30 +29,32 @@ The MCP Google Docs Editor implements a modern full-stack architecture with Next
 
 ### High Level Overview
 
-1. **Architectural Style:** Full-stack application with Next.js frontend and serverless Go backend microservices
-2. **Repository Structure:** Monorepo structure containing both frontend and backend code, simplifying development for single developer
+1. **Architectural Style:** 3-Service Microservices Architecture with containerized deployment
+2. **Repository Structure:** Monorepo structure containing frontend, backend, and MCP service code
 3. **Service Architecture:** 
-   - Frontend: Next.js containers running on AWS ECS Fargate
-   - Backend: Stateless Go microservices on AWS ECS Fargate with Application Load Balancer
-   - MCP Protocol: Dedicated WebSocket service containers for real-time communication
-4. **Primary Data Flow:** User → Load Balancer → Next.js → API → Go Services → Google Docs API → WebSocket Updates
+   - **Frontend Service:** Next.js containers for user interface, authentication flows, and document management UI
+   - **Backend Service:** Go API containers for user management, OAuth token management, session persistence, and user data operations
+   - **MCP Service:** Dedicated Go containers implementing MCP protocol for Claude Code and ChatGPT web interface communication, handling Google Docs API integration
+4. **Primary Data Flow:** User → ALB → Frontend Service → Backend Service (auth/user data) | Claude/ChatGPT → ALB → MCP Service → Google Docs API
 5. **Key Architectural Decisions:**
-   - Next.js 14 with App Router for modern React features and optimal performance
-   - Go backend for high-performance API operations and efficient container execution
-   - ECS Fargate for serverless container management without EC2 overhead
-   - Separation of concerns with clear frontend/backend boundaries
-   - WebSocket support for real-time MCP protocol communication
-   - Redis caching (ElastiCache) for session management and OAuth tokens
-   - Application Load Balancer for HTTP and WebSocket traffic distribution
-   - Infrastructure as Code using Terraform for reproducible AWS deployments
+   - **3-Service Separation:** Clean boundaries between UI, user management, and MCP protocol concerns
+   - **Next.js 14 with App Router** for modern React features and optimal performance in Frontend Service
+   - **Go with Fiber framework** for high-performance Backend Service API operations
+   - **Go with Mark3Labs MCP-Go** for streamlined MCP Service protocol implementation
+   - **ECS Fargate** for serverless container management across all 3 services
+   - **MCP Protocol Implementation** using Mark3Labs MCP Go library for standardized Claude/ChatGPT integration
+   - **Redis caching (ElastiCache)** shared between Backend and MCP services for OAuth tokens
+   - **Application Load Balancer** routing HTTP to Frontend/Backend and WebSocket to MCP Service
+   - **Infrastructure as Code** using Terraform for reproducible AWS deployments
 
 ### High Level Project Diagram
 
 ```mermaid
 graph TB
-    subgraph "User Layer"
+    subgraph "External Clients"
         U[User Browser]
-        CD[Claude Desktop]
+        CD[Claude Desktop/Code]
+        CW[ChatGPT Web]
     end
     
     subgraph "AWS Infrastructure"
@@ -61,57 +63,73 @@ graph TB
         
         subgraph "ECS Fargate Cluster"
             subgraph "Frontend Service"
-                NX[Next.js Container]
-                NX2[Next.js Container 2]
+                FE1[Next.js Container 1]
+                FE2[Next.js Container 2]
             end
             
             subgraph "Backend Service"  
-                GO[Go API Container]
-                GO2[Go API Container 2]
+                BE1[Go Backend Container 1]
+                BE2[Go Backend Container 2]
             end
             
             subgraph "MCP Service"
-                MCP[MCP Protocol Container]
+                MCP1[Go MCP Container 1]
+                MCP2[Go MCP Container 2]
             end
         end
         
         EC[ElastiCache Redis]
         SM[Secrets Manager]
+        RDS[(PostgreSQL RDS)]
         CW[CloudWatch]
-        RDS[(RDS Database)]
     end
     
     subgraph "External Services"
-        GA[Google OAuth]
+        GA[Google OAuth API]
         GD[Google Docs API]
-        NR[New Relic]
-        SL[Slack]
     end
     
+    %% User flows
     U --> CF
     CF --> ALB
-    CD -->|WebSocket| ALB
-    ALB --> NX
-    ALB --> NX2
-    ALB --> GO
-    ALB --> GO2
-    ALB --> MCP
+    ALB --> FE1
+    ALB --> FE2
     
-    NX --> GO
-    NX2 --> GO2
-    GO --> EC
-    GO2 --> EC
-    MCP --> EC
+    %% Frontend to Backend communication
+    FE1 --> BE1
+    FE2 --> BE2
     
-    GO --> SM
-    GO2 --> SM
-    GO --> GA
-    GO --> GD
-    MCP --> GA
-    MCP --> GD
+    %% MCP Client connections
+    CD -->|WebSocket/MCP| ALB
+    CW -->|WebSocket/MCP| ALB
+    ALB --> MCP1
+    ALB --> MCP2
     
-    CW --> NR
-    CW --> SL
+    %% Backend Service connections
+    BE1 --> EC
+    BE2 --> EC
+    BE1 --> RDS
+    BE2 --> RDS
+    BE1 --> SM
+    BE2 --> SM
+    BE1 --> GA
+    BE2 --> GA
+    
+    %% MCP Service connections
+    MCP1 --> EC
+    MCP2 --> EC
+    MCP1 --> SM
+    MCP2 --> SM
+    MCP1 --> GD
+    MCP2 --> GD
+    
+    %% Monitoring
+    BE1 --> CW
+    BE2 --> CW
+    MCP1 --> CW
+    MCP2 --> CW
+    FE1 --> CW
+    FE2 --> CW
 ```
 
 ### Architectural and Design Patterns
@@ -169,8 +187,8 @@ Let me present the technology choices for your approval. These are critical deci
 | **Language** | Go | 1.21.5 | Backend development language | High performance, efficient containerized execution, excellent concurrency |
 | **Containerization** | Docker | 24.0.0 | Container platform | Consistent deployment, scalability |
 | **Base Image** | golang:1.21-alpine | Latest | Minimal container image | Small size, security, fast builds |
-| **Web Framework** | Gin | 1.9.1 | HTTP routing and middleware | Lightweight, fast, excellent middleware support |
-| **MCP Library** | mcp-go | 0.1.0 | MCP protocol implementation | Official MCP SDK for Go |
+| **Backend Framework** | Fiber | 2.52.0 | HTTP framework for Backend Service | High performance, Express-like API, excellent middleware |
+| **MCP Protocol Library** | Mark3Labs MCP-Go | Latest | Streamlined Model Context Protocol implementation | Type-safe, stdio transport, LLM-optimized design |
 
 #### Infrastructure Technologies
 
@@ -770,89 +788,117 @@ CREATE INDEX idx_metrics_name_period ON system_metrics(metric_name, aggregation_
 
 ```plaintext
 mcp-google-docs-editor/
-├── frontend/                       # Next.js Frontend Application
-│   ├── app/                        # App Router directory
-│   │   ├── (auth)/                 # Auth group routes
-│   │   │   ├── login/
-│   │   │   │   └── page.tsx        # Login page
-│   │   │   └── callback/
-│   │   │       └── page.tsx        # OAuth callback
-│   │   ├── (dashboard)/            # Protected routes
-│   │   │   ├── dashboard/
-│   │   │   │   └── page.tsx        # Main dashboard
-│   │   │   ├── documents/
-│   │   │   │   └── page.tsx        # Document list
-│   │   │   └── operations/
-│   │   │       └── page.tsx        # Operations UI
-│   │   ├── api/                    # API Routes
-│   │   │   ├── auth/[...nextauth]/
-│   │   │   │   └── route.ts        # NextAuth handler
-│   │   │   └── operations/
-│   │   │       └── route.ts        # Operations proxy
-│   │   ├── layout.tsx              # Root layout
-│   │   ├── page.tsx                # Homepage
-│   │   └── globals.css             # Global styles
-│   ├── components/                 # React Components
-│   │   ├── ui/                     # shadcn/ui components
-│   │   ├── auth/                   # Auth components
-│   │   ├── dashboard/              # Dashboard components
-│   │   └── operations/             # Operation components
-│   ├── lib/                        # Utility functions
-│   │   ├── api/                    # API client
-│   │   ├── hooks/                  # Custom React hooks
-│   │   └── utils/                  # Helper functions
-│   ├── public/                     # Static assets
-│   ├── package.json                # Frontend dependencies
-│   ├── tsconfig.json               # TypeScript config
-│   ├── next.config.js              # Next.js config
-│   ├── tailwind.config.ts          # Tailwind config
-│   ├── Dockerfile                  # Frontend container definition
-│   ├── .dockerignore               # Docker ignore file
-│   └── .env.local                  # Frontend env vars
-│
-├── backend/                        # Go Backend Services
-│   ├── cmd/
-│   │   ├── api/
-│   │   │   └── main.go             # API server entry point
-│   │   └── mcp/
-│   │       └── main.go             # MCP server entry point
-│   ├── internal/
-│   │   ├── api/
-│   │   │   ├── handlers/           # HTTP handlers
-│   │   │   ├── middleware/         # HTTP middleware
-│   │   │   └── routes.go           # API route definitions
-│   │   ├── mcp/
-│   │   │   ├── handler.go          # MCP protocol handler
-│   │   │   ├── messages.go         # MCP message types
-│   │   │   └── tools.go            # Tool definitions
-│   │   ├── auth/
-│   │   │   ├── oauth.go            # OAuth manager
-│   │   │   ├── tokens.go           # Token management
-│   │   │   └── jwt.go              # JWT handling
-│   │   ├── operations/
-│   │   │   ├── processor.go        # Operation processor
-│   │   │   ├── replace.go          # Replace operations
-│   │   │   ├── append.go           # Append operations
-│   │   │   └── insert.go           # Insert operations
-│   │   ├── docs/
-│   │   │   ├── service.go          # Document service
-│   │   │   ├── client.go           # Google Docs client
-│   │   │   └── converter.go        # Markdown converter
-│   │   ├── cache/
-│   │   │   └── redis.go            # Redis client
-│   │   └── config/
-│   │       └── config.go           # Configuration
-│   ├── pkg/
-│   │   ├── errors/                 # Custom errors
-│   │   └── utils/                  # Utilities
-│   ├── deployments/
-│   │   ├── api/
-│   │   │   └── Dockerfile          # API service container
-│   │   └── mcp/
-│   │       └── Dockerfile          # MCP service container
-│   ├── go.mod                      # Go dependencies
-│   ├── go.sum                      # Dependency lock
-│   └── .dockerignore               # Docker ignore file
+├── services/
+│   ├── frontend/                   # Frontend Service - Next.js Application
+│   │   ├── app/                    # App Router directory
+│   │   │   ├── (auth)/             # Auth group routes
+│   │   │   │   ├── login/
+│   │   │   │   │   └── page.tsx    # Login page
+│   │   │   │   └── callback/
+│   │   │   │       └── page.tsx    # OAuth callback
+│   │   │   ├── (dashboard)/        # Protected routes
+│   │   │   │   ├── dashboard/
+│   │   │   │   │   └── page.tsx    # Main dashboard
+│   │   │   │   ├── documents/
+│   │   │   │   │   └── page.tsx    # Document list
+│   │   │   │   └── operations/
+│   │   │   │       └── page.tsx    # Operations UI
+│   │   │   ├── api/                # API Routes (proxies to backend)
+│   │   │   │   └── proxy/
+│   │   │   │       └── route.ts    # Backend API proxy
+│   │   │   ├── layout.tsx          # Root layout
+│   │   │   ├── page.tsx            # Homepage
+│   │   │   └── globals.css         # Global styles
+│   │   ├── components/             # React Components
+│   │   │   ├── ui/                 # shadcn/ui components
+│   │   │   ├── auth/               # Auth components
+│   │   │   ├── dashboard/          # Dashboard components
+│   │   │   └── operations/         # Operation components
+│   │   ├── lib/                    # Utility functions
+│   │   │   ├── api/                # API client for backend service
+│   │   │   ├── hooks/              # Custom React hooks
+│   │   │   └── utils/              # Helper functions
+│   │   ├── public/                 # Static assets
+│   │   ├── package.json            # Frontend dependencies
+│   │   ├── tsconfig.json           # TypeScript config
+│   │   ├── next.config.js          # Next.js config
+│   │   ├── tailwind.config.ts      # Tailwind config
+│   │   ├── Dockerfile              # Frontend container definition
+│   │   └── .env.local              # Frontend env vars
+│   │
+│   ├── backend/                    # Backend Service - User Management API
+│   │   ├── cmd/
+│   │   │   └── main.go             # Backend API server entry point
+│   │   ├── internal/
+│   │   │   ├── api/
+│   │   │   │   ├── handlers/       # HTTP handlers
+│   │   │   │   │   ├── auth.go     # Authentication handlers
+│   │   │   │   │   ├── users.go    # User management handlers
+│   │   │   │   │   └── health.go   # Health check handlers
+│   │   │   │   ├── middleware/     # HTTP middleware
+│   │   │   │   │   ├── cors.go     # CORS middleware
+│   │   │   │   │   ├── auth.go     # Auth middleware
+│   │   │   │   │   └── logging.go  # Logging middleware
+│   │   │   │   └── routes.go       # API route definitions
+│   │   │   ├── auth/
+│   │   │   │   ├── oauth.go        # OAuth manager
+│   │   │   │   ├── tokens.go       # Token management
+│   │   │   │   └── jwt.go          # JWT handling
+│   │   │   ├── users/
+│   │   │   │   ├── service.go      # User service
+│   │   │   │   ├── repository.go   # User data access
+│   │   │   │   └── models.go       # User models
+│   │   │   ├── cache/
+│   │   │   │   └── redis.go        # Redis client
+│   │   │   └── config/
+│   │   │       └── config.go       # Configuration
+│   │   ├── pkg/
+│   │   │   ├── errors/             # Custom errors
+│   │   │   │   └── errors.go       # Error definitions
+│   │   │   └── utils/              # Utility functions
+│   │   ├── go.mod                  # Go module definition
+│   │   ├── go.sum                  # Go dependencies
+│   │   ├── Dockerfile              # Backend container definition
+│   │   └── .env                    # Backend env vars
+│   │
+│   └── mcp-service/                # MCP Service - Mark3Labs Implementation
+│       ├── cmd/
+│       │   └── main.go             # MCP server entry point with Mark3Labs library
+│       ├── internal/
+│       │   ├── server/
+│       │   │   ├── mcp.go          # Mark3Labs MCP server setup and configuration
+│       │   │   ├── tools.go        # Tool registration with schema validation
+│       │   │   ├── handlers.go     # Strongly-typed tool handlers
+│       │   │   └── middleware.go   # Recovery and capability middleware
+│       │   ├── operations/
+│       │   │   ├── processor.go    # Operation processor with parameter validation
+│       │   │   ├── replace.go      # Replace operations with MCP result types
+│       │   │   ├── append.go       # Append operations with MCP result types
+│       │   │   ├── insert.go       # Insert operations with MCP result types
+│       │   │   └── validator.go    # Parameter validation with enum/pattern support
+│       │   ├── docs/
+│       │   │   ├── service.go      # Document service
+│       │   │   ├── client.go       # Google Docs client
+│       │   │   ├── converter.go    # Markdown converter
+│       │   │   └── formatter.go    # Google Docs formatter
+│       │   ├── auth/
+│       │   │   ├── oauth.go        # Google OAuth for service accounts
+│       │   │   └── tokens.go       # Token validation with backend
+│       │   ├── cache/
+│       │   │   └── redis.go        # Redis client (shared with backend)
+│       │   └── config/
+│       │       └── config.go       # Configuration
+│       ├── pkg/
+│       │   ├── types/              # MCP request/response type definitions
+│       │   │   ├── tools.go        # Tool parameter structures
+│       │   │   └── results.go      # MCP result type wrappers
+│       │   ├── errors/             # Custom errors
+│       │   │   └── errors.go       # Error definitions
+│       │   └── utils/              # Utility functions
+│       ├── go.mod                  # Go module with Mark3Labs MCP-Go dependency
+│       ├── go.sum                  # Go dependencies
+│       ├── Dockerfile              # MCP service container definition
+│       └── .env                    # MCP service env vars
 │
 ├── infrastructure/                 # Infrastructure as Code
 │   ├── terraform/
@@ -867,8 +913,7 @@ mcp-google-docs-editor/
 │   │   │   ├── staging/            # Staging environment
 │   │   │   └── prod/               # Production environment
 │   │   └── main.tf                 # Main Terraform config
-│   └── docker/
-│       └── README.md                # Docker deployment notes
+│   └── docker-compose.yml          # Local development environment
 │
 ├── .github/
 │   └── workflows/

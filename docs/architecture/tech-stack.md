@@ -25,7 +25,14 @@ This document specifies the exact technology stack for the MCP Google Docs Edito
 5. **Security**: Built-in security features and best practices
 6. **Maintenance**: Minimize operational overhead
 
-## Backend Technologies
+## Service Architecture Technologies
+
+### Service Separation
+The architecture implements **3 distinct services**:
+
+1. **Frontend Service**: Next.js containers for user interface and authentication flows
+2. **Backend Service**: Go Fiber containers for user management, OAuth, and data operations  
+3. **MCP Service**: Go Mark3Labs MCP-Go containers for Claude Code and ChatGPT communication via streamlined MCP protocol
 
 ### Primary Language: Go 1.21.5
 
@@ -51,24 +58,32 @@ go1.21.5 download
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main
 ```
 
-### Web Framework: Gin 1.9.1
+### Backend Framework: Go Fiber 2.52.0
 
-**Version:** 1.9.1  
+**Version:** 2.52.0  
 **Purpose:** HTTP routing, middleware, and REST API endpoints  
 **Rationale:**
-- Minimal overhead perfect for containerized services
-- Excellent performance benchmarks
+- Express.js-inspired Go web framework
+- Excellent performance benchmarks (faster than Gin)
 - Rich middleware ecosystem
 - Clear routing patterns
 - Built-in JSON handling
+- Zero memory allocation in many cases
 
 **Configuration:**
 ```go
-// Production-optimized Gin setup
-gin.SetMode(gin.ReleaseMode)
-router := gin.New()
-router.Use(gin.Logger(), gin.Recovery())
-router.Use(corsMiddleware(), authMiddleware())
+// Production-optimized Fiber setup
+app := fiber.New(fiber.Config{
+    Prefork:       true,
+    CaseSensitive: true,
+    StrictRouting: true,
+    ServerHeader:  "MCP-Google-Docs",
+    AppName:       "MCP Google Docs Editor",
+})
+
+app.Use(cors.New())
+app.Use(logger.New())
+app.Use(recover.New())
 ```
 
 **Key Middleware:**
@@ -78,27 +93,97 @@ router.Use(corsMiddleware(), authMiddleware())
 - Request size limiting
 - Rate limiting (future)
 
-### MCP Protocol: mcp-go 0.1.0
+### MCP Protocol Implementation: Mark3Labs Library
 
-**Version:** 0.1.0 (Initial release)  
-**Purpose:** Model Context Protocol implementation  
+**Library:** Mark3Labs MCP-Go  
+**Repository:** github.com/mark3labs/mcp-go  
+**Version:** Latest  
+**Purpose:** Streamlined Model Context Protocol implementation for LLM applications  
 **Rationale:**
-- Official Go implementation of MCP protocol
-- WebSocket and HTTP transport support
-- Claude AI compatibility guaranteed
-- Tool registration and discovery
-- Message validation and error handling
+- Lightweight, LLM-optimized MCP implementation
+- Type-safe tool registration with parameter validation
+- Stdio transport optimized for Claude Code integration
+- Strongly-typed request/response structures
+- Minimal dependencies with excellent performance
+- Purpose-built for seamless LLM application integration
 
-**Usage:**
+**Mark3Labs MCP Server Implementation:**
 ```go
 import (
-    "github.com/anthropics/mcp-go/pkg/server"
-    "github.com/anthropics/mcp-go/pkg/transport"
+    "context"
+    "github.com/mark3labs/mcp-go"
 )
 
-// WebSocket server for real-time MCP communication
-server := server.NewMCPServer()
-transport := transport.NewWebSocketTransport(":8081")
+// MCP Server setup with Mark3Labs library
+server := mcp.NewServer("mcp-google-docs", "1.0.0")
+
+// Configure server with recovery and capabilities
+server.SetOption(mcp.WithRecovery(true))
+server.SetOption(mcp.WithTools(true))
+
+// Tool registration for document operations
+server.RegisterTool("replace_all_content", mcp.Tool{
+    Name:        "replace_all_content",
+    Description: "Replace all content in a Google Docs document",
+    InputSchema: mcp.InputSchema{
+        Type: "object",
+        Properties: map[string]mcp.Property{
+            "document_id": {
+                Type:        "string",
+                Description: "Google Docs document ID",
+                Required:    true,
+            },
+            "content": {
+                Type:        "string",
+                Description: "New content for the document",
+                Required:    true,
+            },
+        },
+    },
+    Handler: HandleReplaceAllContent,
+})
+
+// Strongly-typed tool handler
+type ReplaceAllRequest struct {
+    DocumentID string `json:"document_id"`
+    Content    string `json:"content"`
+}
+
+type ReplaceAllResponse struct {
+    DocumentID      string `json:"document_id"`
+    OperationID     string `json:"operation_id"`
+    CharactersAdded int    `json:"characters_added"`
+    Success         bool   `json:"success"`
+}
+
+func HandleReplaceAllContent(ctx context.Context, params map[string]interface{}) (*mcp.ToolResult, error) {
+    // Parse and validate input
+    var req ReplaceAllRequest
+    if err := mcp.ParseParams(params, &req); err != nil {
+        return mcp.NewErrorResult("Invalid parameters: " + err.Error()), nil
+    }
+    
+    // Execute document operation
+    result, err := documentService.ReplaceAll(ctx, req.DocumentID, req.Content)
+    if err != nil {
+        return mcp.NewErrorResult("Operation failed: " + err.Error()), nil
+    }
+    
+    // Return typed response
+    response := ReplaceAllResponse{
+        DocumentID:      result.DocumentID,
+        OperationID:     result.OperationID,
+        CharactersAdded: result.CharactersAdded,
+        Success:         true,
+    }
+    
+    return mcp.NewTextResult("Document content replaced successfully", response), nil
+}
+
+// Start server with stdio transport
+if err := server.Serve(ctx); err != nil {
+    log.Fatalf("Server failed: %v", err)
+}
 ```
 
 ### OAuth Library: golang.org/x/oauth2 0.15.0
@@ -749,7 +834,8 @@ module github.com/your-org/mcp-google-docs-editor
 go 1.21.5
 
 require (
-    github.com/gin-gonic/gin v1.9.1
+    github.com/gofiber/fiber/v2 v2.52.0
+    github.com/mark3labs/mcp-go latest
     github.com/anthropics/mcp-go v0.1.0
     golang.org/x/oauth2 v0.15.0
     google.golang.org/api v0.150.0
