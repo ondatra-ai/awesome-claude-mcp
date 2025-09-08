@@ -1,8 +1,5 @@
 # Exclude Cursor IDE configuration from GitHub Copilot
 .cursor/
 
-# Exclude memory-bank documentation from GitHub Copilot
-memory-bank/
-
 # Exclude Claude Code configuration from GitHub Copilot
 .claude/

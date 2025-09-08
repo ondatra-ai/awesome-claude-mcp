@@ -7,6 +7,4 @@ reviews:
 
   path_filters:
     - "!**/.cursor/**"
-    - "!**/.memory-bank/**"
-    - "!**/memory-bank/**"
     - "!**/.claude/**"

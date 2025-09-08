@@ -6,12 +6,12 @@ Create or update pull requests following conventional commit guidelines with Git
 1. Run `git --no-pager status` to see which files have changed
 2. Run `git --no-pager diff` to compare current branch with origin default branch
 3. Analyze changes to understand purpose and impact
-4. Check `memory-bank/tasks.md` and `memory-bank/activeContext.md` for GitHub issue references
+4. Check project files for GitHub issue references
 
 ## GitHub Issue Integration
 1. **Issue Reference Detection**: Look for issue references in format:
-   - `**Issue Reference**: [#<number>](https://github.com/owner/repo/issues/<number>)` (in memory bank files)
-   - Search both `memory-bank/tasks.md` and `memory-bank/activeContext.md` files
+   - `**Issue Reference**: [#<number>](https://github.com/owner/repo/issues/<number>)` (in project documentation)
+   - Search project documentation and relevant files for issue references
 
 2. **Issue Link in PR Body**: If an issue reference is found:
    - Check if issue link is already mentioned in PR body
@@ -73,7 +73,7 @@ When creating a PR:
 
 ## Process Steps
 1. Analyze changes between origin default branch and current branch
-2. Check Memory Bank files for issue references
+2. Check project files for issue references
 3. Create PR title and bullet list description
 4. Check if issue reference already exists in PR body, update or add
 5. Create new PR or update existing PR tied to current branch
