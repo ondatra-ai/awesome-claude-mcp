@@ -9,4 +9,3 @@ reviews:
     - "!**/.cursor/**"
     - "!**/.claude/**"
     - "!**/.bmad-core/**"
-    - "!**/bmad-core/**"
