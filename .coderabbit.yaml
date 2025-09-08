@@ -8,3 +8,5 @@ reviews:
   path_filters:
     - "!**/.cursor/**"
     - "!**/.claude/**"
+    - "!**/.bmad-core/**"
+    - "!**/bmad-core/**"

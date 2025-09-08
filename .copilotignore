@@ -3,3 +3,6 @@
 
 # Exclude Claude Code configuration from GitHub Copilot
 .claude/
+
+# Exclude BMAD Core files from GitHub Copilot
+.bmad-core/
