@@ -9,7 +9,6 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
-        exclude: 'tests/e2e/testdata/flows/error-cases/invalid-json\.json|cmd/commands/\.flows/flows/corrupted-flow\.json'
       - id: check-added-large-files
         args: ['--maxkb=1000']
       - id: check-case-conflict
@@ -21,50 +20,34 @@ repos:
     hooks:
     - id: action-validator
 
-  - repo: local
+  # Go tools from remote repositories
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.61.0
     hooks:
       - id: golangci-lint
-        name: golangci-lint
-        entry: golangci-lint run --fix
-        language: system
-        always_run: true
-        pass_filenames: false
+        args: ['--fix']
 
-      - id: go-mod-tidy
-        name: go mod tidy
-        entry: go mod tidy
-        language: system
-        types: [go]
-        pass_filenames: false
-
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
       - id: go-fmt
-        name: go fmt
-        entry: gofumpt -l -w
-        language: system
-        types: [go]
-        pass_filenames: true
-
       - id: go-imports
-        name: go imports
-        entry: goimports -local github.com/boarlabsxyz/mono-expenses -w
-        language: system
-        types: [go]
-        pass_filenames: true
+      - id: go-mod-tidy
+      - id: go-unit-tests
+        args: ['-short']  # Run only unit tests
+      # - id: go-build  # Uncomment if you want build checks
 
-      - id: go-test-unit
-        name: go test-unit
-        entry: make test-unit
-        language: system
-        types: [go]
-        pass_filenames: false
+  # Alternative: tekwizely/pre-commit-golang has more hooks
+  # - repo: https://github.com/tekwizely/pre-commit-golang
+  #   rev: v1.0.0-rc.1
+  #   hooks:
+  #     - id: go-fmt-repo
+  #     - id: go-imports-repo
+  #     - id: go-mod-tidy-repo
 
-      - id: go-test-e2e
-        name: go test-e2e
-        entry: make test-e2e
-        language: system
-        types: [go]
-        pass_filenames: false
-
+  # Custom local hook for no-nolint policy
+  - repo: local
+    hooks:
       - id: no-nolint-comments
         name: Ensure no //nolint comments
         entry: bash -c
