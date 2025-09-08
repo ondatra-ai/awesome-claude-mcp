@@ -1,0 +1,102 @@
+---
+description: Rules for creating and updating pull requests
+alwaysApply: false
+---
+Rule Name: pull-request-rules
+Description:
+# Pull Request Guidelines
+
+When creating or updating a pull request, follow these guidelines:
+
+## Analysis Process
+1. Run `git --no-pager status` to see which files have changed
+2. Run `git --no-pager diff` to compare the current branch with origin default branch
+3. Analyze the changes to understand the purpose and impact
+4. Check `memory-bank/tasks.md` and `memory-bank/activeContext.md` for GitHub issue references
+
+## GitHub Issue Integration
+1. **Issue Reference Detection**: Look for issue references in the following format:
+   - `**Issue Reference**: [#<number>](https://github.com/owner/repo/issues/<number>)` (in memory bank files)
+   - Search both `memory-bank/tasks.md` and `memory-bank/activeContext.md` files
+2. **Issue Link in PR Body**: If an issue reference is found, include it in the PR body:
+   - Check if the issue link is already mentioned in the PR body
+   - If not mentioned, add "**Related Issue**: #<number>: <issue_title>" after the bullet list
+   - If already mentioned, update the existing issue link to ensure it's current and correctly formatted with title
+3. **Issue Update After PR**: After creating or updating the PR, update the related issue:
+   - Check if the PR link is already mentioned in the issue body
+   - If not mentioned, update the issue body to include the PR link: "**Related PR**: #<pr_number>: <pr_title>"
+   - If already mentioned, update the existing PR link to ensure it's current and correctly formatted with title
+   - Use appropriate labels if the PR addresses/closes the issue
+
+## Pull Request Types
+
+- `fix`: Patches a bug in your codebase (correlates with PATCH in Semantic Versioning)
+- `feat`: Introduces a new feature to the codebase (correlates with MINOR in Semantic Versioning)
+- `BREAKING CHANGE`: Introduces a breaking API change (correlates with MAJOR in Semantic Versioning)
+- Other allowed types: `build:`, `chore:`, `ci:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`
+
+## Specification Details
+
+1. Title MUST be prefixed with a type, followed by an OPTIONAL scope, OPTIONAL !, and REQUIRED terminal colon and space
+2. The type `feat` MUST be used when adding a new feature
+3. The type `fix` MUST be used when fixing a bug
+4. A scope MAY be provided after a type, surrounded by parenthesis (e.g., `fix(parser):`)
+
+## Pull Request Format
+- Title: One sentence summary (max 120 characters)
+- Body:
+  - Bullet list of changes (with NO extra lines between bullet points)
+  - **Related Issue**: #<number>: <issue_title> (if issue reference found - update existing link or add new one)
+  - After the list, add a brief explanation of why this PR is needed
+- Do NOT repeat the title in the body
+
+## Example with Issue Reference (new or updated):
+```
+feat: Add user authentication to login page
+
+Body:
+- Add password validation function
+- Create JWT token generation
+- Add error handling for invalid credentials
+
+**Related Issue**: #37: GitHub Reader Step Implementation
+
+This feature is necessary to secure user accounts and prevent unauthorized access to the application.
+```
+
+## Example without Issue Reference:
+```
+feat: Add user authentication to login page
+
+Body:
+- Add password validation function
+- Create JWT token generation
+- Add error handling for invalid credentials
+
+This feature is necessary to secure user accounts and prevent unauthorized access to the application.
+```
+
+## PR Description Formatting
+When creating a PR, ensure that:
+- The title is not repeated in the body
+- All bullet points are written without extra lines between them
+- The body starts directly with bullet points (no introductory text)
+- Check if issue reference already exists in PR body, then update existing link or add new one if found in Memory Bank files
+- When using GitHub CLI, use `--body-file` instead of `--body` to avoid escape character issues
+- Always create the PR body file in the `.cursor/tmp/` folder (e.g., `.cursor/tmp/pr-body.md`)
+In GitHub or similar platforms, preview the PR description to verify there are no unwanted
+line breaks between bullet points.
+
+## Process
+1. Analyze changes between origin default branch and current branch
+2. Check Memory Bank files for issue references
+3. Create PR title and bullet list description
+4. Check if issue reference already exists in PR body, then update existing link or add new one
+5. Create new PR or update existing PR tied to current branch
+6. **Post-PR Actions**: If issue reference was found:
+   - Check if the PR link is already mentioned in the issue body
+   - If not mentioned, update the issue body to include the PR link with title
+   - If already mentioned, update the existing PR link to ensure it's current and correctly formatted with title
+   - Apply appropriate labels (e.g., "in-progress", "has-pr")
+   - Update issue status if appropriate
+7. Request review if needed
