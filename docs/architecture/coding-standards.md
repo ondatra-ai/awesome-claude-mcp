@@ -739,7 +739,7 @@ test:
     go tool cover -html=coverage.out -o coverage.html
 
 lint:
-    golangci-lint run --config .golangci.yml
+    golangci-lint run --config .golangci.yml  # Runs 70+ linters including cyclop, funlen, gosec
 
 deploy: build
     sam deploy --guided
@@ -813,13 +813,21 @@ func PerformHealthCheck() *HealthCheck {
 
 ### Pre-commit Checks
 
-Required checks before any commit:
+**Automated via lint-staged (.lintstagedrc.json):**
+- **TypeScript files (`*.{ts,tsx}`)**: 
+  - `eslint --fix` - Auto-fix linting issues
+  - `prettier --write` - Auto-format code
+- **Config/Docs (`*.{json,md,yml,yaml}`)**:
+  - `prettier --write` - Auto-format configuration files
+
+**Required checks before any commit:**
 1. All tests pass
-2. Linting passes (golangci-lint, eslint)
-3. Type checking passes (Go build, TypeScript)
-4. Security scanning passes
-5. Code coverage meets minimums
-6. Documentation updated if needed
+2. Linting passes (golangci-lint with 70+ linters, eslint with strict rules)
+3. Type checking passes (Go build, TypeScript compiler)
+4. Security scanning passes (gosec, eslint security rules)
+5. Code coverage meets minimums (80%+ overall)
+6. Pre-commit hooks pass (lint-staged)
+7. Documentation updated if needed
 
 ### Code Review Checklist
 
@@ -836,10 +844,23 @@ Required checks before any commit:
 
 ### Quality Metrics
 
-**Automated Quality Gates:**
+**Automated Quality Gates (Go):**
+- **Cyclomatic complexity**: ≤15 per function (configured in .golangci.yml cyclop linter)
+- **Function length**: ≤80 lines / ≤40 statements (configured in .golangci.yml funlen linter)
+- **No critical security vulnerabilities**: gosec linter enabled
+- **All linting rules pass**: 70+ linters in golangci-lint configuration
+
+**Automated Quality Gates (TypeScript):**
+- **Complexity limit**: ≤10 per function
+- **Function length**: ≤50 lines (≤100 for container/handler files, ≤250 for tests)
+- **Line length**: ≤80 characters
+- **File length**: ≤300 lines
+- **Max parameters**: ≤5 per function
+- **Nesting depth**: ≤4 levels
+- **Interface naming**: Must use 'I' prefix
+
+**Common Quality Gates:**
 - Code coverage: ≥80% overall, ≥85% business logic
-- Cyclomatic complexity: ≤10 per function
-- Function length: ≤50 lines (with exceptions documented)
 - No critical security vulnerabilities
 - All linting rules pass
 - Build time: <5 minutes for full pipeline

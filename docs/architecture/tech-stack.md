@@ -321,37 +321,46 @@ func TestWithMock(t *testing.T) {
 **Version:** 1.55.0  
 **Purpose:** Comprehensive Go linting and code quality checks  
 **Rationale:**
-- Multiple linters in single tool
+- Multiple linters in single tool (70+ enabled)
 - Configurable rule sets
 - CI/CD integration
 - Performance optimized
 - Security vulnerability detection
 
-**Configuration (.golangci.yml):**
+**Current Configuration (.golangci.yml) - Key Settings:**
 ```yaml
 linters:
-  enable:
-    - govet
-    - errcheck
-    - staticcheck
-    - unused
-    - gosimple
-    - ineffassign
-    - typecheck
-    - gofmt
-    - goimports
-    - misspell
-    - unparam
-    - unconvert
-    - gosec
-    - gocyclo
+  enable: # 70+ linters enabled including:
+    - cyclop          # Complexity (max 15)
+    - funlen          # Function length (80 lines/40 statements)
+    - gosec           # Security analysis
+    - errcheck        # Error handling
+    - staticcheck     # Static analysis
+    - govet           # Go vet checks
+    - unused          # Unused code detection
+    - gosimple        # Code simplification
+    - ineffassign     # Inefficient assignments
+    - gofmt           # Code formatting
+    - goimports       # Import organization
+    - misspell        # Typo detection
+    # ... and 50+ more linters
 
-linters-settings:
-  gocyclo:
-    min-complexity: 10
-  gosec:
-    excludes:
-      - G104 # Allow unhandled errors in specific cases
+settings:
+  cyclop:
+    max-complexity: 15
+  funlen:
+    lines: 80
+    statements: 40
+  wsl_v5:
+    allow-first-in-block: true
+    branch-max-lines: 2
+
+exclusions:
+  rules:
+    - path: _test\.go
+      linters: [gocyclo, errcheck, dupl, gosec, funlen, cyclop]
+    - path: scripts/.*
+      linters: [revive, forbidigo, err113, gosec]
 ```
 
 ## Frontend Technologies
@@ -568,13 +577,20 @@ function DocumentList() {
 
 **Primary Services:**
 - **AWS ECS (Fargate)**: Container orchestration for Go backend services
-- **AWS ECR**: Container registry for Docker images
+- **AWS ECR**: Container registry for Docker images  
 - **Application Load Balancer**: HTTP and WebSocket traffic distribution
 - **ElastiCache Redis**: Token caching and session management
 - **CloudWatch**: Logging, monitoring, and alerting
 - **Secrets Manager**: Secure credential storage
 - **Route 53**: DNS management
 - **CloudFront**: CDN for static assets (if needed)
+
+**Current Architecture Pattern:**
+This project uses a **containerized microservices architecture** with:
+- **Frontend**: Next.js containers running on ECS Fargate
+- **Backend**: Go API containers running on ECS Fargate  
+- **MCP Protocol**: Go WebSocket containers for real-time communication
+- **Infrastructure as Code**: Terraform for reproducible deployments
 
 **Rationale:**
 - Container-based deployment for consistent environments
@@ -826,10 +842,19 @@ jobs:
 - **gosec**: Security analysis
 
 **Frontend (TypeScript/React):**
-- **ESLint**: JavaScript/TypeScript linting
-- **Prettier**: Code formatting  
-- **TypeScript Compiler**: Type checking
-- **next lint**: Next.js specific linting
+- **ESLint 8.56.0**: JavaScript/TypeScript linting with strict rules
+- **Prettier 3.1.1**: Code formatting
+- **TypeScript Compiler 5.3.3**: Type checking
+- **lint-staged**: Pre-commit linting for staged files
+
+**Current ESLint Configuration (.eslintrc.json) - Key Rules:**
+- **Line length**: 80 characters max
+- **Function length**: 50 lines max (100 for containers, 250 for tests)
+- **Complexity**: ≤10 per function
+- **Interface naming**: Must use 'I' prefix
+- **No `unknown` type**: Use cast utilities instead
+- **Strict TypeScript**: Explicit function return types required
+- **Import ordering**: Alphabetical with newlines between groups
 
 ### Local Development
 

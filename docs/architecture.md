@@ -2,13 +2,14 @@
 
 ## Introduction
 
-This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, implementing AWS serverless infrastructure, monitoring, CI/CD pipeline, and core architectural patterns that will support all future epics.
+This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, implementing AWS containerized infrastructure, monitoring, CI/CD pipeline, and core architectural patterns that will support all future epics.
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
 - **Backend:** Go microservices handling MCP protocol, OAuth, and Google Docs operations
 - **Communication:** REST API and WebSocket for real-time MCP protocol
-- **Infrastructure:** AWS Lambda for Go services, Vercel for Next.js deployment
+- **Infrastructure:** AWS ECS Fargate for containerized services, not Lambda
+- **Deployment:** Terraform Infrastructure as Code with GitHub Actions CI/CD
 
 ### Starter Template or Existing Project
 
@@ -31,17 +32,19 @@ The MCP Google Docs Editor implements a modern full-stack architecture with Next
 1. **Architectural Style:** Full-stack application with Next.js frontend and serverless Go backend microservices
 2. **Repository Structure:** Monorepo structure containing both frontend and backend code, simplifying development for single developer
 3. **Service Architecture:** 
-   - Frontend: Next.js App Router with Server Components deployed on Vercel
-   - Backend: Stateless Go microservices on AWS Lambda with API Gateway
-4. **Primary Data Flow:** User → Next.js UI → REST API → Go Services → Google Docs API → UI Updates
+   - Frontend: Next.js containers running on AWS ECS Fargate
+   - Backend: Stateless Go microservices on AWS ECS Fargate with Application Load Balancer
+   - MCP Protocol: Dedicated WebSocket service containers for real-time communication
+4. **Primary Data Flow:** User → Load Balancer → Next.js → API → Go Services → Google Docs API → WebSocket Updates
 5. **Key Architectural Decisions:**
    - Next.js 14 with App Router for modern React features and optimal performance
-   - Go backend for high-performance API operations and efficient Lambda execution
+   - Go backend for high-performance API operations and efficient container execution
+   - ECS Fargate for serverless container management without EC2 overhead
    - Separation of concerns with clear frontend/backend boundaries
    - WebSocket support for real-time MCP protocol communication
-   - Redis caching for session management and OAuth tokens
-   - Vercel for frontend hosting with edge functions support
-   - Infrastructure as Code using Terraform for AWS resources
+   - Redis caching (ElastiCache) for session management and OAuth tokens
+   - Application Load Balancer for HTTP and WebSocket traffic distribution
+   - Infrastructure as Code using Terraform for reproducible AWS deployments
 
 ### High Level Project Diagram
 
@@ -610,12 +613,13 @@ paths:
 **Primary Database: PostgreSQL 15**
 - **Rationale:** ACID compliance for user data integrity, excellent JSON support for flexible schemas, proven reliability for 30+ concurrent users, supports both relational and document-like queries
 
-**Caching Layer: Redis 7**  
+**Caching Layer: Redis 7 (AWS ElastiCache)**  
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
 
-**Deployment:**
-- **Local:** PostgreSQL + Redis containers in docker-compose
-- **AWS:** RDS PostgreSQL + ElastiCache Redis for managed services
+**Current Deployment:**
+- **Local Development:** PostgreSQL + Redis containers in docker-compose.yml
+- **AWS Production:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
+- **Container Support**: All services containerized for consistent environments across dev/staging/prod
 
 ### Database Schema
 
@@ -899,7 +903,8 @@ mcp-google-docs-editor/
 - **Orchestration:** AWS ECS Fargate for serverless container management
 - **Load Balancing:** Application Load Balancer with target groups for each service
 - **CI/CD Platform:** GitHub Actions
-- **Pipeline Configuration:** `.github/workflows/build-deploy.yml`
+- **Pipeline Configuration:** `.github/workflows/build-images.yml`, `.github/workflows/deploy-ecs.yml`
+- **Infrastructure as Code:** Terraform modules for reproducible deployments
 
 ### ECS Service Configuration
 - **Frontend Service:** Next.js containers behind ALB target group on port 3000
