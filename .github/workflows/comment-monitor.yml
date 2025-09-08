@@ -1,0 +1,31 @@
+name: PR/Issue Comment Monitor
+
+on:
+  issue_comment:
+    types: [created]
+
+# Set minimum permissions by default
+permissions:
+  contents: read
+
+jobs:
+  comment-monitor:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    timeout-minutes: 5
+    steps:
+      - name: Print comment information
+        run: |
+          echo "New comment detected:"
+          echo "Author: @${{ github.event.comment.user.login }}"
+          echo "PR/Issue: #${{ github.event.issue.number }}"
+          echo "Content: ${{ github.event.comment.body }}"
+          echo "Timestamp: ${{ github.event.comment.created_at }}"
+          echo "Repository: ${{ github.repository }}"
+          echo ""
+          echo "Additional Details:"
+          echo "Comment ID: ${{ github.event.comment.id }}"
+          echo "Comment URL: ${{ github.event.comment.html_url }}"
+          echo "Issue/PR Title: ${{ github.event.issue.title }}"
+          echo "Issue/PR State: ${{ github.event.issue.state }}"
+          echo "Action: ${{ github.event.action }}"
