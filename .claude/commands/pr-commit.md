@@ -7,24 +7,25 @@
 **Use when**: You have completed development work and are ready to commit changes that meet all quality standards and testing requirements.
 
 ## Analysis Process
-1. Run golangci-lint and fix all issues:
-   - `golangci-lint run --fix` (or `go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --fix`)
+1. Run linting and fix all issues:
+   - `make lint-backend` - Runs golint and go fmt on backend code
+   - `make lint-frontend` - Runs ESLint with --fix and Prettier with --write on frontend code
    - If any issues are found, fix the actual problems in the code - never disable linting rules, remove files, or suppress errors
    - Re-run until all issues are resolved
 
-2. Run unit tests with coverage and fix any failures:
-   - `make coverage-unit` (if Makefile exists) or `go test ./... -coverprofile=coverage.out`
+2. Run unit tests and fix any failures:
+   - `make test-unit` - Runs unit tests for both backend and frontend
    - If any tests fail, fix the actual issues in the code - never skip or disable tests
    - Re-run until all tests pass
 
-3. Run e2e tests with coverage and fix any failures:
-   - `make coverage-e2e` (if Makefile exists) or appropriate e2e test command
+3. Run e2e tests and fix any failures:
+   - `make test-e2e` - Runs E2E tests with Docker containers
    - If any tests fail, fix the actual issues in the code - never skip or disable tests
    - Re-run until all tests pass
    - **REQUIREMENT: All changed files must have >80% test coverage**
 
 4. Run pre-commit hooks and fix issues if any:
-   - `pre-commit run --all-files`
+   - `pre-commit run --all-files` (if pre-commit is configured)
    - If any hook fails, fix the reported issues and re-run until all hooks pass
 
 5. Analyze changes:

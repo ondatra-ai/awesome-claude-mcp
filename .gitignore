@@ -27,6 +27,23 @@ go.work.sum
 # env file
 .env
 
+# Node.js dependencies
+node_modules/
+**/node_modules/
+
+# Package managers
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Next.js build output
+.next/
+out/
+
+# Test artifacts
+test-results/
+playwright-report/
+
 # Editor/IDE
 # .idea/
 # .vscode/

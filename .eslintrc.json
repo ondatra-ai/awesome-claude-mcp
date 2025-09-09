@@ -127,7 +127,7 @@
     {
       "files": ["scripts/merged-prs-last-24h.ts"],
       "rules": {
-        "@typescript-eslint/no-unsafe-assignment": "off", // Required for test mock objects and dynamic test data
+        "@typescript-eslint/no-unsafe-assignment": "off",
         "@typescript-eslint/no-unsafe-call": "off",
         "@typescript-eslint/no-unsafe-member-access": "off"
       }
@@ -140,7 +140,7 @@
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/require-await": "off",
         "@typescript-eslint/unbound-method": "off",
-        "@typescript-eslint/no-unsafe-assignment": "off", // Required for test mock objects and dynamic test data
+        "@typescript-eslint/no-unsafe-assignment": "off",
         "no-restricted-syntax": [
           "error",
           {
@@ -162,7 +162,7 @@
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/require-await": "off",
         "@typescript-eslint/unbound-method": "off",
-        "@typescript-eslint/no-unsafe-assignment": "off", // Required for test mock objects and dynamic test data
+        "@typescript-eslint/no-unsafe-assignment": "off",
         "no-restricted-syntax": [
           "error",
           {
@@ -229,7 +229,8 @@
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-unsafe-assignment": "off",
-        "@typescript-eslint/no-unsafe-return": "off",        "no-restricted-syntax": [
+        "@typescript-eslint/no-unsafe-return": "off",
+        "no-restricted-syntax": [
           "error",
           {
             "selector": "TSTypeAliasDeclaration",

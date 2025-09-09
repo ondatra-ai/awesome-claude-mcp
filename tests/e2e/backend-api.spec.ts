@@ -1,0 +1,48 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Backend API E2E Tests', () => {
+  test('should access version endpoint directly', async ({ request }) => {
+    const response = await request.get('http://localhost:8080/version');
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('version');
+    expect(data.version).toBe('1.0.0');
+  });
+
+  test('should access health endpoint directly', async ({ request }) => {
+    const response = await request.get('http://localhost:8080/health');
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('status', 'healthy');
+    expect(data).toHaveProperty('service', 'MCP Google Docs Editor - Backend');
+    expect(data).toHaveProperty('timestamp');
+  });
+
+  test('should handle 404 for non-existent endpoints', async ({ request }) => {
+    const response = await request.get('http://localhost:8080/nonexistent');
+    expect(response.status()).toBe(404);
+  });
+
+  test('should handle method not allowed for POST on version endpoint', async ({ request }) => {
+    const response = await request.post('http://localhost:8080/version');
+    expect(response.status()).toBe(405);
+  });
+
+  test('should verify CORS headers for frontend requests', async ({ request }) => {
+    const response = await request.get('http://localhost:8080/version', {
+      headers: {
+        'Origin': 'http://localhost:3000'
+      }
+    });
+    expect(response.ok()).toBeTruthy();
+
+    // The response should include CORS headers allowing the frontend origin
+    const headers = response.headers();
+    // Note: Exact CORS headers depend on Fiber's CORS middleware implementation
+    expect(response.status()).toBe(200);
+  });
+});

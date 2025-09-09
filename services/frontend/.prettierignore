@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Config files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.config.js
+*.config.ts
+tsconfig.json
+next-env.d.ts
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# Environment
+.env*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
