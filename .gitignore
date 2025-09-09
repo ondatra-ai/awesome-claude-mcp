@@ -8,8 +8,7 @@
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
-*.test
+# Go test binaries (if any) - but *.test pattern too broad, removed
 
 # Code coverage profiles and other test artifacts
 *.out
