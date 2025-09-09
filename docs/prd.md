@@ -30,7 +30,7 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 - FR1: The system shall authenticate users via OAuth 2.0 with Google, supporting multiple Google account connections per user
 - FR2: The system shall support replace_all operation to completely replace document content with provided Markdown
 - FR3: The system shall support append operation to add content at the end of documents
-- FR4: The system shall support prepend operation to insert content at the beginning of documents  
+- FR4: The system shall support prepend operation to insert content at the beginning of documents
 - FR5: The system shall support replace_match operation using exact text matching (first match only in MVP)
 - FR6: The system shall support insert_before operation to add content before matched text
 - FR7: The system shall support insert_after operation to add content after matched text
@@ -52,7 +52,7 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 - NFR5: The system shall support 30 daily active users
 - NFR6: The system shall process 100+ document edits per day
 - NFR7: The system shall use standard MCP protocol without custom extensions
-- NFR8: The system shall be deployable to AWS infrastructure
+- NFR8: The system shall be deployable to AWS ECS Fargate infrastructure with containerized services
 - NFR9: The system shall send Slack alerts when service is down or error rate exceeds 5%
 - NFR10: The system shall be released as open source with MIT license for MVP
 - NFR11: Every epic, user story, and task shall include comprehensive test coverage
@@ -62,11 +62,11 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 
 ### Repository Structure: Monorepo
 
-All services, including the MCP server, OAuth handler, and any future components will be maintained in a single repository to simplify development and deployment for the single developer team.
+All services, including the Frontend Service (Next.js), Backend Service (Go Fiber), MCP Service (Mark3Labs MCP-Go), and any future components will be maintained in a single monorepo structure to simplify development and deployment for the single developer team.
 
 ### Service Architecture
 
-The system will be implemented as a stateless microservice deployed on AWS Lambda with API Gateway, utilizing AWS services for infrastructure. The architecture will follow the design patterns established in the architecture document, with adjustment from GCP to AWS as the cloud provider.
+The system will be implemented as a 3-service containerized architecture deployed on AWS ECS Fargate with Application Load Balancer, utilizing AWS services for infrastructure. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber), and MCP Service (Go with Mark3Labs MCP-Go library) following the design patterns established in the architecture document.
 
 ### Testing Requirements
 
@@ -79,9 +79,12 @@ Comprehensive testing pyramid including:
 
 ### Additional Technical Assumptions and Requests
 
-- Go 1.21.5 as primary development language
-- AWS as cloud infrastructure provider (Lambda, API Gateway, CloudWatch)
+- **Backend Services:** Go 1.21.5 with Fiber framework for Backend and MCP services
+- **Frontend Service:** TypeScript with Next.js 14 (App Router) and modern React patterns
+- **MCP Protocol:** Mark3Labs MCP-Go library for MCP protocol implementation
+- AWS as cloud infrastructure provider (ECS Fargate, Application Load Balancer, CloudWatch)
 - Redis for token caching (AWS ElastiCache or similar)
+- Docker containerization with multi-stage builds for all services
 - New Relic + CloudWatch for monitoring and observability
 - Standard MCP protocol implementation without extensions
 - OAuth tokens cached until expiry by default
@@ -89,7 +92,7 @@ Comprehensive testing pyramid including:
 - Fail-fast error handling - no automatic retries
 - All configuration via environment variables
 - Infrastructure as Code using Terraform
-- GitHub Actions for CI/CD pipeline
+- GitHub Actions for CI/CD pipeline with ECR integration
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations
 
@@ -164,61 +167,69 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 
 ### User Stories
 
-#### Story 1.1: AWS Infrastructure Setup
-**As a** Developer/Maintainer  
-**I want** to configure AWS infrastructure  
+#### Story 1.1: Project Repository Setup
+**As a** Developer/Maintainer
+**I want** to initialize the multi-service project structure
+**So that** I have a maintainable codebase foundation
+
+**Acceptance Criteria:**
+- Monorepo structure with services/ directory created
+- Go modules initialized for Backend and MCP services
+- Next.js project initialized for Frontend service
+- Dockerfiles created for each service
+- Project structure follows architecture document
+- Makefile created with build, test, deploy targets for all services
+- Git repository configured with .gitignore
+- README.md with setup instructions for all services
+- MIT license file added
+
+#### Story 1.2: AWS Infrastructure Setup
+**As a** Developer/Maintainer
+**I want** to configure AWS infrastructure
 **So that** I have a deployable environment for the application
 
 **Acceptance Criteria:**
 - AWS account configured with appropriate IAM roles
-- Lambda function created and deployable
-- API Gateway configured with proper routes
-- CloudWatch logging enabled
+- ECS Fargate cluster created and configured
+- Application Load Balancer configured with proper target groups
+- VPC and networking configured for container communication
+- CloudWatch logging enabled for all services
 - Infrastructure defined in Terraform
-- Deployment successful to AWS
+- Deployment successful to AWS ECS
 
-#### Story 1.2: Project Repository Setup
-**As a** Developer/Maintainer  
-**I want** to initialize the Go project structure  
-**So that** I have a maintainable codebase foundation
-
-**Acceptance Criteria:**
-- Go module initialized with dependencies
-- Project structure follows architecture document
-- Makefile created with build, test, deploy targets
-- Git repository configured with .gitignore
-- README.md with setup instructions
-- MIT license file added
-
-#### Story 1.3: Homepage Implementation
-**As a** Claude User  
-**I want** to access a homepage at the service URL  
-**So that** I can verify the service is running
+#### Story 1.3: Frontend Service Implementation
+**As a** Claude User
+**I want** to access a web interface for service management
+**So that** I can configure authentication and monitor service status
 
 **Acceptance Criteria:**
-- Homepage responds with 200 status at root URL
-- Displays "MCP Google Docs Editor" title
-- Shows service status (operational/degraded/down)
-- Mobile responsive design
+- Next.js 14 frontend service deployed and accessible
+- Homepage displays "MCP Google Docs Editor" title
+- Service status dashboard (operational/degraded/down)
+- OAuth authentication management interface
+- Connected Google accounts display
+- Mobile responsive design with modern UI
 - Page loads in under 2 seconds
 - Health check endpoint returns proper status
 
 #### Story 1.4: CI/CD Pipeline
-**As a** Developer/Maintainer  
-**I want** automated build and deployment  
+**As a** Developer/Maintainer
+**I want** automated build and deployment
 **So that** code changes are safely deployed
 
 **Acceptance Criteria:**
-- GitHub Actions workflow configured
-- Automated tests run on pull requests
-- Successful builds deploy to AWS
+- GitHub Actions workflow configured for all services
+- Docker images built and pushed to ECR
+- Automated tests run on pull requests for each service
+- Successful builds deploy all services to AWS ECS
+- Blue-green deployment capability for zero downtime
 - Rollback capability implemented
 - Build status badges in README
 - Deployment notifications to Slack
 
 #### Story 1.5: Monitoring Setup
-**As a** Developer/Maintainer  
-**I want** comprehensive monitoring  
+**As a** Developer/Maintainer
+**I want** comprehensive monitoring
 **So that** I can track system health and performance
 
 **Acceptance Criteria:**
@@ -230,17 +241,19 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Logging pipeline established
 
 #### Story 1.6: Testing Framework
-**As a** Developer/Maintainer  
-**I want** testing infrastructure  
-**So that** I can ensure code quality
+**As a** Developer/Maintainer
+**I want** comprehensive testing infrastructure
+**So that** I can ensure code quality across all services
 
 **Acceptance Criteria:**
-- Unit test framework configured (testify)
-- Integration test environment setup
-- E2E test framework ready
-- Test coverage reporting enabled
-- Pre-commit hooks for testing
-- Example tests for each test type
+- Unit test framework configured (testify for Go services, Jest for Next.js)
+- Integration test environment setup for service-to-service communication
+- E2E test framework ready (Playwright for frontend workflows)
+- Docker Compose for local testing environment
+- Test coverage reporting enabled for all services
+- Container-based testing for deployment validation
+- Pre-commit hooks for testing all services
+- Example tests for each service and test type
 
 ## Epic 2: OAuth Authentication
 
@@ -249,8 +262,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 2.1: OAuth Configuration
-**As a** Developer/Maintainer  
-**I want** to configure Google OAuth application  
+**As a** Developer/Maintainer
+**I want** to configure Google OAuth application
 **So that** users can authenticate with Google
 
 **Acceptance Criteria:**
@@ -262,8 +275,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Environment variables configured
 
 #### Story 2.2: OAuth Flow Implementation
-**As a** Claude User  
-**I want** to authenticate with my Google account  
+**As a** Claude User
+**I want** to authenticate with my Google account
 **So that** the service can access my documents
 
 **Acceptance Criteria:**
@@ -275,8 +288,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Success redirect to settings page
 
 #### Story 2.3: Token Management
-**As a** Developer/Maintainer  
-**I want** to securely manage OAuth tokens  
+**As a** Developer/Maintainer
+**I want** to securely manage OAuth tokens
 **So that** user sessions remain valid
 
 **Acceptance Criteria:**
@@ -288,8 +301,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Secure token deletion capability
 
 #### Story 2.4: Multi-Account Support
-**As a** Claude User  
-**I want** to connect multiple Google accounts  
+**As a** Claude User
+**I want** to connect multiple Google accounts
 **So that** I can edit documents from different accounts
 
 **Acceptance Criteria:**
@@ -301,8 +314,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Default account designation
 
 #### Story 2.5: Authentication Error Handling
-**As a** Claude User  
-**I want** clear authentication error messages  
+**As a** Claude User
+**I want** clear authentication error messages
 **So that** I can resolve authentication issues
 
 **Acceptance Criteria:**
@@ -320,8 +333,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 3.1: MCP Server Implementation
-**As a** Developer/Maintainer  
-**I want** to implement MCP protocol server  
+**As a** Developer/Maintainer
+**I want** to implement MCP protocol server
 **So that** Claude can communicate with the service
 
 **Acceptance Criteria:**
@@ -333,8 +346,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Concurrent connection support
 
 #### Story 3.2: Tool Registration
-**As a** Claude User  
-**I want** to discover available tools  
+**As a** Claude User
+**I want** to discover available tools
 **So that** I know what operations are available
 
 **Acceptance Criteria:**
@@ -346,8 +359,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Dynamic or static registration (TBD after testing)
 
 #### Story 3.3: Message Protocol Handler
-**As a** Developer/Maintainer  
-**I want** to process MCP messages correctly  
+**As a** Developer/Maintainer
+**I want** to process MCP messages correctly
 **So that** operations are executed properly
 
 **Acceptance Criteria:**
@@ -359,8 +372,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Correlation ID tracking
 
 #### Story 3.4: MCP Error Handling
-**As a** Claude User  
-**I want** standard MCP error responses  
+**As a** Claude User
+**I want** standard MCP error responses
 **So that** I can handle failures appropriately
 
 **Acceptance Criteria:**
@@ -372,8 +385,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Rate limit errors handled
 
 #### Story 3.5: Connection Management
-**As a** Developer/Maintainer  
-**I want** robust connection handling  
+**As a** Developer/Maintainer
+**I want** robust connection handling
 **So that** communication remains stable
 
 **Acceptance Criteria:**
@@ -391,8 +404,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 4.1: Replace All Command Handler
-**As a** Claude User  
-**I want** to replace entire document content  
+**As a** Claude User
+**I want** to replace entire document content
 **So that** I can update documents completely
 
 **Acceptance Criteria:**
@@ -404,8 +417,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Operation logging implemented
 
 #### Story 4.2: Markdown Parser Integration
-**As a** Developer/Maintainer  
-**I want** to parse Markdown content  
+**As a** Developer/Maintainer
+**I want** to parse Markdown content
 **So that** I can convert it to Google Docs format
 
 **Acceptance Criteria:**
@@ -417,8 +430,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Performance optimized
 
 #### Story 4.3: Heading Conversion
-**As a** Claude User  
-**I want** Markdown headings converted properly  
+**As a** Claude User
+**I want** Markdown headings converted properly
 **So that** document structure is preserved
 
 **Acceptance Criteria:**
@@ -430,8 +443,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Heading IDs preserved if present
 
 #### Story 4.4: List Formatting
-**As a** Claude User  
-**I want** all list types converted  
+**As a** Claude User
+**I want** all list types converted
 **So that** document organization is maintained
 
 **Acceptance Criteria:**
@@ -443,8 +456,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - List spacing preserved
 
 #### Story 4.5: Text Formatting
-**As a** Claude User  
-**I want** text formatting preserved  
+**As a** Claude User
+**I want** text formatting preserved
 **So that** emphasis and links work correctly
 
 **Acceptance Criteria:**
@@ -456,8 +469,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Combined formatting handled
 
 #### Story 4.6: Document Update Integration
-**As a** Developer/Maintainer  
-**I want** to update Google Docs efficiently  
+**As a** Developer/Maintainer
+**I want** to update Google Docs efficiently
 **So that** changes are applied correctly
 
 **Acceptance Criteria:**
@@ -475,8 +488,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 5.1: Append Command Handler
-**As a** Claude User  
-**I want** to append content to documents  
+**As a** Claude User
+**I want** to append content to documents
 **So that** I can add information without replacing existing content
 
 **Acceptance Criteria:**
@@ -488,8 +501,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Operation metrics tracked
 
 #### Story 5.2: Document Position Detection
-**As a** Developer/Maintainer  
-**I want** to find the document end position  
+**As a** Developer/Maintainer
+**I want** to find the document end position
 **So that** I can append content correctly
 
 **Acceptance Criteria:**
@@ -501,8 +514,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Performance optimized
 
 #### Story 5.3: Content Insertion
-**As a** Developer/Maintainer  
-**I want** to insert content at specific position  
+**As a** Developer/Maintainer
+**I want** to insert content at specific position
 **So that** append operation works correctly
 
 **Acceptance Criteria:**
@@ -514,8 +527,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Undo information available
 
 #### Story 5.4: Format Preservation
-**As a** Claude User  
-**I want** existing formatting preserved  
+**As a** Claude User
+**I want** existing formatting preserved
 **So that** document consistency is maintained
 
 **Acceptance Criteria:**
@@ -533,8 +546,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 6.1: Prepend Command Handler
-**As a** Claude User  
-**I want** to prepend content to documents  
+**As a** Claude User
+**I want** to prepend content to documents
 **So that** I can add information at the beginning
 
 **Acceptance Criteria:**
@@ -546,8 +559,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Error handling complete
 
 #### Story 6.2: Beginning Position Handling
-**As a** Developer/Maintainer  
-**I want** to identify document beginning  
+**As a** Developer/Maintainer
+**I want** to identify document beginning
 **So that** I can prepend content correctly
 
 **Acceptance Criteria:**
@@ -559,8 +572,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Edge cases handled
 
 #### Story 6.3: Content Shifting
-**As a** Developer/Maintainer  
-**I want** to shift existing content properly  
+**As a** Developer/Maintainer
+**I want** to shift existing content properly
 **So that** nothing is lost during prepend
 
 **Acceptance Criteria:**
@@ -578,8 +591,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 7.1: Replace Match Command Handler
-**As a** Claude User  
-**I want** to replace specific text matches  
+**As a** Claude User
+**I want** to replace specific text matches
 **So that** I can update specific content sections
 
 **Acceptance Criteria:**
@@ -591,8 +604,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - No regex support in MVP
 
 #### Story 7.2: Text Search Implementation
-**As a** Developer/Maintainer  
-**I want** to search for text in documents  
+**As a** Developer/Maintainer
+**I want** to search for text in documents
 **So that** I can find replacement targets
 
 **Acceptance Criteria:**
@@ -604,8 +617,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Special characters handled
 
 #### Story 7.3: Match Replacement
-**As a** Developer/Maintainer  
-**I want** to replace matched text  
+**As a** Developer/Maintainer
+**I want** to replace matched text
 **So that** content is updated correctly
 
 **Acceptance Criteria:**
@@ -617,8 +630,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Operation reversible (future)
 
 #### Story 7.4: Match Error Handling
-**As a** Claude User  
-**I want** clear feedback on match failures  
+**As a** Claude User
+**I want** clear feedback on match failures
 **So that** I can adjust my search parameters
 
 **Acceptance Criteria:**
@@ -636,8 +649,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 8.1: Insert Before Command Handler
-**As a** Claude User  
-**I want** to insert content before specific text  
+**As a** Claude User
+**I want** to insert content before specific text
 **So that** I can add context to existing content
 
 **Acceptance Criteria:**
@@ -649,8 +662,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Position tracking accurate
 
 #### Story 8.2: Anchor Position Detection
-**As a** Developer/Maintainer  
-**I want** to find anchor text position  
+**As a** Developer/Maintainer
+**I want** to find anchor text position
 **So that** I can insert content before it
 
 **Acceptance Criteria:**
@@ -662,8 +675,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Performance acceptable
 
 #### Story 8.3: Before Insertion Logic
-**As a** Developer/Maintainer  
-**I want** to insert content before anchor  
+**As a** Developer/Maintainer
+**I want** to insert content before anchor
 **So that** document flows naturally
 
 **Acceptance Criteria:**
@@ -681,8 +694,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 ### User Stories
 
 #### Story 9.1: Insert After Command Handler
-**As a** Claude User  
-**I want** to insert content after specific text  
+**As a** Claude User
+**I want** to insert content after specific text
 **So that** I can append related information
 
 **Acceptance Criteria:**
@@ -694,8 +707,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Complete MVP functionality
 
 #### Story 9.2: After Position Calculation
-**As a** Developer/Maintainer  
-**I want** to find position after anchor text  
+**As a** Developer/Maintainer
+**I want** to find position after anchor text
 **So that** I can insert content correctly
 
 **Acceptance Criteria:**
@@ -707,8 +720,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Position validation complete
 
 #### Story 9.3: After Insertion Implementation
-**As a** Developer/Maintainer  
-**I want** to insert content after anchor  
+**As a** Developer/Maintainer
+**I want** to insert content after anchor
 **So that** additions appear in correct location
 
 **Acceptance Criteria:**
@@ -720,8 +733,8 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - All operations complete
 
 #### Story 9.4: MVP Completion Validation
-**As a** Developer/Maintainer  
-**I want** to validate MVP completeness  
+**As a** Developer/Maintainer
+**I want** to validate MVP completeness
 **So that** we can prepare for launch
 
 **Acceptance Criteria:**

@@ -1,0 +1,12 @@
+reviews:
+  # Minimize walkthrough visibility
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  profile: "chill"
+  request_changes_workflow: true
+  summarize: false
+
+  path_filters:
+    - "!**/.cursor/**"
+    - "!**/.claude/commands/BMad/**"
+    - "!**/.bmad-core/**"
