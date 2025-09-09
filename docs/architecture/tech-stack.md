@@ -375,6 +375,65 @@ func TestDocumentProcessor_ReplaceAll(t *testing.T) {
 }
 ```
 
+### E2E Testing: Playwright 1.55.0
+
+**Version:** 1.55.0
+**Purpose:** Unified end-to-end testing for both frontend UI and backend API integration
+**Rationale:**
+- Single testing framework for both frontend and backend tests
+- API testing capabilities alongside browser automation
+- TypeScript support with strong typing
+- Built-in test reporting and debugging tools
+- CI/CD integration with containerized execution
+- Cross-browser and API testing in unified workflow
+
+**Configuration:**
+```typescript
+// playwright.config.ts - Unified configuration for both frontend and backend tests
+export default defineConfig({
+  testDir: '.',
+  projects: [
+    {
+      name: 'frontend',
+      testDir: './frontend',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3000',
+      },
+    },
+    {
+      name: 'backend-api',
+      testDir: './backend',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:8080',
+      },
+    },
+  ],
+  webServer: [
+    {
+      command: 'cd ../../services/backend && go run ./cmd/main.go',
+      port: 8080,
+    },
+    {
+      command: 'cd ../../services/frontend && npm run dev',
+      port: 3000,
+    },
+  ],
+});
+```
+
+**API Testing Example:**
+```typescript
+test('Backend API Integration Tests', async ({ request }) => {
+  const response = await request.get('/version');
+  expect(response.status()).toBe(200);
+  
+  const data = await response.json();
+  expect(data.version).toBe('1.0.0');
+});
+```
+
 ### Mocking: gomock 1.6.0
 
 **Version:** 1.6.0

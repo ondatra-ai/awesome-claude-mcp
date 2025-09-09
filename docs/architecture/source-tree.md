@@ -512,25 +512,31 @@ docs/
 
 ```text
 tests/
-├── e2e/                       # End-to-End Tests
-│   ├── auth/                  # Authentication flow tests
-│   │   ├── login.spec.ts      # Login functionality tests
-│   │   └── multi-account.spec.ts # Multi-account tests
-│   ├── documents/             # Document operation tests
-│   │   ├── replace-all.spec.ts # Replace all operation tests
-│   │   ├── append.spec.ts     # Append operation tests
-│   │   ├── prepend.spec.ts    # Prepend operation tests
-│   │   └── insert-ops.spec.ts # Insert operations tests
-│   ├── integration/           # Service integration tests
-│   │   ├── api-frontend.spec.ts # API-Frontend integration
-│   │   └── mcp-client.spec.ts # MCP-Client integration
+├── e2e/                       # End-to-End Tests (Unified Playwright)
+│   ├── frontend/              # Frontend UI/UX Tests
+│   │   ├── homepage.spec.ts   # Homepage functionality tests
+│   │   ├── auth/              # Authentication flow tests
+│   │   │   ├── login.spec.ts  # Login functionality tests
+│   │   │   └── multi-account.spec.ts # Multi-account tests
+│   │   └── documents/         # Document management UI tests
+│   │       ├── list.spec.ts   # Document listing tests
+│   │       └── editor.spec.ts # Document editor tests
+│   ├── backend/               # Backend API Integration Tests
+│   │   ├── api.spec.ts        # Core API functionality tests
+│   │   ├── auth/              # Authentication API tests
+│   │   │   ├── oauth.spec.ts  # OAuth flow tests
+│   │   │   └── tokens.spec.ts # Token management tests
+│   │   └── documents/         # Document operation API tests
+│   │       ├── operations.spec.ts # Document operations tests
+│   │       └── validation.spec.ts # Input validation tests
 │   ├── fixtures/              # E2E test fixtures
 │   │   ├── test-documents.json # Test document data
 │   │   └── test-users.json    # Test user data
 │   ├── helpers/               # E2E test helpers
 │   │   ├── auth-helper.ts     # Authentication helpers
-│   │   └── page-helper.ts     # Page interaction helpers
-│   ├── playwright.config.ts   # E2E-specific Playwright configuration
+│   │   └── api-helper.ts      # API interaction helpers
+│   ├── playwright.config.ts   # Unified Playwright configuration for both frontend and backend tests
+│   ├── package.json           # E2E test dependencies
 │   └── Dockerfile             # Playwright test container for CI/CD
 ├── load/                      # Load and Performance Tests
 │   ├── api-load.js            # API load tests (Artillery)
