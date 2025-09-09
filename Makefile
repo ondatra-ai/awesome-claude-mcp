@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help dev test-unit test-e2e lint-backend lint-frontend
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend
 
 # Default target
 help: ## Show available commands
@@ -7,12 +7,27 @@ help: ## Show available commands
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
+init: ## Install dependencies for all services and tests
+	@echo "🚀 Initializing project dependencies..."
+	@echo "📦 Installing backend Go dependencies..."
+	go mod download -C services/backend
+	go mod tidy -C services/backend
+	@echo "📦 Installing frontend Node.js dependencies..."
+	npm install --prefix services/frontend
+	@echo "📦 Installing test dependencies..."
+	npm install --prefix tests
+	@echo "📦 Installing root package dependencies..."
+	npm install
+	@echo "✅ All dependencies installed successfully!"
+
 dev: ## Start all services with Docker Compose
 	docker-compose up --build
 
 test-unit: ## Run unit tests for both services
 	@echo "🧪 Running unit tests..."
-	go test ./services/backend/...
+	@echo "🔧 Running Go backend tests..."
+	go test -C services/backend ./...
+	@echo "🔧 Running Node.js frontend tests..."
 	npm test --prefix services/frontend
 	@echo "✅ Unit tests completed!"
 
@@ -23,8 +38,22 @@ test-e2e: ## Run E2E tests with Docker
 	@echo "🔧 Starting backend and frontend services..."
 	@docker-compose -f docker-compose.test.yml up -d backend frontend
 	@echo "⏳ Waiting for services to be healthy..."
-	@docker-compose -f docker-compose.test.yml exec backend wget --no-verbose --tries=1 --spider http://localhost:8080/health
-	@docker-compose -f docker-compose.test.yml exec frontend wget --no-verbose --tries=1 --spider http://localhost:3000
+	@for i in $$(seq 1 30); do \
+		if docker-compose -f docker-compose.test.yml exec -T backend wget --no-verbose --tries=1 --spider http://localhost:8080/health > /dev/null 2>&1; then \
+			echo "✅ Backend is healthy"; \
+			break; \
+		fi; \
+		echo "Waiting for backend... ($$i/30)"; \
+		sleep 2; \
+	done
+	@for i in $$(seq 1 30); do \
+		if docker-compose -f docker-compose.test.yml exec -T frontend wget --no-verbose --tries=1 --spider http://0.0.0.0:3000 > /dev/null 2>&1; then \
+			echo "✅ Frontend is healthy"; \
+			break; \
+		fi; \
+		echo "Waiting for frontend... ($$i/30)"; \
+		sleep 2; \
+	done
 	@echo "🧪 Running E2E tests..."
 	@docker-compose -f docker-compose.test.yml run --rm playwright-test; \
 	TEST_EXIT_CODE=$$?; \
