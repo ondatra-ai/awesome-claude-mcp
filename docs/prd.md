@@ -52,7 +52,7 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 - NFR5: The system shall support 30 daily active users
 - NFR6: The system shall process 100+ document edits per day
 - NFR7: The system shall use standard MCP protocol without custom extensions
-- NFR8: The system shall be deployable to AWS infrastructure
+- NFR8: The system shall be deployable to AWS ECS Fargate infrastructure with containerized services
 - NFR9: The system shall send Slack alerts when service is down or error rate exceeds 5%
 - NFR10: The system shall be released as open source with MIT license for MVP
 - NFR11: Every epic, user story, and task shall include comprehensive test coverage
@@ -62,11 +62,11 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 
 ### Repository Structure: Monorepo
 
-All services, including the MCP server, OAuth handler, and any future components will be maintained in a single repository to simplify development and deployment for the single developer team.
+All services, including the Frontend Service (Next.js), Backend Service (Go Fiber), MCP Service (Mark3Labs MCP-Go), and any future components will be maintained in a single monorepo structure to simplify development and deployment for the single developer team.
 
 ### Service Architecture
 
-The system will be implemented as a stateless microservice deployed on AWS Lambda with API Gateway, utilizing AWS services for infrastructure. The architecture will follow the design patterns established in the architecture document, with adjustment from GCP to AWS as the cloud provider.
+The system will be implemented as a 3-service containerized architecture deployed on AWS ECS Fargate with Application Load Balancer, utilizing AWS services for infrastructure. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber), and MCP Service (Go with Mark3Labs MCP-Go library) following the design patterns established in the architecture document.
 
 ### Testing Requirements
 
@@ -79,9 +79,12 @@ Comprehensive testing pyramid including:
 
 ### Additional Technical Assumptions and Requests
 
-- Go 1.21.5 as primary development language
-- AWS as cloud infrastructure provider (Lambda, API Gateway, CloudWatch)
+- **Backend Services:** Go 1.21.5 with Fiber framework for Backend and MCP services
+- **Frontend Service:** TypeScript with Next.js 14 (App Router) and modern React patterns
+- **MCP Protocol:** Mark3Labs MCP-Go library for MCP protocol implementation
+- AWS as cloud infrastructure provider (ECS Fargate, Application Load Balancer, CloudWatch)
 - Redis for token caching (AWS ElastiCache or similar)
+- Docker containerization with multi-stage builds for all services
 - New Relic + CloudWatch for monitoring and observability
 - Standard MCP protocol implementation without extensions
 - OAuth tokens cached until expiry by default
@@ -89,7 +92,7 @@ Comprehensive testing pyramid including:
 - Fail-fast error handling - no automatic retries
 - All configuration via environment variables
 - Infrastructure as Code using Terraform
-- GitHub Actions for CI/CD pipeline
+- GitHub Actions for CI/CD pipeline with ECR integration
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations
 
@@ -171,35 +174,41 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 
 **Acceptance Criteria:**
 - AWS account configured with appropriate IAM roles
-- Lambda function created and deployable
-- API Gateway configured with proper routes
-- CloudWatch logging enabled
+- ECS Fargate cluster created and configured
+- Application Load Balancer configured with proper target groups
+- VPC and networking configured for container communication
+- CloudWatch logging enabled for all services
 - Infrastructure defined in Terraform
-- Deployment successful to AWS
+- Deployment successful to AWS ECS
 
 #### Story 1.2: Project Repository Setup
 **As a** Developer/Maintainer  
-**I want** to initialize the Go project structure  
+**I want** to initialize the multi-service project structure  
 **So that** I have a maintainable codebase foundation
 
 **Acceptance Criteria:**
-- Go module initialized with dependencies
+- Monorepo structure with services/ directory created
+- Go modules initialized for Backend and MCP services
+- Next.js project initialized for Frontend service
+- Dockerfiles created for each service
 - Project structure follows architecture document
-- Makefile created with build, test, deploy targets
+- Makefile created with build, test, deploy targets for all services
 - Git repository configured with .gitignore
-- README.md with setup instructions
+- README.md with setup instructions for all services
 - MIT license file added
 
-#### Story 1.3: Homepage Implementation
+#### Story 1.3: Frontend Service Implementation
 **As a** Claude User  
-**I want** to access a homepage at the service URL  
-**So that** I can verify the service is running
+**I want** to access a web interface for service management  
+**So that** I can configure authentication and monitor service status
 
 **Acceptance Criteria:**
-- Homepage responds with 200 status at root URL
-- Displays "MCP Google Docs Editor" title
-- Shows service status (operational/degraded/down)
-- Mobile responsive design
+- Next.js 14 frontend service deployed and accessible
+- Homepage displays "MCP Google Docs Editor" title
+- Service status dashboard (operational/degraded/down)
+- OAuth authentication management interface
+- Connected Google accounts display
+- Mobile responsive design with modern UI
 - Page loads in under 2 seconds
 - Health check endpoint returns proper status
 
@@ -209,9 +218,11 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 **So that** code changes are safely deployed
 
 **Acceptance Criteria:**
-- GitHub Actions workflow configured
-- Automated tests run on pull requests
-- Successful builds deploy to AWS
+- GitHub Actions workflow configured for all services
+- Docker images built and pushed to ECR
+- Automated tests run on pull requests for each service
+- Successful builds deploy all services to AWS ECS
+- Blue-green deployment capability for zero downtime
 - Rollback capability implemented
 - Build status badges in README
 - Deployment notifications to Slack
@@ -231,16 +242,18 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 
 #### Story 1.6: Testing Framework
 **As a** Developer/Maintainer  
-**I want** testing infrastructure  
-**So that** I can ensure code quality
+**I want** comprehensive testing infrastructure  
+**So that** I can ensure code quality across all services
 
 **Acceptance Criteria:**
-- Unit test framework configured (testify)
-- Integration test environment setup
-- E2E test framework ready
-- Test coverage reporting enabled
-- Pre-commit hooks for testing
-- Example tests for each test type
+- Unit test framework configured (testify for Go services, Jest for Next.js)
+- Integration test environment setup for service-to-service communication
+- E2E test framework ready (Playwright for frontend workflows)
+- Docker Compose for local testing environment
+- Test coverage reporting enabled for all services
+- Container-based testing for deployment validation
+- Pre-commit hooks for testing all services
+- Example tests for each service and test type
 
 ## Epic 2: OAuth Authentication
 
