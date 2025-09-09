@@ -167,21 +167,7 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 
 ### User Stories
 
-#### Story 1.1: AWS Infrastructure Setup
-**As a** Developer/Maintainer
-**I want** to configure AWS infrastructure
-**So that** I have a deployable environment for the application
-
-**Acceptance Criteria:**
-- AWS account configured with appropriate IAM roles
-- ECS Fargate cluster created and configured
-- Application Load Balancer configured with proper target groups
-- VPC and networking configured for container communication
-- CloudWatch logging enabled for all services
-- Infrastructure defined in Terraform
-- Deployment successful to AWS ECS
-
-#### Story 1.2: Project Repository Setup
+#### Story 1.1: Project Repository Setup
 **As a** Developer/Maintainer
 **I want** to initialize the multi-service project structure
 **So that** I have a maintainable codebase foundation
@@ -196,6 +182,20 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - Git repository configured with .gitignore
 - README.md with setup instructions for all services
 - MIT license file added
+
+#### Story 1.2: AWS Infrastructure Setup
+**As a** Developer/Maintainer
+**I want** to configure AWS infrastructure
+**So that** I have a deployable environment for the application
+
+**Acceptance Criteria:**
+- AWS account configured with appropriate IAM roles
+- ECS Fargate cluster created and configured
+- Application Load Balancer configured with proper target groups
+- VPC and networking configured for container communication
+- CloudWatch logging enabled for all services
+- Infrastructure defined in Terraform
+- Deployment successful to AWS ECS
 
 #### Story 1.3: Frontend Service Implementation
 **As a** Claude User
