@@ -922,13 +922,13 @@ mcp-google-docs-editor/
 │       └── pr-preview.yml          # PR preview environment
 │
 ├── scripts/                        # Build and deploy scripts
-│   ├── dev.sh                      # Local development
-│   └── deploy.sh                   # Deployment script
+│   └── (various shell scripts)     # Complex automation logic
 │
 ├── docs/                           # Documentation
 │   ├── prd.md                      # Product Requirements
 │   └── architecture.md             # This document
 │
+├── Makefile                        # Primary build and deploy interface
 ├── docker-compose.yml              # Local development stack
 ├── package.json                    # Monorepo root package
 ├── turbo.json                      # Turborepo config
@@ -950,6 +950,12 @@ mcp-google-docs-editor/
 - **CI/CD Platform:** GitHub Actions
 - **Pipeline Configuration:** `.github/workflows/build-images.yml`, `.github/workflows/deploy-ecs.yml`
 - **Infrastructure as Code:** Terraform modules for reproducible deployments
+
+### Build and Deploy Automation
+- **Primary Interface:** Makefile in project root provides standardized commands (`make dev`, `make build`, `make deploy`)
+- **Complex Logic:** Shell scripts in `./scripts/` folder handle sophisticated automation tasks
+- **Approach:** Hybrid system where Makefile coordinates high-level operations and delegates complex logic to shell scripts
+- **Benefits:** Simple developer interface with powerful scripting capabilities for AWS operations and multi-service coordination
 
 ### ECS Service Configuration
 - **Frontend Service:** Next.js containers behind ALB target group on port 3000

@@ -4,10 +4,11 @@
 
 This document defines the complete source tree structure for the MCP Google Docs Editor project. It establishes a monorepo organization with clear separation between frontend (Next.js) and backend (Go) services, supporting the development requirements outlined in the PRD.
 
-**Structure Type:** Monorepo  
-**Primary Languages:** Go (backend), TypeScript (frontend)  
+**Structure Type:** Monorepo with 3-Service Architecture  
+**Primary Languages:** Go (backend services), TypeScript (frontend)  
+**Service Architecture:** Frontend, Backend, and MCP services  
 **Target Audience:** AI development agents and human developers  
-**Last Updated:** 2025-09-07
+**Last Updated:** 2025-09-09
 
 ## Root Directory Structure
 
@@ -21,8 +22,10 @@ mcp-google-docs-editor/
 │   ├── ISSUE_TEMPLATE/         # GitHub issue templates
 │   ├── PULL_REQUEST_TEMPLATE.md # PR template
 │   └── dependabot.yml         # Dependency update configuration
-├── frontend/                   # Next.js Frontend Application
-├── backend/                    # Go Backend Services
+├── services/                   # 3-Service Architecture
+│   ├── frontend/              # Next.js Frontend Service
+│   ├── backend/               # Go Backend Service (User Management)
+│   └── mcp-service/           # Go MCP Service (Mark3Labs)
 ├── infrastructure/             # Infrastructure as Code
 ├── scripts/                    # Build and deployment scripts
 ├── docs/                       # Project documentation
@@ -36,10 +39,12 @@ mcp-google-docs-editor/
 └── CLAUDE.md                  # Claude Code configuration
 ```
 
-## Frontend Directory Structure (Next.js 14)
+## Services Directory Structure
+
+### Frontend Service Structure (Next.js 14)
 
 ```text
-frontend/
+services/frontend/
 ├── app/                        # Next.js App Router (primary routing)
 │   ├── (auth)/                 # Route group for authentication
 │   │   ├── login/              # Login page route
@@ -182,73 +187,37 @@ frontend/
 └── README.md                  # Frontend-specific documentation
 ```
 
-## Backend Directory Structure (Go Services)
+### Backend Service Structure (Go Fiber)
 
 ```text
-backend/
-├── cmd/                        # Application Entry Points
-│   ├── api/                    # REST API Server
-│   │   ├── main.go             # API server entry point
-│   │   └── config.go           # API server configuration
-│   └── mcp/                    # MCP WebSocket Server
-│       ├── main.go             # MCP server entry point
-│       └── config.go           # MCP server configuration
+services/backend/
+├── cmd/                        # Application Entry Point
+│   └── main.go                 # Backend API server entry point
 ├── internal/                   # Internal Packages (Private)
-│   ├── api/                    # HTTP API Implementation
+│   ├── api/                    # Fiber HTTP API Implementation
 │   │   ├── handlers/           # HTTP request handlers
 │   │   │   ├── auth.go         # Authentication handlers
-│   │   │   ├── documents.go    # Document operation handlers
+│   │   │   ├── users.go        # User management handlers
 │   │   │   ├── health.go       # Health check handlers
-│   │   │   └── middleware.go   # HTTP middleware
+│   │   │   └── middleware.go   # Fiber middleware
 │   │   ├── routes/             # Route definitions
 │   │   │   ├── auth.go         # Authentication routes
-│   │   │   ├── documents.go    # Document operation routes
+│   │   │   ├── users.go        # User management routes
 │   │   │   └── routes.go       # Main route setup
-│   │   └── server.go           # HTTP server setup
-│   ├── mcp/                    # MCP Protocol Implementation
-│   │   ├── server.go           # MCP WebSocket server
-│   │   ├── handlers/           # MCP message handlers
-│   │   │   ├── tools.go        # Tool registration handlers
-│   │   │   ├── operations.go   # Document operation handlers
-│   │   │   └── discovery.go    # Service discovery handlers
-│   │   ├── protocol/           # MCP protocol implementation
-│   │   │   ├── messages.go     # Message types and validation
-│   │   │   ├── transport.go    # Transport layer handling
-│   │   │   └── client.go       # Client connection management
-│   │   └── tools/              # MCP tool definitions
-│   │       ├── replace_all.go  # Replace all operation tool
-│   │       ├── append.go       # Append operation tool
-│   │       ├── prepend.go      # Prepend operation tool
-│   │       ├── replace_match.go # Replace match operation tool
-│   │       ├── insert_before.go # Insert before operation tool
-│   │       └── insert_after.go # Insert after operation tool
+│   │   └── server.go           # Fiber server setup
 │   ├── auth/                   # Authentication and Authorization
 │   │   ├── oauth.go            # OAuth 2.0 implementation
 │   │   ├── tokens.go           # Token management
 │   │   ├── middleware.go       # Authentication middleware
 │   │   ├── google.go           # Google-specific auth logic
 │   │   └── cache.go            # Token caching
-│   ├── operations/             # Document Operations Business Logic
-│   │   ├── processor.go        # Main document processor
-│   │   ├── markdown.go         # Markdown parsing and conversion
-│   │   ├── replace_all.go      # Replace all operation
-│   │   ├── append.go           # Append operation
-│   │   ├── prepend.go          # Prepend operation
-│   │   ├── replace_match.go    # Replace match operation
-│   │   ├── insert_before.go    # Insert before operation
-│   │   ├── insert_after.go     # Insert after operation
-│   │   └── validator.go        # Operation input validation
-│   ├── docs/                   # Google Docs Integration
-│   │   ├── client.go           # Google Docs API client
-│   │   ├── service.go          # Document service wrapper
-│   │   ├── formatter.go        # Document formatting utilities
-│   │   ├── batch.go            # Batch operation handler
-│   │   └── errors.go           # Google Docs specific errors
+│   ├── users/                  # User Management Business Logic
+│   │   ├── service.go          # User service implementation
+│   │   ├── repository.go       # User data access layer
+│   │   └── models.go           # User data models
 │   ├── cache/                  # Caching Layer
 │   │   ├── redis.go            # Redis client implementation
-│   │   ├── tokens.go           # Token caching logic
-│   │   ├── documents.go        # Document metadata caching
-│   │   └── interface.go        # Caching interface definition
+│   │   └── tokens.go           # OAuth token caching logic
 │   └── config/                 # Configuration Management
 │       ├── config.go           # Configuration structure and loading
 │       ├── env.go              # Environment variable handling
@@ -321,6 +290,67 @@ backend/
 ├── go.sum                     # Go dependency checksums
 ├── Makefile                   # Build automation
 └── README.md                  # Backend-specific documentation
+```
+
+### MCP Service Structure (Mark3Labs MCP-Go)
+
+```text
+services/mcp-service/
+├── cmd/                        # Application Entry Point
+│   └── main.go                 # MCP server entry point with Mark3Labs library
+├── internal/                   # Internal Packages (Private)
+│   ├── server/                 # MCP Server Implementation
+│   │   ├── mcp.go              # Mark3Labs MCP server setup and configuration
+│   │   ├── tools.go            # Tool registration with schema validation
+│   │   ├── handlers.go         # Strongly-typed tool handlers
+│   │   └── middleware.go       # Recovery and capability middleware
+│   ├── operations/             # Document Operations Business Logic
+│   │   ├── processor.go        # Operation processor with parameter validation
+│   │   ├── replace.go          # Replace operations with MCP result types
+│   │   ├── append.go           # Append operations with MCP result types
+│   │   ├── insert.go           # Insert operations with MCP result types
+│   │   └── validator.go        # Parameter validation with enum/pattern support
+│   ├── docs/                   # Google Docs Integration
+│   │   ├── service.go          # Document service
+│   │   ├── client.go           # Google Docs API client
+│   │   ├── converter.go        # Markdown converter
+│   │   └── formatter.go        # Google Docs formatter
+│   ├── auth/                   # Authentication for MCP Service
+│   │   ├── oauth.go            # Google OAuth for service accounts
+│   │   └── tokens.go           # Token validation with backend service
+│   ├── cache/                  # Caching Layer (shared with backend)
+│   │   └── redis.go            # Redis client implementation
+│   └── config/                 # Configuration Management
+│       └── config.go           # Configuration structure and loading
+├── pkg/                        # Public Packages (Importable)
+│   ├── types/                  # MCP Type Definitions
+│   │   ├── tools.go            # Tool parameter structures
+│   │   └── results.go          # MCP result type wrappers
+│   ├── errors/                 # Custom Error Types
+│   │   └── errors.go           # MCP-specific error definitions
+│   └── utils/                  # Utility Functions
+│       └── validation.go       # Parameter validation utilities
+├── tests/                      # Test Files and Utilities
+│   ├── integration/            # Integration Tests
+│   │   ├── mcp_test.go         # MCP protocol integration tests
+│   │   ├── tools_test.go       # Tool handler tests
+│   │   └── docs_test.go        # Google Docs integration tests
+│   ├── fixtures/               # Test Data and Fixtures
+│   │   ├── documents/          # Sample document data
+│   │   └── requests/           # MCP request/response samples
+│   ├── helpers/                # Test Helper Functions
+│   │   ├── mcp.go              # MCP testing utilities
+│   │   └── mocks.go            # Mock generation utilities
+│   └── mocks/                  # Generated Mocks
+│       ├── docs_mock.go        # Google Docs client mocks
+│       └── cache_mock.go       # Cache interface mocks
+├── .env.example               # Environment variables template
+├── .gitignore                 # MCP service specific git ignores
+├── .dockerignore              # Docker ignore patterns
+├── go.mod                     # Go module with Mark3Labs MCP-Go dependency
+├── go.sum                     # Go dependency checksums
+├── Dockerfile                 # MCP service container definition
+└── README.md                  # MCP service documentation
 ```
 
 ## Infrastructure Directory Structure
@@ -564,7 +594,7 @@ docker-compose.yml           # Local development stack
 .dockerignore               # Docker ignore patterns
 
 # Build Configuration
-Makefile                    # Build automation
+Makefile                    # Primary build and deploy interface (hybrid with scripts)
 package.json                # Node.js workspace configuration (if using workspaces)
 
 # Documentation
@@ -617,16 +647,21 @@ jest.config.js            # Jest testing configuration
 ```text
 # Main entry points
 main.go                    # Application entry point
-server.go                  # Server setup and configuration
+server.go                  # Server setup (Fiber or Mark3Labs MCP)
 config.go                  # Configuration handling
 
-# Business logic
-document_processor.go      # Document processing logic
+# Business logic (Backend Service)
+user_service.go           # User management service
 auth_service.go           # Authentication service
-operation_handler.go      # Operation handlers
+token_handler.go          # OAuth token handlers
+
+# Business logic (MCP Service)
+tools.go                  # MCP tool registration
+handlers.go               # MCP tool handlers
+operations.go             # Document operations
 
 # Tests
-document_processor_test.go # Unit tests
+user_service_test.go      # Unit tests
 integration_test.go       # Integration tests
 ```
 
@@ -672,31 +707,37 @@ template.yaml           # SAM/CloudFormation template
 
 ### Local Development Structure
 
-When running the application locally, the following structure supports the development workflow:
+When running the application locally, the following structure supports the 3-service development workflow:
 
 ```text
-# Terminal 1: Backend API Server
-cd backend && make dev-api
+# Using root Makefile (recommended)
+make dev                    # Starts all services via docker-compose
 
-# Terminal 2: Backend MCP Server  
-cd backend && make dev-mcp
+# Or individual services:
+# Terminal 1: Frontend Service
+cd services/frontend && npm run dev
 
-# Terminal 3: Frontend Development Server
-cd frontend && npm run dev
+# Terminal 2: Backend Service (User Management)
+cd services/backend && go run cmd/main.go
+
+# Terminal 3: MCP Service (Mark3Labs)
+cd services/mcp-service && go run cmd/main.go
 
 # Terminal 4: Infrastructure Services
-docker-compose up redis
+make dev-infra             # Start Redis, PostgreSQL via docker-compose
 ```
 
 ### Build Artifact Organization
 
 ```text
 # Build outputs (git-ignored)
-frontend/.next/            # Next.js build output
-backend/bin/              # Go compiled binaries
-dist/                     # Distribution packages
-coverage/                 # Test coverage reports
-logs/                     # Development logs
+services/frontend/.next/   # Next.js build output
+services/backend/bin/      # Backend service compiled binaries
+services/mcp-service/bin/  # MCP service compiled binaries
+dist/                      # Distribution packages and Docker images
+coverage/                  # Test coverage reports
+logs/                      # Development logs
+tmp/                       # Temporary build files (used by scripts)
 ```
 
 ### IDE Integration
