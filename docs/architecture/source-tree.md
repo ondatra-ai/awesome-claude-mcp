@@ -172,8 +172,7 @@ services/frontend/
 │   ├── hooks/                  # Hook tests
 │   ├── lib/                    # Utility tests
 │   └── setup.ts                # Test setup configuration
-├── .env.local                  # Local environment variables
-├── .env.example               # Environment variables template
+├── .env.local                  # Local environment variables (references root .env.example)
 ├── .eslintrc.json             # ESLint configuration
 ├── .prettierrc                # Prettier configuration
 ├── .gitignore                 # Frontend-specific git ignores
@@ -239,9 +238,6 @@ services/backend/
 │       └── formatters.go       # Log formatting utilities
 ├── deployments/                # Deployment Configurations
 │   ├── docker/                 # Docker configurations
-│   │   ├── Dockerfile.api      # API service Dockerfile
-│   │   ├── Dockerfile.mcp      # MCP service Dockerfile
-│   │   └── docker-compose.yml  # Local development compose
 │   ├── aws/                    # AWS deployment configurations
 │   │   ├── template.yaml       # SAM template
 │   │   └── buildspec.yml       # AWS CodeBuild specification
@@ -282,12 +278,12 @@ services/backend/
 │   ├── api.md                  # API documentation
 │   ├── mcp.md                  # MCP protocol implementation
 │   └── deployment.md           # Deployment instructions
-├── .env.example               # Environment variables template
 ├── .gitignore                 # Go-specific git ignores
 ├── .golangci.yml              # golangci-lint configuration
 ├── .dockerignore              # Docker ignore patterns
 ├── go.mod                     # Go module definition
 ├── go.sum                     # Go dependency checksums
+├── Dockerfile                 # Backend service container definition
 ├── Makefile                   # Build automation
 └── README.md                  # Backend-specific documentation
 ```
@@ -344,7 +340,6 @@ services/mcp-service/
 │   └── mocks/                  # Generated Mocks
 │       ├── docs_mock.go        # Google Docs client mocks
 │       └── cache_mock.go       # Cache interface mocks
-├── .env.example               # Environment variables template
 ├── .gitignore                 # MCP service specific git ignores
 ├── .dockerignore              # Docker ignore patterns
 ├── go.mod                     # Go module with Mark3Labs MCP-Go dependency
@@ -404,8 +399,7 @@ infrastructure/
 │       └── stack.yaml         # CloudFormation stack
 ├── docker/                    # Docker configurations
 │   ├── Dockerfile.dev         # Development Dockerfile
-│   ├── Dockerfile.prod        # Production Dockerfile
-│   └── docker-compose.yml     # Multi-service composition
+│   └── Dockerfile.prod        # Production Dockerfile
 ├── k8s/                       # Kubernetes manifests (future)
 │   ├── namespace.yaml         # Namespace definition
 │   ├── deployment.yaml        # Application deployment
@@ -536,7 +530,8 @@ tests/
 │   ├── helpers/               # E2E test helpers
 │   │   ├── auth-helper.ts     # Authentication helpers
 │   │   └── page-helper.ts     # Page interaction helpers
-│   └── playwright.config.ts   # Playwright configuration
+│   ├── playwright.config.ts   # E2E-specific Playwright configuration
+│   └── Dockerfile             # Playwright test container for CI/CD
 ├── load/                      # Load and Performance Tests
 │   ├── api-load.js            # API load tests (Artillery)
 │   ├── websocket-load.js      # WebSocket load tests
@@ -566,8 +561,8 @@ tests/
 │   └── assertion-helpers.js   # Custom assertion helpers
 ├── config/                    # Test Configuration
 │   ├── jest.config.js         # Jest configuration
-│   ├── playwright.config.js   # Playwright configuration
 │   └── test-env.js            # Test environment setup
+├── package.json               # Test dependencies and scripts
 └── README.md                  # Testing documentation
 ```
 
@@ -590,12 +585,10 @@ tests/
 .prettierignore              # Prettier ignore patterns
 
 # Docker Configuration
-docker-compose.yml           # Local development stack
 .dockerignore               # Docker ignore patterns
 
 # Build Configuration
 Makefile                    # Primary build and deploy interface (hybrid with scripts)
-package.json                # Node.js workspace configuration (if using workspaces)
 
 # Documentation
 README.md                   # Project overview
@@ -614,8 +607,9 @@ go.sum                      # Dependency checksums
 .golangci.yml              # golangci-lint configuration
 ```
 
-**Node.js Configuration (frontend/):**
+**Node.js Configuration (frontend/ and tests/):**
 ```text
+# Frontend Service
 package.json               # Dependencies and scripts
 package-lock.json          # Dependency lock file
 .eslintrc.json            # ESLint configuration
@@ -625,6 +619,9 @@ next.config.js            # Next.js configuration
 tailwind.config.ts        # Tailwind CSS configuration
 postcss.config.js         # PostCSS configuration
 jest.config.js            # Jest testing configuration
+
+# Tests Directory
+package.json               # Test dependencies and E2E test scripts
 ```
 
 ## File Naming Conventions
@@ -693,8 +690,7 @@ document.ts               # Document types
 .env.example             # Template for environment variables
 
 # Build and deployment
-Dockerfile               # Docker container definition
-docker-compose.yml       # Multi-service composition
+Dockerfile               # Service-specific container definition
 template.yaml           # SAM/CloudFormation template
 
 # Code quality
