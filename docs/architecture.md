@@ -31,7 +31,7 @@ The MCP Google Docs Editor implements a modern full-stack architecture with Next
 
 1. **Architectural Style:** 3-Service Microservices Architecture with containerized deployment
 2. **Repository Structure:** Monorepo structure containing frontend, backend, and MCP service code
-3. **Service Architecture:** 
+3. **Service Architecture:**
    - **Frontend Service:** Next.js containers for user interface, authentication flows, and document management UI
    - **Backend Service:** Go API containers for user management, OAuth token management, session persistence, and user data operations
    - **MCP Service:** Dedicated Go containers implementing MCP protocol for Claude Code and ChatGPT web interface communication, handling Google Docs API integration
@@ -56,55 +56,55 @@ graph TB
         CD[Claude Desktop/Code]
         CW[ChatGPT Web]
     end
-    
+
     subgraph "AWS Infrastructure"
         CF[CloudFront CDN]
         ALB[Application Load Balancer]
-        
+
         subgraph "ECS Fargate Cluster"
             subgraph "Frontend Service"
                 FE1[Next.js Container 1]
                 FE2[Next.js Container 2]
             end
-            
-            subgraph "Backend Service"  
+
+            subgraph "Backend Service"
                 BE1[Go Backend Container 1]
                 BE2[Go Backend Container 2]
             end
-            
+
             subgraph "MCP Service"
                 MCP1[Go MCP Container 1]
                 MCP2[Go MCP Container 2]
             end
         end
-        
+
         EC[ElastiCache Redis]
         SM[Secrets Manager]
         RDS[(PostgreSQL RDS)]
         CW[CloudWatch]
     end
-    
+
     subgraph "External Services"
         GA[Google OAuth API]
         GD[Google Docs API]
     end
-    
+
     %% User flows
     U --> CF
     CF --> ALB
     ALB --> FE1
     ALB --> FE2
-    
+
     %% Frontend to Backend communication
     FE1 --> BE1
     FE2 --> BE2
-    
+
     %% MCP Client connections
     CD -->|WebSocket/MCP| ALB
     CW -->|WebSocket/MCP| ALB
     ALB --> MCP1
     ALB --> MCP2
-    
+
     %% Backend Service connections
     BE1 --> EC
     BE2 --> EC
@@ -114,7 +114,7 @@ graph TB
     BE2 --> SM
     BE1 --> GA
     BE2 --> GA
-    
+
     %% MCP Service connections
     MCP1 --> EC
     MCP2 --> EC
@@ -122,7 +122,7 @@ graph TB
     MCP2 --> SM
     MCP1 --> GD
     MCP2 --> GD
-    
+
     %% Monitoring
     BE1 --> CW
     BE2 --> CW
@@ -148,13 +148,13 @@ Let me present the technology choices for your approval. These are critical deci
 ### Cloud Infrastructure
 - **Provider:** AWS (Amazon Web Services)
 - **Container Platform:** ECS Fargate (serverless containers)
-- **Key Services:** 
+- **Key Services:**
   - Compute: ECS Fargate clusters for frontend and backend services
   - Networking: Application Load Balancer, VPC, CloudFront CDN
   - Storage: ElastiCache (Redis), RDS (if needed), S3 for static assets
   - Monitoring: CloudWatch, AWS X-Ray for distributed tracing
   - Security: Secrets Manager, IAM roles, Security Groups
-- **Deployment Regions:** 
+- **Deployment Regions:**
   - Primary: us-east-1
   - Future DR: us-west-2
 
@@ -163,7 +163,7 @@ Let me present the technology choices for your approval. These are critical deci
 #### Frontend Technologies
 
 | Category | Technology | Version | Purpose | Rationale |
-|----------|------------|---------|---------|-----------|  
+|----------|------------|---------|---------|-----------|
 | **Framework** | Next.js | 14.1.0 | React framework with SSR/SSG | App Router, React Server Components, excellent DX |
 | **Language** | TypeScript | 5.3.3 | Type-safe JavaScript | Better IDE support, fewer runtime errors |
 | **UI Library** | React | 18.2.0 | Component-based UI | Industry standard, huge ecosystem |
@@ -467,13 +467,13 @@ graph LR
         CM[Cache Manager]
         CB[Circuit Breaker]
     end
-    
+
     subgraph "External Services"
         CLAUDE[Claude AI]
         GOOGLE[Google APIs]
         REDIS[(Redis)]
     end
-    
+
     CLAUDE <--> MPH
     MPH --> CP
     CP --> OM
@@ -524,7 +524,7 @@ sequenceDiagram
     participant O as OAuth Manager
     participant R as Redis Cache
     participant G as Google Docs API
-    
+
     C->>M: Tool Call (edit document)
     M->>M: Parse command & validate
     M->>O: Get user token
@@ -547,7 +547,7 @@ sequenceDiagram
     participant C as Claude
     participant M as MCP Server
     participant G as Google OAuth
-    
+
     U->>C: First use of tool
     C->>M: Tool discovery
     M-->>C: Tool definition
@@ -631,7 +631,7 @@ paths:
 **Primary Database: PostgreSQL 15**
 - **Rationale:** ACID compliance for user data integrity, excellent JSON support for flexible schemas, proven reliability for 30+ concurrent users, supports both relational and document-like queries
 
-**Caching Layer: Redis 7 (AWS ElastiCache)**  
+**Caching Layer: Redis 7 (AWS ElastiCache)**
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
 
 **Current Deployment:**
@@ -676,14 +676,14 @@ CREATE TABLE document_operations (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     google_account_id UUID NOT NULL REFERENCES google_accounts(id) ON DELETE CASCADE,
     document_id VARCHAR(100) NOT NULL, -- Google Docs document ID
-    operation_type VARCHAR(20) NOT NULL CHECK (operation_type IN 
+    operation_type VARCHAR(20) NOT NULL CHECK (operation_type IN
         ('replace_all', 'append', 'prepend', 'replace_match', 'insert_before', 'insert_after')),
-    
+
     -- Operation parameters
     content_preview TEXT, -- First 500 chars of content (for debugging)
     anchor_text TEXT, -- For positioned operations
     case_sensitive BOOLEAN DEFAULT TRUE,
-    
+
     -- Results
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
     matches_found INTEGER DEFAULT 0,
@@ -691,13 +691,13 @@ CREATE TABLE document_operations (
     error_code VARCHAR(50),
     error_message TEXT,
     error_hints JSONB,
-    
+
     -- Timing and metadata
     started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE,
     execution_time_ms INTEGER,
     document_size_chars INTEGER,
-    
+
     -- Audit trail
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -758,7 +758,7 @@ CREATE INDEX idx_metrics_name_period ON system_metrics(metric_name, aggregation_
 // Fields: user_id, google_account_id, expires_at, created_at
 // TTL: 24 hours
 
-// OAuth tokens (hot cache) - Hash  
+// OAuth tokens (hot cache) - Hash
 // Key: token:{google_account_id}
 // Fields: access_token, expires_at, last_refreshed
 // TTL: Set to token expiry time
@@ -965,13 +965,13 @@ mcp-google-docs-editor/
 - **Health Checks:** Application-level health endpoints
 
 ### Environments
-- **Development:** 
+- **Development:**
   - Local: Root-level `docker-compose.yml` with all services (frontend, backend, Redis, databases)
   - AWS: Single ECS cluster with dev task definitions
-- **Staging:** 
+- **Staging:**
   - Dedicated ECS cluster with staging configuration
   - Separate ALB and target groups
-- **Production:** 
+- **Production:**
   - Production ECS cluster with high-availability configuration
   - Multi-AZ deployment with auto-scaling
 
@@ -992,10 +992,10 @@ services:
     depends_on:
       - backend-api
       - backend-mcp
-  
+
   # Backend API Service
   backend-api:
-    build: 
+    build:
       context: ./backend
       dockerfile: ./deployments/api/Dockerfile
     ports: ["8080:8080"]
@@ -1007,10 +1007,10 @@ services:
     depends_on:
       - postgres
       - redis
-  
+
   # Backend MCP Service
   backend-mcp:
-    build: 
+    build:
       context: ./backend
       dockerfile: ./deployments/mcp/Dockerfile
     ports: ["8081:8081"]
@@ -1022,7 +1022,7 @@ services:
     depends_on:
       - postgres
       - redis
-  
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -1034,7 +1034,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d
-  
+
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -1061,7 +1061,7 @@ volumes:
 Feature Branch
       ↓ (git push)
 Local: docker-compose up + testing
-      ↓ (PR merge to main)  
+      ↓ (PR merge to main)
 ECR Push + Staging ECS Deploy
       ↓ (manual approval)
 Production ECS Deploy
@@ -1070,7 +1070,7 @@ Production ECS Deploy
 ### Rollback Strategy
 - **Method:** ECS service update with previous task definition revision
 - **Automation:** Automated rollback on health check failures
-- **Trigger Conditions:** Failed health checks, error rate > 5%, response time > 5s  
+- **Trigger Conditions:** Failed health checks, error rate > 5%, response time > 5s
 - **Recovery Time Objective:** < 2 minutes for container restart
 
 ## Error Handling Strategy

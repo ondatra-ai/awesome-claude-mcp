@@ -4,10 +4,10 @@
 
 This document defines the complete source tree structure for the MCP Google Docs Editor project. It establishes a monorepo organization with clear separation between frontend (Next.js) and backend (Go) services, supporting the development requirements outlined in the PRD.
 
-**Structure Type:** Monorepo with 3-Service Architecture  
-**Primary Languages:** Go (backend services), TypeScript (frontend)  
-**Service Architecture:** Frontend, Backend, and MCP services  
-**Target Audience:** AI development agents and human developers  
+**Structure Type:** Monorepo with 3-Service Architecture
+**Primary Languages:** Go (backend services), TypeScript (frontend)
+**Service Architecture:** Frontend, Backend, and MCP services
+**Target Audience:** AI development agents and human developers
 **Last Updated:** 2025-09-09
 
 ## Root Directory Structure
@@ -628,7 +628,7 @@ package.json               # Test dependencies and E2E test scripts
 
 ### General Conventions
 
-**Directories:** 
+**Directories:**
 - Use lowercase with hyphens for multi-word names: `api-gateway/`, `user-management/`
 - Use descriptive, clear names: `authentication/` not `auth/` (except for very common abbreviations)
 

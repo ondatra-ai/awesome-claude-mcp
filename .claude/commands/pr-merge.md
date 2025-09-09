@@ -80,7 +80,7 @@ echo "✅ Merge completed successfully!"
 
 **CRITICAL**: This command explicitly forbids admin privilege usage:
 - Detects admin permissions and exits with error
-- Uses standard `gh pr merge` without admin flags  
+- Uses standard `gh pr merge` without admin flags
 - Enforces all branch protection rules
 - No bypass of required status checks
 

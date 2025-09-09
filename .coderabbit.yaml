@@ -4,6 +4,7 @@ reviews:
   sequence_diagrams: false
   profile: "chill"
   request_changes_workflow: true
+  summarize: false
 
   path_filters:
     - "!**/.cursor/**"

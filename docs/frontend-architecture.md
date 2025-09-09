@@ -95,7 +95,7 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <label 
+      <label
         htmlFor={htmlFor}
         className="block text-sm font-medium text-gray-700"
       >
@@ -104,8 +104,8 @@ export const FormField: React.FC<FormFieldProps> = ({
       </label>
       {children}
       {error && (
-        <p 
-          className="text-sm text-red-600" 
+        <p
+          className="text-sm text-red-600"
           role="alert"
           id={`${htmlFor}-error`}
         >
@@ -140,13 +140,13 @@ export const DocumentOperationForm: React.FC<DocumentOperationFormProps> = ({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      <FormField 
-        label="Operation Type" 
-        htmlFor="operationType" 
+      <FormField
+        label="Operation Type"
+        htmlFor="operationType"
         required
         error={form.formState.errors.operationType?.message}
       >
-        <Select 
+        <Select
           value={form.watch('operationType')}
           onValueChange={(value) => form.setValue('operationType', value)}
         >
@@ -164,35 +164,35 @@ export const DocumentOperationForm: React.FC<DocumentOperationFormProps> = ({
         </Select>
       </FormField>
 
-      <FormField 
-        label="Document ID" 
-        htmlFor="documentId" 
+      <FormField
+        label="Document ID"
+        htmlFor="documentId"
         required
         error={form.formState.errors.documentId?.message}
       >
-        <Input 
+        <Input
           id="documentId"
           {...form.register('documentId')}
           placeholder="Enter Google Docs document ID"
         />
       </FormField>
 
-      <FormField 
-        label="Content (Markdown)" 
-        htmlFor="content" 
+      <FormField
+        label="Content (Markdown)"
+        htmlFor="content"
         required
         error={form.formState.errors.content?.message}
       >
-        <MarkdownEditor 
+        <MarkdownEditor
           value={form.watch('content')}
           onChange={(value) => form.setValue('content', value)}
           id="content"
         />
       </FormField>
 
-      <Button 
-        type="submit" 
-        variant="primary" 
+      <Button
+        type="submit"
+        variant="primary"
         size="md"
         loading={loading}
         disabled={!form.formState.isValid}
@@ -225,7 +225,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {header}
         </header>
       )}
-      
+
       <div className="flex">
         {sidebar && (
           <aside className="w-64 bg-white shadow-sm min-h-screen">
@@ -234,7 +234,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </nav>
           </aside>
         )}
-        
+
         <main className="flex-1 p-6" role="main">
           {children}
         </main>
@@ -268,7 +268,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <SystemStatusCard status={systemStatus} />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <RecentOperationsCard operations={recentOperations} />
           <QuickActionsCard />
@@ -523,7 +523,7 @@ interface OperationsState {
   currentOperation: DocumentOperation | null
   loading: boolean
   error: string | null
-  
+
   // Actions
   fetchOperations: () => Promise<void>
   executeOperation: (operation: CreateOperationInput) => Promise<void>
@@ -553,10 +553,10 @@ export const useOperationsStore = create<OperationsState>((set, get) => ({
     set({ loading: true, error: null })
     try {
       const operation = await operationsApi.create(operationInput)
-      set(state => ({ 
+      set(state => ({
         operations: [operation, ...state.operations],
         currentOperation: operation,
-        loading: false 
+        loading: false
       }))
     } catch (error) {
       set({ error: error.message, loading: false })
@@ -611,7 +611,7 @@ export const useOperations = () => {
     if (!validation.success) {
       throw new Error('Invalid operation input')
     }
-    
+
     // Execute operation
     await executeOperation(validation.data)
   }, [executeOperation])
@@ -724,7 +724,7 @@ class ApiClient {
         details: error.response.data.details
       }
     }
-    
+
     return {
       code: 'NETWORK_ERROR',
       message: 'Network connection error',
@@ -997,12 +997,12 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl
-        
+
         // Public routes
         if (pathname.startsWith('/login') || pathname === '/') {
           return true
         }
-        
+
         // Protected routes require authentication
         return !!token
       }
@@ -1085,7 +1085,7 @@ export const Header: React.FC = () => {
 export const createDocumentUrl = (documentId: string, view?: 'edit' | 'history') => {
   const params = new URLSearchParams()
   if (view) params.set('view', view)
-  
+
   return `/documents/${documentId}${params.toString() ? `?${params.toString()}` : ''}`
 }
 
@@ -1096,7 +1096,7 @@ export const createOperationUrl = (operationId: string, section?: string) => {
 // Share operation functionality
 export const shareOperation = async (operationId: string) => {
   const url = `${window.location.origin}${createOperationUrl(operationId)}`
-  
+
   if (navigator.share) {
     try {
       await navigator.share({
@@ -1126,7 +1126,7 @@ export const OperationsList: React.FC<{ operations: DocumentOperation[] }> = ({ 
       <h2 id="operations-heading" className="text-xl font-semibold mb-4">
         Recent Operations
       </h2>
-      
+
       {operations.length === 0 ? (
         <div role="status" aria-live="polite">
           <p>No operations found.</p>
@@ -1138,23 +1138,23 @@ export const OperationsList: React.FC<{ operations: DocumentOperation[] }> = ({ 
               <article className="border rounded-lg p-4 mb-4">
                 <header>
                   <h3 className="font-medium">
-                    <Link 
+                    <Link
                       href={`/operations/${operation.id}`}
                       className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
                     >
                       {operation.operationType} Operation
                     </Link>
                   </h3>
-                  <time 
+                  <time
                     dateTime={operation.createdAt}
                     className="text-sm text-gray-500"
                   >
                     {formatRelativeTime(operation.createdAt)}
                   </time>
                 </header>
-                
+
                 <div className="mt-2">
-                  <StatusBadge 
+                  <StatusBadge
                     status={operation.status}
                     aria-label={`Operation status: ${operation.status}`}
                   />
@@ -1174,7 +1174,7 @@ export const OperationsList: React.FC<{ operations: DocumentOperation[] }> = ({ 
 // Form with proper ARIA attributes
 export const DocumentOperationForm: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({})
-  
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -1182,10 +1182,10 @@ export const DocumentOperationForm: React.FC = () => {
       noValidate
     >
       <h2 id="operation-form-title">Create Document Operation</h2>
-      
+
       <fieldset>
         <legend className="sr-only">Operation Details</legend>
-        
+
         <div className="space-y-4">
           <div>
             <label htmlFor="operation-type" className="block font-medium">
@@ -1218,7 +1218,7 @@ export const DocumentOperationForm: React.FC = () => {
           </div>
         </div>
       </fieldset>
-      
+
       <button
         type="submit"
         disabled={loading}
@@ -1247,7 +1247,7 @@ export const DocumentOperationForm: React.FC = () => {
 // Custom hook for keyboard navigation
 export const useKeyboardNavigation = (items: any[], onSelect: (item: any) => void) => {
   const [activeIndex, setActiveIndex] = useState(0)
-  
+
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
     switch (event.key) {
       case 'ArrowDown':
@@ -1268,7 +1268,7 @@ export const useKeyboardNavigation = (items: any[], onSelect: (item: any) => voi
         break
     }
   }, [items, activeIndex, onSelect])
-  
+
   return {
     activeIndex,
     handleKeyDown
@@ -1278,7 +1278,7 @@ export const useKeyboardNavigation = (items: any[], onSelect: (item: any) => voi
 // Usage in dropdown component
 export const Dropdown: React.FC<DropdownProps> = ({ items, onSelect }) => {
   const { activeIndex, handleKeyDown } = useKeyboardNavigation(items, onSelect)
-  
+
   return (
     <div
       role="listbox"
@@ -1310,19 +1310,19 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, onSelect }) => {
 // Live regions for dynamic content
 export const OperationStatus: React.FC<{ operation: DocumentOperation }> = ({ operation }) => {
   const [previousStatus, setPreviousStatus] = useState(operation.status)
-  
+
   useEffect(() => {
     if (previousStatus !== operation.status) {
       setPreviousStatus(operation.status)
-      
+
       // Announce status changes to screen readers
       const announcement = `Operation ${operation.operationType} status changed to ${operation.status}`
-      
+
       // You might also want to use a more sophisticated announcement system
       announceToScreenReader(announcement)
     }
   }, [operation.status, operation.operationType, previousStatus])
-  
+
   return (
     <div>
       <div
@@ -1334,7 +1334,7 @@ export const OperationStatus: React.FC<{ operation: DocumentOperation }> = ({ op
         {operation.status === 'completed' && 'Operation completed successfully'}
         {operation.status === 'failed' && 'Operation failed'}
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <StatusIcon status={operation.status} aria-hidden="true" />
         <span className="capitalize">{operation.status}</span>
@@ -1350,9 +1350,9 @@ const announceToScreenReader = (message: string) => {
   announcement.setAttribute('aria-atomic', 'true')
   announcement.className = 'sr-only'
   announcement.textContent = message
-  
+
   document.body.appendChild(announcement)
-  
+
   setTimeout(() => {
     document.body.removeChild(announcement)
   }, 1000)
@@ -1383,11 +1383,11 @@ export default function OperationsPage() {
   return (
     <div>
       <h1>Operations Dashboard</h1>
-      
+
       <Suspense fallback={<FormSkeleton />}>
         <OperationForm />
       </Suspense>
-      
+
       <Suspense fallback={<ChartSkeleton />}>
         <OperationsChart />
       </Suspense>
@@ -1442,7 +1442,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   className
 }) => {
   const [isLoading, setIsLoading] = useState(true)
-  
+
   return (
     <div className={cn('overflow-hidden', className)}>
       <Image
@@ -1507,7 +1507,7 @@ export const useLazyLoad = ({ threshold = 0.1, rootMargin = '0px' }: UseLazyLoad
 // Usage in component
 export const LazyOperationsList: React.FC = () => {
   const { ref, isVisible } = useLazyLoad({ threshold: 0.2 })
-  
+
   return (
     <div ref={ref} className="min-h-[200px]">
       {isVisible ? (
@@ -1537,7 +1537,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lodash-es', 'date-fns'],
   },
-  
+
   // Webpack optimization
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -1548,7 +1548,7 @@ const nextConfig = {
         tls: false,
       }
     }
-    
+
     // Optimize bundle size
     config.optimization.splitChunks = {
       chunks: 'all',
@@ -1560,7 +1560,7 @@ const nextConfig = {
         },
       },
     }
-    
+
     return config
   },
 }
@@ -1576,7 +1576,7 @@ export const measurePageLoad = () => {
     window.addEventListener('load', () => {
       const perfData = window.performance.timing
       const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart
-      
+
       // Send to analytics
       gtag('event', 'page_load_time', {
         event_category: 'Performance',
@@ -1598,7 +1598,7 @@ export const usePerformanceMetrics = () => {
             value: Math.round(entry.startTime)
           })
         }
-        
+
         if (entry.entryType === 'first-input') {
           gtag('event', 'fid', {
             event_category: 'Web Vitals',
@@ -1607,10 +1607,10 @@ export const usePerformanceMetrics = () => {
         }
       }
     })
-    
+
     observer.observe({ type: 'largest-contentful-paint', buffered: true })
     observer.observe({ type: 'first-input', buffered: true })
-    
+
     return () => observer.disconnect()
   }, [])
 }
@@ -1676,7 +1676,7 @@ describe('Button Component', () => {
         Click me
       </Button>
     )
-    
+
     fireEvent.click(screen.getByRole('button'))
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
@@ -1687,7 +1687,7 @@ describe('Button Component', () => {
         Submit
       </Button>
     )
-    
+
     expect(screen.getByLabelText('Loading...')).toBeInTheDocument()
     expect(screen.getByRole('button')).toBeDisabled()
   })
@@ -1696,9 +1696,9 @@ describe('Button Component', () => {
     const { rerender } = render(
       <Button variant="primary" size="md">Primary</Button>
     )
-    
+
     expect(screen.getByRole('button')).toHaveClass('bg-blue-600', 'text-white')
-    
+
     rerender(<Button variant="danger" size="md">Danger</Button>)
     expect(screen.getByRole('button')).toHaveClass('bg-red-600', 'text-white')
   })
@@ -1713,19 +1713,19 @@ import { test, expect } from '@playwright/test'
 test.describe('Authentication Flow', () => {
   test('should complete OAuth login flow', async ({ page }) => {
     await page.goto('/login')
-    
+
     // Check login page loads
     await expect(page.getByHeading('Sign in to MCP Docs Editor')).toBeVisible()
-    
+
     // Click Google sign in button
     await page.getByRole('button', { name: 'Sign in with Google' }).click()
-    
+
     // Should redirect to Google OAuth (in real test, mock this)
     await expect(page).toHaveURL(/accounts\.google\.com/)
-    
+
     // Mock successful auth callback
     await page.goto('/api/auth/callback/google?code=mock_code&state=mock_state')
-    
+
     // Should redirect to dashboard
     await expect(page).toHaveURL('/dashboard')
     await expect(page.getByHeading('Welcome to MCP Google Docs Editor')).toBeVisible()
@@ -1733,7 +1733,7 @@ test.describe('Authentication Flow', () => {
 
   test('should handle authentication errors', async ({ page }) => {
     await page.goto('/api/auth/callback/google?error=access_denied')
-    
+
     await expect(page).toHaveURL('/auth/error')
     await expect(page.getByText('Authentication failed')).toBeVisible()
   })
@@ -1748,29 +1748,29 @@ import { test, expect } from '@playwright/test'
 test.describe('Visual Regression Tests', () => {
   test('Button component variations', async ({ page }) => {
     await page.goto('/storybook/button')
-    
+
     // Primary button
     await expect(page.locator('[data-testid="button-primary"]')).toHaveScreenshot('button-primary.png')
-    
+
     // Secondary button
     await expect(page.locator('[data-testid="button-secondary"]')).toHaveScreenshot('button-secondary.png')
-    
+
     // Disabled state
     await expect(page.locator('[data-testid="button-disabled"]')).toHaveScreenshot('button-disabled.png')
-    
+
     // Loading state
     await expect(page.locator('[data-testid="button-loading"]')).toHaveScreenshot('button-loading.png')
   })
 
   test('Form components', async ({ page }) => {
     await page.goto('/storybook/form')
-    
+
     await expect(page.locator('[data-testid="operation-form"]')).toHaveScreenshot('operation-form.png')
-    
+
     // Fill form and test validation state
     await page.fill('[data-testid="document-id"]', 'invalid-id')
     await page.click('[data-testid="submit-button"]')
-    
+
     await expect(page.locator('[data-testid="operation-form"]')).toHaveScreenshot('operation-form-error.png')
   })
 })
@@ -1785,22 +1785,22 @@ import AxeBuilder from '@axe-core/playwright'
 test.describe('Accessibility Tests', () => {
   test('Dashboard page should be accessible', async ({ page }) => {
     await page.goto('/dashboard')
-    
+
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze()
     expect(accessibilityScanResults.violations).toEqual([])
   })
 
   test('Operation form should be accessible', async ({ page }) => {
     await page.goto('/operations/new')
-    
+
     // Check for proper labels
     await expect(page.getByLabel('Operation Type')).toBeVisible()
     await expect(page.getByLabel('Document ID')).toBeVisible()
-    
+
     // Check focus management
     await page.keyboard.press('Tab')
     await expect(page.locator('[data-testid="operation-type"]')).toBeFocused()
-    
+
     // Run axe accessibility scan
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze()
     expect(accessibilityScanResults.violations).toEqual([])
@@ -1808,14 +1808,14 @@ test.describe('Accessibility Tests', () => {
 
   test('Keyboard navigation should work correctly', async ({ page }) => {
     await page.goto('/operations')
-    
+
     // Tab through operation cards
     await page.keyboard.press('Tab')
     await expect(page.locator('[data-testid="operation-card"]:first-child a')).toBeFocused()
-    
+
     await page.keyboard.press('Tab')
     await expect(page.locator('[data-testid="operation-card"]:nth-child(2) a')).toBeFocused()
-    
+
     // Enter should activate links
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/operations\//)
@@ -1870,18 +1870,18 @@ export const handlers = [
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
-    
+
     return res(ctx.json(newOperation))
   }),
 
   rest.get('/api/operations/:id', (req, res, ctx) => {
     const { id } = req.params
     const operation = mockOperations.find(op => op.id === id)
-    
+
     if (!operation) {
       return res(ctx.status(404), ctx.json({ error: 'Operation not found' }))
     }
-    
+
     return res(ctx.json(operation))
   })
 ]
@@ -1925,12 +1925,12 @@ const nextConfig = {
     if (dev) {
       // Enable source maps in development
       config.devtool = 'eval-source-map'
-      
+
       // Hot module replacement optimizations
       config.optimization.splitChunks = false
       config.optimization.runtimeChunk = false
     }
-    
+
     return config
   },
 
@@ -1995,21 +1995,21 @@ export const performanceLog = (label: string) => {
 // Usage in components
 export const OperationForm: React.FC = () => {
   const [formData, setFormData] = useState({})
-  
+
   useEffect(() => {
     debugLog('Form Data Updated', formData)
   }, [formData])
-  
+
   const handleSubmit = async (data: any) => {
     const stopTimer = performanceLog('Operation Submit')
-    
+
     try {
       await submitOperation(data)
     } finally {
       stopTimer()
     }
   }
-  
+
   // ... rest of component
 }
 ```
@@ -2028,16 +2028,16 @@ import { cn } from '@/lib/utils/cn'
 interface ComponentNameProps {
   // Required props
   children: React.ReactNode
-  
+
   // Optional props with defaults
   variant?: 'default' | 'secondary'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   className?: string
-  
+
   // Event handlers
   onClick?: () => void
-  
+
   // Additional props as needed
 }
 
@@ -2057,7 +2057,7 @@ export const ComponentName = forwardRef<HTMLElement, ComponentNameProps>(
       if (disabled) return
       onClick?.()
     }
-    
+
     // 4. Render with proper accessibility
     return (
       <element
@@ -2065,25 +2065,25 @@ export const ComponentName = forwardRef<HTMLElement, ComponentNameProps>(
         className={cn(
           // Base styles
           'base-component-styles',
-          
+
           // Variant styles
           {
             'variant-default-styles': variant === 'default',
             'variant-secondary-styles': variant === 'secondary'
           },
-          
+
           // Size styles
           {
             'size-sm-styles': size === 'sm',
             'size-md-styles': size === 'md',
             'size-lg-styles': size === 'lg'
           },
-          
+
           // State styles
           {
             'disabled-styles': disabled
           },
-          
+
           // Custom className
           className
         )}
@@ -2134,11 +2134,11 @@ export const FormComponent: React.FC<FormComponentProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues
   })
-  
+
   const handleSubmit = (data: FormData) => {
     onSubmit(data)
   }
-  
+
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
       <FormField
@@ -2153,7 +2153,7 @@ export const FormComponent: React.FC<FormComponentProps> = ({
           placeholder="Enter value"
         />
       </FormField>
-      
+
       <Button
         type="submit"
         loading={loading}
@@ -2179,9 +2179,9 @@ export const withErrorBoundary = <P extends object>(
       <Component {...props} />
     </ErrorBoundary>
   )
-  
+
   WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
-  
+
   return WrappedComponent
 }
 
@@ -2213,7 +2213,7 @@ export const WithLoading: React.FC<WithLoadingProps> = ({
       </div>
     )
   }
-  
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -2222,7 +2222,7 @@ export const WithLoading: React.FC<WithLoadingProps> = ({
       </div>
     )
   }
-  
+
   return <>{children}</>
 }
 ```
@@ -2237,7 +2237,7 @@ export const useApiData = <T>(
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
@@ -2250,11 +2250,11 @@ export const useApiData = <T>(
       setLoading(false)
     }
   }, dependencies)
-  
+
   useEffect(() => {
     fetchData()
   }, [fetchData])
-  
+
   return {
     data,
     loading,
@@ -2274,14 +2274,14 @@ export const DocumentOperationPanel: React.FC = () => {
   const { operations, loading, error, executeOperation } = useOperations()
   const { documents } = useDocuments()
   const [selectedDocument, setSelectedDocument] = useState<string>('')
-  
+
   // Form handling
   const [formData, setFormData] = useState<OperationFormData>({
     operationType: 'replace_all',
     documentId: '',
     content: ''
   })
-  
+
   // Event handlers
   const handleSubmit = async (data: OperationFormData) => {
     try {
@@ -2291,12 +2291,12 @@ export const DocumentOperationPanel: React.FC = () => {
       toast.error(getErrorMessage(error))
     }
   }
-  
+
   const handleDocumentSelect = (documentId: string) => {
     setSelectedDocument(documentId)
     setFormData(prev => ({ ...prev, documentId }))
   }
-  
+
   // Render
   return (
     <div className="space-y-6">
@@ -2304,7 +2304,7 @@ export const DocumentOperationPanel: React.FC = () => {
         <h2 className="text-2xl font-bold">Document Operations</h2>
         <p className="text-gray-600">Execute operations on your Google Docs</p>
       </header>
-      
+
       <WithLoading loading={loading} error={error}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
@@ -2317,7 +2317,7 @@ export const DocumentOperationPanel: React.FC = () => {
               onDocumentSelect={handleDocumentSelect}
             />
           </div>
-          
+
           <div>
             <h3 className="text-lg font-semibold mb-4">Recent Operations</h3>
             <OperationsList operations={operations.slice(0, 5)} />
@@ -2340,8 +2340,8 @@ const updateOperation = (id: string, updates: Partial<Operation>) => {
 
 // ✅ Good: Immutable updates
 const updateOperation = (id: string, updates: Partial<Operation>) => {
-  setOperations(prev => 
-    prev.map(op => 
+  setOperations(prev =>
+    prev.map(op =>
       op.id === id ? { ...op, ...updates } : op
     )
   )
@@ -2355,8 +2355,8 @@ const ComponentWithProblem = ({ items }) => {
   return (
     <div>
       {items.map(item => (
-        <ExpensiveComponent 
-          key={item.id} 
+        <ExpensiveComponent
+          key={item.id}
           item={item}
           onClick={() => handleClick(item)} // New function every render
         />
@@ -2370,12 +2370,12 @@ const ComponentOptimized = ({ items }) => {
   const handleClick = useCallback((item) => {
     // Handle click logic
   }, [])
-  
+
   return (
     <div>
       {items.map(item => (
-        <ExpensiveComponent 
-          key={item.id} 
+        <ExpensiveComponent
+          key={item.id}
           item={item}
           onClick={handleClick}
         />

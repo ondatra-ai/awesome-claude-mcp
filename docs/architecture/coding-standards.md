@@ -92,7 +92,7 @@ func ReplaceAllContent(ctx context.Context, docID, content string) (*OperationRe
     if docID == "" {
         return nil, ErrInvalidDocumentID
     }
-    
+
     // Implementation
     return result, nil
 }
@@ -111,7 +111,7 @@ type DocumentError struct {
 }
 
 func (e *DocumentError) Error() string {
-    return fmt.Sprintf("document %s: operation %s failed: %v", 
+    return fmt.Sprintf("document %s: operation %s failed: %v",
         e.DocumentID, e.Operation, e.Cause)
 }
 
@@ -169,10 +169,10 @@ func TestDocumentProcessor_ReplaceAll(t *testing.T) {
     processor := NewDocumentProcessor(mockClient)
     docID := "test-doc-123"
     content := "# New Content\n\nTest document"
-    
+
     // Act
     result, err := processor.ReplaceAll(context.Background(), docID, content)
-    
+
     // Assert
     assert.NoError(t, err)
     assert.NotNil(t, result)
@@ -189,10 +189,10 @@ func TestDocumentProcessor_ReplaceAll(t *testing.T) {
 func TestAuthHandler_WithMockedTokenValidator(t *testing.T) {
     ctrl := gomock.NewController(t)
     defer ctrl.Finish()
-    
+
     mockValidator := mocks.NewMockTokenValidator(ctrl)
     mockValidator.EXPECT().Validate("valid-token").Return(nil)
-    
+
     // Test implementation
 }
 ```
@@ -276,14 +276,14 @@ interface DocumentEditorProps {
     readOnly?: boolean;
 }
 
-export function DocumentEditor({ 
-    document, 
-    onSave, 
-    readOnly = false 
+export function DocumentEditor({
+    document,
+    onSave,
+    readOnly = false
 }: DocumentEditorProps) {
     const [content, setContent] = useState(document.content);
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -294,7 +294,7 @@ export function DocumentEditor({
             setIsSaving(false);
         }
     };
-    
+
     return (
         <div className="document-editor">
             {/* Component JSX */}
@@ -310,7 +310,7 @@ export function useDocumentOperations(documentId: string) {
     const [document, setDocument] = useState<Document | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+
     const replaceAll = async (content: string) => {
         try {
             setIsLoading(true);
@@ -322,7 +322,7 @@ export function useDocumentOperations(documentId: string) {
             setIsLoading(false);
         }
     };
-    
+
     return { document, isLoading, error, replaceAll };
 }
 ```
@@ -354,11 +354,11 @@ type DocumentUpdate = Partial<Pick<Document, 'title' | 'content'>>;
 // Typed API client with proper error handling
 class ApiClient {
     private baseURL: string;
-    
+
     constructor(baseURL: string) {
         this.baseURL = baseURL;
     }
-    
+
     async replaceAll(documentId: string, content: string): Promise<ApiResponse<OperationResult>> {
         const response = await fetch(`${this.baseURL}/api/documents/${documentId}/replace-all`, {
             method: 'POST',
@@ -367,11 +367,11 @@ class ApiClient {
             },
             body: JSON.stringify({ content }),
         });
-        
+
         if (!response.ok) {
             throw new Error(`API request failed: ${response.statusText}`);
         }
-        
+
         return response.json();
     }
 }
@@ -439,12 +439,12 @@ type ServerConfig struct {
 func LoadConfig() (*Config, error) {
     viper.AutomaticEnv()
     viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-    
+
     var config Config
     if err := viper.Unmarshal(&config); err != nil {
         return nil, err
     }
-    
+
     return &config, nil
 }
 ```
@@ -497,11 +497,11 @@ tests/
 func LoadTestDocument(t *testing.T, filename string) *Document {
     data, err := os.ReadFile(filepath.Join("fixtures", "documents", filename))
     require.NoError(t, err)
-    
+
     var doc Document
     err = json.Unmarshal(data, &doc)
     require.NoError(t, err)
-    
+
     return &doc
 }
 ```
@@ -538,11 +538,11 @@ func ValidateToken(token *oauth2.Token) error {
 ```tsx
 /**
  * Custom hook for managing document operations.
- * 
+ *
  * Provides methods for all six document operations (replace_all, append, prepend,
  * replace_match, insert_before, insert_after) with proper error handling and
  * loading states.
- * 
+ *
  * @param documentId - The Google Docs document ID
  * @returns Object containing document state and operation methods
  */
@@ -596,7 +596,7 @@ func StoreToken(userID string, token *oauth2.Token) error {
     if err != nil {
         return err
     }
-    
+
     return redisClient.Set(
         fmt.Sprintf("token:%s", userID),
         encrypted,
@@ -610,11 +610,11 @@ func GetValidToken(userID string) (*oauth2.Token, error) {
     if err != nil {
         return nil, err
     }
-    
+
     if token.Expiry.Before(time.Now()) {
         return nil, ErrTokenExpired
     }
-    
+
     return token, nil
 }
 ```
@@ -628,15 +628,15 @@ func ValidateReplaceAllRequest(req *ReplaceAllRequest) error {
     if req.DocumentID == "" {
         return ErrInvalidDocumentID
     }
-    
+
     if len(req.Content) > MAX_DOCUMENT_SIZE {
         return ErrDocumentTooLarge
     }
-    
+
     if !isValidMarkdown(req.Content) {
         return ErrInvalidMarkdown
     }
-    
+
     return nil
 }
 ```
@@ -668,7 +668,7 @@ func HandleError(err error) *APIError {
             Status:  401,
         }
     }
-    
+
     // Log internal error but return generic message
     logger.Error("internal error", "error", err)
     return &APIError{
@@ -814,7 +814,7 @@ func PerformHealthCheck() *HealthCheck {
 ### Pre-commit Checks
 
 **Automated via lint-staged (.lintstagedrc.json):**
-- **TypeScript files (`*.{ts,tsx}`)**: 
+- **TypeScript files (`*.{ts,tsx}`)**:
   - `eslint --fix` - Auto-fix linting issues
   - `prettier --write` - Auto-format code
 - **Config/Docs (`*.{json,md,yml,yaml}`)**:

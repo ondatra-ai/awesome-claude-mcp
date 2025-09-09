@@ -4,8 +4,8 @@
 
 This document specifies the exact technology stack for the MCP Google Docs Editor, including specific versions, rationale for selections, and configuration guidelines. The stack supports a full-stack application with Next.js frontend and Go backend services deployed on AWS infrastructure.
 
-**Last Updated:** 2025-09-07  
-**Version:** 1.0.0  
+**Last Updated:** 2025-09-07
+**Version:** 1.0.0
 **Target Environment:** Production deployment by October 15, 2025
 
 ## Stack Overview
@@ -31,13 +31,13 @@ This document specifies the exact technology stack for the MCP Google Docs Edito
 The architecture implements **3 distinct services**:
 
 1. **Frontend Service**: Next.js containers for user interface and authentication flows
-2. **Backend Service**: Go Fiber containers for user management, OAuth, and data operations  
+2. **Backend Service**: Go Fiber containers for user management, OAuth, and data operations
 3. **MCP Service**: Go Mark3Labs MCP-Go containers for Claude Code and ChatGPT communication via streamlined MCP protocol
 
 ### Primary Language: Go 1.21.5
 
-**Version:** 1.21.5 (Latest stable)  
-**Rationale:** 
+**Version:** 1.21.5 (Latest stable)
+**Rationale:**
 - Excellent performance for serverless functions
 - Strong standard library reducing external dependencies
 - Excellent HTTP and WebSocket support for MCP protocol
@@ -60,8 +60,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main
 
 ### Backend Framework: Go Fiber 2.52.0
 
-**Version:** 2.52.0  
-**Purpose:** HTTP routing, middleware, and REST API endpoints  
+**Version:** 2.52.0
+**Purpose:** HTTP routing, middleware, and REST API endpoints
 **Rationale:**
 - Express.js-inspired Go web framework
 - Excellent performance benchmarks (faster than Gin)
@@ -95,10 +95,10 @@ app.Use(recover.New())
 
 ### MCP Protocol Implementation: Mark3Labs Library
 
-**Library:** Mark3Labs MCP-Go  
-**Repository:** github.com/mark3labs/mcp-go  
-**Version:** Latest  
-**Purpose:** Streamlined Model Context Protocol implementation for LLM applications  
+**Library:** Mark3Labs MCP-Go
+**Repository:** github.com/mark3labs/mcp-go
+**Version:** Latest
+**Purpose:** Streamlined Model Context Protocol implementation for LLM applications
 **Rationale:**
 - Lightweight, LLM-optimized MCP implementation
 - Type-safe tool registration with parameter validation
@@ -162,13 +162,13 @@ func HandleReplaceAllContent(ctx context.Context, params map[string]interface{})
     if err := mcp.ParseParams(params, &req); err != nil {
         return mcp.NewErrorResult("Invalid parameters: " + err.Error()), nil
     }
-    
+
     // Execute document operation
     result, err := documentService.ReplaceAll(ctx, req.DocumentID, req.Content)
     if err != nil {
         return mcp.NewErrorResult("Operation failed: " + err.Error()), nil
     }
-    
+
     // Return typed response
     response := ReplaceAllResponse{
         DocumentID:      result.DocumentID,
@@ -176,7 +176,7 @@ func HandleReplaceAllContent(ctx context.Context, params map[string]interface{})
         CharactersAdded: result.CharactersAdded,
         Success:         true,
     }
-    
+
     return mcp.NewTextResult("Document content replaced successfully", response), nil
 }
 
@@ -188,8 +188,8 @@ if err := server.Serve(ctx); err != nil {
 
 ### OAuth Library: golang.org/x/oauth2 0.15.0
 
-**Version:** 0.15.0  
-**Purpose:** Google OAuth 2.0 authentication flow  
+**Version:** 0.15.0
+**Purpose:** Google OAuth 2.0 authentication flow
 **Rationale:**
 - Official OAuth 2.0 implementation by Go team
 - Google-specific provider support
@@ -218,8 +218,8 @@ config := &oauth2.Config{
 
 ### Google API Client: google.golang.org/api/docs/v1 0.150.0
 
-**Version:** 0.150.0  
-**Purpose:** Google Docs API integration  
+**Version:** 0.150.0
+**Purpose:** Google Docs API integration
 **Rationale:**
 - Official Google API client library
 - Type-safe API bindings
@@ -239,8 +239,8 @@ if err != nil {
 
 ### Markdown Parser: goldmark 1.6.0
 
-**Version:** 1.6.0  
-**Purpose:** Markdown to AST conversion for Google Docs formatting  
+**Version:** 1.6.0
+**Purpose:** Markdown to AST conversion for Google Docs formatting
 **Rationale:**
 - CommonMark compliant parser
 - Extensible with custom renderers
@@ -272,8 +272,8 @@ md := goldmark.New(
 
 ### Redis Client: go-redis/redis 9.3.0
 
-**Version:** 9.3.0  
-**Purpose:** OAuth token caching and session management  
+**Version:** 9.3.0
+**Purpose:** OAuth token caching and session management
 **Rationale:**
 - High-performance Redis client
 - Connection pooling for Lambda efficiency
@@ -297,8 +297,8 @@ rdb := redis.NewClient(&redis.Options{
 
 ### Logging: zerolog 1.31.0
 
-**Version:** 1.31.0  
-**Purpose:** Structured JSON logging for monitoring and debugging  
+**Version:** 1.31.0
+**Purpose:** Structured JSON logging for monitoring and debugging
 **Rationale:**
 - Zero allocation JSON logging
 - CloudWatch compatible output
@@ -326,8 +326,8 @@ log.Info().
 
 ### Configuration: viper 1.17.0
 
-**Version:** 1.17.0  
-**Purpose:** Configuration management with environment variables  
+**Version:** 1.17.0
+**Purpose:** Configuration management with environment variables
 **Rationale:**
 - Environment variable support
 - Configuration validation
@@ -347,8 +347,8 @@ viper.SetDefault("server.timeout", "30s")
 
 ### Testing Framework: testify 1.8.4
 
-**Version:** 1.8.4  
-**Purpose:** Enhanced testing capabilities with assertions and mocks  
+**Version:** 1.8.4
+**Purpose:** Enhanced testing capabilities with assertions and mocks
 **Rationale:**
 - Rich assertion library
 - Test suite organization
@@ -366,9 +366,9 @@ import (
 
 func TestDocumentProcessor_ReplaceAll(t *testing.T) {
     assert := assert.New(t)
-    
+
     result, err := processor.ReplaceAll(ctx, "doc-123", "content")
-    
+
     assert.NoError(err)
     assert.NotNil(result)
     assert.Equal("doc-123", result.DocumentID)
@@ -377,8 +377,8 @@ func TestDocumentProcessor_ReplaceAll(t *testing.T) {
 
 ### Mocking: gomock 1.6.0
 
-**Version:** 1.6.0  
-**Purpose:** Interface mocking for unit tests  
+**Version:** 1.6.0
+**Purpose:** Interface mocking for unit tests
 **Rationale:**
 - Code generation for type-safe mocks
 - Flexible expectation matching
@@ -393,7 +393,7 @@ func TestDocumentProcessor_ReplaceAll(t *testing.T) {
 func TestWithMock(t *testing.T) {
     ctrl := gomock.NewController(t)
     defer ctrl.Finish()
-    
+
     mockClient := mocks.NewMockGoogleDocsClient(ctrl)
     mockClient.EXPECT().
         UpdateDocument("doc-123", gomock.Any()).
@@ -403,8 +403,8 @@ func TestWithMock(t *testing.T) {
 
 ### Code Quality: golangci-lint 1.55.0
 
-**Version:** 1.55.0  
-**Purpose:** Comprehensive Go linting and code quality checks  
+**Version:** 1.55.0
+**Purpose:** Comprehensive Go linting and code quality checks
 **Rationale:**
 - Multiple linters in single tool (70+ enabled)
 - Configurable rule sets
@@ -452,8 +452,8 @@ exclusions:
 
 ### Frontend Framework: Next.js 14.1.0
 
-**Version:** 14.1.0 with App Router  
-**Purpose:** React-based full-stack web application framework  
+**Version:** 14.1.0 with App Router
+**Purpose:** React-based full-stack web application framework
 **Rationale:**
 - App Router for modern React patterns
 - Server-side rendering for performance
@@ -488,8 +488,8 @@ module.exports = nextConfig
 
 ### Language: TypeScript 5.3.3
 
-**Version:** 5.3.3  
-**Purpose:** Type-safe JavaScript development  
+**Version:** 5.3.3
+**Purpose:** Type-safe JavaScript development
 **Rationale:**
 - Static type checking prevents runtime errors
 - Excellent IDE support with IntelliSense
@@ -532,8 +532,8 @@ module.exports = nextConfig
 
 ### UI Library: React 18.2.0
 
-**Version:** 18.2.0  
-**Purpose:** Component-based user interface library  
+**Version:** 18.2.0
+**Purpose:** Component-based user interface library
 **Rationale:**
 - Server components support in Next.js 14
 - Concurrent features for better UX
@@ -543,8 +543,8 @@ module.exports = nextConfig
 
 ### Styling: Tailwind CSS 3.4.0
 
-**Version:** 3.4.0  
-**Purpose:** Utility-first CSS framework  
+**Version:** 3.4.0
+**Purpose:** Utility-first CSS framework
 **Rationale:**
 - Rapid UI development
 - Consistent design system
@@ -609,8 +609,8 @@ export default config
 
 ### Component Library: shadcn/ui
 
-**Version:** Latest (component-based, not versioned package)  
-**Purpose:** Pre-built accessible UI components  
+**Version:** Latest (component-based, not versioned package)
+**Purpose:** Pre-built accessible UI components
 **Rationale:**
 - Copy-paste components (no runtime dependency)
 - Tailwind CSS based
@@ -627,8 +627,8 @@ npx shadcn-ui@latest add button input form card dialog
 
 ### State Management: React Hooks + SWR
 
-**React Hooks:** Built-in state management  
-**SWR:** Data fetching with caching  
+**React Hooks:** Built-in state management
+**SWR:** Data fetching with caching
 **Rationale:**
 - Built-in React state for local component state
 - SWR for server state management
@@ -642,10 +642,10 @@ import useSWR from 'swr'
 
 function DocumentList() {
   const { data, error, isLoading } = useSWR('/api/documents', fetcher)
-  
+
   if (error) return <div>Failed to load documents</div>
   if (isLoading) return <div>Loading...</div>
-  
+
   return (
     <div>
       {data.documents.map(doc => (
@@ -662,7 +662,7 @@ function DocumentList() {
 
 **Primary Services:**
 - **AWS ECS (Fargate)**: Container orchestration for Go backend services
-- **AWS ECR**: Container registry for Docker images  
+- **AWS ECR**: Container registry for Docker images
 - **Application Load Balancer**: HTTP and WebSocket traffic distribution
 - **ElastiCache Redis**: Token caching and session management
 - **CloudWatch**: Logging, monitoring, and alerting
@@ -673,7 +673,7 @@ function DocumentList() {
 **Current Architecture Pattern:**
 This project uses a **containerized microservices architecture** with:
 - **Frontend**: Next.js containers running on ECS Fargate
-- **Backend**: Go API containers running on ECS Fargate  
+- **Backend**: Go API containers running on ECS Fargate
 - **MCP Protocol**: Go WebSocket containers for real-time communication
 - **Infrastructure as Code**: Terraform for reproducible deployments
 
@@ -686,8 +686,8 @@ This project uses a **containerized microservices architecture** with:
 
 ### Container Platform: Docker 24.0.0
 
-**Version:** 24.0.0  
-**Purpose:** Development environment and deployment packaging  
+**Version:** 24.0.0
+**Purpose:** Development environment and deployment packaging
 **Base Images:**
 - **Go Services**: `golang:1.21-alpine` for building, `scratch` for runtime
 - **Development**: `golang:1.21` for local development
@@ -715,8 +715,8 @@ CMD ["./main"]
 
 ### Infrastructure as Code: Terraform
 
-**Version:** Latest stable (1.6.x)  
-**Purpose:** AWS infrastructure provisioning and management  
+**Version:** Latest stable (1.6.x)
+**Purpose:** AWS infrastructure provisioning and management
 **Rationale:**
 - Declarative infrastructure definition
 - State management for team collaboration
@@ -744,7 +744,7 @@ infrastructure/
 
 ### Deployment: Docker + ECS with Terraform
 
-**Purpose:** Container deployment and orchestration  
+**Purpose:** Container deployment and orchestration
 **Rationale:**
 - Consistent environments across development and production
 - Container-based deployment with ECS Fargate
@@ -767,7 +767,7 @@ resource "aws_ecs_task_definition" "api_service" {
   container_definitions = jsonencode([{
     name  = "api"
     image = "${aws_ecr_repository.api.repository_url}:latest"
-    
+
     portMappings = [{
       containerPort = 8080
       protocol      = "tcp"
@@ -824,8 +824,8 @@ resource "aws_ecs_service" "api" {
 
 ### Package Manager: Go Modules + npm
 
-**Go Modules:** Native Go dependency management  
-**npm:** Node.js package management for frontend  
+**Go Modules:** Native Go dependency management
+**npm:** Node.js package management for frontend
 
 **Go Module Configuration (go.mod):**
 ```go
@@ -851,8 +851,8 @@ require (
 
 ### Version Control: Git
 
-**Version:** 2.40+  
-**Workflow:** GitHub Flow with feature branches  
+**Version:** 2.40+
+**Workflow:** GitHub Flow with feature branches
 **Conventions:**
 - Conventional commits for automated changelog
 - Pre-commit hooks for code quality
@@ -861,7 +861,7 @@ require (
 
 ### CI/CD: GitHub Actions
 
-**Purpose:** Automated testing, building, and deployment  
+**Purpose:** Automated testing, building, and deployment
 **Workflows:**
 - Pull Request validation
 - Automated testing (unit, integration, e2e)
@@ -960,8 +960,8 @@ npm run dev                 # Next.js with hot reload
 
 ### Application Monitoring: New Relic
 
-**Version:** Latest Agent  
-**Purpose:** Application performance monitoring and error tracking  
+**Version:** Latest Agent
+**Purpose:** Application performance monitoring and error tracking
 **Features:**
 - Real-time performance metrics
 - Error tracking and alerting
@@ -982,7 +982,7 @@ app, err := newrelic.NewApplication(
 
 ### Infrastructure Monitoring: AWS CloudWatch
 
-**Purpose:** Infrastructure metrics and log aggregation  
+**Purpose:** Infrastructure metrics and log aggregation
 **Features:**
 - ECS service metrics (CPU, memory, task count, health checks)
 - Custom application metrics
@@ -1014,7 +1014,7 @@ _, err := cloudwatch.PutMetricData(&cloudwatch.PutMetricDataInput{
 
 ### Alerting: Slack Integration
 
-**Purpose:** Real-time notifications for system events  
+**Purpose:** Real-time notifications for system events
 **Alerts:**
 - Service down notifications
 - Error rate > 5% threshold
@@ -1026,7 +1026,7 @@ _, err := cloudwatch.PutMetricData(&cloudwatch.PutMetricDataInput{
 
 ### OAuth 2.0: Google Identity Platform
 
-**Purpose:** User authentication and Google API access  
+**Purpose:** User authentication and Google API access
 **Features:**
 - OpenID Connect for user identity
 - OAuth 2.0 for API access
@@ -1036,7 +1036,7 @@ _, err := cloudwatch.PutMetricData(&cloudwatch.PutMetricDataInput{
 
 ### Secrets Management: AWS Secrets Manager
 
-**Purpose:** Secure storage of sensitive configuration  
+**Purpose:** Secure storage of sensitive configuration
 **Stored Secrets:**
 - Google OAuth client credentials
 - Redis connection strings
@@ -1061,7 +1061,7 @@ func getSecret(secretName string) (string, error) {
 
 ### Encryption: AWS KMS
 
-**Purpose:** Encryption key management for sensitive data  
+**Purpose:** Encryption key management for sensitive data
 **Use Cases:**
 - OAuth token encryption at rest
 - Database encryption (if RDS used)
@@ -1072,7 +1072,7 @@ func getSecret(secretName string) (string, error) {
 
 ### Caching: Redis (AWS ElastiCache)
 
-**Purpose:** High-performance caching for tokens and session data  
+**Purpose:** High-performance caching for tokens and session data
 **Configuration:**
 - Instance Type: cache.t3.micro (development), cache.r6g.large (production)
 - Multi-AZ for high availability
@@ -1081,7 +1081,7 @@ func getSecret(secretName string) (string, error) {
 
 ### CDN: AWS CloudFront (Optional)
 
-**Purpose:** Global content delivery for static assets  
+**Purpose:** Global content delivery for static assets
 **Use Cases:**
 - Next.js static assets
 - Font files and images
@@ -1196,8 +1196,8 @@ go install golang.org/x/tools/cmd/goimports@latest
 
 ### Load Testing Tools
 
-**Artillery.io:** API load testing  
-**Lighthouse CI:** Frontend performance  
-**K6:** End-to-end load testing  
+**Artillery.io:** API load testing
+**Lighthouse CI:** Frontend performance
+**K6:** End-to-end load testing
 
 This comprehensive technology stack provides a solid foundation for the MCP Google Docs Editor while maintaining flexibility for future enhancements and scalability requirements.
