@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Homepage E2E Tests', () => {
   test('should load homepage and display title', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
 
     // Check that the page loads successfully
     await expect(page).toHaveTitle('MCP Google Docs Editor');
@@ -15,7 +15,7 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('should display welcome card with features', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
 
     // Check welcome card title
     await expect(page.getByTestId('welcome-title')).toContainText('Welcome to MCP Google Docs Editor');
@@ -30,7 +30,7 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('should fetch and display backend version', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
 
     // Check that backend version section is present
     await expect(page.locator('text=Backend Version:')).toBeVisible();
@@ -52,7 +52,7 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('should have responsive design', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('/');
 
     // Test mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
