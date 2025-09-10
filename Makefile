@@ -16,8 +16,6 @@ init: ## Install dependencies for all services and tests
 	npm install --prefix services/frontend
 	@echo "📦 Installing test dependencies..."
 	npm install --prefix tests
-	@echo "📦 Installing root package dependencies..."
-	npm install
 	@echo "✅ All dependencies installed successfully!"
 
 dev: ## Start all services with Docker Compose
