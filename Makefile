@@ -7,16 +7,11 @@ help: ## Show available commands
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-init: ## Install dependencies for all services and tests
-	@echo "🚀 Initializing project dependencies..."
-	@echo "📦 Installing backend Go dependencies..."
-	go mod download -C services/backend
-	go mod tidy -C services/backend
-	@echo "📦 Installing frontend Node.js dependencies..."
-	npm install --prefix services/frontend
-	@echo "📦 Installing test dependencies..."
-	npm install --prefix tests
-	@echo "✅ All dependencies installed successfully!"
+init: ## Initialize project by building Docker images (dependencies handled in Docker)
+	@echo "🚀 Initializing project with Docker builds..."
+	@echo "🐳 Building all Docker images with cached dependencies..."
+	docker compose -f docker-compose.test.yml build --parallel
+	@echo "✅ All Docker images built successfully with cached dependencies!"
 
 dev: ## Start all services with Docker Compose
 	docker compose up --build

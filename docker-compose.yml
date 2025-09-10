@@ -11,6 +11,10 @@ services:
     environment:
       - PORT=8080
       - LOG_LEVEL=info
+    volumes:
+      # Cache Go modules for faster development builds
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -39,6 +43,10 @@ services:
       - NEXT_PUBLIC_API_URL=http://backend:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
+    volumes:
+      # Cache Node.js modules and Next.js build artifacts for faster development builds
+      - frontend-node-modules:/app/node_modules
+      - frontend-next-cache:/app/.next/cache
     depends_on:
       backend:
         condition: service_healthy
@@ -65,7 +73,14 @@ networks:
     name: mcp-network
 
 volumes:
-  backend_data:
-    name: mcp-backend-data
-  frontend_data:
-    name: mcp-frontend-data
+  # Backend caching volumes
+  go-mod-cache:
+    name: mcp-go-mod-cache
+  go-build-cache:
+    name: mcp-go-build-cache
+
+  # Frontend caching volumes
+  frontend-node-modules:
+    name: mcp-frontend-node-modules
+  frontend-next-cache:
+    name: mcp-frontend-next-cache

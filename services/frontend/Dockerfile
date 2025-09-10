@@ -20,6 +20,9 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Ensure public directory exists (even if empty)
+RUN mkdir -p public
+
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app

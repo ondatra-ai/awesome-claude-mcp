@@ -9,6 +9,10 @@ services:
     environment:
       - PORT=8080
       - LOG_LEVEL=info
+    volumes:
+      # Cache Go modules for faster builds
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8080/health"]
       interval: 10s
@@ -30,6 +34,10 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
+    volumes:
+      # Cache Node.js modules and Next.js build artifacts for faster builds
+      - frontend-node-modules:/app/node_modules
+      - frontend-next-cache:/app/.next/cache
     depends_on:
       backend:
         condition: service_healthy
@@ -58,6 +66,9 @@ services:
       frontend:
         condition: service_healthy
     volumes:
+      # Cache Node.js modules for faster test builds
+      - playwright-node-modules:/app/node_modules
+      # Mount test results and reports
       - ./test-results:/app/test-results
       - ./playwright-report:/app/playwright-report
 
@@ -65,3 +76,20 @@ networks:
   test-network:
     driver: bridge
     name: mcp-test-network
+
+volumes:
+  # Backend caching volumes
+  go-mod-cache:
+    name: mcp-go-mod-cache
+  go-build-cache:
+    name: mcp-go-build-cache
+
+  # Frontend caching volumes
+  frontend-node-modules:
+    name: mcp-frontend-node-modules
+  frontend-next-cache:
+    name: mcp-frontend-next-cache
+
+  # Test caching volumes
+  playwright-node-modules:
+    name: mcp-playwright-node-modules
