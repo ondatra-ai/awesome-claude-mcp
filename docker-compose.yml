@@ -1,0 +1,84 @@
+services:
+  backend:
+    build:
+      context: ./services/backend
+      dockerfile: Dockerfile
+    container_name: mcp-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=info
+    volumes:
+      # Cache Go modules for faster development builds
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mcp-network
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/backend
+          ignore:
+            - ./services/backend/tmp/
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: mcp-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:8080
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    volumes:
+      # Cache Node.js modules and Next.js build artifacts for faster development builds
+      - frontend-node-modules:/app/node_modules
+      - frontend-next-cache:/app/.next/cache
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - mcp-network
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/frontend
+          ignore:
+            - ./services/frontend/node_modules/
+            - ./services/frontend/.next/
+
+networks:
+  mcp-network:
+    driver: bridge
+    name: mcp-network
+
+volumes:
+  # Backend caching volumes
+  go-mod-cache:
+    name: mcp-go-mod-cache
+  go-build-cache:
+    name: mcp-go-build-cache
+
+  # Frontend caching volumes
+  frontend-node-modules:
+    name: mcp-frontend-node-modules
+  frontend-next-cache:
+    name: mcp-frontend-next-cache

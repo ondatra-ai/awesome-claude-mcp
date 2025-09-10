@@ -21,21 +21,24 @@ repos:
     - id: action-validator
 
   # Go tools from remote repositories
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v1.61.0
-    hooks:
-      - id: golangci-lint
-        args: ['--fix']
+  # Temporarily disabled due to compatibility issues with Go 1.25+
+  # Use `make lint-backend` instead which runs golint via go run
+  # - repo: https://github.com/golangci/golangci-lint
+  #   rev: v1.61.0
+  #   hooks:
+  #     - id: golangci-lint
+  #       args: ['--fix']
 
-  - repo: https://github.com/dnephin/pre-commit-golang
-    rev: v0.5.1
-    hooks:
-      - id: go-fmt
-      - id: go-imports
-      - id: go-mod-tidy
-      - id: go-unit-tests
-        args: ['-short']  # Run only unit tests
-      # - id: go-build  # Uncomment if you want build checks
+  # Temporarily disabled due to Go module structure - use Makefile commands instead
+  # - repo: https://github.com/dnephin/pre-commit-golang
+  #   rev: v0.5.1
+  #   hooks:
+  #     - id: go-fmt
+  #     - id: go-imports
+  #     - id: go-mod-tidy
+  #     - id: go-unit-tests
+  #       args: ['-short']  # Run only unit tests
+  #     # - id: go-build  # Uncomment if you want build checks
 
   # Alternative: tekwizely/pre-commit-golang has more hooks
   # - repo: https://github.com/tekwizely/pre-commit-golang

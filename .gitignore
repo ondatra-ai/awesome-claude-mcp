@@ -8,8 +8,7 @@
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
-*.test
+# Go test binaries (if any) - but *.test pattern too broad, removed
 
 # Code coverage profiles and other test artifacts
 *.out
@@ -26,6 +25,20 @@ go.work.sum
 
 # env file
 .env
+
+# Node.js dependencies
+node_modules/
+**/node_modules/
+
+# Package managers - lockfiles should be committed for reproducible builds
+
+# Next.js build output
+.next/
+out/
+
+# Test artifacts
+test-results/
+playwright-report/
 
 # Editor/IDE
 # .idea/

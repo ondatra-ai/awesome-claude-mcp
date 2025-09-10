@@ -149,7 +149,7 @@ logger.Error("document operation failed",
 **Test File Organization:**
 - Test files alongside implementation: `document_test.go`
 - Integration tests: `tests/integration/`
-- E2E tests: `tests/e2e/`
+- E2E tests: `tests/e2e/` (organized by service: frontend/, backend/, mcp-service/)
 
 **Test Naming:**
 ```go
@@ -473,10 +473,12 @@ func LoadConfig() (*Config, error) {
 - MCP protocol compliance
 
 **End-to-End Tests (10% of test pyramid):**
-- Complete user workflows
-- Frontend-to-backend integration
-- Document operation flows
-- Authentication workflows
+- Complete user workflows across all three services
+- Service-to-service integration testing
+- Document operation workflows (frontend → backend → MCP service)
+- Authentication workflows (OAuth flows through all services)
+- **Framework**: Playwright for cross-browser testing
+- **Organization**: Service-specific test directories (frontend/, backend/, mcp-service/)
 
 ### Test Data Management
 

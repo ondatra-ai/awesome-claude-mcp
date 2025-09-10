@@ -656,6 +656,133 @@ function DocumentList() {
 }
 ```
 
+## E2E Testing Technologies
+
+### E2E Testing Framework: Playwright
+
+**Version:** Latest stable
+**Purpose:** Cross-browser end-to-end testing for all three services
+**Rationale:**
+- Multi-browser testing (Chromium, Firefox, Safari)
+- Service-specific test organization and configuration
+- Native async/await support
+- Built-in wait strategies and auto-wait
+- Mobile device emulation
+- Docker container support for CI/CD
+- Excellent debugging capabilities with UI mode
+
+**Service Architecture:**
+- **Frontend E2E Tests**: User interface workflows, authentication flows, responsive design
+- **Backend E2E Tests**: API endpoint testing, health checks, service integration
+- **MCP Service E2E Tests**: Protocol compliance, document operations, client integration
+
+**Installation:**
+```bash
+npm install --save-dev @playwright/test
+npx playwright install
+```
+
+**Configuration Structure:**
+```text
+tests/e2e/
+├── playwright.config.ts              # Global configuration
+├── playwright.frontend.config.ts     # Frontend-specific settings
+├── playwright.backend.config.ts      # Backend API testing settings
+├── playwright.mcp.config.ts          # MCP service protocol testing
+└── shared/
+    ├── fixtures/                     # Shared test data
+    └── helpers/                      # Common test utilities
+```
+
+**Global Configuration (playwright.config.ts):**
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/e2e',
+  projects: [
+    {
+      name: 'frontend-chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testDir: './tests/e2e/frontend',
+    },
+    {
+      name: 'backend-api',
+      use: { baseURL: 'http://localhost:8080' },
+      testDir: './tests/e2e/backend',
+    },
+    {
+      name: 'mcp-service',
+      use: { baseURL: 'http://localhost:9090' },
+      testDir: './tests/e2e/mcp-service',
+    },
+  ],
+  use: {
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  webServer: [
+    {
+      command: 'docker-compose up -d',
+      port: 3000,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
+});
+```
+
+**Frontend-Specific Configuration (playwright.frontend.config.ts):**
+```typescript
+export default defineConfig({
+  use: {
+    baseURL: 'http://localhost:3000',
+    viewport: { width: 1280, height: 720 },
+  },
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    { name: 'mobile', use: { ...devices['iPhone 12'] } },
+  ],
+});
+```
+
+**Test Examples:**
+```typescript
+// Frontend E2E Test
+test('homepage displays backend version', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('MCP Google Docs Editor')).toBeVisible();
+  await expect(page.getByText('Version: 1.0.0')).toBeVisible();
+});
+
+// Backend API E2E Test
+test('version endpoint returns correct version', async ({ request }) => {
+  const response = await request.get('/version');
+  expect(response.ok()).toBeTruthy();
+  const data = await response.json();
+  expect(data.version).toBe('1.0.0');
+});
+
+// MCP Service E2E Test
+test('MCP protocol connection establishment', async ({ page }) => {
+  const websocket = await page.waitForEvent('websocket');
+  await websocket.waitForEvent('framereceived');
+  expect(websocket.url()).toContain('ws://localhost:9090/mcp');
+});
+```
+
+**Docker Support:**
+```dockerfile
+# tests/e2e/Dockerfile
+FROM mcr.microsoft.com/playwright:latest
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY tests/e2e ./tests/e2e
+CMD ["npx", "playwright", "test"]
+```
+
 ## Infrastructure Technologies
 
 ### Cloud Provider: AWS

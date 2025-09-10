@@ -977,75 +977,36 @@ mcp-google-docs-editor/
 
 ### Local Development Setup
 
-The root-level `docker-compose.yml` provides a complete local development environment:
+Use Docker Compose for consistent development environments. The project provides a complete containerized development stack.
 
-```yaml
-# Example docker-compose.yml structure
-services:
-  # Frontend Service
-  frontend:
-    build: ./frontend
-    ports: ["3000:3000"]
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend-api:8080
-      - NEXT_PUBLIC_WS_URL=ws://backend-mcp:8081
-    depends_on:
-      - backend-api
-      - backend-mcp
+**Primary Development Commands:**
+```bash
+# Start all services (recommended for development)
+make dev
+# or
+docker-compose up --build
 
-  # Backend API Service
-  backend-api:
-    build:
-      context: ./backend
-      dockerfile: ./deployments/api/Dockerfile
-    ports: ["8080:8080"]
-    environment:
-      - DATABASE_URL=postgres://postgres:password@postgres:5432/mcp_docs_editor?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-    depends_on:
-      - postgres
-      - redis
+# Start services in background
+make dev-bg
+# or
+docker-compose up -d --build
 
-  # Backend MCP Service
-  backend-mcp:
-    build:
-      context: ./backend
-      dockerfile: ./deployments/mcp/Dockerfile
-    ports: ["8081:8081"]
-    environment:
-      - DATABASE_URL=postgres://postgres:password@postgres:5432/mcp_docs_editor?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-    depends_on:
-      - postgres
-      - redis
+# Run tests with Docker
+make test-docker
+# or
+./scripts/test.sh
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=mcp_docs_editor
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    ports: ["5432:5432"]
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
-    volumes:
-      - redis_data:/data
-
-volumes:
-  postgres_data:
-  redis_data:
+# Quick development scripts
+./scripts/dev.sh           # Start with health checks
+./scripts/dev-watch.sh     # Start with file watching
 ```
+
+**Docker Compose Structure:**
+- **Services:** Frontend (Next.js), Backend (Go), supporting databases
+- **Networking:** Internal Docker network with service discovery
+- **File Watching:** Automatic rebuilds on code changes with `docker-compose up --watch`
+- **Health Checks:** Built-in health monitoring for all services
+- **Development Tools:** Integrated testing and debugging support
 
 **Benefits:**
 - Single `docker-compose up` command to start entire stack (frontend + 2 backend services + PostgreSQL + Redis)

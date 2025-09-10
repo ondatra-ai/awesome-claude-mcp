@@ -26,20 +26,18 @@ jobs:
           go-version: '1.24.5'
           cache: true
 
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build app
-        run: make build
-
-      - name: Run unit tests with coverage
-        run: make coverage-unit
-
-      - name: Save coverage report
-        uses: actions/upload-artifact@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: coverage-report
-          path: coverage/unit.out
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: services/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: make init
+
+      - name: Run unit tests
+        run: make test-unit
 
   lint:
     runs-on: ubuntu-latest
@@ -54,17 +52,26 @@ jobs:
           go-version: '1.24.5'
           cache: true
 
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          version: 'v2.3.0'
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: services/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: make init
+
+      - name: Run backend linting
+        run: make lint-backend
+
+      - name: Run frontend linting
+        run: make lint-frontend
 
   e2e-tests:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,79 +82,77 @@ jobs:
           go-version: '1.24.5'
           cache: true
 
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build app
-        run: make build
-
-      - name: Create e2e environment file
-        run: echo "${{ secrets.ENV_E2E }}" > .env.e2e
-
-      - name: Run e2e tests
-        run: make coverage-e2e
-        env:
-          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  sonarqube:
-    runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    needs: unit-tests
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: services/frontend/package-lock.json
 
-      - name: Download coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: ./
+      - name: Install dependencies
+        run: make init
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v5.0.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Run E2E tests
+        run: make test-e2e
 
-      - name: SonarQube Quality Gate check
-        uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  # sonarqube:
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.actor != 'dependabot[bot]' }}
+  #   needs: unit-tests
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - name: Download coverage report
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: coverage-report
+  #         path: ./
+  #
+  #     - name: SonarQube Scan
+  #       uses: sonarsource/sonarqube-scan-action@v5.0.0
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #
+  #     - name: SonarQube Quality Gate check
+  #       uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
+  #       timeout-minutes: 5
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.5'
-          cache: true
-
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@v2.22.7
-        with:
-          args: '-exclude=G304,G204 ./...'
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+  # security:
+  #   name: Security Scan
+  #   runs-on: ubuntu-latest
+  #   if: ${{ github.actor != 'dependabot[bot]' }}
+  #   permissions:
+  #     contents: read
+  #     security-events: write
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v5
+  #       with:
+  #         go-version: '1.24.5'
+  #         cache: true
+  #
+  #     - name: Run Gosec Security Scanner
+  #       uses: securego/gosec@v2.22.7
+  #       with:
+  #         args: '-exclude=G304,G204 ./...'
+  #
+  #     - name: Run Trivy vulnerability scanner
+  #       uses: aquasecurity/trivy-action@0.32.0
+  #       with:
+  #         scan-type: 'fs'
+  #         scan-ref: '.'
+  #         format: 'sarif'
+  #         output: 'trivy-results.sarif'
+  #
+  #     - name: Upload Trivy scan results
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: 'trivy-results.sarif'

@@ -39,3 +39,4 @@ Currently empty - update this section as the codebase develops.
 
 - The .gitignore is configured for Go projects
 - Environment variables should be stored in .env files (excluded from git)
+- Never Update @services/frontend/.eslintrc.json and @.golangci.yml without my permission
