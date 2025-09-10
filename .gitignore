@@ -44,3 +44,8 @@ playwright-report/
 # .idea/
 # .vscode/
 # BMAD (local only)
+
+# Temporary files
+tmp/
+.cursor/tmp/
+.claude/tmp/
