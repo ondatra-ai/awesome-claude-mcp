@@ -32,12 +32,12 @@ test-unit: ## Run unit tests for both services
 test-e2e: ## Run E2E tests with Docker
 	@echo "🚀 Starting E2E Test Pipeline..."
 	@echo "🧹 Cleaning up existing containers..."
-	@docker compose -f docker compose.test.yml down --remove-orphans || true
+	@docker compose -f docker-compose.test.yml down --remove-orphans || true
 	@echo "🔧 Starting backend and frontend services..."
-	@docker compose -f docker compose.test.yml up -d backend frontend
+	@docker compose -f docker-compose.test.yml up -d backend frontend
 	@echo "⏳ Waiting for services to be healthy..."
 	@for i in $$(seq 1 30); do \
-		if docker compose -f docker compose.test.yml exec -T backend wget --no-verbose --tries=1 --spider http://localhost:8080/health > /dev/null 2>&1; then \
+		if docker compose -f docker-compose.test.yml exec -T backend wget --no-verbose --tries=1 --spider http://localhost:8080/health > /dev/null 2>&1; then \
 			echo "✅ Backend is healthy"; \
 			break; \
 		fi; \
@@ -45,7 +45,7 @@ test-e2e: ## Run E2E tests with Docker
 		sleep 2; \
 	done
 	@for i in $$(seq 1 30); do \
-		if docker compose -f docker compose.test.yml exec -T frontend wget --no-verbose --tries=1 --spider http://0.0.0.0:3000 > /dev/null 2>&1; then \
+		if docker compose -f docker-compose.test.yml exec -T frontend wget --no-verbose --tries=1 --spider http://0.0.0.0:3000 > /dev/null 2>&1; then \
 			echo "✅ Frontend is healthy"; \
 			break; \
 		fi; \
@@ -53,10 +53,10 @@ test-e2e: ## Run E2E tests with Docker
 		sleep 2; \
 	done
 	@echo "🧪 Running E2E tests..."
-	@docker compose -f docker compose.test.yml run --rm playwright-test; \
+	@docker compose -f docker-compose.test.yml run --rm playwright-test; \
 	TEST_EXIT_CODE=$$?; \
 	echo "🧹 Cleaning up containers..."; \
-	docker compose -f docker compose.test.yml down --remove-orphans; \
+	docker compose -f docker-compose.test.yml down --remove-orphans; \
 	if [ $$TEST_EXIT_CODE -eq 0 ]; then \
 		echo "✅ All tests passed!"; \
 	else \
