@@ -1,18 +1,9 @@
 services:
   backend:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
+    extends:
+      file: docker-compose.yml
+      service: backend
     container_name: mcp-backend-test
-    ports:
-      - "8080:8080"
-    environment:
-      - PORT=8080
-      - LOG_LEVEL=info
-    volumes:
-      # Cache Go modules for faster builds
-      - go-mod-cache:/go/pkg/mod
-      - go-build-cache:/root/.cache/go-build
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8080/health"]
       interval: 10s
@@ -21,23 +12,18 @@ services:
       start_period: 20s
     networks:
       - test-network
+    restart: "no"
 
   frontend:
-    build:
-      context: ./services/frontend
-      dockerfile: Dockerfile
+    extends:
+      file: docker-compose.yml
+      service: frontend
     container_name: mcp-frontend-test
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
-    volumes:
-      # Cache Node.js modules and Next.js build artifacts for faster builds
-      - frontend-node-modules:/app/node_modules
-      - frontend-next-cache:/app/.next/cache
     depends_on:
       backend:
         condition: service_healthy
@@ -49,6 +35,7 @@ services:
       start_period: 20s
     networks:
       - test-network
+    restart: "no"
 
   playwright-test:
     build:
@@ -76,20 +63,21 @@ networks:
   test-network:
     driver: bridge
     name: mcp-test-network
+  # Also define mcp-network for compatibility (inherited from base compose)
+  mcp-network:
+    driver: bridge
+    name: mcp-network
 
 volumes:
-  # Backend caching volumes
+  # Inherit volumes from base compose file
   go-mod-cache:
     name: mcp-go-mod-cache
   go-build-cache:
     name: mcp-go-build-cache
-
-  # Frontend caching volumes
   frontend-node-modules:
     name: mcp-frontend-node-modules
   frontend-next-cache:
     name: mcp-frontend-next-cache
-
   # Test caching volumes
   playwright-node-modules:
     name: mcp-playwright-node-modules
