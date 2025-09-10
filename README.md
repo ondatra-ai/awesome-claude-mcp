@@ -61,144 +61,61 @@ awesome-claude-mcp/
 
 ## 🚀 Quick Start
 
-### Docker Development (Recommended)
-
+### Prerequisites Setup
 1. **Clone the repository:**
 ```bash
 git clone git@github.com:ondatra-ai/awesome-claude-mcp.git
 cd awesome-claude-mcp
 ```
 
-2. **Start all services with Docker Compose:**
+2. **Initialize project (install dependencies and build Docker images):**
 ```bash
-# Build and start in foreground (recommended for development)
-docker-compose up --build
-
-# Or start in background
-docker-compose up -d --build
+make init
 ```
 
-3. **Access the application:**
+### Development Workflow
+
+1. **Start all services:**
+```bash
+make dev
+```
+
+2. **Access the application:**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
 
-4. **Stop all services:**
+3. **Stop all services:**
 ```bash
-docker-compose down
-```
-
-5. **View logs:**
-```bash
-# All services
-docker-compose logs -f
-
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
-```
-
-### Local Development (Alternative)
-
-For local development without Docker:
-
-1. **Start the backend service:**
-```bash
-cd services/backend
-go mod download
-go run ./cmd/main.go
-```
-
-2. **Start the frontend service:** *(in a new terminal)*
-```bash
-cd services/frontend
-npm install
-npm run dev
+# Press Ctrl+C to stop, then clean up with:
+docker compose down
 ```
 
 ## 🧪 Testing
 
-### Docker E2E Testing (Recommended)
-
-**Full automated testing pipeline:**
+### E2E Testing
 ```bash
-# Run E2E test suite with Docker (recommended)
+# Run complete E2E test suite with Docker
 make test-e2e
-# or
-./scripts/test.sh
-
-# Or run tests directly with Docker Compose
-docker-compose -f docker-compose.test.yml run --rm playwright-test
-```
-
-### Local E2E Testing (Playwright)
-```bash
-# First, ensure services are running (docker-compose up)
-
-# Install Playwright browsers (first time only)
-npm run install:browsers --prefix tests
-
-# Run E2E tests
-npm test --prefix tests
-
-# Run tests with UI
-npm run test:ui --prefix tests
-
-# Run tests in headed mode (visible browser)
-npm run test:headed --prefix tests
-
-# Show test report
-npm run test:report --prefix tests
 ```
 
 ### Unit Testing
-
-**All Tests:**
 ```bash
-make test           # Run all unit tests (backend + frontend)
-```
-
-**Individual Service Tests:**
-```bash
-make test-be        # Run backend unit tests only
-make test-fe        # Run frontend unit tests only
-```
-
-**Manual Testing:**
-```bash
-# Backend Testing (Go)
-go test ./services/backend/...
-
-# Frontend Testing (Node.js)
-npm test --prefix services/frontend
+# Run all unit tests (backend + frontend)
+make test-unit
 ```
 
 ## 🏭 Production Deployment
 
 ### Docker Production Build
 
-1. **Build optimized images:**
+1. **Initialize and build optimized images:**
 ```bash
-docker-compose build
+make init
 ```
 
 2. **Deploy with production configuration:**
 ```bash
-docker-compose -f docker-compose.yml up -d
-```
-
-### Manual Production Build
-
-#### Backend
-```bash
-cd services/backend
-CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
-```
-
-#### Frontend
-```bash
-cd services/frontend
-npm run build
-npm start
+docker compose -f docker-compose.yml up -d
 ```
 
 ## ⚙️ Configuration
@@ -235,14 +152,10 @@ Environment variables are configured in `docker-compose.yml`:
 ### Code Quality
 ```bash
 # Backend linting and formatting
-cd services/backend
-go fmt ./...
-go vet ./...
+make lint-backend
 
-# Frontend linting and type checking
-cd services/frontend
-npm run lint
-npm run type-check
+# Frontend linting and formatting
+make lint-frontend
 ```
 
 ### Git Workflow
@@ -279,13 +192,8 @@ docker-compose build --no-cache
 
 ### Debug Mode
 ```bash
-# Backend with debug logging
-cd services/backend
-LOG_LEVEL=debug go run ./cmd/main.go
-
-# Frontend with detailed errors
-cd services/frontend
-NODE_ENV=development npm run dev
+# Start services in development mode (includes debug logging)
+make dev
 ```
 
 ## 🤝 Contributing
@@ -294,7 +202,7 @@ NODE_ENV=development npm run dev
 2. Create a feature branch: `git checkout -b feature/your-feature-name`
 3. Make your changes following the coding standards
 4. Add tests for new functionality
-5. Run the full test suite: `npm run test:e2e`
+5. Run the full test suite: `make test-e2e`
 6. Commit your changes: `git commit -m "feat: add your feature"`
 7. Push to your branch: `git push origin feature/your-feature-name`
 8. Submit a pull request
