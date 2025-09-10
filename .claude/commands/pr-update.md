@@ -69,7 +69,7 @@ When creating a PR:
 - Body starts directly with bullet points (no introductory text)
 - Check if issue reference already exists in PR body, update existing or add new
 - Use `--body-file` instead of `--body` with GitHub CLI to avoid escape issues
-- Create PR body file in `.cursor/tmp/` folder (e.g., `.cursor/tmp/pr-body.md`)
+- Create PR body file in `./tmp/` folder (e.g., `./tmp/pr-body.md`)
 
 ## Process Steps
 1. Analyze changes between origin default branch and current branch
