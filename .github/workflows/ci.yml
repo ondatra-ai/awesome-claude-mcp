@@ -31,9 +31,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            services/frontend/package-lock.json
+          cache-dependency-path: services/frontend/package-lock.json
 
       - name: Install dependencies
         run: make init
@@ -59,9 +57,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            services/frontend/package-lock.json
+          cache-dependency-path: services/frontend/package-lock.json
 
       - name: Install dependencies
         run: make init
@@ -91,9 +87,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            services/frontend/package-lock.json
+          cache-dependency-path: services/frontend/package-lock.json
 
       - name: Install dependencies
         run: make init
