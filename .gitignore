@@ -47,5 +47,3 @@ playwright-report/
 
 # Temporary files
 tmp/
-.cursor/tmp/
-.claude/tmp/
