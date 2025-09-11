@@ -5,6 +5,12 @@
 ## Purpose
 Execute a complete quality gate before committing and pushing changes: lint, unit tests, e2e tests, coverage check, pre-commit hooks, then create and push a well‑formatted commit.
 
+## Prerequisites
+- Active Git branch with staged or unstaged changes to commit
+- Project dependencies installed (`make init` available and executed as needed)
+- Docker running for E2E pipeline
+- GitHub remote configured (origin) and authenticated SSH/HTTPS
+
 ## Workflow Rules
 - Do not bypass failures (no --no-verify). Auto-fix issues and re-run until green.
 - Do NOT attempt to install missing tools automatically. If any required tool is missing, HALT and ask the user to install it, then re-run.
@@ -13,7 +19,7 @@ Execute a complete quality gate before committing and pushing changes: lint, uni
 - Create any temporary files under `./tmp/` and clean them up.
 - Strict order: lint → unit → e2e → pre-commit → stage → compose message → commit → push. On any failure, attempt automated fixes and iterate until passing.
 - Fix policy: For any failing step (lint/tests/hooks), attempt up to 5 fix iterations. First apply tool auto-fixes; if issues remain, modify SOURCE CODE to conform. Never modify configuration files (e.g., `.golangci.yml`, `.eslintrc.json`, `tsconfig.json`, `package.json`, CI configs). If still failing after 5 attempts, STOP and report remaining issues.
- - E2E tests are authoritative: NEVER edit E2E test code to make tests pass. Fix the service/application code (frontend/backend/mcp/infra) to satisfy the tests.
+- E2E tests are authoritative: NEVER edit E2E test code to make tests pass. Fix the service/application code (frontend/backend/mcp/infra) to satisfy the tests.
 
 ## Inputs
 - None (message is auto-generated; no prompts)
@@ -138,6 +144,26 @@ git commit -F "$COMMIT_FILE"
 
 ### 7) Cleanup
 - Remove `./tmp/commit-msg.txt` if it exists.
+
+## Quality Gate Checklist (PASS required)
+- Tools present: git, make, go, npm, docker, docker compose, pre-commit
+- Backend lint passes (format, vet, optional golangci)
+- Frontend lint passes (ESLint --fix, Prettier)
+- Unit tests pass (backend + frontend)
+- E2E tests pass (Playwright via Docker Compose)
+- Pre-commit hooks pass on all files
+- Commit message follows Conventional Commits (type(scope): subject) and body bullet rules
+- Commit pushed to origin HEAD
+
+## Artifacts Produced
+- Git commit on current branch with Conventional Commit title and bullet list
+- Remote branch updated (origin/BRANCH)
+- Temporary file removed: `./tmp/commit-msg.txt`
+
+## Failure Handling & Reporting
+- If a tool is missing: stop, report missing tool, ask user to install, then re-run
+- If a step fails after 5 fix attempts: stop and summarize remaining issues with file paths, error excerpts, and suggested fixes
+- Never edit configuration files or E2E tests to pass gates
 
 ## Notes
 - If your repo uses conventional commits, ensure the Title conforms (e.g., feat:, fix:, chore:).
