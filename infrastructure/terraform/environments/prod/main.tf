@@ -7,7 +7,9 @@ module "vpc" {
 }
 
 module "ecs" {
-  source = "../../modules/ecs"
+  source     = "../../modules/ecs"
+  vpc_id     = module.vpc.vpc_id
+  alb_sg_id  = module.alb.sg_id
 }
 
 module "alb" {
