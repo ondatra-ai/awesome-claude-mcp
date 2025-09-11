@@ -75,6 +75,36 @@ variable "desired_count_mcp" {
   default     = 1
 }
 
+variable "min_count_frontend" {
+  description = "Min tasks for frontend"
+  type        = number
+  default     = 1
+}
+
+variable "max_count_frontend" {
+  description = "Max tasks for frontend"
+  type        = number
+  default     = 3
+}
+
+variable "min_count_backend" {
+  description = "Min tasks for backend"
+  type        = number
+  default     = 1
+}
+
+variable "max_count_backend" {
+  description = "Max tasks for backend"
+  type        = number
+  default     = 3
+}
+
+variable "scale_cpu_target" {
+  description = "Target CPU utilization for scaling"
+  type        = number
+  default     = 60
+}
+
 variable "namespace_name" {
   description = "Private DNS namespace for service discovery"
   type        = string

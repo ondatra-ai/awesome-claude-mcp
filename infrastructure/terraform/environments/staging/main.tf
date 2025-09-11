@@ -15,6 +15,10 @@ module "ecs" {
   tg_backend_arn     = module.alb.target_groups["backend"]
   execution_role_arn = module.iam.execution_role_arn
   task_role_arn      = module.iam.task_role_arn
+  min_count_frontend = 2
+  max_count_frontend = 4
+  min_count_backend  = 2
+  max_count_backend  = 4
 }
 
 module "alb" {
@@ -29,7 +33,10 @@ module "ecr" {
 }
 
 module "redis" {
-  source = "../../modules/redis"
+  source             = "../../modules/redis"
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  allowed_sg_ids     = [module.ecs.service_sg_id]
 }
 
 module "monitoring" {

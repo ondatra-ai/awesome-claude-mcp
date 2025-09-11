@@ -226,3 +226,53 @@ resource "aws_ecs_service" "mcp" {
     assign_public_ip = false
   }
 }
+
+# Autoscaling targets and policies (frontend)
+resource "aws_appautoscaling_target" "frontend" {
+  max_capacity       = var.max_count_frontend
+  min_capacity       = var.min_count_frontend
+  resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.frontend.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "frontend_cpu" {
+  name               = "frontend-cpu-tt"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.frontend.resource_id
+  scalable_dimension = aws_appautoscaling_target.frontend.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.frontend.service_namespace
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.scale_cpu_target
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
+}
+
+# Autoscaling targets and policies (backend)
+resource "aws_appautoscaling_target" "backend" {
+  max_capacity       = var.max_count_backend
+  min_capacity       = var.min_count_backend
+  resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.backend.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "backend_cpu" {
+  name               = "backend-cpu-tt"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend.resource_id
+  scalable_dimension = aws_appautoscaling_target.backend.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend.service_namespace
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.scale_cpu_target
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
+}
