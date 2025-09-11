@@ -10,6 +10,11 @@ module "ecs" {
   source     = "../../modules/ecs"
   vpc_id     = module.vpc.vpc_id
   alb_sg_id  = module.alb.sg_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+  tg_frontend_arn    = module.alb.target_groups["frontend"]
+  tg_backend_arn     = module.alb.target_groups["backend"]
+  execution_role_arn = module.iam.execution_role_arn
+  task_role_arn      = module.iam.task_role_arn
 }
 
 module "alb" {

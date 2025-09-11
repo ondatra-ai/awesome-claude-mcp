@@ -53,3 +53,176 @@ resource "aws_security_group" "services" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+# Service discovery namespace (private DNS)
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  name        = var.namespace_name
+  description = "Private namespace for ECS services"
+  vpc         = var.vpc_id
+}
+
+resource "aws_service_discovery_service" "backend" {
+  name = "backend"
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.this.id
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+    routing_policy = "MULTIVALUE"
+  }
+  health_check_custom_config { failure_threshold = 1 }
+}
+
+locals {
+  log_group_frontend = "/aws/ecs/frontend"
+  log_group_backend  = "/aws/ecs/backend"
+  log_group_mcp      = "/aws/ecs/mcp-service"
+}
+
+resource "aws_ecs_task_definition" "frontend" {
+  family                   = "frontend"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
+  container_definitions = jsonencode([
+    {
+      name      = "frontend"
+      image     = var.frontend_image
+      essential = true
+      portMappings = [{
+        containerPort = 3000
+        hostPort      = 3000
+        protocol      = "tcp"
+      }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = local.log_group_frontend
+          awslogs-region        = data.aws_region.current.name
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "backend"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
+  container_definitions = jsonencode([
+    {
+      name      = "backend"
+      image     = var.backend_image
+      essential = true
+      portMappings = [{
+        containerPort = 8080
+        hostPort      = 8080
+        protocol      = "tcp"
+      }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = local.log_group_backend
+          awslogs-region        = data.aws_region.current.name
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_ecs_task_definition" "mcp" {
+  family                   = "mcp-service"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
+  container_definitions = jsonencode([
+    {
+      name      = "mcp"
+      image     = var.mcp_image
+      essential = true
+      portMappings = [{
+        containerPort = 9090
+        hostPort      = 9090
+        protocol      = "tcp"
+      }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = local.log_group_mcp
+          awslogs-region        = data.aws_region.current.name
+          awslogs-stream-prefix = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+data "aws_region" "current" {}
+
+resource "aws_ecs_service" "frontend" {
+  name            = "frontend"
+  cluster         = aws_ecs_cluster.this.arn
+  task_definition = aws_ecs_task_definition.frontend.arn
+  desired_count   = var.desired_count_frontend
+  launch_type     = "FARGATE"
+  platform_version = "LATEST"
+  network_configuration {
+    subnets         = var.private_subnet_ids
+    security_groups = [aws_security_group.services.id]
+    assign_public_ip = false
+  }
+  load_balancer {
+    target_group_arn = var.tg_frontend_arn
+    container_name   = "frontend"
+    container_port   = 3000
+  }
+}
+
+resource "aws_ecs_service" "backend" {
+  name            = "backend"
+  cluster         = aws_ecs_cluster.this.arn
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = var.desired_count_backend
+  launch_type     = "FARGATE"
+  platform_version = "LATEST"
+  network_configuration {
+    subnets         = var.private_subnet_ids
+    security_groups = [aws_security_group.services.id]
+    assign_public_ip = false
+  }
+  load_balancer {
+    target_group_arn = var.tg_backend_arn
+    container_name   = "backend"
+    container_port   = 8080
+  }
+  service_registries {
+    registry_arn = aws_service_discovery_service.backend.arn
+  }
+}
+
+resource "aws_ecs_service" "mcp" {
+  name            = "mcp-service"
+  cluster         = aws_ecs_cluster.this.arn
+  task_definition = aws_ecs_task_definition.mcp.arn
+  desired_count   = var.desired_count_mcp
+  launch_type     = "FARGATE"
+  platform_version = "LATEST"
+  network_configuration {
+    subnets         = var.private_subnet_ids
+    security_groups = [aws_security_group.services.id]
+    assign_public_ip = false
+  }
+}
