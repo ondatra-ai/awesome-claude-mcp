@@ -69,6 +69,9 @@ commands:
   - explain: teach me what and why you did whatever you just did in detail so I can learn. Explain to me as if you were training a junior engineer.
   - review-qa: run task `apply-qa-fixes.md'
   - run-tests: Execute linting and tests
+  - pr-commit: Execute task `pr-commit.md` to lint, test, then commit and push changes
+  - pr-update: Execute task `pr-update.md` to create or update a pull request
+  - pr-merge: Execute task `pr-merge.md` to merge the current branch's PR and clean up
   - exit: Say goodbye as the Developer, and then abandon inhabiting this persona
 
 dependencies:
@@ -78,4 +81,7 @@ dependencies:
     - apply-qa-fixes.md
     - execute-checklist.md
     - validate-next-story.md
+    - pr-commit.md
+    - pr-update.md
+    - pr-merge.md
 ```
