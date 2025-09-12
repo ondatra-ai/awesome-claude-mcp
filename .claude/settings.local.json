@@ -8,7 +8,13 @@
       "Bash(make test-e2e:*)",
       "Bash(pre-commit run:*)",
       "Bash(git --no-pager diff)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(mkdir:*)",
+      "Bash(git commit:*)",
+      "Bash(rm:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
