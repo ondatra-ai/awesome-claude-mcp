@@ -47,3 +47,11 @@ playwright-report/
 
 # Temporary files
 tmp/
+
+# Terraform
+**/.terraform/**
+*.tfstate
+*.tfstate.*
+*.tfvars.local
+crash.log
+*.tfplan

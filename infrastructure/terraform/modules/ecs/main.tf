@@ -71,7 +71,7 @@ resource "aws_service_discovery_service" "backend" {
     }
     routing_policy = "MULTIVALUE"
   }
-  health_check_custom_config { failure_threshold = 1 }
+  health_check_custom_config {}
 }
 
 locals {
@@ -102,7 +102,7 @@ resource "aws_ecs_task_definition" "frontend" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = local.log_group_frontend
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.id
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "backend" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = local.log_group_backend
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.id
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -162,7 +162,7 @@ resource "aws_ecs_task_definition" "mcp" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = local.log_group_mcp
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.id
           awslogs-stream-prefix = "ecs"
         }
       }

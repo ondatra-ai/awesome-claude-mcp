@@ -1,5 +1,22 @@
 terraform {
   required_version = ">= 1.6.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Environment = var.environment
+      Project     = "mcp-google-docs-editor"
+    }
+  }
 }
 
 module "vpc" {
@@ -15,6 +32,10 @@ module "ecs" {
   tg_backend_arn     = module.alb.target_groups["backend"]
   execution_role_arn = module.iam.execution_role_arn
   task_role_arn      = module.iam.task_role_arn
+  # Use images pushed to ECR (tagged :latest)
+  frontend_image = format("%s:latest", module.ecr.repository_urls["frontend"])
+  backend_image  = format("%s:latest", module.ecr.repository_urls["backend"])
+  mcp_image      = format("%s:latest", module.ecr.repository_urls["mcp-service"])
   min_count_frontend = 1
   max_count_frontend = 3
   min_count_backend  = 1

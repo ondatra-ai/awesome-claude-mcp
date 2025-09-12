@@ -13,7 +13,7 @@ resource "aws_cloudwatch_dashboard" "infra" {
         x = 0, y = 0, width = 12, height = 6
         properties = {
           metrics = [["AWS/ApplicationELB", "HTTPCode_ELB_5XX_Count", {"stat": "Sum"}]]
-          region  = "${data.aws_region.current.name}"
+          region  = "${data.aws_region.current.id}"
           title   = "ALB 5XX Errors"
         }
       },
@@ -25,7 +25,7 @@ resource "aws_cloudwatch_dashboard" "infra" {
             ["AWS/ECS", "CPUUtilization", "ClusterName", "mcp-gde-cluster", {"stat": "Average"}],
             ["AWS/ECS", "MemoryUtilization", "ClusterName", "mcp-gde-cluster", {"stat": "Average"}]
           ]
-          region = "${data.aws_region.current.name}"
+          region = "${data.aws_region.current.id}"
           title  = "ECS Cluster Utilization"
         }
       }
