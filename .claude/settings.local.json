@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --no-pager status)",
+      "Bash(make lint-backend:*)",
+      "Bash(make lint-frontend:*)",
+      "Bash(make test-unit:*)",
+      "Bash(make test-e2e:*)",
+      "Bash(pre-commit run:*)",
+      "Bash(git --no-pager diff)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
