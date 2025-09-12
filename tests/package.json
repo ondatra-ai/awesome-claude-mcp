@@ -9,7 +9,7 @@
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
-    "test:docker": "../scripts/test.sh",
+    "test:docker": "npm run test:docker:simple",
     "test:docker:simple": "docker-compose -f ../docker-compose.test.yml run --rm playwright-test",
     "install:browsers": "npx playwright install"
   },
