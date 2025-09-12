@@ -10,3 +10,5 @@ reviews:
     - "!**/.cursor/**"
     - "!**/.claude/commands/BMad/**"
     - "!**/.bmad-core/**"
+    - "!docs/**"
+    - "!**/docs/**"
