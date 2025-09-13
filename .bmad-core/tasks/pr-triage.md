@@ -80,11 +80,18 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - DO NOT COMMIT CHANGES
    - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
    - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
-   - Otherwise (risk ≥ 5), produce a YAML recommendation using the inline template (below) and print the YAML to stdout exactly as written (no wrappers, banners, or extra formatting). Do not save to a file.
+   - Otherwise (risk ≥ 5), then output:
+```txt
+  Id: "{{thread_id}}"
+  Url: "{{thread_url}}"
+  Location: "{{file}}:{{line}}"
+  Comment: {{comment_body}}
+  Proposed Fix: {{proposed_fix}}
+  Risk: "{{risk_score}}"
 
-### Console Output Requirements (risk ≥ 5)
+  Should I proceed with the {{proposed_fix}}?
+  1. Yes
+  2. No, do ... instead
+```
 
-- Always print the recommendation YAML to the console as-is so reviewers can read it without opening files.
-- The printed content should be the YAML only (aside from terminal line endings).
-- Example flow:
 
