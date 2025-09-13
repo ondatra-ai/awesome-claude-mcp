@@ -50,15 +50,12 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 4) Read `tmp/CONV_CURRENT.json`.
    - If it contains `{ "id": "No More Converations" }`, stop.
    - Otherwise, proceed with heuristic analysis for that conversation.
-5) Append ID to `tmp/CONV_ID.txt`.
-   - Append processed to `tmp/CONV_ID.txt`.
-6) Repeat actions 3 → 5 until sentinel appears
+5) Repeat actions 3 → 5 until sentinel appears
    - Ensure any required thread reply was posted (per outcome in Heuristic analysis)
    - Verify the conversation ID was appended to `tmp/CONV_ID.txt` (no duplicates)
    - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
    - If `tmp/CONV_CURRENT.json` contains `{ "id": "No More Converations" }`, stop (do NOT print blocks for the sentinel)
    - Otherwise, continue with item 4
-   - Append the conversation ID to `tmp/CONV_ID.txt` AFTER meeting the Output Gate conditions for that conversation
 
 ### Continuous Triage Loop (example)
 ```bash
