@@ -58,6 +58,7 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
    - If `tmp/CONV_CURRENT.json` contains `{ "id": "No More Converations" }`, stop (do NOT print blocks for the sentinel)
    - Otherwise, continue with item 4
+   - Append the conversation ID to `tmp/CONV_ID.txt` AFTER meeting the Output Gate conditions for that conversation
 
 ### Continuous Triage Loop (example)
 ```bash
@@ -79,7 +80,7 @@ while true; do
   # Risk branch: Low (<5) → auto-apply + print Action Block; High (≥5) → print Approval Block
   # Post required thread reply per branch
 
-  # Append processed ID
+  # Append processed ID (after Output Gate conditions)
   jq -r '.id' tmp/CONV_CURRENT.json >> tmp/CONV_ID.txt
 done
 ```
