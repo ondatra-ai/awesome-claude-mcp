@@ -26,3 +26,26 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 4) Read `tmp/CONV_CURRENT.json`.
    - If it contains `{ "id": "No More Converations" }`, stop.
    - Otherwise, proceed with heuristic analysis for that conversation.
+
+## Artifcts
+
+- `scripts/list-pr-conversations/main.go`
+  - Reads review threads for the current PR (or a provided PR number) and writes the full conversations JSON array to a file.
+  - Usage: `go run scripts/list-pr-conversations/main.go tmp/CONV.json [PR_NUMBER]`
+  - Guarantees: writes to `tmp/CONV.json` (or specified path), produces no JSON on stdout.
+
+- `tmp/CONV.json`
+  - Cached conversations JSON (array of conversation objects) used as the single source of truth for the triage run.
+
+- `tmp/CONV_ID.txt`
+  - Line‑separated list of processed conversation IDs.
+  - Empty by default; updated after each conversation is processed.
+
+- Next selection script (to be written)
+  - Reads `tmp/CONV.json` and `tmp/CONV_ID.txt`.
+  - Writes the first unprocessed conversation object to `tmp/CONV_CURRENT.json`.
+  - If none remain, writes exactly `{ "id": "No More Converations" }` to `tmp/CONV_CURRENT.json`.
+  - Suggested path/name: `scripts/pr-triage/next.go` (or equivalent).
+
+- `tmp/CONV_CURRENT.json`
+  - The single conversation object to analyze next, or the sentinel `{ "id": "No More Converations" }` when finished.
