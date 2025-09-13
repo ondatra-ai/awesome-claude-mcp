@@ -50,6 +50,7 @@ tmp/
 
 # Terraform
 **/.terraform/**
+**/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
 *.tfvars.local
