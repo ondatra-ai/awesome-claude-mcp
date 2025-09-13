@@ -69,6 +69,7 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - Record the numeric score and rationale.
 
 4) If risk < 5, implement without human-in-the-loop
-   - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally/CI.
+   - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
+   - DO NOT COMMIT CHANGES
    - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
    - Otherwise (risk ≥ 5), output the recommendation and wait for human approval using "bmad-core/templates/pr-triage-output-tmpl.yaml".
