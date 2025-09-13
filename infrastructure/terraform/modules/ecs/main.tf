@@ -46,6 +46,15 @@ resource "aws_security_group" "services" {
     security_groups = [var.alb_sg_id]
   }
 
+  # Allow intra-services traffic to MCP on 9090
+  ingress {
+    description = "Services -> MCP"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    self        = true
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
