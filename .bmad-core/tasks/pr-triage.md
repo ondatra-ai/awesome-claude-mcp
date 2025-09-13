@@ -56,7 +56,12 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - Otherwise, proceed with heuristic analysis for that conversation.
 6) Append ID to `tmp/CONV_ID.txt`.
    - Append processed to `tmp/CONV_ID.txt`.
-7) Go to item 4.
+7) Repeat actions 4 → 6 until sentinel appears
+   - Ensure any required thread reply was posted (per outcome in Heuristic analysis)
+   - Verify the conversation ID was appended to `tmp/CONV_ID.txt` (no duplicates)
+   - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
+   - If `tmp/CONV_CURRENT.json` contains `{ "id": "No More Converations" }`, stop
+   - Otherwise, continue with item 5
 
 ## Heuristic analysis
 1) Perform Heuristic checklist
