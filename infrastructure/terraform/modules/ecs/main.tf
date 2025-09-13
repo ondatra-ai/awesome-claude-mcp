@@ -89,7 +89,24 @@ locals {
   log_group_mcp      = "/aws/ecs/mcp-service"
 }
 
+# Ensure CloudWatch Log Groups exist with retention before tasks start
+resource "aws_cloudwatch_log_group" "frontend" {
+  name              = local.log_group_frontend
+  retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_group" "backend" {
+  name              = local.log_group_backend
+  retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_group" "mcp" {
+  name              = local.log_group_mcp
+  retention_in_days = 30
+}
+
 resource "aws_ecs_task_definition" "frontend" {
+  depends_on = [aws_cloudwatch_log_group.frontend]
   family                   = "frontend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -120,6 +137,7 @@ resource "aws_ecs_task_definition" "frontend" {
 }
 
 resource "aws_ecs_task_definition" "backend" {
+  depends_on = [aws_cloudwatch_log_group.backend]
   family                   = "backend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -150,6 +168,7 @@ resource "aws_ecs_task_definition" "backend" {
 }
 
 resource "aws_ecs_task_definition" "mcp" {
+  depends_on = [aws_cloudwatch_log_group.mcp]
   family                   = "mcp-service"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"

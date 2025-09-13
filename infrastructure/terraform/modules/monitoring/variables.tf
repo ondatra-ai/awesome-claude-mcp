@@ -3,3 +3,13 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "alb_arn_suffix" {
+  description = "ALB ARN suffix used for CloudWatch metric dimensions (e.g., app/xyz/abc)"
+  type        = string
+}
+
+variable "alarm_topic_arn" {
+  description = "SNS Topic ARN for alarm notifications"
+  type        = string
+}

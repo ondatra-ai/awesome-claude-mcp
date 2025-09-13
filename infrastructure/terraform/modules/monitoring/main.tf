@@ -44,4 +44,12 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
   period              = 60
   statistic           = "Sum"
   threshold           = 1
+  dimensions = {
+    LoadBalancer = var.alb_arn_suffix
+  }
+  datapoints_to_alarm = 1
+  treat_missing_data  = "notBreaching"
+  alarm_description   = "ALB 5xx spikes on ${var.alb_arn_suffix}"
+  alarm_actions       = [var.alarm_topic_arn]
+  ok_actions          = [var.alarm_topic_arn]
 }

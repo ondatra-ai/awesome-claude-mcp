@@ -112,16 +112,6 @@ resource "aws_network_acl_rule" "public_in_https" {
   to_port        = 443
 }
 
-resource "aws_network_acl_rule" "public_in_ephemeral" {
-  network_acl_id = aws_network_acl.public.id
-  rule_number    = 120
-  egress         = false
-  protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  from_port      = 1024
-  to_port        = 65535
-}
 
 resource "aws_network_acl_rule" "public_out_all" {
   network_acl_id = aws_network_acl.public.id
