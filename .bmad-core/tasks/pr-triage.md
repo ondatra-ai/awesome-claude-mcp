@@ -13,12 +13,28 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - `scripts/get-pr-number/main.go`
   - `scripts/list-pr-conversations/main.go`
   - `scripts/resolve-pr-conversation/main.go` (for optional resolve step)
- - Local tests runnable (make test-unit, make test-e2e)
+- Local tests runnable (make test-unit, make test-e2e)
+- Output policy: Do NOT display raw shell commands; show concise results and decisions only.
 
 ## Inputs
 - None (non-interactive end-to-end flow)
 
 ## Sequential Task Execution
+
+Preferred execution
+- Use the wrapper script `scripts/pr-triage/run.sh` to perform triage with clean, standardized output. It internally calls `scripts/list-pr-conversations/main.go` and `scripts/resolve-pr-conversation/main.go`, applies auto‑resolve, selects the next actionable thread, and prints a decision package without showing any shell commands.
+- Output format (see template):
+  - Thread: <id>
+  - Link: <url>
+  - Location: <file:line>
+  - Comment: full review comment content
+  - Proposed Fix: <concise action aligned with standards>
+  - Risk Analysis: <short note>
+  - Risk: <0–10>
+  - Decision: <Proceed fix | Create ticket>
+
+Template
+- Reference: `.bmad-core/templates/pr-triage-output-tmpl.md` for the exact structure and labels used in output.
 
 ### 1) Detect PR Number
 - Get current PR number for this branch:
@@ -26,17 +42,13 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - If empty, use `go run scripts/get-pr-number/main.go` to display info and HALT.
 
 ### 2) Fetch ALL Conversations (JSON)
-- Run: `go run ./scripts/list-pr-conversations/main.go "$PR" > ./tmp/PR_CONVERSATIONS.json`
-- Validate JSON: `jq 'type=="array"' ./tmp/PR_CONVERSATIONS.json`
-- Note: This list includes both resolved and unresolved threads.
+- Use `scripts/list-pr-conversations/main.go` to fetch all review threads for the PR and produce JSON (both resolved and unresolved).
+- Store JSON in a temp file (e.g., `./tmp/PR_CONVERSATIONS.json`) for analysis.
 
 ### 3) Auto-Resolve Outdated (MANDATORY)
-- Identify threads where ALL comments are `outdated==true`.
-- Resolve each of those threads before analysis:
-  - `IDS=$(jq -r 'map(select( all(.comments[]; .outdated==true) and (.isResolved==false) )) | .[].id' ./tmp/PR_CONVERSATIONS.json)`
-  - For each: `go run ./scripts/resolve-pr-conversation/main.go "$id" "Auto-resolving: thread is fully outdated."`
-- Optional (recommended): Re-fetch the conversations JSON to capture updated resolution states:
-  - `go run ./scripts/list-pr-conversations/main.go "$PR" > ./tmp/PR_CONVERSATIONS.json`
+- Identify threads where ALL comments are `outdated==true` and the thread is unresolved.
+- Use `scripts/resolve-pr-conversation/main.go` to resolve those threads by ID with a standard note (e.g., “Auto-resolving: thread is fully outdated.”) before analysis.
+- Re-fetch conversations with `scripts/list-pr-conversations/main.go` so resolution states are current for the next steps.
 
 ### 4) Load Architecture Context (Developer Analysis)
 - Read these files to understand intended design and standards before making decisions:
@@ -47,9 +59,7 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - `docs/frontend-architecture.md`
 
 ### 5) Determine PR Scope (What is “in progress now”)
-- Infer scope from changed files vs default branch:
-  - `BASE=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)`
-  - `CHANGED=$(git diff --name-only origin/$BASE...HEAD)`
+- Infer scope from changed files vs default branch (e.g., via `git diff --name-only origin/<default>...HEAD`).
 - Build a list of paths and top-level areas (e.g., `services/frontend/`, `services/backend/`, `infrastructure/`, `docs/`).
 
 ### 6) Classify Remaining Conversations (Relevant vs Not Relevant Now)
@@ -61,23 +71,24 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - Otherwise → NOT RELEVANT NOW
 - Always use intent: if the issue describes a pattern the PR modifies, treat as RELEVANT even if code moved.
 
-### 7) Human-In-The-Loop Approval (Per Relevant Thread)
-- For each RELEVANT thread, pause and request approval before acting. Present a concise fix plan grounded in architecture docs and current changes:
-
-  Proposal format (example to send to human):
-  - Thread: <short summary> (<file:line>)
-  - Proposed fix: <1–2 lines describing what and where>
-  - Tests: <unit/integration/e2e to run>
-  - Rationale: aligns with <coding-standards|tech-stack|source-tree>
-
-  Options (reply with a number):
-  1) Proceed: implement the proposed fix now (then run tests, reply, resolve)
-  2) Create ticket: defer fix, file a GitHub issue and link it (reply, resolve)
-  3) Not relevant now: explain briefly, resolve
-  4) Defer: skip this thread for now (leave unresolved)
-  5) Custom: provide instructions (I will follow them)
-
-  - If no explicit approval is given, do not modify code or create issues; move to next thread.
+### 7) Human-In-The-Loop Approval (Process One-By-One)
+- Process relevant threads sequentially, one at a time. Do not batch.
+- For the current thread, present a decision package with enough context to act confidently:
+  - Thread: short summary + link + file:line
+  - Comment excerpt: 1–3 lines (trimmed)
+  - Code context: brief diff or description of implicated code
+  - Proposed fix: concrete steps (what exactly to change and where)
+  - Architecture alignment: cite relevant points from coding-standards/tech-stack/source-tree
+  - Risk/Effort: very short estimate (e.g., Low/Medium/High; ~N LOC)
+  - Validations: tests to run (unit/integration/e2e) and any linters
+  - Rollback: how to revert if needed
+- Provide a Preferred option based on scope, risk, and effort (heuristic: if in-scope and low/medium risk → Prefer "Proceed fix"; otherwise → Prefer "Create ticket").
+- Ask: "Default: <Preferred option>. Do you want to proceed with the default?"
+- If the user declines, allow an explicit alternative:
+  - 1) Proceed fix — implement the proposed fix now, then run validations, reply on thread, resolve
+  - 2) Create ticket — open a GitHub issue with context and link; reply with the issue link; resolve
+  - 3) Custom — provide instructions; follow them and then reply/resolve accordingly
+- If no explicit approval is given, do not modify code or create issues; leave the thread pending and stop triage.
 
 ### 8) Act: Fix or Ticket (No report file)
 - For RELEVANT items:
@@ -106,7 +117,7 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - Ticketed (not relevant now): <n>
 
 ## Checklist
-- Execute checklist `.bmad-core/checklists/pr-conversations-checklist.md` and confirm PASS.
+- Execute checklist `.bmad-core/checklists/pr-triage-checklist.md` and confirm PASS.
 
 ## Notes
 - This flow prioritizes keeping the PR focused: outdated items are resolved, relevant ones are fixed in-place (pending explicit commit), and non-relevant are ticketed for follow-up.
