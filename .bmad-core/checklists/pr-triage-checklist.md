@@ -1,6 +1,6 @@
 <!-- Powered by BMAD™ Core -->
 
-# PR Conversations Read Checklist
+# PR Triage Checklist
 
 - [ ] Tools present: gh, go, jq
 - [ ] PR number detected for current branch

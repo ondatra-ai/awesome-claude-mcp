@@ -1,6 +1,6 @@
 <!-- Powered by BMAD™ Core -->
 
-# PR Conversations Read (Auto-resolve ➜ Fix-or-Ticket)
+# PR Triage (Auto-resolve ➜ Fix-or-Ticket)
 
 ## Purpose
 Read ALL review conversations on the current PR, automatically resolve those that are fully outdated, then for the remainder: decide relevance to the work in progress, and either FIX immediately (if relevant) or CREATE a GitHub issue (if not relevant). No report file is produced.

@@ -4,18 +4,52 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
+    "bufio"
+    "fmt"
+    "log"
+    "os"
+    "os/exec"
+    "strconv"
+    "strings"
 )
 
 type FileCoverage struct {
 	SmartLinesSet            map[int]bool // Smart filtered lines that actually need coverage
 	SmartCoveredLinesSet     map[int]bool // Covered lines from the smart set
 	SmartLineCoveragePercent float64
+}
+
+// repoPrefix caches the computed GitHub repo import prefix, e.g.,
+// "github.com/owner/repo/". Used to shorten paths for display.
+var repoPrefix string
+
+func getRepoPrefix() string {
+    if repoPrefix != "" {
+        return repoPrefix
+    }
+    out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
+    if err != nil {
+        return ""
+    }
+    url := strings.TrimSpace(string(out))
+    ownerRepo := ""
+    if strings.HasPrefix(url, "git@") {
+        // git@github.com:owner/repo.git
+        parts := strings.SplitN(url, ":", 2)
+        if len(parts) == 2 {
+            ownerRepo = strings.TrimSuffix(parts[1], ".git")
+        }
+    } else {
+        // https://github.com/owner/repo.git or similar
+        idx := strings.Index(url, "github.com/")
+        if idx != -1 {
+            ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
+        }
+    }
+    if ownerRepo != "" {
+        repoPrefix = "github.com/" + ownerRepo + "/"
+    }
+    return repoPrefix
 }
 
 func main() {
@@ -214,7 +248,11 @@ func calculateMaxPathLength(fileCoverage map[string]*FileCoverage) int {
 	maxLen := 0
 
 	for filePath := range fileCoverage {
-		shortPath := strings.TrimPrefix(filePath, "github.com/ondatra-ai/flow-test-go/")
+        rp := getRepoPrefix()
+        shortPath := filePath
+        if rp != "" {
+            shortPath = strings.TrimPrefix(filePath, rp)
+        }
 		if len(shortPath) > maxLen {
 			maxLen = len(shortPath)
 		}
@@ -255,7 +293,11 @@ func getSortedFiles(fileCoverage map[string]*FileCoverage) []string {
 func printCoverageRows(fileCoverage map[string]*FileCoverage, sortedFiles []string, maxLen int) {
 	for _, filePath := range sortedFiles {
 		coverage := fileCoverage[filePath]
-		shortPath := strings.TrimPrefix(filePath, "github.com/ondatra-ai/flow-test-go/")
+        rp := getRepoPrefix()
+        shortPath := filePath
+        if rp != "" {
+            shortPath = strings.TrimPrefix(filePath, rp)
+        }
 
 		if len(coverage.SmartLinesSet) == 0 {
 			fmt.Printf("│ %-*s │   --   │\n", maxLen, shortPath)
@@ -345,7 +387,11 @@ func calculateStats(fileCoverage map[string]*FileCoverage, sortedFiles []string)
 // Helper functions for smart filtering
 func loadSourceFile(modulePath string) ([]string, error) {
 	// Accept both module-qualified and repo-relative paths.
-	filePath := strings.TrimPrefix(modulePath, "github.com/ondatra-ai/flow-test-go/")
+    rp := getRepoPrefix()
+    filePath := modulePath
+    if rp != "" {
+        filePath = strings.TrimPrefix(modulePath, rp)
+    }
 	// If the path still doesn't exist relative to CWD (repo root), bail and let caller fall back.
 	if _, statErr := os.Stat(filePath); statErr != nil {
 		return nil, fmt.Errorf("failed to locate source file %s: %w", filePath, statErr)

@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -157,6 +158,36 @@ func displayGotestdoxReport(testResults map[string]*TestResult) {
 	printSummary(stats)
 }
 
+// repoPrefix caches the computed GitHub repo import prefix, e.g., "github.com/owner/repo/"
+var repoPrefix string
+
+func getRepoPrefix() string {
+    if repoPrefix != "" {
+        return repoPrefix
+    }
+    out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
+    if err != nil {
+        return ""
+    }
+    url := strings.TrimSpace(string(out))
+    ownerRepo := ""
+    if strings.HasPrefix(url, "git@") {
+        parts := strings.SplitN(url, ":", 2)
+        if len(parts) == 2 {
+            ownerRepo = strings.TrimSuffix(parts[1], ".git")
+        }
+    } else {
+        idx := strings.Index(url, "github.com/")
+        if idx != -1 {
+            ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
+        }
+    }
+    if ownerRepo != "" {
+        repoPrefix = "github.com/" + ownerRepo + "/"
+    }
+    return repoPrefix
+}
+
 func groupTestsByPackage(testResults map[string]*TestResult) map[string][]*TestResult {
 	packageTests := make(map[string][]*TestResult)
 	for _, result := range testResults {
@@ -199,7 +230,11 @@ func displayPackageResults(packageTests map[string][]*TestResult, packages []str
 			fmt.Println()
 		}
 
-		shortPkg := strings.TrimPrefix(pkg, "github.com/ondatra-ai/flow-test-go/")
+		rp := getRepoPrefix()
+		shortPkg := pkg
+		if rp != "" {
+			shortPkg = strings.TrimPrefix(pkg, rp)
+		}
 		fmt.Printf("%s:\n", shortPkg)
 
 		tests := packageTests[pkg]
