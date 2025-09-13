@@ -78,11 +78,12 @@ func repoOwnerAndName() (string, string) {
     return parts[0], parts[1]
 }
 
-func currentPRNumber() int {
-    if len(os.Args) >= 2 {
-        if n, err := strconv.Atoi(os.Args[1]); err == nil {
+func currentPRNumber(arg string) int {
+    if arg != "" {
+        if n, err := strconv.Atoi(arg); err == nil {
             return n
         }
+        log.Fatalf("invalid PR number: %q", arg)
     }
     cmd := exec.Command("gh", "pr", "view", "--json", "number", "-q", ".number")
     out, err := cmd.Output()
@@ -162,8 +163,19 @@ func toConversations(resp GraphQLResponse) []Conversation {
 }
 
 func main() {
+    // Usage: list-pr-conversations <output-file> [PR_NUMBER]
+    if len(os.Args) < 2 {
+        fmt.Fprintln(os.Stderr, "Usage: list-pr-conversations <output-file> [PR_NUMBER]")
+        os.Exit(1)
+    }
+    outPath := strings.TrimSpace(os.Args[1])
+    var prArg string
+    if len(os.Args) >= 3 {
+        prArg = strings.TrimSpace(os.Args[2])
+    }
+
     owner, name := repoOwnerAndName()
-    prNum := currentPRNumber()
+    prNum := currentPRNumber(prArg)
     query := buildQuery(owner, name)
 
     cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query, "-F", fmt.Sprintf("prNumber=%d", prNum))
@@ -177,17 +189,18 @@ func main() {
     }
     convs := toConversations(resp)
 
-    // ensure tmp dir
-    if err := os.MkdirAll("tmp", 0o755); err != nil {
-        log.Fatalf("failed to create tmp dir: %v", err)
+    // ensure output dir
+    if dir := filepath.Dir(outPath); dir != "." && dir != "" {
+        if err := os.MkdirAll(dir, 0o755); err != nil {
+            log.Fatalf("failed to create output dir: %v", err)
+        }
     }
-    path := filepath.Join("tmp", "CONV.json")
     data, err := json.MarshalIndent(convs, "", "  ")
     if err != nil {
         log.Fatalf("failed to marshal conversations: %v", err)
     }
-    if err := os.WriteFile(path, data, 0o644); err != nil {
-        log.Fatalf("failed to write %s: %v", path, err)
+    if err := os.WriteFile(outPath, data, 0o644); err != nil {
+        log.Fatalf("failed to write %s: %v", outPath, err)
     }
     // do not print JSON to stdout; writing to file only
 }
