@@ -97,7 +97,6 @@ Read ALL review conversations on the current PR, automatically resolve those tha
   - Reply and resolve as OUTDATED.
 
 ### 9) Output
-- No `./tmp/PR_CONVERSATIONS.md` is created.
 - Final state should be: outdated threads resolved; relevant ones fixed (pending review/commit); non-relevant converted to issues and resolved.
 
 ### 10) Summary (console only)
