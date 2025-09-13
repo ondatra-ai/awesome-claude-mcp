@@ -77,19 +77,24 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - 4–6: medium (localized behavior, limited blast radius)
    - 7–10: high (architecture/security/performance implications or wide impact)
    - Record the numeric score and rationale.
+   - Thresholds (authoritative): Low risk = risk < 5. Medium/High risk = risk ≥ 5.
 
 4) If risk < 5, implement without human-in-the-loop
    - DO NOT COMMIT CHANGES
    - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
-   - Print BOTH blocks in this order:
+   - MUST print BOTH blocks in this order:
      1) Heuristic Checklist Result (see below)
-     2) Decision block (see below)
-   - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
-   - Otherwise (risk ≥ 5):
-     - Print BOTH blocks in this order:
-       1) Heuristic Checklist Result (see below)
-       2) Decision block (see below)
-     - Do not apply/commit; wait for human approval.
+     2) Low‑Risk Action Block (no prompt; see below)
+   - Auto‑apply the change, run validations/tests, post a resolving reply to the thread.
+   - Append the conversation ID to `tmp/CONV_ID.txt`.
+
+5) If risk ≥ 5 (approval required)
+   - MUST NOT apply or commit changes.
+   - MUST print BOTH blocks in this order:
+     1) Heuristic Checklist Result (see below)
+     2) Medium/High‑Risk Approval Block (see below)
+   - Post a non‑resolving reply summarizing the recommendation and await approval.
+   - Append the conversation ID to `tmp/CONV_ID.txt`.
 
 ### Heuristic Checklist Output (MUST PRINT)
 Print this block exactly once per conversation, before any action or decision output.
@@ -107,8 +112,22 @@ Heuristic Checklist Result
 - Risk score (1–10): N — one‑sentence rationale
 END_HEURISTIC
 
-### Decision Block (MUST PRINT)
-Print this decision package after the checklist for every conversation.
+### Low‑Risk Action Block (risk < 5 — MUST PRINT, no prompt)
+Print this action package after the checklist for every low‑risk conversation.
+```txt
+BEGIN_ACTION
+Id: "{{thread_id}}"
+Url: "{{thread_url}}"
+Location: "{{file}}:{{line}}"
+Summary: {{one‑line description of fix}}
+Actions Taken: {{what changed at a high level}}
+Tests/Checks: {{brief result}}
+Resolution: Posted reply and resolved
+END_ACTION
+```
+
+### Medium/High‑Risk Approval Block (risk ≥ 5 — MUST PRINT)
+Print this approval package (with question) after the checklist for every medium/high‑risk conversation.
 ```txt
   Id: "{{thread_id}}"
   Url: "{{thread_url}}"
@@ -123,8 +142,15 @@ Print this decision package after the checklist for every conversation.
 ```
 
 ### Output Gate
-- A conversation is considered processed only if:
+- Low risk (risk < 5) conversation is processed only if:
   - The Heuristic Checklist Result block was printed, and
-  - The Decision Block was printed, and
-  - Any required thread reply was posted (when applicable).
-- Only then append the conversation ID to `tmp/CONV_ID.txt`.
+  - The Low‑Risk Action Block was printed, and
+  - The change was applied + validations run, and
+  - A resolving reply was posted to the thread.
+  - Then append the conversation ID to `tmp/CONV_ID.txt`.
+
+- Medium/High risk (risk ≥ 5) conversation is processed only if:
+  - The Heuristic Checklist Result block was printed, and
+  - The Medium/High‑Risk Approval Block was printed, and
+  - A non‑resolving reply was posted to the thread.
+  - Then append the conversation ID to `tmp/CONV_ID.txt`.
