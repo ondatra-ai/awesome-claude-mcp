@@ -35,3 +35,15 @@ variable "name_prefix" {
   description = "Prefix to ensure Redis resource names are unique per environment (e.g., dev|staging|prod)"
   type        = string
 }
+
+variable "cluster_num_node_groups" {
+  description = "Number of node groups (shards) for Redis cluster mode"
+  type        = number
+  default     = 1
+}
+
+variable "cluster_replicas_per_node_group" {
+  description = "Number of replicas per node group for Redis cluster mode"
+  type        = number
+  default     = 1
+}
