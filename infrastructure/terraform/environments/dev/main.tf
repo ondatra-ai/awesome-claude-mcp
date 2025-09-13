@@ -44,6 +44,7 @@ module "ecs" {
 
 module "alb" {
   source            = "../../modules/alb"
+  name              = "mcp-gde-alb-dev"
   vpc_id            = module.vpc.vpc_id
   public_subnet_ids = module.vpc.public_subnet_ids
   certificate_arn   = var.certificate_arn
