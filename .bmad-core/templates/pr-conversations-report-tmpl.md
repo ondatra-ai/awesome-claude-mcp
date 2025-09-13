@@ -2,7 +2,7 @@
 
 # All Conversations for PR #{{pr_number}}:
 
-## ❌ OUTDATED (Fixed by previous changes):
+## ❌ Auto-Resolved Outdated:
 
 {{#each outdated}}
 ### **{{file}}:{{line}}**
@@ -12,11 +12,11 @@ Description: {{description}}
 ----
 {{body}}
 ----
-Status: OUTDATED: All comments marked outdated or code no longer exists.
+Status: OUTDATED: All comments were marked outdated and resolved automatically.
 
 {{/each}}
 
-## ✅ STILL RELEVANT (Need to be fixed):
+## ✅ Still Relevant After Auto-Resolve:
 
 {{#each relevant}}
 ### **{{file}}:{{line}}**

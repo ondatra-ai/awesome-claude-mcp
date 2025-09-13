@@ -14,8 +14,8 @@ Analyze review conversations on the current PR and generate a structured report 
   - `scripts/list-pr-conversations/main.go`
   - `scripts/resolve-pr-conversation/main.go` (for optional resolve step)
 
-## Inputs (optional)
-- `autoResolveOutdated` (yes/no, default: no) — if yes, resolve all conversations where all comments are marked `outdated=true`.
+## Inputs
+- None
 
 ## Sequential Task Execution
 
@@ -24,47 +24,61 @@ Analyze review conversations on the current PR and generate a structured report 
   - `PR=$(gh pr view --json number -q .number)`
   - If empty, use `go run scripts/get-pr-number/main.go` to display info and HALT.
 
-### 2) Fetch Conversations (JSON)
+### 2) Fetch ALL Conversations (JSON)
 - Run: `go run ./scripts/list-pr-conversations/main.go "$PR" > ./tmp/PR_CONVERSATIONS.json`
 - Validate JSON: `jq 'type=="array"' ./tmp/PR_CONVERSATIONS.json`
+- Note: This list includes both resolved and unresolved threads.
 
-### 3) Classify Conversations
+### 3) Auto-Resolve Outdated (MANDATORY)
+- Identify threads where ALL comments are `outdated==true`.
+- Resolve each of those threads before analysis:
+  - `IDS=$(jq -r 'map(select( all(.comments[]; .outdated==true) and (.isResolved==false) )) | .[].id' ./tmp/PR_CONVERSATIONS.json)`
+  - For each: `go run ./scripts/resolve-pr-conversation/main.go "$id" "Auto-resolving: thread is fully outdated."`
+- Optional (recommended): Re-fetch the conversations JSON to capture updated resolution states:
+  - `go run ./scripts/list-pr-conversations/main.go "$PR" > ./tmp/PR_CONVERSATIONS.json`
+
+### 4) Classify Conversations (Comprehensive Heuristics)
 - Heuristics (intent-based):
-  - If every comment in a thread has `outdated=true` → OUTDATED
-  - If a comment references a file that no longer exists → OUTDATED
-  - If the suggestion/issue intent still applies (pattern still present) → RELEVANT
-  - Vague comments → default RELEVANT
-- For this automated run, apply lightweight rules using the JSON only:
-  - OUTDATED if all comments have `outdated==true`
-  - Otherwise RELEVANT
-- Note: Human review may upgrade/downgrade relevance later.
+  - If a comment references a file path that no longer exists in HEAD → OUTDATED
+    - `FILE=$(jq -r '.comments[0].file // empty' <<<"$node"); [ -n "$FILE" ] && git ls-files --error-unmatch -- "$FILE" >/dev/null 2>&1 || mark OUTDATED`
+  - Else if every comment is marked outdated → OUTDATED (already auto-resolved)
+  - Else if path is under `docs/` → RELEVANT (Docs) with recommendation: defer or track separately
+  - Else → RELEVANT
+- This pass operates on the refreshed JSON from step 3.
 
-### 4) Generate Report
-- Use template `.bmad-core/templates/pr-conversations-report-tmpl.md`.
+### 5) Generate Report
+- Use template `.bmad-core/templates/pr-conversations-report-tmpl.md` (structure mirrored below).
 - Produce `./tmp/PR_CONVERSATIONS.md` with sections:
-  - OUTDATED (auto)
-  - STILL RELEVANT (auto)
+  - Auto-Resolved Outdated (fixed pre-analysis)
+  - Still Relevant After Auto-Resolve (needs attention)
 - Fill each item with: file:line (if present), conversation id, author, body, and a short one-line description.
 - Command scaffold (example):
   ```bash
+  export PR
   jq -r '
     def firstFile: (.[0].file // "unknown");
     def firstLine: (.[0].line // 0);
     def desc(s): (s | gsub("\n"; " ") | .[0:120]);
 
-    . as $all |
+    . as $allRaw |
+    # Identify auto-resolved (all comments outdated prior to analysis)
+    ( $allRaw | map(select( all(.comments[]; .outdated==true) and (.isResolved==false) )) ) as $auto |
+    # After auto-resolve and optional re-fetch
+    ( $allRaw ) as $all |
     "# All Conversations for PR #" + env.PR + ":\n\n" +
-    "## ❌ OUTDATED (Fixed by previous changes):\n\n" +
-    ( $all
-      | map(select( all(.comments[]; .outdated==true) ))
+    "- Auto-resolved (outdated): " + ($auto | length | tostring) + "\n" +
+    "- Remaining (relevant candidates): " + (($all | map(select(any(.comments[]; .outdated!=true))) ) | length | tostring) + "\n\n" +
+
+    "## ❌ Auto-Resolved Outdated:\n\n" +
+    ( $auto
       | map( "### **" + ( (.comments|first|.file // "unknown") + ":" + ((.comments|first|.line // 0)|tostring) ) + "**\n" +
               "Id: " + .id + "\n" +
               "Author: " + ((.comments|first|.author) // "unknown") + "\n" +
               "Description: " + (desc((.comments|first|.body) // "")) + "\n----\n" +
               ((.comments|first|.body) // "") + "\n----\n" +
-              "Status: OUTDATED: All comments marked outdated.\n\n" )
+              "Status: OUTDATED: All comments were marked outdated and resolved automatically.\n\n" )
       | join("") ) +
-    "\n## ✅ STILL RELEVANT (Need to be fixed):\n\n" +
+    "\n## ✅ Still Relevant After Auto-Resolve:\n\n" +
     ( $all
       | map(select( any(.comments[]; .outdated!=true) ))
       | map( "### **" + ( (.comments|first|.file // "unknown") + ":" + ((.comments|first|.line // 0)|tostring) ) + "**\n" +
@@ -78,11 +92,6 @@ Analyze review conversations on the current PR and generate a structured report 
       | join("") )
   ' ./tmp/PR_CONVERSATIONS.json > ./tmp/PR_CONVERSATIONS.md
   ```
-
-### 5) Optional: Auto-Resolve Outdated
-- If `autoResolveOutdated == yes`:
-  - Extract IDs: `IDS=$(jq -r 'map(select( all(.comments[]; .outdated==true) )) | .[].id' ./tmp/PR_CONVERSATIONS.json)`
-  - For each ID: `go run ./scripts/resolve-pr-conversation/main.go "$id" "Auto-resolving: thread is outdated."`
 
 ### 6) Output
 - Print a short summary:

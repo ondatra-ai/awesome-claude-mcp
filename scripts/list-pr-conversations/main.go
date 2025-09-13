@@ -2,14 +2,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-	"sort"
-	"strconv"
-	"time"
+    "encoding/json"
+    "fmt"
+    "log"
+    "os"
+    "os/exec"
+    "sort"
+    "strconv"
+    "strings"
+    "time"
 )
 
 // Comment represents a PR review comment
@@ -79,16 +80,17 @@ func getPRNumber() string {
 }
 
 // buildGraphQLQuery builds the GraphQL query for fetching PR review threads
-func buildGraphQLQuery() string {
-	return `
+func buildGraphQLQuery(owner, name string) string {
+    // owner and name are derived from the current repo via gh
+    return fmt.Sprintf(`
 query($prNumber: Int!) {
-  repository(owner: "ondatra-ai", name: "flow-test-go") {
+  repository(owner: "%s", name: "%s") {
     pullRequest(number: $prNumber) {
       reviewThreads(first: 100) {
         nodes {
           id
           isResolved
-          comments(first: 10) {
+          comments(first: 50) {
             nodes {
               path
               line
@@ -106,47 +108,56 @@ query($prNumber: Int!) {
       }
     }
   }
-}`
+}` , owner, name)
 }
 
 // parseConversations parses the GraphQL response into conversations
 func parseConversations(data GraphQLResponse) []Conversation {
-	var conversations []Conversation
+    var conversations []Conversation
 
-	for _, thread := range data.Data.Repository.PullRequest.ReviewThreads.Nodes {
-		// Only include unresolved threads
-		if thread.IsResolved {
-			continue
-		}
+    for _, thread := range data.Data.Repository.PullRequest.ReviewThreads.Nodes {
+        // Include ALL threads (resolved and unresolved) to enable full reporting.
+        var comments []Comment
+        for _, comment := range thread.Comments.Nodes {
+            comments = append(comments, Comment{
+                File:      comment.Path,
+                Line:      comment.Line,
+                Author:    comment.Author.Login,
+                Body:      comment.Body,
+                CreatedAt: comment.CreatedAt,
+                Outdated:  comment.Outdated,
+                Resolved:  thread.IsResolved,
+                DiffHunk:  comment.DiffHunk,
+                URL:       comment.URL,
+            })
+        }
 
-		var comments []Comment
-		for _, comment := range thread.Comments.Nodes {
-			comments = append(comments, Comment{
-				File:      comment.Path,
-				Line:      comment.Line,
-				Author:    comment.Author.Login,
-				Body:      comment.Body,
-				CreatedAt: comment.CreatedAt,
-				Outdated:  comment.Outdated,
-				Resolved:  thread.IsResolved,
-				DiffHunk:  comment.DiffHunk,
-				URL:       comment.URL,
-			})
-		}
+        conversations = append(conversations, Conversation{
+            ID:         thread.ID,
+            IsResolved: thread.IsResolved,
+            Comments:   comments,
+        })
+    }
 
-		conversations = append(conversations, Conversation{
-			ID:         thread.ID,
-			IsResolved: thread.IsResolved,
-			Comments:   comments,
-		})
-	}
-
-	return conversations
+    return conversations
 }
 
 // getPRComments fetches and displays PR comments
 func getPRComments(prNumber string) {
-	query := buildGraphQLQuery()
+    // Detect current repo owner/name using gh
+    repoInfoCmd := exec.Command("gh", "repo", "view", "--json", "owner,name", "-q", ".owner.login + \" \" + .name")
+    repoOut, err := repoInfoCmd.Output()
+    if err != nil {
+        log.Fatalf("Error getting repo info: %v", err)
+    }
+    parts := strings.Split(strings.TrimSpace(string(repoOut)), " ")
+    if len(parts) != 2 {
+        log.Fatalf("Unexpected repo info format: %s", string(repoOut))
+    }
+    owner := parts[0]
+    name := parts[1]
+
+    query := buildGraphQLQuery(owner, name)
 
 	// Convert PR number to int to validate it
 	prNum, err := strconv.Atoi(prNumber)
