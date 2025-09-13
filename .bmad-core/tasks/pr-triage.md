@@ -56,6 +56,7 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 1) Perform Heuristic checklist
    - Use `.bmad-core/checklists/triage-heuristic-checklist.md` against the single conversation in `tmp/CONV_CURRENT.json`.
    - Ensure each item is evaluated; record any conflicts or notes.
+   - Out Perform Heuristic checklist results
 
 2) Determine the best option to proceed
    - Choose one: implement now, request changes/clarification, defer and create an issue, or escalate (architect/PO/QA).
@@ -70,4 +71,4 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 4) If risk < 5, implement without human-in-the-loop
    - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally/CI.
    - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
-   - Otherwise (risk ≥ 5), post the recommendation and wait for human approval using "bmad-core/templates/pr-triage-output-tmpl.yaml".
+   - Otherwise (risk ≥ 5), output the recommendation and wait for human approval using "bmad-core/templates/pr-triage-output-tmpl.yaml".
