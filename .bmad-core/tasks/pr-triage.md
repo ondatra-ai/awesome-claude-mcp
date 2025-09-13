@@ -8,7 +8,7 @@ Stage and process PR review conversations deterministically using local files.
 
 Provide a predictable, file‑based workflow to read all PR conversations once, track processed items, and surface the next conversation for analysis.
 
-## Artifcts
+## Artifacts
 
 - `scripts/list-pr-conversations/main.go`
   - Reads review threads for the current PR (or a provided PR number) and writes the full conversations JSON array to a file.
@@ -45,7 +45,7 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 
 3) Create `tmp/CONV_ID.txt`.
    - Initialize file if missing: empty by default.
-   - Cleat it if it exists.
+   - Clear it if it exists.
    - Purpose: store processed conversation IDs (one per line).
 
 4) Identify the next conversation to process.
@@ -56,15 +56,14 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - Otherwise, proceed with heuristic analysis for that conversation.
 6) Append ID to `tmp/CONV_ID.txt`.
    - Append processed to `tmp/CONV_ID.txt`.
-7) 
+7) Go to item 4.
 
 ## Heuristic analysis
 1) Perform Heuristic checklist
-   - Output: `Performing Heuristic Analysys for {CONV_ID}`
+   - Output: `Performing Heuristic Analysis for {CONV_ID}`
    - Use `.bmad-core/checklists/triage-heuristic-checklist.md` against the single conversation in `tmp/CONV_CURRENT.json`.
-   - Ensure each item is evaluated; record any conflicts or notes.
-   - Out Perform Heuristic checklist results
-   - Output result of Heuristic Analysy Checklist.
+   - Prform Heuristic checklist
+   - Output: Heuristic Analysis checklist result
 
 2) Determine the best option to proceed
    - Choose one: implement now, request changes/clarification, defer and create an issue, or escalate (architect/PO/QA).
