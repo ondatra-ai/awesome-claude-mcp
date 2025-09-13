@@ -8,4 +8,7 @@ Comment:
 Proposed Fix: {{proposed_fix}}
 Risk Analysis: {{risk_analysis}}
 Risk: {{risk_score}}/10
-Decision: {{decision}}
+Suggestion: {{decision}}
+
+Procees with:
+1. {{Decision}}
