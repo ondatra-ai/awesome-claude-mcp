@@ -4,9 +4,12 @@ reviews:
   sequence_diagrams: false
   profile: "chill"
   request_changes_workflow: true
-  summarize: false
+  high_level_summary: false
 
   path_filters:
     - "!**/.cursor/**"
-    - "!**/.claude/commands/BMad/**"
+    - "!.claude/**"
+    - "!**/.claude/**"
     - "!**/.bmad-core/**"
+    - "!docs/**"
+    - "!**/docs/**"
