@@ -22,7 +22,28 @@ Read ALL review conversations on the current PR, automatically resolve those tha
 ## Sequential Task Execution
 
 Preferred execution
+<<<<<<< Updated upstream
 - Use the wrapper script `scripts/pr-triage/run.sh` to perform triage with clean, standardized output. It internally calls `scripts/list-pr-conversations/main.go` and `scripts/resolve-pr-conversation/main.go`, applies auto‑resolve, selects the next actionable thread, and prints a decision package without showing any shell commands.
+=======
+- Step 1 — Fetch only: `scripts/pr-triage/fetch.sh` (caches all threads to `./tmp/PR_CONVERSATIONS.json`).
+- Step 2 — Resolve outdated (optional): `scripts/pr-triage/resolve-outdated.sh` (resolves fully outdated threads then refreshes the cache).
+- Step 3 — Process next item: `scripts/pr-triage/next.sh` (prints decision package for the next actionable thread with clean output).
+- All scripts avoid printing raw shell commands; they show results only.
+
+All‑in‑one (optional)
+- Alternatively, `scripts/pr-triage/run.sh` performs all steps in one go and prints the decision package.
+
+Output format (see template):
+  - Thread: <id>
+  - Link: <url>
+  - Location: <file:line>
+  - Comment: full review comment content
+  - Proposed Fix: <concise action aligned with standards>
+  - Risk Analysis: <short note>
+  - Risk: <0–10>
+  - Decision: <Proceed fix | Create ticket>
+
+>>>>>>> Stashed changes
 Template
 - Reference: `.bmad-core/templates/pr-triage-output-tmpl.md` for the exact structure and labels used in output.
 
@@ -111,3 +132,14 @@ Template
 
 ## Notes
 - This flow prioritizes keeping the PR focused: outdated items are resolved, relevant ones are fixed in-place (pending explicit commit), and non-relevant are ticketed for follow-up.
+1) Read conversations to `tmp/CONV.json`.
+   - The `main.go` script must be rewritten to write JSON directly to this file instead of standard output.
+
+2) Create `tmp/CONV_ID.txt`.
+   - This file stores processed conversation IDs (one per line). It is empty by default.
+
+3) Identify the next conversation to process.
+   - Write a Go script that reads `tmp/CONV.json` and `tmp/CONV_ID.txt`, finds the first conversation ID present in JSON that is not listed in `tmp/CONV_ID.txt`, and writes the complete conversation object to `tmp/CONV_CURRENT.json`. If none remain, write `{ "id": "No More Converations" }` to `tmp/CONV_CURRENT.json`.
+
+4) Read `tmp/CONV_CURRENT.json`.
+   - If it contains `{ "id": "No More Converations" }`, stop. Otherwise, proceed with heuristic analysis for that conversation.
