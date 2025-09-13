@@ -44,15 +44,17 @@ resource "aws_internet_gateway" "this" {
 }
 
 resource "aws_eip" "nat" {
-  domain = "vpc"
+  for_each = aws_subnet.public
+  domain   = "vpc"
 }
 
 resource "aws_nat_gateway" "this" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = values(aws_subnet.public)[0].id
+  for_each      = aws_subnet.public
+  allocation_id = aws_eip.nat[each.key].id
+  subnet_id     = each.value.id
   depends_on    = [aws_internet_gateway.this]
   tags = {
-    Name = "${var.name}-nat"
+    Name = "${var.name}-nat-${each.key}"
   }
 }
 
@@ -65,10 +67,11 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.this.id
+  for_each = aws_subnet.private
+  vpc_id   = aws_vpc.this.id
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.this.id
+    nat_gateway_id = aws_nat_gateway.this[each.key].id
   }
 }
 
@@ -81,7 +84,7 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table_association" "private" {
   for_each       = aws_subnet.private
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[each.key].id
 }
 
 # Network ACLs (basic hardening)
