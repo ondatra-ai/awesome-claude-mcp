@@ -13,8 +13,8 @@ DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git fetch origin "$DEFAULT_BRANCH" --quiet >/dev/null 2>&1 || true
 git diff --name-only "origin/$DEFAULT_BRANCH"...HEAD > "$TMP_DIR/CHANGED_FILES.txt"
 
-# Select first unresolved thread that still has at least one non‑outdated comment
-jq -r '[.[] | select(.isResolved==false and any(.comments[]; .outdated!=true))][0] // empty' "$JSON" > "$TMP_DIR/CURRENT_THREAD.json"
+# Select first unresolved thread with at least one non‑outdated comment
+jq -r 'first(.[] | select(.isResolved==false and any(.comments[]; .outdated!=true)))' "$JSON" > "$TMP_DIR/CURRENT_THREAD.json"
 
 if [[ ! -s "$TMP_DIR/CURRENT_THREAD.json" ]] || [[ "$(jq -r 'keys|length' "$TMP_DIR/CURRENT_THREAD.json")" == "0" ]]; then
   echo "Nothing to triage right now."
@@ -22,10 +22,10 @@ if [[ ! -s "$TMP_DIR/CURRENT_THREAD.json" ]] || [[ "$(jq -r 'keys|length' "$TMP_
 fi
 
 THREAD_ID=$(jq -r '.id' "$TMP_DIR/CURRENT_THREAD.json")
-FILE_PATH=$(jq -r '.comments[0].file // ""' "$TMP_DIR/CURRENT_THREAD.json")
-LINE_NO=$(jq -r '.comments[0].line // 0' "$TMP_DIR/CURRENT_THREAD.json")
-LINK=$(jq -r '.comments[0].url // ""' "$TMP_DIR/CURRENT_THREAD.json")
-COMMENT_FULL=$(jq -r '.comments[0].body // ""' "$TMP_DIR/CURRENT_THREAD.json")
+FILE_PATH=$(jq -r '.comments | map(select(.outdated!=true)) | .[0].file // ""' "$TMP_DIR/CURRENT_THREAD.json")
+LINE_NO=$(jq -r '.comments | map(select(.outdated!=true)) | .[0].line // 0' "$TMP_DIR/CURRENT_THREAD.json")
+LINK=$(jq -r '.comments | map(select(.outdated!=true)) | .[0].url // ""' "$TMP_DIR/CURRENT_THREAD.json")
+COMMENT_FULL=$(jq -r '.comments | map(select(.outdated!=true)) | .[0].body // ""' "$TMP_DIR/CURRENT_THREAD.json")
 
 # Preferred option heuristic (based on scope)
 PREFERRED="Create ticket"

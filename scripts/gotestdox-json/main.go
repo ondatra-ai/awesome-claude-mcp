@@ -44,50 +44,58 @@ type TestResult struct {
 }
 
 func main() {
-	var (
-		testResults map[string]*TestResult
-		err         error
-	)
+    var (
+        testResults map[string]*TestResult
+        err         error
+    )
 
-	if len(os.Args) >= 2 {
-		testResults, err = parseTestJSON(os.Args[1])
-	} else {
-		testResults = parseTestJSONFromReader(os.Stdin)
-		err = nil
-	}
+    args := os.Args[1:]
+    if len(args) >= 1 && (args[0] == "-h" || args[0] == "--help") {
+        fmt.Fprintf(os.Stderr, "Usage: %s [PATH-TO_go-test-json | -]\n", os.Args[0])
+        os.Exit(2)
+    }
+    if len(args) >= 1 {
+        if args[0] == "-" {
+            testResults, err = parseTestJSONFromReader(os.Stdin)
+        } else {
+            testResults, err = parseTestJSON(args[0])
+        }
+    } else {
+        testResults, err = parseTestJSONFromReader(os.Stdin)
+    }
 
-	if err != nil {
-		log.Fatalf("Error parsing test JSON: %v", err)
-	}
+    if err != nil {
+        log.Fatalf("Error parsing test JSON: %v", err)
+    }
 
-	displayGotestdoxReport(testResults)
+    displayGotestdoxReport(testResults)
 }
 
 func parseTestJSON(filename string) (map[string]*TestResult, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
-	}
+    file, err := os.Open(filename)
+    if err != nil {
+        return nil, fmt.Errorf("failed to open file: %w", err)
+    }
 
-	defer func() { _ = file.Close() }()
+    defer func() { _ = file.Close() }()
 
-	return parseTestJSONFromReader(file), nil
+    return parseTestJSONFromReader(file)
 }
 
-func parseTestJSONFromReader(reader io.Reader) map[string]*TestResult {
-	testResults := make(map[string]*TestResult)
-	scanner := bufio.NewScanner(reader)
+func parseTestJSONFromReader(reader io.Reader) (map[string]*TestResult, error) {
+    testResults := make(map[string]*TestResult)
+    scanner := bufio.NewScanner(reader)
 	// Increase buffer in case of long output lines
 	const maxScannerTokenSize = 1024 * 1024
 
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, maxScannerTokenSize)
 
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || !strings.HasPrefix(line, "{") {
-			continue
-		}
+    for scanner.Scan() {
+        line := strings.TrimSpace(scanner.Text())
+        if line == "" || !strings.HasPrefix(line, "{") {
+            continue
+        }
 
 		var event TestEvent
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
@@ -101,9 +109,11 @@ func parseTestJSONFromReader(reader io.Reader) map[string]*TestResult {
 		testKey := event.Package + "::" + event.Test
 		result := getOrCreateTestResult(testResults, testKey, event)
 		updateTestResult(result, event)
-	}
-	// Ignore scanner errors and return what we parsed
-	return testResults
+    }
+    if err := scanner.Err(); err != nil {
+        return testResults, fmt.Errorf("scan error: %w", err)
+    }
+    return testResults, nil
 }
 
 func getOrCreateTestResult(testResults map[string]*TestResult, testKey string, event TestEvent) *TestResult {

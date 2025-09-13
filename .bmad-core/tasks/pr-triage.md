@@ -65,10 +65,8 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 
 ## Heuristic analysis
 1) Perform Heuristic checklist
-   - Output: `Performing Heuristic Analysis for {CONV_ID}`
    - Use `.bmad-core/checklists/triage-heuristic-checklist.md` against the single conversation in `tmp/CONV_CURRENT.json`.
-   - Prform Heuristic checklist
-   - Output: Heuristic Analysis checklist result
+   - MUST print the Heuristic Checklist Result block exactly once per conversation (see "Heuristic Checklist Output").
 
 2) Determine the best option to proceed
    - Choose one: implement now, request changes/clarification, defer and create an issue, or escalate (architect/PO/QA).
@@ -83,8 +81,34 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 4) If risk < 5, implement without human-in-the-loop
    - DO NOT COMMIT CHANGES
    - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
+   - Print BOTH blocks in this order:
+     1) Heuristic Checklist Result (see below)
+     2) Decision block (see below)
    - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
-   - Otherwise (risk ≥ 5), then output:
+   - Otherwise (risk ≥ 5):
+     - Print BOTH blocks in this order:
+       1) Heuristic Checklist Result (see below)
+       2) Decision block (see below)
+     - Do not apply/commit; wait for human approval.
+
+### Heuristic Checklist Output (MUST PRINT)
+Print this block exactly once per conversation, before any action or decision output.
+
+BEGIN_HEURISTIC
+Heuristic Checklist Result
+- Locate code: OK | ISSUE: …
+- Read conversation intent: OK | ISSUE: …
+- Already fixed in current code: Yes | No
+- Standards alignment: OK | CONFLICTS: …
+- Pros/cons analyzed: OK | NOTES: …
+- Scope fit (this PR/story): In-scope | Out-of-scope
+- Better/confirming solution: N/A | Brief summary
+- Postpone criteria met: Yes | No (explain)
+- Risk score (1–10): N — one‑sentence rationale
+END_HEURISTIC
+
+### Decision Block (MUST PRINT)
+Print this decision package after the checklist for every conversation.
 ```txt
   Id: "{{thread_id}}"
   Url: "{{thread_url}}"
@@ -98,4 +122,9 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
   2. No, do ... instead
 ```
 
-
+### Output Gate
+- A conversation is considered processed only if:
+  - The Heuristic Checklist Result block was printed, and
+  - The Decision Block was printed, and
+  - Any required thread reply was posted (when applicable).
+- Only then append the conversation ID to `tmp/CONV_ID.txt`.

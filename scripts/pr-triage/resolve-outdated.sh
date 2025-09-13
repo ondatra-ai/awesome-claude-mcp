@@ -9,7 +9,7 @@ if [[ ! -f "$JSON" ]]; then
   exit 1
 fi
 
-IDS=$(jq -r 'map(select( all(.comments[]; .outdated==true) and (.isResolved==false) )) | .[].id' "$JSON")
+IDS=$(jq -r 'map(select((.comments|length)>0 and all(.comments[]; .outdated==true) and (.isResolved==false))) | .[].id' "$JSON")
 COUNT=0
 if [[ -n "$IDS" ]]; then
   while read -r tid; do

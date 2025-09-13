@@ -114,13 +114,13 @@ func processCoverageLine(line string, fileCoverage map[string]*FileCoverage) err
 		return err
 	}
 
-	coverageFlag, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return fmt.Errorf("invalid coverage flag: %w", err)
-	}
+    coverageCount, err := strconv.Atoi(parts[2])
+    if err != nil {
+        return fmt.Errorf("invalid coverage count: %w", err)
+    }
 
-	initializeFileCoverage(fileCoverage, filePath)
-	processLineRange(fileCoverage[filePath], filePath, startLine, endLine, coverageFlag)
+    initializeFileCoverage(fileCoverage, filePath)
+    processLineRange(fileCoverage[filePath], filePath, startLine, endLine, coverageCount)
 
 	return nil
 }
@@ -188,34 +188,34 @@ func initializeFileCoverage(fileCoverage map[string]*FileCoverage, filePath stri
 	}
 }
 
-func processLineRange(coverage *FileCoverage, filePath string, startLine, endLine, coverageFlag int) {
-	sourceLines, err := loadSourceFile(filePath)
-	if err != nil {
-		addBasicLineRange(coverage, startLine, endLine, coverageFlag)
-		return
-	}
+func processLineRange(coverage *FileCoverage, filePath string, startLine, endLine, coverageCount int) {
+    sourceLines, err := loadSourceFile(filePath)
+    if err != nil {
+        addBasicLineRange(coverage, startLine, endLine, coverageCount)
+        return
+    }
 
-	addSmartFilteredLines(coverage, sourceLines, startLine, endLine, coverageFlag)
+    addSmartFilteredLines(coverage, sourceLines, startLine, endLine, coverageCount)
 }
 
-func addBasicLineRange(coverage *FileCoverage, startLine, endLine, coverageFlag int) {
-	for line := startLine; line <= endLine; line++ {
-		coverage.SmartLinesSet[line] = true
-		if coverageFlag == 1 {
-			coverage.SmartCoveredLinesSet[line] = true
-		}
-	}
+func addBasicLineRange(coverage *FileCoverage, startLine, endLine, coverageCount int) {
+    for line := startLine; line <= endLine; line++ {
+        coverage.SmartLinesSet[line] = true
+        if coverageCount > 0 {
+            coverage.SmartCoveredLinesSet[line] = true
+        }
+    }
 }
 
-func addSmartFilteredLines(coverage *FileCoverage, sourceLines []string, startLine, endLine, coverageFlag int) {
-	for line := startLine; line <= endLine; line++ {
-		if isExecutableLine(sourceLines, line) {
-			coverage.SmartLinesSet[line] = true
-			if coverageFlag == 1 {
-				coverage.SmartCoveredLinesSet[line] = true
-			}
-		}
-	}
+func addSmartFilteredLines(coverage *FileCoverage, sourceLines []string, startLine, endLine, coverageCount int) {
+    for line := startLine; line <= endLine; line++ {
+        if isExecutableLine(sourceLines, line) {
+            coverage.SmartLinesSet[line] = true
+            if coverageCount > 0 {
+                coverage.SmartCoveredLinesSet[line] = true
+            }
+        }
+    }
 }
 
 func calculateCoveragePercentages(fileCoverage map[string]*FileCoverage) {

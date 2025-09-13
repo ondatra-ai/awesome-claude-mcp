@@ -60,7 +60,7 @@ flowchart TD
     CheckId -->|Yes| NextConv[Skip to Next Conversation]
     CheckId -->|No| CheckStatus{Is Status = OUTDATED?}
 
-    CheckStatus -->|Yes| ResolveOutdated[Execute: resolve-pr-conversation.ts<br/>with 'Marked as outdated']
+    CheckStatus -->|Yes| ResolveOutdated[Execute: go run scripts/resolve-pr-conversation/main.go<br/>with 'Marked as outdated']
     ResolveOutdated --> NextConv
 
     CheckStatus -->|No| CheckDecision{Check Decision Field}
@@ -117,7 +117,7 @@ flowchart LR
         Rule5 --> ImplementFix
 
         ImplementFix --> CreateComment[Create 7-15 Word Summary<br/>of What Was Fixed]
-        CreateComment --> ResolveConv[Execute: resolve-pr-conversation.ts<br/>CONVERSATION_ID 'Fixed: summar
+        CreateComment --> ResolveConv[Execute: go run scripts/resolve-pr-conversation/main.go<br/>CONVERSATION_ID 'Fixed: summar
 y']
 
     end

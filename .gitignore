@@ -53,7 +53,8 @@ tmp/
 **/.terraform.lock.hcl
 *.tfstate
 *.tfstate.*
-*.tfvars.local
+*.tfvars
+!*.tfvars.example
 crash.log
 *.tfplan
 **/tfplan
