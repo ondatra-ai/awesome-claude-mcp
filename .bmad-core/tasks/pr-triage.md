@@ -33,23 +33,28 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 
 ## Process
 
-1) Read conversations to `tmp/CONV.json`.
+1) Initialization
+   - Delete `tmp/CONV.json` if it exists
+   - Delete `tmp/CONV_ID.txt` if it exists
+   - Delete `tmp/CONV_CURRENT.json` if it exists
+
+2) Read conversations to `tmp/CONV.json`.
    - Run: `go run scripts/list-pr-conversations/main.go tmp/CONV.json [PR_NUMBER]`
    - MUST write the full conversations JSON array to `tmp/CONV.json`.
    - MUST NOT print JSON to standard output.
 
-2) Create `tmp/CONV_ID.txt`.
+3) Create `tmp/CONV_ID.txt`.
    - Initialize file if missing: empty by default.
    - Cleat it if it exists.
    - Purpose: store processed conversation IDs (one per line).
 
-3) Identify the next conversation to process.
+4) Identify the next conversation to process.
    - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
 
-4) Read `tmp/CONV_CURRENT.json`.
+5) Read `tmp/CONV_CURRENT.json`.
    - If it contains `{ "id": "No More Converations" }`, stop.
    - Otherwise, proceed with heuristic analysis for that conversation.
-5) Goto item 3.
+6) Goto item 4.
 
 ## Heuristic analysis
 
