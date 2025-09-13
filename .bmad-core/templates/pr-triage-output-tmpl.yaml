@@ -1,0 +1,22 @@
+# Powered by BMAD™ Core
+schema: pr-triage-output.v1
+thread:
+  id: "{{thread_id}}"
+  url: "{{thread_url}}"
+location:
+  file: "{{file}}"
+  line: {{line}}
+comment: |-
+  {{comment_body}}
+proposed_fix: |-
+  {{proposed_fix}}
+risk:
+  score: {{risk_score}}
+decision: "{{decision}}"
+confirmation:
+  prompt: "Should I proceed with the suggested decision?"
+  options:
+    - "Yes"
+    - "No, do ... instead"
+
+
