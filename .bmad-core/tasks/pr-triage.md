@@ -105,7 +105,6 @@ done
      1) Heuristic Checklist Result (see below)
      2) Low‑Risk Action Block (no prompt; see below)
    - Auto‑apply the change, run validations/tests, post a resolving reply to the thread.
-   - Append the conversation ID to `tmp/CONV_ID.txt`.
 
 5) If risk ≥ 5 (approval required)
    - MUST NOT apply or commit changes.
@@ -113,7 +112,6 @@ done
      1) Heuristic Checklist Result (see below)
      2) Medium/High‑Risk Approval Block (see below)
    - Post a non‑resolving reply summarizing the recommendation and await approval.
-   - Append the conversation ID to `tmp/CONV_ID.txt`.
 
 ### Heuristic Checklist Output (MUST PRINT)
 Print this block exactly once per conversation, before any action or decision output.
@@ -166,10 +164,8 @@ Print this approval package (with question) after the checklist for every medium
   - The Low‑Risk Action Block was printed, and
   - The change was applied + validations run, and
   - A resolving reply was posted to the thread.
-  - Then append the conversation ID to `tmp/CONV_ID.txt`.
 
 - Medium/High risk (risk ≥ 5) conversation is processed only if:
   - The Heuristic Checklist Result block was printed, and
   - The Medium/High‑Risk Approval Block was printed, and
   - A non‑resolving reply was posted to the thread.
-  - Then append the conversation ID to `tmp/CONV_ID.txt`.
