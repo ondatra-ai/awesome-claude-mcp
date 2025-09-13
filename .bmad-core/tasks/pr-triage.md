@@ -1,5 +1,5 @@
 1) Read conversations to `tmp/CONV.json`.
-   - The `main.go` script must be rewritten to write JSON directly to this file instead of standard output.
+   - Run `go run scripts/list-pr-conversations/main.go` (no arguments needed). It MUST write the full JSON array of conversations directly to `tmp/CONV.json` and MUST NOT print the JSON to standard output.
 
 2) Create `tmp/CONV_ID.txt`.
    - This file stores processed conversation IDs (one per line). It is empty by default.

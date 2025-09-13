@@ -7,81 +7,96 @@ import (
     "log"
     "os"
     "os/exec"
+    "path/filepath"
     "sort"
     "strconv"
     "strings"
     "time"
 )
 
-// Comment represents a PR review comment
 type Comment struct {
-	File      *string `json:"file"`
-	Line      *int    `json:"line"`
-	Author    string  `json:"author"`
-	Body      string  `json:"body"`
-	CreatedAt string  `json:"createdAt"`
-	Outdated  bool    `json:"outdated"`
-	Resolved  bool    `json:"resolved"`
-	DiffHunk  string  `json:"diffHunk"`
-	URL       string  `json:"url"`
+    File      *string `json:"file"`
+    Line      *int    `json:"line"`
+    Author    string  `json:"author"`
+    Body      string  `json:"body"`
+    CreatedAt string  `json:"createdAt"`
+    Outdated  bool    `json:"outdated"`
+    Resolved  bool    `json:"resolved"`
+    DiffHunk  string  `json:"diffHunk"`
+    URL       string  `json:"url"`
 }
 
-// Conversation represents a PR review conversation
 type Conversation struct {
-	ID         string    `json:"id"`
-	IsResolved bool      `json:"isResolved"`
-	Comments   []Comment `json:"comments"`
+    ID         string    `json:"id"`
+    IsResolved bool      `json:"isResolved"`
+    Comments   []Comment `json:"comments"`
 }
 
-// CommentNode represents a comment node from GitHub GraphQL API
 type CommentNode struct {
-	Path      *string `json:"path"`
-	Line      *int    `json:"line"`
-	Body      string  `json:"body"`
-	CreatedAt string  `json:"createdAt"`
-	Outdated  bool    `json:"outdated"`
-	DiffHunk  string  `json:"diffHunk"`
-	URL       string  `json:"url"`
-	Author    struct {
-		Login string `json:"login"`
-	} `json:"author"`
+    Path      *string `json:"path"`
+    Line      *int    `json:"line"`
+    Body      string  `json:"body"`
+    CreatedAt string  `json:"createdAt"`
+    Outdated  bool    `json:"outdated"`
+    DiffHunk  string  `json:"diffHunk"`
+    URL       string  `json:"url"`
+    Author    struct {
+        Login string `json:"login"`
+    } `json:"author"`
 }
 
-// ThreadNode represents a review thread from GitHub GraphQL API
 type ThreadNode struct {
-	ID         string `json:"id"`
-	IsResolved bool   `json:"isResolved"`
-	Comments   struct {
-		Nodes []CommentNode `json:"nodes"`
-	} `json:"comments"`
+    ID         string `json:"id"`
+    IsResolved bool   `json:"isResolved"`
+    Comments   struct {
+        Nodes []CommentNode `json:"nodes"`
+    } `json:"comments"`
 }
 
-// GraphQLResponse represents the GitHub GraphQL API response
 type GraphQLResponse struct {
-	Data struct {
-		Repository struct {
-			PullRequest struct {
-				ReviewThreads struct {
-					Nodes []ThreadNode `json:"nodes"`
-				} `json:"reviewThreads"`
-			} `json:"pullRequest"`
-		} `json:"repository"`
-	} `json:"data"`
+    Data struct {
+        Repository struct {
+            PullRequest struct {
+                ReviewThreads struct {
+                    Nodes []ThreadNode `json:"nodes"`
+                } `json:"reviewThreads"`
+            } `json:"pullRequest"`
+        } `json:"repository"`
+    } `json:"data"`
 }
 
-// getPRNumber gets the PR number from command line arguments
-func getPRNumber() string {
-	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "Usage: list-pr-conversations.go [PR_NUMBER]")
-		os.Exit(1)
-	}
-
-	return os.Args[1]
+func repoOwnerAndName() (string, string) {
+    cmd := exec.Command("gh", "repo", "view", "--json", "owner,name", "-q", ".owner.login + \" \" + .name")
+    out, err := cmd.Output()
+    if err != nil {
+        log.Fatalf("failed to get repo info: %v", err)
+    }
+    parts := strings.Split(strings.TrimSpace(string(out)), " ")
+    if len(parts) != 2 {
+        log.Fatalf("unexpected repo info: %s", string(out))
+    }
+    return parts[0], parts[1]
 }
 
-// buildGraphQLQuery builds the GraphQL query for fetching PR review threads
-func buildGraphQLQuery(owner, name string) string {
-    // owner and name are derived from the current repo via gh
+func currentPRNumber() int {
+    if len(os.Args) >= 2 {
+        if n, err := strconv.Atoi(os.Args[1]); err == nil {
+            return n
+        }
+    }
+    cmd := exec.Command("gh", "pr", "view", "--json", "number", "-q", ".number")
+    out, err := cmd.Output()
+    if err != nil {
+        log.Fatalf("failed to detect PR number: %v", err)
+    }
+    n, err := strconv.Atoi(strings.TrimSpace(string(out)))
+    if err != nil {
+        log.Fatalf("invalid PR number: %v", err)
+    }
+    return n
+}
+
+func buildQuery(owner, name string) string {
     return fmt.Sprintf(`
 query($prNumber: Int!) {
   repository(owner: "%s", name: "%s") {
@@ -99,111 +114,80 @@ query($prNumber: Int!) {
               outdated
               diffHunk
               url
-              author {
-                login
-              }
+              author { login }
             }
           }
         }
       }
     }
   }
-}` , owner, name)
+}`, owner, name)
 }
 
-// parseConversations parses the GraphQL response into conversations
-func parseConversations(data GraphQLResponse) []Conversation {
-    var conversations []Conversation
-
-    for _, thread := range data.Data.Repository.PullRequest.ReviewThreads.Nodes {
-        // Include ALL threads (resolved and unresolved) to enable full reporting.
+func toConversations(resp GraphQLResponse) []Conversation {
+    var convs []Conversation
+    for _, t := range resp.Data.Repository.PullRequest.ReviewThreads.Nodes {
         var comments []Comment
-        for _, comment := range thread.Comments.Nodes {
+        for _, c := range t.Comments.Nodes {
             comments = append(comments, Comment{
-                File:      comment.Path,
-                Line:      comment.Line,
-                Author:    comment.Author.Login,
-                Body:      comment.Body,
-                CreatedAt: comment.CreatedAt,
-                Outdated:  comment.Outdated,
-                Resolved:  thread.IsResolved,
-                DiffHunk:  comment.DiffHunk,
-                URL:       comment.URL,
+                File:      c.Path,
+                Line:      c.Line,
+                Author:    c.Author.Login,
+                Body:      c.Body,
+                CreatedAt: c.CreatedAt,
+                Outdated:  c.Outdated,
+                Resolved:  t.IsResolved,
+                DiffHunk:  c.DiffHunk,
+                URL:       c.URL,
             })
         }
-
-        conversations = append(conversations, Conversation{
-            ID:         thread.ID,
-            IsResolved: thread.IsResolved,
+        convs = append(convs, Conversation{
+            ID:         t.ID,
+            IsResolved: t.IsResolved,
             Comments:   comments,
         })
     }
-
-    return conversations
-}
-
-// getPRComments fetches and displays PR comments
-func getPRComments(prNumber string) {
-    // Detect current repo owner/name using gh
-    repoInfoCmd := exec.Command("gh", "repo", "view", "--json", "owner,name", "-q", ".owner.login + \" \" + .name")
-    repoOut, err := repoInfoCmd.Output()
-    if err != nil {
-        log.Fatalf("Error getting repo info: %v", err)
-    }
-    parts := strings.Split(strings.TrimSpace(string(repoOut)), " ")
-    if len(parts) != 2 {
-        log.Fatalf("Unexpected repo info format: %s", string(repoOut))
-    }
-    owner := parts[0]
-    name := parts[1]
-
-    query := buildGraphQLQuery(owner, name)
-
-	// Convert PR number to int to validate it
-	prNum, err := strconv.Atoi(prNumber)
-	if err != nil {
-		log.Fatalf("Invalid PR number: %s", prNumber)
-	}
-
-	// #nosec G204 - query is constructed internally and not from user input
-	cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query, "-F", fmt.Sprintf("prNumber=%d", prNum))
-
-	output, err := cmd.Output()
-	if err != nil {
-		log.Fatalf("Error fetching PR comments: %v", err)
-	}
-
-	var data GraphQLResponse
-	if err := json.Unmarshal(output, &data); err != nil {
-		log.Fatalf("Error parsing response: %v", err)
-	}
-
-	conversations := parseConversations(data)
-
-	// Sort by creation date of first comment in each conversation
-	sort.Slice(conversations, func(index1, index2 int) bool {
-		var aTime, bTime time.Time
-		if len(conversations[index1].Comments) > 0 {
-			aTime, _ = time.Parse(time.RFC3339, conversations[index1].Comments[0].CreatedAt)
-		}
-
-		if len(conversations[index2].Comments) > 0 {
-			bTime, _ = time.Parse(time.RFC3339, conversations[index2].Comments[0].CreatedAt)
-		}
-
-		return aTime.Before(bTime)
-	})
-
-	// Output JSON for programmatic use
-	jsonOutput, err := json.MarshalIndent(conversations, "", "  ")
-	if err != nil {
-		log.Fatalf("Error marshaling conversations: %v", err)
-	}
-
-	fmt.Println(string(jsonOutput))
+    // sort for deterministic order
+    sort.Slice(convs, func(i, j int) bool {
+        var ai, aj time.Time
+        if len(convs[i].Comments) > 0 {
+            ai, _ = time.Parse(time.RFC3339, convs[i].Comments[0].CreatedAt)
+        }
+        if len(convs[j].Comments) > 0 {
+            aj, _ = time.Parse(time.RFC3339, convs[j].Comments[0].CreatedAt)
+        }
+        return ai.Before(aj)
+    })
+    return convs
 }
 
 func main() {
-	prNumber := getPRNumber()
-	getPRComments(prNumber)
+    owner, name := repoOwnerAndName()
+    prNum := currentPRNumber()
+    query := buildQuery(owner, name)
+
+    cmd := exec.Command("gh", "api", "graphql", "-f", "query="+query, "-F", fmt.Sprintf("prNumber=%d", prNum))
+    out, err := cmd.Output()
+    if err != nil {
+        log.Fatalf("failed to query GraphQL API: %v", err)
+    }
+    var resp GraphQLResponse
+    if err := json.Unmarshal(out, &resp); err != nil {
+        log.Fatalf("failed to parse GraphQL response: %v", err)
+    }
+    convs := toConversations(resp)
+
+    // ensure tmp dir
+    if err := os.MkdirAll("tmp", 0o755); err != nil {
+        log.Fatalf("failed to create tmp dir: %v", err)
+    }
+    path := filepath.Join("tmp", "CONV.json")
+    data, err := json.MarshalIndent(convs, "", "  ")
+    if err != nil {
+        log.Fatalf("failed to marshal conversations: %v", err)
+    }
+    if err := os.WriteFile(path, data, 0o644); err != nil {
+        log.Fatalf("failed to write %s: %v", path, err)
+    }
+    // do not print JSON to stdout; writing to file only
 }
