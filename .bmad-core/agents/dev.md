@@ -72,6 +72,7 @@ commands:
   - pr-commit: Execute task `pr-commit.md` to lint, test, then commit and push changes
   - pr-update: Execute task `pr-update.md` to create or update a pull request
   - pr-merge: Execute task `pr-merge.md` to merge the current branch's PR and clean up
+  - pr-conversations-read: Execute task `pr-conversations-read.md` to analyze PR review conversations and generate a report (uses template pr-conversations-report-tmpl.md and checklist pr-conversations-checklist.md)
   - exit: Say goodbye as the Developer, and then abandon inhabiting this persona
 
 dependencies:
@@ -84,4 +85,9 @@ dependencies:
     - pr-commit.md
     - pr-update.md
     - pr-merge.md
+    - pr-conversations-read.md
+  templates:
+    - pr-conversations-report-tmpl.md
+  checklists:
+    - pr-conversations-checklist.md
 ```
