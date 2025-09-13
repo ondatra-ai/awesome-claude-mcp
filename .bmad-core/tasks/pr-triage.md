@@ -54,34 +54,17 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
 5) Read `tmp/CONV_CURRENT.json`.
    - If it contains `{ "id": "No More Converations" }`, stop.
    - Otherwise, proceed with heuristic analysis for that conversation.
-6) Goto item 4.
-
-### Default Behavior: Auto‑Iterate (no prompts)
-
-- The triage run iterates through conversations automatically without pausing between items.
-- Stops only when the selector writes the sentinel `{ "id": "No More Converations" }` or on an error.
-- Per item behavior:
-  - Low risk (<5): apply locally (no commit), post a concise reply on the thread, resolve the thread, append ID to `tmp/CONV_ID.txt`, and continue.
-  - Medium/High (≥5): generate a YAML recommendation using the template, save to `tmp/pr-triage-<THREAD_ID>.yaml`, print it to stdout exactly, post a non‑resolving reply linking the recommendation or summarizing it, append ID to `tmp/CONV_ID.txt`, and continue.
-
-Optional interactive mode (opt‑in)
-
-- To pause for confirmation after each item, set an environment flag or use a wrapper option (suggested):
-
-```bash
-# Example wrapper semantics (optional):
-PR_TRIAGE_INTERACTIVE=1 bash scripts/pr-triage/run.sh
-# or
-scripts/pr-triage/run.sh --interactive
-```
-In interactive mode, the workflow pauses after printing any recommendation (risk ≥ 5) or after a low‑risk change, awaiting user input before proceeding.
+6) Append ID to `tmp/CONV_ID.txt`.
+   - Append processed to `tmp/CONV_ID.txt`.
+7) 
 
 ## Heuristic analysis
-
 1) Perform Heuristic checklist
+   - Output: `Performing Heuristic Analysys for {CONV_ID}`
    - Use `.bmad-core/checklists/triage-heuristic-checklist.md` against the single conversation in `tmp/CONV_CURRENT.json`.
    - Ensure each item is evaluated; record any conflicts or notes.
    - Out Perform Heuristic checklist results
+   - Output result of Heuristic Analysy Checklist.
 
 2) Determine the best option to proceed
    - Choose one: implement now, request changes/clarification, defer and create an issue, or escalate (architect/PO/QA).
@@ -94,27 +77,14 @@ In interactive mode, the workflow pauses after printing any recommendation (risk
    - Record the numeric score and rationale.
 
 4) If risk < 5, implement without human-in-the-loop
-   - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
    - DO NOT COMMIT CHANGES
+   - Conditions: strictly within PR scope, passes checklist alignment, and all tests pass locally.
    - Apply the change, run tests, update the conversation with a concise summary of what changed and why.
-   - Otherwise (risk ≥ 5), produce a YAML recommendation using `bmad-core/templates/pr-triage-output-tmpl.yaml` and both:
-     - Save it to `tmp/pr-triage-<THREAD_ID>.yaml` (exact template fields, no extra keys), and
-     - Print the YAML to stdout exactly as written (no wrappers, banners, or formatting beyond the YAML itself).
+   - Otherwise (risk ≥ 5), produce a YAML recommendation using the inline template (below) and print the YAML to stdout exactly as written (no wrappers, banners, or extra formatting). Do not save to a file.
 
 ### Console Output Requirements (risk ≥ 5)
 
 - Always print the recommendation YAML to the console as-is so reviewers can read it without opening files.
-- The printed content MUST match the file contents byte-for-byte (aside from terminal line endings).
-- Suggested flow:
+- The printed content should be the YAML only (aside from terminal line endings).
+- Example flow:
 
-```bash
-# Prepare recommendation file from template fields
-THREAD_ID=$(jq -r '.id' tmp/CONV_CURRENT.json)
-OUT="tmp/pr-triage-$THREAD_ID.yaml"
-# …generate YAML into "$OUT" using the template fields…
-
-# Print to console exactly (no headers or footers)
-cat "$OUT"
-```
-
-Note: Do not auto-apply or commit medium/high-risk items; wait for explicit human approval after printing the recommendation.
