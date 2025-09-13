@@ -37,31 +37,52 @@ Provide a predictable, file‑based workflow to read all PR conversations once, 
    - Delete `tmp/CONV.json` if it exists
    - Delete `tmp/CONV_ID.txt` if it exists
    - Delete `tmp/CONV_CURRENT.json` if it exists
+   - Create/clear `tmp/CONV_ID.txt` (empty file). Note: Do this ONCE per triage session. Do NOT clear inside the loop.
 
 2) Read conversations to `tmp/CONV.json`.
    - Run: `go run scripts/list-pr-conversations/main.go tmp/CONV.json [PR_NUMBER]`
    - MUST write the full conversations JSON array to `tmp/CONV.json`.
    - MUST NOT print JSON to standard output.
 
-3) Create `tmp/CONV_ID.txt`.
-   - Initialize file if missing: empty by default.
-   - Clear it if it exists.
-   - Purpose: store processed conversation IDs (one per line).
-
-4) Identify the next conversation to process.
+3) Identify the next conversation to process.
    - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
 
-5) Read `tmp/CONV_CURRENT.json`.
+4) Read `tmp/CONV_CURRENT.json`.
    - If it contains `{ "id": "No More Converations" }`, stop.
    - Otherwise, proceed with heuristic analysis for that conversation.
-6) Append ID to `tmp/CONV_ID.txt`.
+5) Append ID to `tmp/CONV_ID.txt`.
    - Append processed to `tmp/CONV_ID.txt`.
-7) Repeat actions 4 → 6 until sentinel appears
+6) Repeat actions 3 → 5 until sentinel appears
    - Ensure any required thread reply was posted (per outcome in Heuristic analysis)
    - Verify the conversation ID was appended to `tmp/CONV_ID.txt` (no duplicates)
    - Run: `go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json`
-   - If `tmp/CONV_CURRENT.json` contains `{ "id": "No More Converations" }`, stop
-   - Otherwise, continue with item 5
+   - If `tmp/CONV_CURRENT.json` contains `{ "id": "No More Converations" }`, stop (do NOT print blocks for the sentinel)
+   - Otherwise, continue with item 4
+
+### Continuous Triage Loop (example)
+```bash
+# One-time initialization (outside loop)
+rm -f tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json
+mkdir -p tmp
+go run scripts/list-pr-conversations/main.go tmp/CONV.json
+: > tmp/CONV_ID.txt
+
+# Loop: identify + analyze + append until sentinel
+while true; do
+  go run scripts/pr-triage/next-pr-conversation.go tmp/CONV.json tmp/CONV_ID.txt tmp/CONV_CURRENT.json
+  if jq -e '.id == "No More Converations"' tmp/CONV_CURRENT.json >/dev/null; then
+    echo "No more conversations."
+    break
+  fi
+
+  # Heuristic analysis (print checklist)
+  # Risk branch: Low (<5) → auto-apply + print Action Block; High (≥5) → print Approval Block
+  # Post required thread reply per branch
+
+  # Append processed ID
+  jq -r '.id' tmp/CONV_CURRENT.json >> tmp/CONV_ID.txt
+done
+```
 
 ## Heuristic analysis
 1) Perform Heuristic checklist
