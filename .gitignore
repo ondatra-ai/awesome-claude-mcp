@@ -56,3 +56,4 @@ tmp/
 *.tfvars.local
 crash.log
 *.tfplan
+**/tfplan
