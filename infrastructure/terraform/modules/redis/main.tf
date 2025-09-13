@@ -1,5 +1,5 @@
 resource "aws_security_group" "redis" {
-  name        = "redis-sg"
+  name        = "${var.name_prefix}-redis-sg"
   description = "Allow access to Redis from ECS services"
   vpc_id      = var.vpc_id
 
@@ -19,12 +19,12 @@ resource "aws_security_group" "redis" {
 }
 
 resource "aws_elasticache_subnet_group" "this" {
-  name       = "redis-subnets"
+  name       = "${var.name_prefix}-redis-subnets"
   subnet_ids = var.private_subnet_ids
 }
 
 resource "aws_elasticache_replication_group" "this" {
-  replication_group_id          = "redis-rg"
+  replication_group_id          = "${var.name_prefix}-redis-rg"
   description                   = "Redis replication group"
   engine                        = "redis"
   engine_version                = var.engine_version

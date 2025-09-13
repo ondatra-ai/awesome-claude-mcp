@@ -62,6 +62,7 @@ module "redis" {
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
   allowed_sg_ids     = [module.ecs.service_sg_id]
+  name_prefix        = var.environment
 }
 
 module "monitoring" {

@@ -30,3 +30,8 @@ variable "num_cache_clusters" {
   type        = number
   default     = 1
 }
+
+variable "name_prefix" {
+  description = "Prefix to ensure Redis resource names are unique per environment (e.g., dev|staging|prod)"
+  type        = string
+}
