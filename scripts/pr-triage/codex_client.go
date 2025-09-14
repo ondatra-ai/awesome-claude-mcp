@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
+    "context"
+    "fmt"
+    "os"
+    "path/filepath"
+    "regexp"
+    "strconv"
+    "strings"
 )
 
 type CodexClient interface {
@@ -25,7 +25,7 @@ func (s *stubCodex) HeuristicAnalysis(ctx context.Context, ctxInput ThreadContex
     if perr != nil {
         return HeuristicAnalysisResult{}, perr
     }
-    out, err := tryCodex(ctx, prompt)
+    out, err := tryCodex(ctx, prompt, PlanMode)
     if err != nil {
         return HeuristicAnalysisResult{}, err
     }
@@ -70,25 +70,38 @@ func (s *stubCodex) ImplementCode(ctx context.Context, ctxInput ThreadContext) (
         "Summarize in one short sentence the minimal low-risk change to address: %q (file %s:%d). Output a single line without quotes.",
         truncate(joinAllComments(ctxInput.Thread), 300), ctxInput.Comment.File, ctxInput.Comment.Line,
     )
-    out, err := tryCodex(ctx, prompt)
-	if err != nil {
-		return "", err
-	}
-	line := strings.TrimSpace(firstLine(out))
-	if line == "" {
-		return "", fmt.Errorf("empty codex response for low-risk summary")
-	}
-	return line, nil
+    out, err := tryCodex(ctx, prompt, ApplyMode)
+    if err != nil {
+        return "", err
+    }
+    line := strings.TrimSpace(firstLine(out))
+    if line == "" {
+        return "", fmt.Errorf("empty codex response for low-risk summary")
+    }
+    return line, nil
 }
 
-// tryCodex executes Codex non-interactively; guard: no fallback
+// Codex execution modes
+type ExecMode string
 
-func tryCodex(ctx context.Context, prompt string) (string, error) {
-	out, err := runShell(ctx, "codex", "exec", prompt)
-	if err != nil {
-		return "", err
-	}
-	return out, nil
+const (
+    PlanMode  ExecMode = "plan"
+    ApplyMode ExecMode = "apply"
+)
+
+// tryCodex executes Codex in plan or apply mode. In apply mode, it disables
+// approvals and grants workspace write access so Codex can apply changes.
+func tryCodex(ctx context.Context, prompt string, mode ExecMode) (string, error) {
+    args := []string{"codex", "exec", prompt}
+    if mode == ApplyMode {
+        // Auto-apply changes with no interactive approvals, limited to workspace writes
+        args = append(args, "--ask-for-approval", "never", "--sandbox", "workspace-write")
+    }
+    out, err := runShell(ctx, args[0], args[1:]...)
+    if err != nil {
+        return "", err
+    }
+    return out, nil
 }
 
 func hasPrefix(s, p string) bool {
