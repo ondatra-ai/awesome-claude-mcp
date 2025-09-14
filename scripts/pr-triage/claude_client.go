@@ -121,10 +121,15 @@ func tryClaude(ctx context.Context, prompt string, mode ExecMode) (string, error
 	fmt.Printf("BEGIN_CLAUDE_RUN\n")
 	fmt.Printf("mode: %s\n", mode)
 
-	args := []string{"claude"}
+	args := []string{"claude", "--print"}
 
-	// Note: Claude Code CLI doesn't support --auto-approve flag
-	// Apply mode will use the same command as plan mode
+	// For apply mode, bypass all permissions to enable automated changes
+	if mode == ApplyMode {
+		args = append(args, "--dangerously-skip-permissions")
+	} else {
+		// For plan mode, use plan permission mode to prevent changes
+		args = append(args, "--permission-mode", "plan")
+	}
 
 	// Execute Claude with prompt via stdin
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
