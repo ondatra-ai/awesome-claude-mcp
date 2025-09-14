@@ -42,9 +42,9 @@ func (r *Runner) Run(ctx context.Context) error {
 				// _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
 				printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
 			} else {
-				fmt.Printf("Apply failed: %v\n", apErr)
+				return fmt.Errorf("apply failed for thread %s: %v", th.ID, apErr)
 			}
-			// continue processing others as needed
+			return nil
 		}
 	}
 	return nil

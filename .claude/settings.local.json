@@ -14,7 +14,9 @@
       "Bash(rm:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(go build:*)",
+      "Bash(go run:*)"
     ],
     "deny": [],
     "ask": []

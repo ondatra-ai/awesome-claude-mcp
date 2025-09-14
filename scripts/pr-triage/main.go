@@ -11,20 +11,29 @@ import (
 // pr-triage CLI entrypoint
 //
 // Flags:
-//   -mode string   triage mode: "heuristic" (default) or "apply"
-//                  Note: current runner prints heuristic for first thread.
-//                        "apply" mode is reserved for future use.
+//   -engine string AI engine: "claude" (default) or "codex"
 func main() {
     log.SetFlags(0)
 
-    mode := flag.String("mode", "heuristic", "triage mode: heuristic|apply")
+    engine := flag.String("engine", "claude", "AI engine: claude|codex")
     flag.Parse()
 
-    // Log selected mode to stderr for visibility without affecting stdout blocks
-    fmt.Fprintf(os.Stderr, "pr-triage mode: %s\n", *mode)
+    // Log selected engine to stderr for visibility without affecting stdout blocks
+    fmt.Fprintf(os.Stderr, "pr-triage engine: %s\n", *engine)
 
     ctx := context.Background()
-    runner := NewRunner(NewGitHubCLIClient(), NewStubCodex())
+
+    var codexClient CodexClient
+    switch *engine {
+    case "claude":
+        codexClient = NewClaudeClient()
+    case "codex":
+        codexClient = NewStubCodex()
+    default:
+        log.Fatalf("unsupported engine: %s (supported: claude, codex)", *engine)
+    }
+
+    runner := NewRunner(NewGitHubCLIClient(), codexClient)
     if err := runner.Run(ctx); err != nil {
         log.Fatalf("triage: %v", err)
     }
