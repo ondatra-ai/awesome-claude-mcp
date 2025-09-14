@@ -39,7 +39,7 @@ func (r *Runner) Run(ctx context.Context) error {
 			if summary, apErr := r.codex.ImplementCode(ctx, tc); apErr == nil {
 				fmt.Printf("Applied code changes; resolving.\n")
 				// Post a concise reply and resolve the thread
-				// _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
+				_ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
 				printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
 			} else {
 				return fmt.Errorf("apply failed for thread %s: %v", th.ID, apErr)
