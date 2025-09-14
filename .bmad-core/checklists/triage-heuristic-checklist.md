@@ -5,12 +5,10 @@
 ## Heuristic Session
 
 - [ ] Locate and review the exact code under discussion
-  - [ ] Open the PR "Files changed" tab and navigate to the referenced file/line(s)
   - [ ] Read ~30 lines around the change for context; scan related functions/modules
   - [ ] If applicable, run the project or tests to reproduce the behavior
 
-- [ ] Read the entire conversation and extract the request
-  - [ ] Read all comments, including resolved and outdated threads
+- [ ] Read all
   - [ ] Summarize the suggested change(s) and intended outcome in one sentence
   - [ ] Note assumptions, open questions, and edge cases mentioned by reviewers
 
