@@ -1,6 +1,6 @@
 # Apply Changes Prompt Template
 
-As @dev implement suggested changes.
+As @dev, implement the suggested changes directly in the repository.
 
 Context:
 - PR Number: {{PR_NUMBER}}
@@ -9,26 +9,13 @@ Context:
 - Conversation Text:
 {{CONVERSATION_TEXT}}
 
-Guidance:
-- Prefer minimal, localized changes within the specified file/location.
-- Keep changes aligned with architecture and coding standards (naming, formatting, module boundaries).
-- If critical uncertainty exists (e.g., naming conventions, missing context), set action to "clarify-then-implement" and craft a precise question in reply_comment; do not produce a patch.
-- If the change is beneficial but out-of-scope or cross-cutting, set action to "create-followup-ticket" and propose a ticket title in reply_comment; do not produce a patch.
-- If you detect architectural/security/performance implications beyond scope, set action to "escalate-architecture" and explain briefly in reply_comment; do not produce a patch.
-- Only include tests_to_run that are relevant and fast (e.g., file-specific unit tests, linters).
+Instructions (Apply Mode):
+- Edit files in this workspace to implement the requested change.
+- Make the smallest, standards-aligned modification at the specified location.
+- Do not output diffs or plans; apply the change directly.
+- After applying, print exactly one short line summarizing what you changed.
+- Do not include code fences, YAML, or multi-line output.
 
-Output example (format guide, not content; DO NOT copy verbatim):
-"""
-  diff --git a/infrastructure/terraform/environments/variables.tf b/infrastructure/terraform/environments/variables.tf
-  index 0000000..0000000 100644
-  --- a/infrastructure/terraform/environments/variables.tf
-  +++ b/infrastructure/terraform/environments/variables.tf
-  @@ -6,6 +6,12 @@ variable "environment" {
-    description = "Environment name (dev|staging|prod)"
-    type        = string
-  +  validation {
-  +    condition     = contains(["dev", "staging", "prod"], var.environment)
-  +    error_message = "environment must be one of: dev, staging, prod."
-  +  }
-   }
-"""
+Notes:
+- Keep changes localized to the referenced file unless strictly necessary.
+- Preserve formatting and surrounding context.
