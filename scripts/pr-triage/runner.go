@@ -36,12 +36,15 @@ func (r *Runner) Run(ctx context.Context) error {
 		// Auto-apply simple fixes for low-risk items
 		if res.Score < 5 {
 			fmt.Printf("Applying code changes\n")
-			summary, _ := r.codex.ImplementCode(ctx, tc)
-			fmt.Printf("Applied code changes; resolving.\n")
-			// Post a concise reply and resolve the thread
-			// _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
-			printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
-			break
+			if summary, apErr := r.codex.ImplementCode(ctx, tc); apErr == nil {
+				fmt.Printf("Applied code changes; resolving.\n")
+				// Post a concise reply and resolve the thread
+				// _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
+				printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
+			} else {
+				fmt.Printf("Apply failed: %v\n", apErr)
+			}
+			// continue processing others as needed
 		}
 	}
 	return nil

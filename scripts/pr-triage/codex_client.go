@@ -1,14 +1,14 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "regexp"
-    "strconv"
-    "strings"
+	"context"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type CodexClient interface {
@@ -97,42 +97,39 @@ const (
 // tryCodex executes Codex in plan or apply mode. In apply mode, it disables
 // approvals and grants workspace write access so Codex can apply changes.
 func tryCodex(ctx context.Context, prompt string, mode ExecMode) (string, error) {
-    args := []string{"codex", "exec", prompt}
-    if mode == ApplyMode {
-        // Auto-apply changes with no interactive approvals, limited to workspace writes
-        args = append(args, "--ask-for-approval", "never", "--sandbox", "workspace-write")
-    }
-    out, err := runShell(ctx, args[0], args[1:]...)
-    // Print structured execution info to help diagnose Codex runs
-    fmt.Printf("BEGIN_CODEX_RUN\n")
-    fmt.Printf("mode: %s\n", mode)
-    // Print only flags, not the full prompt content
-    if mode == ApplyMode {
-        fmt.Printf("flags: --ask-for-approval never --sandbox workspace-write\n")
-    } else {
-        fmt.Printf("flags: (none)\n")
-    }
-    if err != nil {
-        fmt.Printf("exit: %d\n", exitCode(err))
-    } else {
-        fmt.Printf("exit: 0\n")
-    }
-    fmt.Printf("stdout:\n%s\n", strings.TrimSpace(out))
-    fmt.Printf("END_CODEX_RUN\n")
-    if err != nil {
-        return "", err
-    }
-    return out, nil
+	// Prefer global flags before subcommand; use equals syntax for values
+
+	fmt.Printf("BEGIN_CODEX_RUN\n")
+	fmt.Printf("mode: %s\n", mode)
+
+	args := []string{"codex", "exec", prompt}
+
+	if mode == ApplyMode {
+		args = append(args, "--full-auto",)
+	}
+	out, err := runShell(ctx, args[0], args[1:]...)
+
+	if err != nil {
+		fmt.Printf("exit: %d\n", exitCode(err))
+	} else {
+		fmt.Printf("exit: 0\n")
+	}
+	fmt.Printf("stdout:\n%s\n", strings.TrimSpace(out))
+	fmt.Printf("END_CODEX_RUN\n")
+	if err != nil {
+		return "", err
+	}
+	return out, nil
 }
 
 func exitCode(err error) int {
-    if err == nil {
-        return 0
-    }
-    if ee, ok := err.(*exec.ExitError); ok {
-        return ee.ExitCode()
-    }
-    return -1
+	if err == nil {
+		return 0
+	}
+	if ee, ok := err.(*exec.ExitError); ok {
+		return ee.ExitCode()
+	}
+	return -1
 }
 
 func hasPrefix(s, p string) bool {
