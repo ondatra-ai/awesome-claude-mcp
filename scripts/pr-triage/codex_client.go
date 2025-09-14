@@ -1,18 +1,18 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    "path/filepath"
-    "regexp"
-    "strconv"
-    "strings"
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type CodexClient interface {
-    HeuristicAnalysis(ctx context.Context, ctxInput ThreadContext) (HeuristicAnalysisResult, error)
-    ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error)
+	HeuristicAnalysis(ctx context.Context, ctxInput ThreadContext) (HeuristicAnalysisResult, error)
+	ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error)
 }
 
 // stubCodex now attempts Codex CLI with a stub prompt; no fallbacks.
@@ -21,14 +21,14 @@ type stubCodex struct{}
 func NewStubCodex() CodexClient { return &stubCodex{} }
 
 func (s *stubCodex) HeuristicAnalysis(ctx context.Context, ctxInput ThreadContext) (HeuristicAnalysisResult, error) {
-    prompt, perr := buildHeuristicPrompt(ctxInput)
-    if perr != nil {
-        return HeuristicAnalysisResult{}, perr
-    }
-    out, err := tryCodex(ctx, prompt, PlanMode)
-    if err != nil {
-        return HeuristicAnalysisResult{}, err
-    }
+	prompt, perr := buildHeuristicPrompt(ctxInput)
+	if perr != nil {
+		return HeuristicAnalysisResult{}, perr
+	}
+	out, err := tryCodex(ctx, prompt, PlanMode)
+	if err != nil {
+		return HeuristicAnalysisResult{}, err
+	}
 
 	// Extract the most likely final YAML block from Codex output.
 	cleaned := extractFinalYAML(out)
@@ -66,42 +66,42 @@ func (s *stubCodex) HeuristicAnalysis(ctx context.Context, ctxInput ThreadContex
 }
 
 func (s *stubCodex) ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error) {
-    prompt := fmt.Sprintf(
-        "Summarize in one short sentence the minimal low-risk change to address: %q (file %s:%d). Output a single line without quotes.",
-        truncate(joinAllComments(ctxInput.Thread), 300), ctxInput.Comment.File, ctxInput.Comment.Line,
-    )
-    out, err := tryCodex(ctx, prompt, ApplyMode)
-    if err != nil {
-        return "", err
-    }
-    line := strings.TrimSpace(firstLine(out))
-    if line == "" {
-        return "", fmt.Errorf("empty codex response for low-risk summary")
-    }
-    return line, nil
+	prompt, err := buildImplementCodePrompt(ctxInput)
+	fmt.Println("Codex prompt:")
+	fmt.Println("--------------------------------")
+	fmt.Println(prompt)
+	fmt.Println("--------------------------------")
+	if err != nil {
+		return "", err
+	}
+	out, err := tryCodex(ctx, prompt, ApplyMode)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(firstLine(out)), nil
 }
 
 // Codex execution modes
 type ExecMode string
 
 const (
-    PlanMode  ExecMode = "plan"
-    ApplyMode ExecMode = "apply"
+	PlanMode  ExecMode = "plan"
+	ApplyMode ExecMode = "apply"
 )
 
 // tryCodex executes Codex in plan or apply mode. In apply mode, it disables
 // approvals and grants workspace write access so Codex can apply changes.
 func tryCodex(ctx context.Context, prompt string, mode ExecMode) (string, error) {
-    args := []string{"codex", "exec", prompt}
-    if mode == ApplyMode {
-        // Auto-apply changes with no interactive approvals, limited to workspace writes
-        args = append(args, "--ask-for-approval", "never", "--sandbox", "workspace-write")
-    }
-    out, err := runShell(ctx, args[0], args[1:]...)
-    if err != nil {
-        return "", err
-    }
-    return out, nil
+	args := []string{"codex", "exec", prompt}
+	if mode == ApplyMode {
+		// Auto-apply changes with no interactive approvals, limited to workspace writes
+		args = append(args, "--ask-for-approval", "never", "--sandbox", "workspace-write")
+	}
+	out, err := runShell(ctx, args[0], args[1:]...)
+	if err != nil {
+		return "", err
+	}
+	return out, nil
 }
 
 func hasPrefix(s, p string) bool {
@@ -124,40 +124,40 @@ func firstLine(s string) string {
 }
 
 func truncate(s string, max int) string {
-    if len(s) <= max {
-        return s
-    }
-    return s[:max]
+	if len(s) <= max {
+		return s
+	}
+	return s[:max]
 }
 
 // extractFinalYAML attempts to locate the last YAML block starting with
 // a top-level `risk_score:` line in Codex output that may include logs/prose.
 // It returns the substring from that line to the end.
 func extractFinalYAML(s string) string {
-    re := regexp.MustCompile(`(?m)^\s*risk_score\s*:\s*[0-9]+\b`)
-    locs := re.FindAllStringIndex(s, -1)
-    if len(locs) == 0 {
-        return ""
-    }
-    start := locs[len(locs)-1][0]
-    return s[start:]
+	re := regexp.MustCompile(`(?m)^\s*risk_score\s*:\s*[0-9]+\b`)
+	locs := re.FindAllStringIndex(s, -1)
+	if len(locs) == 0 {
+		return ""
+	}
+	start := locs[len(locs)-1][0]
+	return s[start:]
 }
 
-// buildApplyPrompt loads scripts/pr-triage/apply.prompt.tpl and fills placeholders
-// with the given thread context and heuristic YAML.
-func buildApplyPrompt(tc ThreadContext, heur HeuristicAnalysisResult) (string, error) {
-    tplPath := filepath.FromSlash("scripts/pr-triage/apply.prompt.tpl")
-    tplBytes, err := os.ReadFile(tplPath)
-    if err != nil {
-        return "", err
-    }
-    prompt := string(tplBytes)
-    prompt = strings.ReplaceAll(prompt, "{{PR_NUMBER}}", fmt.Sprintf("%d", tc.PRNumber))
-    loc := fmt.Sprintf("%s:%d", tc.Comment.File, tc.Comment.Line)
-    prompt = strings.ReplaceAll(prompt, "{{LOCATION}}", loc)
-    prompt = strings.ReplaceAll(prompt, "{{URL}}", tc.Comment.URL)
-    prompt = strings.ReplaceAll(prompt, "{{CONVERSATION_TEXT}}", joinAllComments(tc.Thread))
-    return prompt, nil
+// buildImplementCodePrompt loads scripts/pr-triage/apply.prompt.tpl and fills
+// placeholders with the given thread context for implementation.
+func buildImplementCodePrompt(tc ThreadContext) (string, error) {
+	tplPath := filepath.FromSlash("scripts/pr-triage/apply.prompt.tpl")
+	tplBytes, err := os.ReadFile(tplPath)
+	if err != nil {
+		return "", err
+	}
+	prompt := string(tplBytes)
+	prompt = strings.ReplaceAll(prompt, "{{PR_NUMBER}}", fmt.Sprintf("%d", tc.PRNumber))
+	loc := fmt.Sprintf("%s:%d", tc.Comment.File, tc.Comment.Line)
+	prompt = strings.ReplaceAll(prompt, "{{LOCATION}}", loc)
+	prompt = strings.ReplaceAll(prompt, "{{URL}}", tc.Comment.URL)
+	prompt = strings.ReplaceAll(prompt, "{{CONVERSATION_TEXT}}", joinAllComments(tc.Thread))
+	return prompt, nil
 }
 
 // heuristicToYAML renders the HeuristicAnalysisResult to a compact YAML block
