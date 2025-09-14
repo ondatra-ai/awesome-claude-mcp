@@ -74,7 +74,11 @@ func (s *stubCodex) ImplementCode(ctx context.Context, ctxInput ThreadContext) (
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("Codex output:")
 	out, err := tryCodex(ctx, prompt, ApplyMode)
+	fmt.Println("--------------------------------")
+	fmt.Println(out)
+	fmt.Println("--------------------------------")
 	if err != nil {
 		return "", err
 	}
