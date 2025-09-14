@@ -11,8 +11,8 @@ import (
 )
 
 type CodexClient interface {
-	HeuristicAnalysis(ctx context.Context, ctxInput ThreadContext) (HeuristicAnalysisResult, error)
-	ImplementLowRisk(ctx context.Context, ctxInput ThreadContext) (string, error)
+    HeuristicAnalysis(ctx context.Context, ctxInput ThreadContext) (HeuristicAnalysisResult, error)
+    ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error)
 }
 
 // stubCodex now attempts Codex CLI with a stub prompt; no fallbacks.
@@ -65,12 +65,12 @@ func (s *stubCodex) HeuristicAnalysis(ctx context.Context, ctxInput ThreadContex
 	return HeuristicAnalysisResult{Score: score, Summary: summary, ProposedActions: actions, Items: items, Alternatives: alts}, nil
 }
 
-func (s *stubCodex) ImplementLowRisk(ctx context.Context, ctxInput ThreadContext) (string, error) {
-	prompt := fmt.Sprintf(
-		"Summarize in one short sentence the minimal low-risk change to address: %q (file %s:%d). Output a single line without quotes.",
-		truncate(joinAllComments(ctxInput.Thread), 300), ctxInput.Comment.File, ctxInput.Comment.Line,
-	)
-	out, err := tryCodex(ctx, prompt)
+func (s *stubCodex) ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error) {
+    prompt := fmt.Sprintf(
+        "Summarize in one short sentence the minimal low-risk change to address: %q (file %s:%d). Output a single line without quotes.",
+        truncate(joinAllComments(ctxInput.Thread), 300), ctxInput.Comment.File, ctxInput.Comment.Line,
+    )
+    out, err := tryCodex(ctx, prompt)
 	if err != nil {
 		return "", err
 	}

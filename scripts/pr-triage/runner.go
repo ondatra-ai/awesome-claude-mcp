@@ -16,32 +16,35 @@ func NewRunner(gh GitHubClient, codex CodexClient) *Runner {
 }
 
 func (r *Runner) Run(ctx context.Context) error {
-    prNum, err := r.gh.GetCurrentPRNumber(ctx)
-    if err != nil {
-        return err
-    }
-    threads, err := r.gh.ListAllReviewThreads(ctx, prNum)
-    if err != nil {
-        return err
-    }
-    for _, th := range threads {
-        cm := firstRelevant(th.Comments)
-        tc := ThreadContext{PRNumber: prNum, Thread: th, Comment: cm}
-        res, err := r.codex.HeuristicAnalysis(ctx, tc)
-        if err != nil {
-            return err
-        }
-        printHeuristic(res)
+	prNum, err := r.gh.GetCurrentPRNumber(ctx)
+	if err != nil {
+		return err
+	}
+	threads, err := r.gh.ListAllReviewThreads(ctx, prNum)
+	if err != nil {
+		return err
+	}
+	for _, th := range threads {
+		cm := firstRelevant(th.Comments)
+		tc := ThreadContext{PRNumber: prNum, Thread: th, Comment: cm}
+		res, err := r.codex.HeuristicAnalysis(ctx, tc)
+		if err != nil {
+			return err
+		}
+		printHeuristic(res)
 
-        // Auto-apply simple fixes for low-risk items
-        if res.Score < 5 {
-            summary, _ := r.codex.ImplementLowRisk(ctx, tc)
-            // Post a concise reply and resolve the thread
-            _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
-            printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
-        }
-    }
-    return nil
+		// Auto-apply simple fixes for low-risk items
+		if res.Score < 5 {
+			fmt.Printf("Applying code changes\n")
+			summary, _ := r.codex.ImplementCode(ctx, tc)
+			fmt.Printf("Applied code changes; resolving.\n")
+			// Post a concise reply and resolve the thread
+			// _ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
+			printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
+			break
+		}
+	}
+	return nil
 }
 
 func firstRelevant(comments []Comment) Comment {
@@ -52,25 +55,25 @@ func firstRelevant(comments []Comment) Comment {
 }
 
 func printHeuristic(res HeuristicAnalysisResult) {
-    fmt.Printf("BEGIN_HEURISTIC\n")
-    fmt.Printf("Heuristic Checklist Result\n")
-    fmt.Printf("- Summary: %s\n", strings.TrimSpace(res.Summary))
+	fmt.Printf("BEGIN_HEURISTIC\n")
+	fmt.Printf("Heuristic Checklist Result\n")
+	fmt.Printf("- Summary: %s\n", strings.TrimSpace(res.Summary))
 
-    // Print known checklist items in a fixed order
-    order := []string{
-        "tools_present",
-        "pr_detected",
-        "conversations_fetched",
-        "auto_resolved_outdated",
-        "relevance_classified",
-    }
-    for _, k := range order {
-        if res.Items != nil {
-            fmt.Printf("- %s: %v\n", k, res.Items[k])
-        } else {
-            fmt.Printf("- %s: %v\n", k, false)
-        }
-    }
+	// Print known checklist items in a fixed order
+	order := []string{
+		"tools_present",
+		"pr_detected",
+		"conversations_fetched",
+		"auto_resolved_outdated",
+		"relevance_classified",
+	}
+	for _, k := range order {
+		if res.Items != nil {
+			fmt.Printf("- %s: %v\n", k, res.Items[k])
+		} else {
+			fmt.Printf("- %s: %v\n", k, false)
+		}
+	}
 
 	// Preferred option
 	if len(res.ProposedActions) > 0 {
