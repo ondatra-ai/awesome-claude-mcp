@@ -9,10 +9,11 @@ type Thread struct {
 
 // Comment represents a single comment in a review thread.
 type Comment struct {
-	File string `json:"file"`
-	Line int    `json:"line"`
-	URL  string `json:"url"`
-	Body string `json:"body"`
+	File     string `json:"file"`
+	Line     int    `json:"line"`
+	URL      string `json:"url"`
+	Body     string `json:"body"`
+	Outdated bool   `json:"outdated"`
 }
 
 // HeuristicAnalysisResult captures the heuristic assessment outcome from Codex.

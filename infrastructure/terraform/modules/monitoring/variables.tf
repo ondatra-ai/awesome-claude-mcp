@@ -1,3 +1,8 @@
+variable "cluster_name" {
+  description = "ECS Cluster name for dashboard metrics"
+  type        = string
+}
+
 variable "log_retention_days" {
   description = "CloudWatch Logs retention period"
   type        = number

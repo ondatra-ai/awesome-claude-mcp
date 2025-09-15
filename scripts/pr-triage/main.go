@@ -6,6 +6,8 @@ import (
     "fmt"
     "log"
     "os"
+    "os/signal"
+    "syscall"
 )
 
 // pr-triage CLI entrypoint
@@ -21,7 +23,8 @@ func main() {
     // Log selected engine to stderr for visibility without affecting stdout blocks
     fmt.Fprintf(os.Stderr, "pr-triage engine: %s\n", *engine)
 
-    ctx := context.Background()
+    ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+    defer stop()
 
     var codexClient CodexClient
     switch *engine {

@@ -32,9 +32,17 @@ variable "max_count_frontend" {
 variable "min_count_backend" {
   description = "Min tasks for backend"
   type        = number
+  validation {
+    condition     = var.min_count_backend >= 0 && var.min_count_backend <= var.max_count_backend
+    error_message = "min_count_backend must be >= 0 and <= max_count_backend."
+  }
 }
 
 variable "max_count_backend" {
   description = "Max tasks for backend"
   type        = number
+  validation {
+    condition     = var.max_count_backend >= var.min_count_backend
+    error_message = "max_count_backend must be >= min_count_backend."
+  }
 }

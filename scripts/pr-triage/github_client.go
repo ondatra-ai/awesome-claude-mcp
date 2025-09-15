@@ -10,9 +10,9 @@ import (
 )
 
 type GitHubClient interface {
-    GetCurrentPRNumber(ctx context.Context) (int, error)
-    ListAllReviewThreads(ctx context.Context, prNumber int) ([]Thread, error)
-    ResolveReply(ctx context.Context, threadID, body string, resolve bool) error
+	GetCurrentPRNumber(ctx context.Context) (int, error)
+	ListAllReviewThreads(ctx context.Context, prNumber int) ([]Thread, error)
+	ResolveReply(ctx context.Context, threadID, body string, resolve bool) error
 }
 
 type ghCLIClient struct{}
@@ -48,58 +48,59 @@ func (c *ghCLIClient) GetCurrentPRNumber(ctx context.Context) (int, error) {
 }
 
 func (c *ghCLIClient) ListAllReviewThreads(ctx context.Context, prNumber int) ([]Thread, error) {
-    owner, name, err := repoOwnerAndName(ctx)
-    if err != nil {
-        return nil, err
-    }
-    // Fetch ALL review threads (paginated)
-    var all []Thread
-    after := ""
-    for {
-        query := buildThreadsPageQuery(owner, name)
-        args := []string{"gh", "api", "graphql", "-f", "query=" + query, "-F", fmt.Sprintf("prNumber=%d", prNumber)}
-        if after != "" {
-            args = append(args, "-F", "after="+after)
-        }
-        out, err := runShell(ctx, args[0], args[1:]...)
-        if err != nil {
-            return nil, fmt.Errorf("graphql list threads: %w, out=%s", err, out)
-        }
-        var page threadsPageResponse
-        if err := json.Unmarshal([]byte(out), &page); err != nil {
-            return nil, fmt.Errorf("parse threads page: %w", err)
-        }
-        for _, tn := range page.Data.Repository.PullRequest.ReviewThreads.Nodes {
-            var cs []Comment
-            for _, c := range tn.Comments.Nodes {
-                if c.Outdated {
-                    continue
-                }
-                file := ""
-                line := 0
-                if c.Path != nil { file = *c.Path }
-                if c.Line != nil { line = *c.Line }
-                cs = append(cs, Comment{File: file, Line: line, URL: c.URL, Body: c.Body})
-            }
-            all = append(all, Thread{ID: tn.ID, IsResolved: tn.IsResolved, Comments: cs})
-        }
-        if page.Data.Repository.PullRequest.ReviewThreads.PageInfo.HasNextPage && page.Data.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor != nil {
-            after = *page.Data.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor
-            continue
-        }
-        break
-    }
-    // Filter after complete pagination: collect all unresolved threads with at least one non-outdated comment
-    var eligible []Thread
-    for _, th := range all {
-        if !th.IsResolved && len(th.Comments) > 0 {
-            eligible = append(eligible, th)
-        }
-    }
-    if len(eligible) == 0 {
-        return nil, fmt.Errorf("no eligible review threads found for PR %d", prNumber)
-    }
-    return eligible, nil
+	owner, name, err := repoOwnerAndName(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Fetch ALL review threads (paginated)
+	var all []Thread
+	after := ""
+	for {
+		query := buildThreadsPageQuery(owner, name)
+		args := []string{"gh", "api", "graphql", "-f", "query=" + query, "-F", fmt.Sprintf("prNumber=%d", prNumber)}
+		if after != "" {
+			args = append(args, "-F", "after="+after)
+		}
+		out, err := runShell(ctx, args[0], args[1:]...)
+		if err != nil {
+			return nil, fmt.Errorf("graphql list threads: %w, out=%s", err, out)
+		}
+		var page threadsPageResponse
+		if err := json.Unmarshal([]byte(out), &page); err != nil {
+			return nil, fmt.Errorf("parse threads page: %w", err)
+		}
+		for _, tn := range page.Data.Repository.PullRequest.ReviewThreads.Nodes {
+			var cs []Comment
+			for _, c := range tn.Comments.Nodes {
+				file := ""
+				line := 0
+				if c.Path != nil {
+					file = *c.Path
+				}
+				if c.Line != nil {
+					line = *c.Line
+				}
+				cs = append(cs, Comment{File: file, Line: line, URL: c.URL, Body: c.Body, Outdated: c.Outdated})
+			}
+			all = append(all, Thread{ID: tn.ID, IsResolved: tn.IsResolved, Comments: cs})
+		}
+		if page.Data.Repository.PullRequest.ReviewThreads.PageInfo.HasNextPage && page.Data.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor != nil {
+			after = *page.Data.Repository.PullRequest.ReviewThreads.PageInfo.EndCursor
+			continue
+		}
+		break
+	}
+	// Filter after complete pagination: collect all unresolved threads with at least one non-outdated comment
+	var eligible []Thread
+	for _, th := range all {
+		if !th.IsResolved && len(th.Comments) > 0 {
+			eligible = append(eligible, th)
+		}
+	}
+	if len(eligible) == 0 {
+		return nil, fmt.Errorf("no eligible review threads found for PR %d", prNumber)
+	}
+	return eligible, nil
 }
 
 func (c *ghCLIClient) ResolveReply(ctx context.Context, threadID, body string, resolve bool) error {
@@ -157,56 +158,56 @@ type threadNode struct {
 }
 
 type commentNode struct {
-    Path     *string `json:"path"`
-    Line     *int    `json:"line"`
-    Body     string  `json:"body"`
-    Outdated bool    `json:"outdated"`
-    URL      string  `json:"url"`
+	Path     *string `json:"path"`
+	Line     *int    `json:"line"`
+	Body     string  `json:"body"`
+	Outdated bool    `json:"outdated"`
+	URL      string  `json:"url"`
 }
 
 // pageInfo supports pagination cursors
 type pageInfo struct {
-    HasNextPage bool    `json:"hasNextPage"`
-    EndCursor   *string `json:"endCursor"`
+	HasNextPage bool    `json:"hasNextPage"`
+	EndCursor   *string `json:"endCursor"`
 }
 
 // threadsPageResponse is a minimal GraphQL response shape for paginating threads
 type threadsPageResponse struct {
-    Data struct {
-        Repository struct {
-            PullRequest struct {
-                ReviewThreads struct {
-                    PageInfo pageInfo `json:"pageInfo"`
-                    Nodes    []struct {
-                        ID         string `json:"id"`
-                        IsResolved bool   `json:"isResolved"`
-                        Comments   struct {
-                            Nodes []commentNode `json:"nodes"`
-                        } `json:"comments"`
-                    } `json:"nodes"`
-                } `json:"reviewThreads"`
-            } `json:"pullRequest"`
-        } `json:"repository"`
-    } `json:"data"`
+	Data struct {
+		Repository struct {
+			PullRequest struct {
+				ReviewThreads struct {
+					PageInfo pageInfo `json:"pageInfo"`
+					Nodes    []struct {
+						ID         string `json:"id"`
+						IsResolved bool   `json:"isResolved"`
+						Comments   struct {
+							Nodes []commentNode `json:"nodes"`
+						} `json:"comments"`
+					} `json:"nodes"`
+				} `json:"reviewThreads"`
+			} `json:"pullRequest"`
+		} `json:"repository"`
+	} `json:"data"`
 }
 
 // commentsPage models the response for fetching a page of comments for a thread by node id
 type commentsPage struct {
-    Data struct {
-        Node struct {
-            ID        string `json:"id"`
-            IsResolved bool  `json:"isResolved"`
-            Comments  struct {
-                PageInfo pageInfo      `json:"pageInfo"`
-                Nodes    []commentNode `json:"nodes"`
-            } `json:"comments"`
-        } `json:"node"`
-    } `json:"data"`
+	Data struct {
+		Node struct {
+			ID         string `json:"id"`
+			IsResolved bool   `json:"isResolved"`
+			Comments   struct {
+				PageInfo pageInfo      `json:"pageInfo"`
+				Nodes    []commentNode `json:"nodes"`
+			} `json:"comments"`
+		} `json:"node"`
+	} `json:"data"`
 }
 
 // buildThreadsPageQuery returns a query that supports pagination via $after
 func buildThreadsPageQuery(owner, name string) string {
-    return fmt.Sprintf(`
+	return fmt.Sprintf(`
 query($prNumber: Int!, $after: String) {
   repository(owner: "%s", name: "%s") {
     pullRequest(number: $prNumber) {
@@ -227,7 +228,7 @@ query($prNumber: Int!, $after: String) {
 
 // buildCommentsPageQuery fetches comments for a thread by node id with pagination
 func buildCommentsPageQuery() string {
-    return `
+	return `
 query($tid: ID!, $after: String) {
   node(id: $tid) {
     ... on PullRequestReviewThread {
@@ -244,47 +245,47 @@ query($tid: ID!, $after: String) {
 
 // fetchAllComments retrieves all non-outdated comments for a given thread id
 func fetchAllComments(ctx context.Context, threadID string) ([]Comment, error) {
-    var all []Comment
-    after := ""
-    query := buildCommentsPageQuery()
-    for {
-        args := []string{"gh", "api", "graphql", "-f", "query=" + query, "-F", "tid=" + threadID}
-        if after != "" {
-            args = append(args, "-F", "after="+after)
-        }
-        out, err := runShell(ctx, args[0], args[1:]...)
-        if err != nil {
-            return nil, fmt.Errorf("comments page: %w, out=%s", err, out)
-        }
-        var page commentsPage
-        if err := json.Unmarshal([]byte(out), &page); err != nil {
-            return nil, fmt.Errorf("parse comments page: %w", err)
-        }
-        for _, c := range page.Data.Node.Comments.Nodes {
-            if c.Outdated {
-                continue
-            }
-            file := ""
-            line := 0
-            if c.Path != nil {
-                file = *c.Path
-            }
-            if c.Line != nil {
-                line = *c.Line
-            }
-            all = append(all, Comment{File: file, Line: line, URL: c.URL, Body: c.Body})
-        }
-        if page.Data.Node.Comments.PageInfo.HasNextPage && page.Data.Node.Comments.PageInfo.EndCursor != nil {
-            after = *page.Data.Node.Comments.PageInfo.EndCursor
-            continue
-        }
-        break
-    }
-    return all, nil
+	var all []Comment
+	after := ""
+	query := buildCommentsPageQuery()
+	for {
+		args := []string{"gh", "api", "graphql", "-f", "query=" + query, "-F", "tid=" + threadID}
+		if after != "" {
+			args = append(args, "-F", "after="+after)
+		}
+		out, err := runShell(ctx, args[0], args[1:]...)
+		if err != nil {
+			return nil, fmt.Errorf("comments page: %w, out=%s", err, out)
+		}
+		var page commentsPage
+		if err := json.Unmarshal([]byte(out), &page); err != nil {
+			return nil, fmt.Errorf("parse comments page: %w", err)
+		}
+		for _, c := range page.Data.Node.Comments.Nodes {
+			if c.Outdated {
+				continue
+			}
+			file := ""
+			line := 0
+			if c.Path != nil {
+				file = *c.Path
+			}
+			if c.Line != nil {
+				line = *c.Line
+			}
+			all = append(all, Comment{File: file, Line: line, URL: c.URL, Body: c.Body})
+		}
+		if page.Data.Node.Comments.PageInfo.HasNextPage && page.Data.Node.Comments.PageInfo.EndCursor != nil {
+			after = *page.Data.Node.Comments.PageInfo.EndCursor
+			continue
+		}
+		break
+	}
+	return all, nil
 }
 
 func buildQuery(owner, name string) string {
-    return fmt.Sprintf(`
+	return fmt.Sprintf(`
 query($prNumber: Int!) {
   repository(owner: "%s", name: "%s") {
     pullRequest(number: $prNumber) {
@@ -311,17 +312,17 @@ query($prNumber: Int!) {
 }
 
 func toThreads(resp graphQLResponse) []Thread {
-    var out []Thread
-    for _, t := range resp.Data.Repository.PullRequest.ReviewThreads.Nodes {
-        // Skip resolved threads; we only want active conversations
-        if t.IsResolved {
-            continue
-        }
-        var cs []Comment
-        for _, c := range t.Comments.Nodes {
-            if c.Outdated {
-                continue
-            }
+	var out []Thread
+	for _, t := range resp.Data.Repository.PullRequest.ReviewThreads.Nodes {
+		// Skip resolved threads; we only want active conversations
+		if t.IsResolved {
+			continue
+		}
+		var cs []Comment
+		for _, c := range t.Comments.Nodes {
+			if c.Outdated {
+				continue
+			}
 			file := ""
 			line := 0
 			if c.Path != nil {

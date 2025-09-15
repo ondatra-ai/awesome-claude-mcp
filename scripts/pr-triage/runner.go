@@ -26,6 +26,9 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	for _, th := range threads {
 		cm := firstRelevant(th.Comments)
+		if cm.Outdated {
+			r.gh.ResolveReply(ctx, th.ID, "This thread resolved as outdated.", true)
+		}
 		tc := ThreadContext{PRNumber: prNum, Thread: th, Comment: cm}
 		res, err := r.codex.HeuristicAnalysis(ctx, tc)
 		if err != nil {
@@ -44,7 +47,6 @@ func (r *Runner) Run(ctx context.Context) error {
 			} else {
 				return fmt.Errorf("apply failed for thread %s: %v", th.ID, apErr)
 			}
-			return nil
 		}
 	}
 	return nil

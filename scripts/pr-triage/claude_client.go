@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -25,7 +26,7 @@ func (c *claudeClient) HeuristicAnalysis(ctx context.Context, ctxInput ThreadCon
 
 	// If Claude returns empty output, provide a default fallback response
 	if strings.TrimSpace(out) == "" {
-		fmt.Printf("Claude returned empty output, using fallback response\n")
+		fmt.Fprintln(os.Stderr, "Claude returned empty output, using fallback response")
 		return HeuristicAnalysisResult{
 			Score:           5, // Medium risk to require approval
 			Summary:         "Claude analysis unavailable - manual review required",
@@ -52,29 +53,29 @@ func (c *claudeClient) HeuristicAnalysis(ctx context.Context, ctxInput ThreadCon
 	// Try to parse YAML, but provide fallbacks if parsing fails
 	score, serr := parseRiskFromYAML(cleaned)
 	if serr != nil {
-		fmt.Printf("Failed to parse risk_score from Claude output, using fallback: %v\n", serr)
+		fmt.Fprintf(os.Stderr, "Failed to parse risk_score from Claude output, using fallback: %v\n", serr)
 		score = 5 // Default to medium risk
 	}
 	if score < 1 || score > 10 {
-		fmt.Printf("Invalid risk_score %d, using fallback\n", score)
+		fmt.Fprintf(os.Stderr, "Invalid risk_score %d, using fallback\n", score)
 		score = 5
 	}
 
 	actions, aerr := parseActionsFromYAML(cleaned)
 	if aerr != nil {
-		fmt.Printf("Failed to parse actions from Claude output: %v\n", aerr)
+		fmt.Fprintf(os.Stderr, "Failed to parse actions from Claude output: %v\n", aerr)
 		actions = []string{"manual-review"}
 	}
 
 	summary, serr2 := parseSummaryFromYAML(cleaned)
 	if serr2 != nil || strings.TrimSpace(summary) == "" {
-		fmt.Printf("Failed to parse summary from Claude output: %v\n", serr2)
+		fmt.Fprintf(os.Stderr, "Failed to parse summary from Claude output: %v\n", serr2)
 		summary = "Claude analysis parsing failed - see raw output above"
 	}
 
 	items, ierr := parseItemsFromYAML(cleaned)
 	if ierr != nil {
-		fmt.Printf("Failed to parse items from Claude output: %v\n", ierr)
+		fmt.Fprintf(os.Stderr, "Failed to parse items from Claude output: %v\n", ierr)
 		items = map[string]bool{
 			"tools_present":            false,
 			"pr_detected":              true,
@@ -86,7 +87,7 @@ func (c *claudeClient) HeuristicAnalysis(ctx context.Context, ctxInput ThreadCon
 
 	alts, alterr := parseAlternativesFromYAML(cleaned)
 	if alterr != nil {
-		fmt.Printf("Failed to parse alternatives from Claude output: %v\n", alterr)
+		fmt.Fprintf(os.Stderr, "Failed to parse alternatives from Claude output: %v\n", alterr)
 		alts = []map[string]string{
 			{"option": "manual-review", "why": "YAML parsing failed, requires human evaluation"},
 		}
@@ -97,18 +98,18 @@ func (c *claudeClient) HeuristicAnalysis(ctx context.Context, ctxInput ThreadCon
 
 func (c *claudeClient) ImplementCode(ctx context.Context, ctxInput ThreadContext) (string, error) {
 	prompt, err := buildImplementCodePrompt(ctxInput)
-	fmt.Println("Claude prompt:")
-	fmt.Println("--------------------------------")
-	fmt.Println(prompt)
-	fmt.Println("--------------------------------")
+	fmt.Fprintln(os.Stderr, "Claude prompt:")
+	fmt.Fprintln(os.Stderr, "--------------------------------")
+	fmt.Fprintln(os.Stderr, prompt)
+	fmt.Fprintln(os.Stderr, "--------------------------------")
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("Claude output:")
+	fmt.Fprintln(os.Stderr, "Claude output:")
 	out, err := tryClaude(ctx, prompt, ApplyMode)
-	fmt.Println("--------------------------------")
-	fmt.Println(out)
-	fmt.Println("--------------------------------")
+	fmt.Fprintln(os.Stderr, "--------------------------------")
+	fmt.Fprintln(os.Stderr, out)
+	fmt.Fprintln(os.Stderr, "--------------------------------")
 	if err != nil {
 		return "", err
 	}
@@ -118,8 +119,8 @@ func (c *claudeClient) ImplementCode(ctx context.Context, ctxInput ThreadContext
 // tryClaude executes Claude Code CLI in plan or apply mode. In apply mode, it enables
 // auto-approval and grants workspace write access so Claude can apply changes.
 func tryClaude(ctx context.Context, prompt string, mode ExecMode) (string, error) {
-	fmt.Printf("BEGIN_CLAUDE_RUN\n")
-	fmt.Printf("mode: %s\n", mode)
+	fmt.Fprintln(os.Stderr, "BEGIN_CLAUDE_RUN")
+	fmt.Fprintf(os.Stderr, "mode: %s\n", mode)
 
 	args := []string{"claude", "--print"}
 
@@ -138,14 +139,14 @@ func tryClaude(ctx context.Context, prompt string, mode ExecMode) (string, error
 	out, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("exit: %d\n", exitCode(err))
+		fmt.Fprintf(os.Stderr, "exit: %d\n", exitCode(err))
 	} else {
-		fmt.Printf("exit: 0\n")
+		fmt.Fprintln(os.Stderr, "exit: 0")
 	}
 
 	result := strings.TrimSpace(string(out))
-	fmt.Printf("stdout:\n%s\n", result)
-	fmt.Printf("END_CLAUDE_RUN\n")
+	fmt.Fprintf(os.Stderr, "stdout:\n%s\n", result)
+	fmt.Fprintln(os.Stderr, "END_CLAUDE_RUN")
 
 	if err != nil {
 		return "", err
@@ -165,8 +166,8 @@ type claudeMessage struct {
 
 // tryClaudeJSON uses Claude Code CLI with JSON input format for more control
 func tryClaudeJSON(ctx context.Context, prompt string, mode ExecMode) (string, error) {
-	fmt.Printf("BEGIN_CLAUDE_JSON_RUN\n")
-	fmt.Printf("mode: %s\n", mode)
+	fmt.Fprintln(os.Stderr, "BEGIN_CLAUDE_JSON_RUN")
+	fmt.Fprintf(os.Stderr, "mode: %s\n", mode)
 
 	// Prepare the JSON request
 	req := claudeJSONRequest{
@@ -184,26 +185,24 @@ func tryClaudeJSON(ctx context.Context, prompt string, mode ExecMode) (string, e
 	}
 
 	args := []string{"claude", "--json"}
-	if mode == ApplyMode {
-		args = append(args, "--auto-approve")
-	}
+	// no extra flags; apply uses same command as plan
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Stdin = strings.NewReader(string(jsonBytes))
 
 	out, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("exit: %d\n", exitCode(err))
+		fmt.Fprintf(os.Stderr, "exit: %d\n", exitCode(err))
 		if ee, ok := err.(*exec.ExitError); ok {
-			fmt.Printf("stderr: %s\n", string(ee.Stderr))
+			fmt.Fprintf(os.Stderr, "stderr: %s\n", string(ee.Stderr))
 		}
 	} else {
-		fmt.Printf("exit: 0\n")
+		fmt.Fprintln(os.Stderr, "exit: 0")
 	}
 
 	result := strings.TrimSpace(string(out))
-	fmt.Printf("stdout:\n%s\n", result)
-	fmt.Printf("END_CLAUDE_JSON_RUN\n")
+	fmt.Fprintf(os.Stderr, "stdout:\n%s\n", result)
+	fmt.Fprintln(os.Stderr, "END_CLAUDE_JSON_RUN")
 
 	if err != nil {
 		return "", err

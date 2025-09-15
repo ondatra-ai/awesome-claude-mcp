@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CodexClient interface {
@@ -59,10 +60,7 @@ func (s *stubCodex) HeuristicAnalysis(ctx context.Context, ctxInput ThreadContex
 	if ierr != nil {
 		return HeuristicAnalysisResult{}, ierr
 	}
-	alts, alterr := parseAlternativesFromYAML(cleaned)
-	if alterr != nil {
-		return HeuristicAnalysisResult{}, alterr
-	}
+	alts, _ := parseAlternativesFromYAML(cleaned)
 	return HeuristicAnalysisResult{Score: score, Summary: summary, ProposedActions: actions, Items: items, Alternatives: alts}, nil
 }
 
@@ -97,25 +95,38 @@ const (
 // tryCodex executes Codex in plan or apply mode. In apply mode, it disables
 // approvals and grants workspace write access so Codex can apply changes.
 func tryCodex(ctx context.Context, prompt string, mode ExecMode) (string, error) {
-	// Prefer global flags before subcommand; use equals syntax for values
+	// Ensure bounded execution if caller didn't set a deadline.
+	if _, ok := ctx.Deadline(); !ok {
+		d := 30 * time.Second
+		if mode == ApplyMode {
+			d = 2 * time.Minute
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, d)
+		defer cancel()
+	}
 
-	fmt.Printf("BEGIN_CODEX_RUN\n")
-	fmt.Printf("mode: %s\n", mode)
+	if debugEnabled() {
+		fmt.Printf("BEGIN_CODEX_RUN\n")
+		fmt.Printf("mode: %s\n", mode)
+	}
 
-	args := []string{"codex", "exec", prompt}
+	args := []string{"exec"}
 
 	if mode == ApplyMode {
-		args = append(args, "--full-auto",)
+		args = append(args, "--full-auto")
 	}
-	out, err := runShell(ctx, args[0], args[1:]...)
+	out, err := runShellWithStdin(ctx, "codex", prompt, args...)
 
-	if err != nil {
-		fmt.Printf("exit: %d\n", exitCode(err))
-	} else {
-		fmt.Printf("exit: 0\n")
+	if debugEnabled() {
+		if err != nil {
+			fmt.Printf("exit: %d\n", exitCode(err))
+		} else {
+			fmt.Printf("exit: 0\n")
+		}
+		fmt.Printf("stdout:\n%s\n", strings.TrimSpace(truncate(out, 4096)))
+		fmt.Printf("END_CODEX_RUN\n")
 	}
-	fmt.Printf("stdout:\n%s\n", strings.TrimSpace(out))
-	fmt.Printf("END_CODEX_RUN\n")
 	if err != nil {
 		return "", err
 	}
@@ -156,6 +167,10 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max]
+}
+
+func debugEnabled() bool {
+	return os.Getenv("DEBUG") != ""
 }
 
 // extractFinalYAML attempts to locate the last YAML block starting with
@@ -291,7 +306,11 @@ func parseItemsFromYAML(yaml string) (map[string]bool, error) {
 				key := strings.TrimSpace(parts[0])
 				val := strings.TrimSpace(parts[1])
 				val = strings.Trim(val, "\"'")
-				b := val == "true"
+				lv := strings.ToLower(val)
+				if lv != "true" && lv != "false" {
+					return nil, fmt.Errorf("items[%s] must be boolean, got %q", key, val)
+				}
+				b := lv == "true"
 				items[key] = b
 			}
 		}
@@ -299,6 +318,16 @@ func parseItemsFromYAML(yaml string) (map[string]bool, error) {
 	// minimal sanity
 	if len(items) == 0 {
 		return nil, fmt.Errorf("items block not found or empty")
+	}
+	// Ensure all required keys are present.
+	required := []string{
+		"tools_present", "pr_detected", "conversations_fetched",
+		"auto_resolved_outdated", "relevance_classified", "human_approval_needed",
+	}
+	for _, k := range required {
+		if _, ok := items[k]; !ok {
+			return nil, fmt.Errorf("missing items.%s", k)
+		}
 	}
 	return items, nil
 }
@@ -351,8 +380,8 @@ func parseAlternativesFromYAML(yaml string) ([]map[string]string, error) {
 		alts = append(alts, current)
 	}
 	// Deduplicate by option name while preserving order
-	if len(alts) == 0 {
-		return nil, fmt.Errorf("alternatives not found in YAML")
+	if len(alts) == 0 && len(current) == 0 {
+		return []map[string]string{}, nil
 	}
 	seen := map[string]bool{}
 	var uniq []map[string]string
