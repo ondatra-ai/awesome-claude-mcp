@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend tf-init tf-validate tf-plan tf-apply
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts tf-init tf-validate tf-plan tf-apply
 
 # Default target
 help: ## Show available commands
@@ -105,3 +105,10 @@ lint-frontend: ## Run ESLint and Prettier on frontend code (auto-fix when possib
 	@echo "🎨 Running Prettier with --write on frontend..."
 	npx prettier --write services/frontend/ --ignore-path services/frontend/.prettierignore --config services/frontend/.prettierrc.json
 	@echo "✅ Frontend linting completed!"
+
+lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible)
+	@echo "🔧 Running go fmt to fix formatting..."
+	gofmt -l -w scripts/pr-triage
+	@echo "🔍 Running golangci-lint on scripts/pr-triage..."
+	cd scripts/pr-triage && golangci-lint run --fix .
+	@echo "✅ Scripts linting completed!"

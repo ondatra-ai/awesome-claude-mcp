@@ -36,4 +36,3 @@
   - [ ] It is out of scope
   - [ ] It has low impact/ROI
   - [ ] It requires broader refactoring that touches more than one file
-

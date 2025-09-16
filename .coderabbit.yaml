@@ -7,6 +7,14 @@ reviews:
   high_level_summary: false
 
   path_filters:
+    # Include only these specific paths
+    - "services/**"
+    - "tests/**"
+    - "docker-compose.yml"
+    - "docker-compose.test.yml"
+    - "Makefile"
+    - ".github/**"
+    # Exclude these paths for extra clarity
     - "!**/.cursor/**"
     - "!.claude/**"
     - "!**/.claude/**"

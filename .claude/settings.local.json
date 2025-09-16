@@ -16,7 +16,17 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(go build:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(timeout:*)",
+      "Bash(/dev/null)",
+      "Bash(find:*)",
+      "Bash(go mod init:*)",
+      "Bash(make lint-scripts:*)",
+      "Bash(go mod:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(gofmt:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.coderabbit.ai)"
     ],
     "deny": [],
     "ask": []

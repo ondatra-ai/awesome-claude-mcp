@@ -3,52 +3,90 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 )
 
+const (
+	lowRiskThreshold = 5
+)
+
 type Runner struct {
-	gh    GitHubClient
-	codex CodexClient
+	prFetcher      *PRNumberFetcher
+	threadsFetcher *ThreadsFetcher
+	resolver       *ThreadResolver
+	analyzer       *ThreadAnalyzer
+	implementer    *ThreadImplementer
 }
 
-func NewRunner(gh GitHubClient, codex CodexClient) *Runner {
-	return &Runner{gh: gh, codex: codex}
+func NewRunner(
+	prFetcher *PRNumberFetcher,
+	threadsFetcher *ThreadsFetcher,
+	resolver *ThreadResolver,
+	analyzer *ThreadAnalyzer,
+	implementer *ThreadImplementer,
+) *Runner {
+	return &Runner{
+		prFetcher:      prFetcher,
+		threadsFetcher: threadsFetcher,
+		resolver:       resolver,
+		analyzer:       analyzer,
+		implementer:    implementer,
+	}
 }
 
 func (r *Runner) Run(ctx context.Context) error {
-	prNum, err := r.gh.GetCurrentPRNumber(ctx)
+	// 1. Get PR number
+	prNum, err := r.prFetcher.Fetch(ctx)
 	if err != nil {
 		return err
 	}
-	threads, err := r.gh.ListAllReviewThreads(ctx, prNum)
+
+	// 2. Fetch all threads for this PR
+	threads, err := r.threadsFetcher.FetchAll(ctx, prNum)
 	if err != nil {
 		return err
 	}
-	for _, th := range threads {
-		cm := firstRelevant(th.Comments)
-		if cm.Outdated {
-			r.gh.ResolveReply(ctx, th.ID, "This thread resolved as outdated.", true)
+
+	// 3. Process each thread
+	for _, thread := range threads {
+		comment := firstRelevant(thread.Comments)
+
+		// Skip outdated threads and resolve them
+		if comment.Outdated {
+			_ = r.resolver.Resolve(ctx, thread.ID, "This thread resolved as outdated.")
+
+			continue
 		}
-		tc := ThreadContext{PRNumber: prNum, Thread: th, Comment: cm}
-		res, err := r.codex.HeuristicAnalysis(ctx, tc)
+
+		// 4. Analyze the thread
+		threadCtx := ThreadContext{PRNumber: prNum, Thread: thread, Comment: comment}
+
+		res, err := r.analyzer.Analyze(ctx, threadCtx)
 		if err != nil {
 			return err
 		}
+
 		printHeuristic(res)
 
-		// Auto-apply simple fixes for low-risk items
-		if res.Score < 5 {
-			fmt.Printf("Applying code changes\n")
-			if summary, apErr := r.codex.ImplementCode(ctx, tc); apErr == nil {
-				fmt.Printf("Applied code changes; resolving.\n")
-				// Post a concise reply and resolve the thread
-				_ = r.gh.ResolveReply(ctx, th.ID, "Applied low-risk default strategy; resolving.", true)
-				printActionBlock(th.ID, cm.URL, cm.File, cm.Line, summary)
-			} else {
-				return fmt.Errorf("apply failed for thread %s: %v", th.ID, apErr)
+		// 5. Auto-apply simple fixes for low-risk items
+		if res.Score < lowRiskThreshold {
+			slog.Info("Applying code changes")
+
+			// 6. Implement the changes
+			summary, err := r.implementer.Implement(ctx, threadCtx)
+			if err != nil {
+				return fmt.Errorf("apply failed for thread %s: %w", thread.ID, err)
 			}
+
+			slog.Info("Applied code changes; resolving.")
+
+			// 7. Resolve the thread with summary
+			_ = r.resolver.Resolve(ctx, thread.ID, "Applied low-risk default strategy; resolving.")
+			printActionBlock(thread.ID, comment.URL, comment.File, comment.Line, summary)
 		}
 	}
+
 	return nil
 }
 
@@ -56,72 +94,22 @@ func firstRelevant(comments []Comment) Comment {
 	if len(comments) > 0 {
 		return comments[0]
 	}
+
 	return Comment{}
 }
 
 func printHeuristic(res HeuristicAnalysisResult) {
-	fmt.Printf("BEGIN_HEURISTIC\n")
-	fmt.Printf("Heuristic Checklist Result\n")
-	fmt.Printf("- Summary: %s\n", strings.TrimSpace(res.Summary))
+	slog.Info("Analysis complete", "summary", strings.TrimSpace(res.Summary), "score", res.Score)
 
-	// Print known checklist items in a fixed order
-	order := []string{
-		"tools_present",
-		"pr_detected",
-		"conversations_fetched",
-		"auto_resolved_outdated",
-		"relevance_classified",
-	}
-	for _, k := range order {
-		if res.Items != nil {
-			fmt.Printf("- %s: %v\n", k, res.Items[k])
-		} else {
-			fmt.Printf("- %s: %v\n", k, false)
-		}
-	}
-
-	// Preferred option
 	if len(res.ProposedActions) > 0 {
-		fmt.Printf("- preferred_option: %s\n", res.ProposedActions[0])
+		slog.Info("Recommended action", "action", res.ProposedActions[0])
 	}
-
-	// Alternatives
-	if len(res.Alternatives) > 0 {
-		fmt.Printf("- alternatives:\n")
-		for _, alt := range res.Alternatives {
-			opt := strings.TrimSpace(alt["option"])
-			why := strings.TrimSpace(alt["why"])
-			fmt.Printf("  - option: %s\n", opt)
-			fmt.Printf("    why: %s\n", why)
-		}
-	}
-
-	fmt.Printf("- Risk score (1–10): %d\n", res.Score)
-	fmt.Printf("END_HEURISTIC\n")
 }
 
-func printActionBlock(id, url, file string, line int, summary string) {
-	fmt.Printf("BEGIN_ACTION\n")
-	fmt.Printf("Id: \"%s\"\n", id)
-	fmt.Printf("Url: \"%s\"\n", url)
-	fmt.Printf("Location: \"%s:%d\"\n", file, line)
+func printActionBlock(id, _ string, file string, line int, summary string) {
 	if summary == "" {
-		summary = "Applied reviewer’s suggestion in minimal, scoped change"
+		summary = "Applied reviewer's suggestion in minimal, scoped change"
 	}
-	fmt.Printf("Summary: %s\n", summary)
-	fmt.Printf("Actions Taken: Auto-applied or verified already fixed; posted resolving reply\n")
-	fmt.Printf("Tests/Checks: Local validations as applicable\n")
-	fmt.Printf("Resolution: Posted reply and resolved\n")
-	fmt.Printf("END_ACTION\n")
-}
 
-func printApprovalBlock(id, url, file string, line int, comment string, risk int) {
-	fmt.Printf("Id: \"%s\"\n", id)
-	fmt.Printf("Url: \"%s\"\n", url)
-	fmt.Printf("Location: \"%s:%d\"\n", file, line)
-	fmt.Printf("Comment: %s\n", comment)
-	fmt.Printf("Proposed Fix: Implement the reviewer’s suggestion in a minimal, scoped change aligned with architecture and coding standards; validate via tests.\n")
-	fmt.Printf("Risk: \"%d\"\n\n", risk)
-	fmt.Printf("Should I proceed with the Implement the reviewer’s suggestion in a minimal, scoped change aligned with architecture and coding standards; validate via tests.?\n")
-	fmt.Printf("1. Yes\n2. No, do ... instead\n")
+	slog.Info("Action completed", "thread", id, "location", fmt.Sprintf("%s:%d", file, line), "summary", summary)
 }

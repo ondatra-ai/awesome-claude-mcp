@@ -91,4 +91,3 @@ alternatives:
 """
 
 Now produce the YAML.
-
