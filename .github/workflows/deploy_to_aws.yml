@@ -1,0 +1,138 @@
+name: 'Deploy to AWS'
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
+      - feature/aws-deployment-workflow
+
+  workflow_dispatch:
+    inputs:
+      deploy-env:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+      deploy-plan-only:
+        description: 'Plan only (no apply)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: ${{ github.event.inputs.deploy-env || 'dev' }}
+
+    env:
+      TF_ENV: ${{ github.event.inputs.deploy-env || 'dev' }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.5'
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: services/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: make init
+
+      - name: Run tests
+        run: |
+          make test-unit
+          make lint-backend
+          make lint-frontend
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Init
+        run: make tf-init TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Validate
+        run: make tf-validate TF_ENV=${{ env.TF_ENV }}
+
+      - name: Terraform Plan
+        run: make tf-plan TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: make tf-apply TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build and Deploy Backend
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: |
+          echo "Building Go backend for AWS Lambda or ECS..."
+          cd services/backend
+          go build -o main ./cmd
+          # Add your deployment commands here (e.g., upload to S3, update Lambda, etc.)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build and Deploy Frontend
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: |
+          echo "Building and deploying Next.js frontend..."
+          cd services/frontend
+          npm run build
+          # Add your deployment commands here (e.g., sync to S3, invalidate CloudFront, etc.)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Post-deployment verification
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: |
+          echo "Running post-deployment verification..."
+          # Add health checks or smoke tests here
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ env.TF_ENV }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Plan Only**: ${{ github.event.inputs.deploy-plan-only || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **AWS Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
