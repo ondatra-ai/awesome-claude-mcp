@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts tf-init tf-validate tf-plan tf-apply
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts tf-bootstrap tf-init tf-validate tf-plan tf-apply
 
 # Default target
 help: ## Show available commands
@@ -27,10 +27,18 @@ dev: ## Start all services with Docker Compose
 # Prefer TF_ENV; fall back to ENV if provided
 TF_ENV ?= $(or $(ENV),dev)
 TF_DIR=infrastructure/terraform
+TF_BOOTSTRAP_DIR=infrastructure/terraform/bootstrap
+
+tf-bootstrap: ## Bootstrap S3 backend (run once to create bucket and DynamoDB table)
+	@echo "🔧 Bootstrapping S3 backend infrastructure..."
+	terraform -chdir=$(TF_BOOTSTRAP_DIR) init
+	terraform -chdir=$(TF_BOOTSTRAP_DIR) plan -out=bootstrap.tfplan
+	terraform -chdir=$(TF_BOOTSTRAP_DIR) apply -auto-approve bootstrap.tfplan
+	@echo "✅ S3 backend bootstrap completed!"
 
 tf-init: ## Terraform init for ENV (ENV=dev|staging|prod)
 	@echo "🔧 Terraform init for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) init
+	terraform -chdir=$(TF_DIR) init -backend-config=backend-$(TF_ENV).hcl
 
 tf-validate: ## Terraform validate for ENV (ENV=dev|staging|prod)
 	@echo "🧪 Terraform validate for $(TF_ENV)..."
