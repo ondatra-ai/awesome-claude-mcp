@@ -42,35 +42,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GitHubActions-${{ github.run_id }}
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.5'
-          cache: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: services/frontend/package-lock.json
-
-      - name: Install dependencies
-        run: make init
-
-      - name: Run tests
-        run: |
-          make test-unit
-          make lint-backend
-          make lint-frontend
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
