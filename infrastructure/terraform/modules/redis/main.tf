@@ -32,10 +32,8 @@ resource "aws_elasticache_replication_group" "this" {
   port                          = 6379
   automatic_failover_enabled    = true
   multi_az_enabled              = true
-  cluster_mode {
-    num_node_groups         = var.cluster_num_node_groups
-    replicas_per_node_group = var.cluster_replicas_per_node_group
-  }
+  num_node_groups         = var.cluster_num_node_groups
+  replicas_per_node_group = var.cluster_replicas_per_node_group
   at_rest_encryption_enabled    = true
   transit_encryption_enabled    = true
   subnet_group_name             = aws_elasticache_subnet_group.this.name

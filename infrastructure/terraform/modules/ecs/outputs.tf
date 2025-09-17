@@ -3,6 +3,11 @@ output "cluster_arn" {
   value       = aws_ecs_cluster.this.arn
 }
 
+output "cluster_name" {
+  description = "ECS cluster name"
+  value       = aws_ecs_cluster.this.name
+}
+
 output "service_sg_id" {
   description = "Security group ID for ECS services"
   value       = aws_security_group.services.id

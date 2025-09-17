@@ -26,7 +26,7 @@ dev: ## Start all services with Docker Compose
 ## Terraform helpers (use TF_ENV=dev|staging|prod, or ENV=... as an alias)
 # Prefer TF_ENV; fall back to ENV if provided
 TF_ENV ?= $(or $(ENV),dev)
-TF_DIR=infrastructure/terraform/environments/$(TF_ENV)
+TF_DIR=infrastructure/terraform
 
 tf-init: ## Terraform init for ENV (ENV=dev|staging|prod)
 	@echo "🔧 Terraform init for $(TF_ENV)..."
@@ -39,7 +39,7 @@ tf-validate: ## Terraform validate for ENV (ENV=dev|staging|prod)
 TF_PLAN ?= plan.out
 tf-plan: ## Terraform plan for ENV (ENV=dev|staging|prod)
 	@echo "🗺️  Terraform plan for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) plan -out $(TF_PLAN)
+	terraform -chdir=$(TF_DIR) plan -var-file="environments/$(TF_ENV).tfvars" -out $(TF_PLAN)
 
 tf-apply: ## Terraform apply for ENV (ENV=dev|staging|prod)
 	@echo "🚀 Terraform apply for $(TF_ENV)..."
