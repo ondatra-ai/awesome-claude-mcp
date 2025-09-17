@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts tf-init tf-validate tf-plan tf-apply
 
 # Default target
 help: ## Show available commands
@@ -22,6 +22,32 @@ init: ## Install dependencies and build Docker images with caching
 
 dev: ## Start all services with Docker Compose
 	docker compose up --build
+
+## Terraform helpers (use TF_ENV=dev|staging|prod, or ENV=... as an alias)
+# Prefer TF_ENV; fall back to ENV if provided
+TF_ENV ?= $(or $(ENV),dev)
+TF_DIR=infrastructure/terraform
+
+tf-init: ## Terraform init for ENV (ENV=dev|staging|prod)
+	@echo "🔧 Terraform init for $(TF_ENV)..."
+	terraform -chdir=$(TF_DIR) init
+
+tf-validate: ## Terraform validate for ENV (ENV=dev|staging|prod)
+	@echo "🧪 Terraform validate for $(TF_ENV)..."
+	terraform -chdir=$(TF_DIR) validate
+
+TF_PLAN ?= plan.out
+tf-plan: ## Terraform plan for ENV (ENV=dev|staging|prod)
+	@echo "🗺️  Terraform plan for $(TF_ENV)..."
+	terraform -chdir=$(TF_DIR) plan -var-file="environments/$(TF_ENV).tfvars" -out $(TF_PLAN)
+
+tf-apply: ## Terraform apply for ENV (ENV=dev|staging|prod)
+	@echo "🚀 Terraform apply for $(TF_ENV)..."
+	@if [ ! -f "$(TF_DIR)/$(TF_PLAN)" ]; then \
+	  echo "❌ Plan file '$(TF_PLAN)' not found in $(TF_DIR). Run 'make tf-plan TF_ENV=$(TF_ENV)' first."; \
+	  exit 1; \
+	fi
+	terraform -chdir=$(TF_DIR) apply -auto-approve -input=false $(TF_PLAN)
 
 test-unit: ## Run unit tests for both services
 	@echo "🧪 Running unit tests..."
@@ -79,3 +105,10 @@ lint-frontend: ## Run ESLint and Prettier on frontend code (auto-fix when possib
 	@echo "🎨 Running Prettier with --write on frontend..."
 	npx prettier --write services/frontend/ --ignore-path services/frontend/.prettierignore --config services/frontend/.prettierrc.json
 	@echo "✅ Frontend linting completed!"
+
+lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible)
+	@echo "🔧 Running go fmt to fix formatting..."
+	gofmt -l -w scripts/pr-triage
+	@echo "🔍 Running golangci-lint on scripts/pr-triage..."
+	cd scripts/pr-triage && golangci-lint run --fix .
+	@echo "✅ Scripts linting completed!"

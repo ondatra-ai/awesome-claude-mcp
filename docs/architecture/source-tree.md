@@ -367,19 +367,27 @@ infrastructure/
 │   │       ├── variables.tf    # Production variables
 │   │       └── terraform.tfvars # Production values
 │   ├── modules/                # Reusable Terraform modules
-│   │   ├── lambda/             # Lambda function module
-│   │   │   ├── main.tf         # Lambda resources
-│   │   │   ├── variables.tf    # Lambda variables
-│   │   │   └── outputs.tf      # Lambda outputs
-│   │   ├── api-gateway/        # API Gateway module
-│   │   │   ├── main.tf         # API Gateway resources
-│   │   │   ├── variables.tf    # API Gateway variables
-│   │   │   └── outputs.tf      # API Gateway outputs
+│   │   ├── vpc/                # VPC and networking module
+│   │   │   ├── main.tf         # VPC resources (subnets, routes, NAT, IGW)
+│   │   │   ├── variables.tf    # VPC variables
+│   │   │   └── outputs.tf      # VPC outputs
+│   │   ├── ecs/                # ECS (Fargate) cluster and services
+│   │   │   ├── main.tf         # Cluster, services, task defs, autoscaling
+│   │   │   ├── variables.tf    # ECS variables
+│   │   │   └── outputs.tf      # ECS outputs
+│   │   ├── ecr/                # ECR repositories for images
+│   │   │   ├── main.tf         # ECR repositories
+│   │   │   ├── variables.tf    # ECR variables
+│   │   │   └── outputs.tf      # ECR outputs
+│   │   ├── alb/                # Application Load Balancer
+│   │   │   ├── main.tf         # ALB, listeners, target groups
+│   │   │   ├── variables.tf    # ALB variables
+│   │   │   └── outputs.tf      # ALB outputs
 │   │   ├── redis/              # ElastiCache Redis module
 │   │   │   ├── main.tf         # Redis resources
 │   │   │   ├── variables.tf    # Redis variables
 │   │   │   └── outputs.tf      # Redis outputs
-│   │   └── monitoring/         # CloudWatch monitoring module
+│   │   └── monitoring/         # CloudWatch logging/metrics/alarms
 │   │       ├── main.tf         # Monitoring resources
 │   │       ├── variables.tf    # Monitoring variables
 │   │       └── outputs.tf      # Monitoring outputs

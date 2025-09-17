@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform plan -var-file=\"environments/dev.tfvars\" -out plan.out)",
+      "Bash(tree:*)",
+      "Bash(AWS_PROFILE=awesome.terraform make tf-plan TF_ENV=dev)",
+      "Bash(AWS_PROFILE=awesome.terraform make tf-apply TF_ENV=dev)",
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform show -json)",
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform show)",
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform apply -var-file=\"environments/dev.tfvars\" -auto-approve)",
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform destroy -var-file=\"environments/dev.tfvars\" -auto-approve)",
+      "Bash(AWS_PROFILE=awesome.terraform terraform -chdir=infrastructure/terraform force-unlock -force)",
+      "Bash(AWS_PROFILE=awesome.terraform aws ec2 describe-instances --region us-east-1 --query 'Reservations[*].Instances[*].[InstanceId,State.Name,Tags[?Key==`Environment`].Value|[0]]' --output table)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
