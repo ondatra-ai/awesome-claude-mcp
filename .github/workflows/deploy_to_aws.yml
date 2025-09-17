@@ -55,19 +55,31 @@ jobs:
           else
             echo "backend_exists=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Bootstrap S3 backend
         if: steps.check_backend.outputs.backend_exists == 'false'
         run: make tf-bootstrap
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Init
         run: make tf-init TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Validate
         run: make tf-validate TF_ENV=${{ env.TF_ENV }}
 
       - name: Terraform Plan
         run: make tf-plan TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Upload Terraform Plan
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
@@ -80,6 +92,9 @@ jobs:
       - name: Terraform Apply
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: make tf-apply TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Post-deployment verification
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
