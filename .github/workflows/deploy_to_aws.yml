@@ -42,63 +42,61 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
 
+      - name: Check if S3 backend exists
+        id: check_backend
+        run: |
+          if aws s3api head-bucket --bucket terraform-awesome-claude-mcp 2>/dev/null; then
+            echo "backend_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bootstrap S3 backend
+        if: steps.check_backend.outputs.backend_exists == 'false'
+        run: make tf-bootstrap
+
       - name: Terraform Init
         run: make tf-init TF_ENV=${{ env.TF_ENV }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Terraform Validate
         run: make tf-validate TF_ENV=${{ env.TF_ENV }}
 
       - name: Terraform Plan
         run: make tf-plan TF_ENV=${{ env.TF_ENV }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Upload Terraform Plan
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ env.TF_ENV }}
+          path: infrastructure/terraform/plan.out
+          retention-days: 7
 
       - name: Terraform Apply
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: make tf-apply TF_ENV=${{ env.TF_ENV }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Build and Deploy Backend
-        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
-        run: |
-          echo "Building Go backend for AWS Lambda or ECS..."
-          cd services/backend
-          go build -o main ./cmd
-          # Add your deployment commands here (e.g., upload to S3, update Lambda, etc.)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Build and Deploy Frontend
-        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
-        run: |
-          echo "Building and deploying Next.js frontend..."
-          cd services/frontend
-          npm run build
-          # Add your deployment commands here (e.g., sync to S3, invalidate CloudFront, etc.)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Post-deployment verification
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: |
           echo "Running post-deployment verification..."
+          echo "Infrastructure deployment completed successfully"
           # Add health checks or smoke tests here
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Deployment Summary
         run: |
@@ -106,4 +104,6 @@ jobs:
           echo "- **Environment**: ${{ env.TF_ENV }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Plan Only**: ${{ github.event.inputs.deploy-plan-only || 'false' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **AWS Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: S3 (terraform-awesome-claude-mcp)" >> $GITHUB_STEP_SUMMARY
+          echo "- **State Key**: ${{ env.TF_ENV }}/terraform.tfstate" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
