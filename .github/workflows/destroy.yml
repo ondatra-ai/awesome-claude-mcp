@@ -1,0 +1,220 @@
+name: 'Destroy Infrastructure'
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy-env:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+      force-destroy:
+        description: 'Force destroy (bypass confirmations)'
+        required: false
+        type: boolean
+        default: false
+      destroy-ecr-repos:
+        description: 'Also destroy ECR repositories and images'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  clean_ecr_repositories:
+    if: ${{ github.event.inputs.destroy-ecr-repos == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.event.inputs.deploy-env }}
+
+    env:
+      TF_ENV: ${{ github.event.inputs.deploy-env }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get AWS Account ID
+        id: aws_account
+        run: |
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "aws_account_id=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Delete ECR repositories
+        run: |
+          echo "Deleting ECR repositories for environment: ${{ env.TF_ENV }}"
+
+          # List of repositories to delete
+          REPOSITORIES=(
+            "backend"
+            "frontend"
+            "backend-${{ env.TF_ENV }}"
+            "frontend-${{ env.TF_ENV }}"
+          )
+
+          for repo in "${REPOSITORIES[@]}"; do
+            echo "Checking repository: $repo"
+            if aws ecr describe-repositories --repository-names $repo --region ${{ env.AWS_REGION }} 2>/dev/null; then
+              echo "Deleting repository: $repo"
+              aws ecr delete-repository --repository-name $repo --force --region ${{ env.AWS_REGION }} || echo "Failed to delete $repo or already deleted"
+            else
+              echo "Repository $repo does not exist or already deleted"
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  destroy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ github.event.inputs.deploy-env }}
+    needs: [clean_ecr_repositories]
+    if: always() && (needs.clean_ecr_repositories.result == 'success' || needs.clean_ecr_repositories.result == 'skipped')
+
+    env:
+      TF_ENV: ${{ github.event.inputs.deploy-env }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Confirmation Warning
+        run: |
+          echo "⚠️  WARNING: You are about to DESTROY the following infrastructure:"
+          echo "🌍 Environment: ${{ env.TF_ENV }}"
+          echo "☁️  AWS Region: ${{ env.AWS_REGION }}"
+          echo "📦 Resources: VPC, ECS Cluster, NAT Gateways, Load Balancers, etc."
+          echo ""
+          if [ "${{ github.event.inputs.force-destroy }}" != "true" ]; then
+            echo "❌ This action requires force-destroy=true to proceed"
+            echo "💡 Please re-run the workflow with force-destroy enabled if you're certain"
+            exit 1
+          else
+            echo "✅ Force destroy enabled - proceeding with destruction"
+          fi
+
+      - name: Terraform Init
+        run: make tf-init TF_ENV=${{ env.TF_ENV }}
+        working-directory: infrastructure/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Plan Destroy
+        run: make tf-plan-destroy TF_ENV=${{ env.TF_ENV }}
+        working-directory: infrastructure/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Stop ECS Services (Graceful Shutdown)
+        run: |
+          echo "Stopping ECS services gracefully..."
+          CLUSTER_NAME="awesome-claude-mcp-cluster-${{ env.TF_ENV }}"
+
+          # Get list of services in the cluster
+          SERVICES=$(aws ecs list-services --cluster $CLUSTER_NAME --query 'serviceArns[*]' --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          if [ ! -z "$SERVICES" ]; then
+            for service_arn in $SERVICES; do
+              service_name=$(basename $service_arn)
+              echo "Scaling down service: $service_name"
+              aws ecs update-service --cluster $CLUSTER_NAME --service $service_name --desired-count 0 --region ${{ env.AWS_REGION }} || echo "Failed to scale down $service_name"
+            done
+
+            echo "Waiting for services to stop..."
+            sleep 30
+          else
+            echo "No services found in cluster or cluster doesn't exist"
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Destroy
+        run: make tf-destroy TF_ENV=${{ env.TF_ENV }}
+        working-directory: infrastructure/terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Cleanup Orphaned Resources
+        run: |
+          echo "🧹 Cleaning up any orphaned resources..."
+
+          # Delete any remaining NAT Gateways (these can be expensive if left running)
+          echo "Checking for orphaned NAT Gateways..."
+          NAT_GATEWAYS=$(aws ec2 describe-nat-gateways --filter "Name=tag:Project,Values=awesome-claude-mcp" "Name=tag:Environment,Values=${{ env.TF_ENV }}" --query 'NatGateways[?State==`available`].NatGatewayId' --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          if [ ! -z "$NAT_GATEWAYS" ]; then
+            for nat_id in $NAT_GATEWAYS; do
+              echo "Deleting orphaned NAT Gateway: $nat_id"
+              aws ec2 delete-nat-gateway --nat-gateway-id $nat_id --region ${{ env.AWS_REGION }} || echo "Failed to delete NAT Gateway $nat_id"
+            done
+          fi
+
+          # Delete any remaining Elastic IPs
+          echo "Checking for orphaned Elastic IPs..."
+          EIPS=$(aws ec2 describe-addresses --filters "Name=tag:Project,Values=awesome-claude-mcp" "Name=tag:Environment,Values=${{ env.TF_ENV }}" --query 'Addresses[?AssociationId==null].AllocationId' --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          if [ ! -z "$EIPS" ]; then
+            for eip_id in $EIPS; do
+              echo "Releasing orphaned Elastic IP: $eip_id"
+              aws ec2 release-address --allocation-id $eip_id --region ${{ env.AWS_REGION }} || echo "Failed to release EIP $eip_id"
+            done
+          fi
+
+          # Delete any remaining security groups (except default)
+          echo "Checking for orphaned security groups..."
+          SECURITY_GROUPS=$(aws ec2 describe-security-groups --filters "Name=tag:Project,Values=awesome-claude-mcp" "Name=tag:Environment,Values=${{ env.TF_ENV }}" --query 'SecurityGroups[?GroupName!=`default`].GroupId' --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+
+          if [ ! -z "$SECURITY_GROUPS" ]; then
+            for sg_id in $SECURITY_GROUPS; do
+              echo "Deleting orphaned security group: $sg_id"
+              aws ec2 delete-security-group --group-id $sg_id --region ${{ env.AWS_REGION }} || echo "Failed to delete security group $sg_id"
+            done
+          fi
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Destruction Summary
+        run: |
+          echo "## 🗑️ Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ env.TF_ENV }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **AWS Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Force Destroy**: ${{ github.event.inputs.force-destroy }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **ECR Cleanup**: ${{ github.event.inputs.destroy-ecr-repos }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Infrastructure Destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "All Terraform-managed resources have been destroyed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💰 Cost Impact" >> $GITHUB_STEP_SUMMARY
+          echo "- NAT Gateways: ~$45+ per month (now deleted)" >> $GITHUB_STEP_SUMMARY
+          echo "- ECS Services: Compute costs (now stopped)" >> $GITHUB_STEP_SUMMARY
+          echo "- Load Balancers: ~$18+ per month (now deleted)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Post-Destruction Checklist" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Verify no unexpected charges in AWS billing" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Check CloudWatch logs retention policies" >> $GITHUB_STEP_SUMMARY
+          echo "- [ ] Confirm S3 buckets are empty if not needed" >> $GITHUB_STEP_SUMMARY

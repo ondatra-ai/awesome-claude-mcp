@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "this" {
-  for_each             = toset(var.repositories)
+  for_each             = var.create_base_repos ? toset(var.repositories) : toset([])
   name                 = each.value
   image_tag_mutability = "MUTABLE"
   force_delete         = var.environment != "prod"

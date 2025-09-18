@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform lint-terraform-modules tf-bootstrap tf-init tf-validate tf-plan tf-apply
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform lint-terraform-modules tf-bootstrap tf-init tf-validate tf-plan tf-apply tf-plan-destroy tf-destroy
 
 # Default target
 help: ## Show available commands
@@ -56,6 +56,15 @@ tf-apply: ## Terraform apply for ENV (ENV=dev|staging|prod)
 	  exit 1; \
 	fi
 	terraform -chdir=$(TF_DIR) apply -auto-approve -input=false $(TF_PLAN)
+
+TF_DESTROY_PLAN ?= destroy.out
+tf-plan-destroy: ## Terraform plan destroy for ENV (ENV=dev|staging|prod)
+	@echo "🗑️  Terraform plan destroy for $(TF_ENV)..."
+	terraform -chdir=$(TF_DIR) plan -destroy -var-file="environments/$(TF_ENV).tfvars" -out $(TF_DESTROY_PLAN)
+
+tf-destroy: ## Terraform destroy for ENV (ENV=dev|staging|prod)
+	@echo "🗑️  Terraform destroy for $(TF_ENV)..."
+	terraform -chdir=$(TF_DIR) destroy -var-file="environments/$(TF_ENV).tfvars" -auto-approve
 
 test-unit: ## Run unit tests for both services
 	@echo "🧪 Running unit tests..."

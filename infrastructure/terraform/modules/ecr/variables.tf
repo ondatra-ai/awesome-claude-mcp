@@ -19,6 +19,12 @@ variable "create_env_specific_repos" {
   default     = true
 }
 
+variable "create_base_repos" {
+  description = "Whether to create base repositories (without environment suffix)"
+  type        = bool
+  default     = false
+}
+
 variable "environment" {
   description = "Environment name (dev|staging|prod)"
   type        = string

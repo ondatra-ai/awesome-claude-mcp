@@ -42,10 +42,10 @@ resource "aws_security_group" "service" {
   }
 
   ingress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
-    self      = true
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    self        = true
     description = "HTTPS from same security group (VPC endpoints)"
   }
 
@@ -82,11 +82,11 @@ resource "aws_security_group" "service" {
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "frontend"
   requires_compatibilities = ["FARGATE"]
-  network_mode            = "awsvpc"
-  cpu                     = 256
-  memory                  = 512
-  execution_role_arn      = var.execution_role_arn
-  task_role_arn          = var.task_role_arn
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {
@@ -121,11 +121,11 @@ resource "aws_ecs_task_definition" "frontend" {
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend"
   requires_compatibilities = ["FARGATE"]
-  network_mode            = "awsvpc"
-  cpu                     = 256
-  memory                  = 512
-  execution_role_arn      = var.execution_role_arn
-  task_role_arn          = var.task_role_arn
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 512
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {

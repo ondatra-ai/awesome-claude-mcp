@@ -33,8 +33,9 @@ module "vpc" {
 
 
 module "ecr" {
-  source      = "./modules/ecr"
-  environment = var.environment
+  source             = "./modules/ecr"
+  environment        = var.environment
+  create_base_repos  = false
 }
 
 module "iam" {
