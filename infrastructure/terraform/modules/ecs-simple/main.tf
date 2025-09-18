@@ -180,9 +180,9 @@ resource "aws_ecs_service" "frontend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.public_subnet_ids
+    subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.service.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   # Force deployment when task definition changes
@@ -202,9 +202,9 @@ resource "aws_ecs_service" "backend" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = var.public_subnet_ids
+    subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.service.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   # Force deployment when task definition changes

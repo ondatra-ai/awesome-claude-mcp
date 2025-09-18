@@ -187,8 +187,51 @@ jobs:
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: |
           echo "Running post-deployment verification..."
-          echo "Infrastructure deployment completed successfully"
-          # Add health checks or smoke tests here
+
+          # Get cluster and service names
+          CLUSTER_NAME="awesome-claude-mcp-cluster-${{ env.TF_ENV }}"
+          SERVICE_NAME="backend"
+
+          echo "Waiting for backend service to stabilize..."
+          echo "Cluster: $CLUSTER_NAME"
+          echo "Service: $SERVICE_NAME"
+
+          # Wait for service to reach desired state with 10 minute timeout
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER_NAME" \
+            --services "$SERVICE_NAME" \
+            --cli-read-timeout 600 \
+            --cli-connect-timeout 60
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Backend service is running and stable"
+
+            # Get task status details
+            TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --query 'taskArns' --output text)
+            if [ -n "$TASK_ARNS" ]; then
+              echo "📊 Task details:"
+              aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks $TASK_ARNS --query 'tasks[0].{LastStatus:lastStatus,HealthStatus:healthStatus,CreatedAt:createdAt}' --output table
+            fi
+          else
+            echo "❌ Backend service failed to stabilize within 10 minutes"
+
+            # Get failure details
+            echo "🔍 Service events (last 10):"
+            aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query 'services[0].events[:10].{CreatedAt:createdAt,Message:message}' --output table
+
+            # Get task failure details if any
+            TASK_ARNS=$(aws ecs list-tasks --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" --query 'taskArns' --output text)
+            if [ -n "$TASK_ARNS" ]; then
+              echo "🔍 Task details:"
+              aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks $TASK_ARNS --query 'tasks[0].{LastStatus:lastStatus,StoppedReason:stoppedReason,CreatedAt:createdAt}' --output table
+            fi
+
+            exit 1
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
 
       - name: Deployment Summary
         run: |
