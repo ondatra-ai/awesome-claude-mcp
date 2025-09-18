@@ -1,0 +1,155 @@
+name: 'Terraform Force Unlock'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to unlock'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+      lock_id:
+        description: 'Lock ID to force unlock (optional - will detect automatically if not provided)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  force-unlock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ github.event.inputs.environment }}
+
+    env:
+      TF_ENV: ${{ github.event.inputs.environment }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Init
+        run: make tf-init TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Check current state lock
+        id: check_lock
+        run: |
+          cd infrastructure/terraform
+
+          echo "🔍 Checking for existing state locks..."
+
+          # Try to get lock info by attempting a plan
+          if terraform plan -var-file="environments/${{ env.TF_ENV }}.tfvars" -var="backend_image=dummy:latest" -var="frontend_image=dummy:latest" -out=/dev/null 2>&1; then
+            echo "✅ No state lock found - state is available"
+            echo "lock_exists=false" >> $GITHUB_OUTPUT
+          else
+            # Extract lock info from error message
+            error_output=$(terraform plan -var-file="environments/${{ env.TF_ENV }}.tfvars" -var="backend_image=dummy:latest" -var="frontend_image=dummy:latest" -out=/dev/null 2>&1 || true)
+
+            if echo "$error_output" | grep -q "Error acquiring the state lock"; then
+              echo "🔒 State lock detected!"
+
+              # Extract lock ID from error message
+              lock_id=$(echo "$error_output" | grep "ID:" | awk '{print $2}')
+              lock_path=$(echo "$error_output" | grep "Path:" | awk '{print $2}')
+              lock_who=$(echo "$error_output" | grep "Who:" | awk '{print $2}')
+              lock_created=$(echo "$error_output" | grep "Created:" | awk '{print $2, $3}')
+
+              echo "📋 Lock Details:"
+              echo "  ID: $lock_id"
+              echo "  Path: $lock_path"
+              echo "  Who: $lock_who"
+              echo "  Created: $lock_created"
+
+              echo "lock_exists=true" >> $GITHUB_OUTPUT
+              echo "detected_lock_id=$lock_id" >> $GITHUB_OUTPUT
+              echo "lock_who=$lock_who" >> $GITHUB_OUTPUT
+              echo "lock_created=$lock_created" >> $GITHUB_OUTPUT
+            else
+              echo "❌ Different error encountered (not a lock issue):"
+              echo "$error_output"
+              exit 1
+            fi
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Force unlock state
+        if: steps.check_lock.outputs.lock_exists == 'true'
+        run: |
+          cd infrastructure/terraform
+
+          # Use provided lock ID or detected one
+          LOCK_ID="${{ github.event.inputs.lock_id }}"
+          if [ -z "$LOCK_ID" ]; then
+            LOCK_ID="${{ steps.check_lock.outputs.detected_lock_id }}"
+          fi
+
+          if [ -z "$LOCK_ID" ]; then
+            echo "❌ No lock ID provided and none detected"
+            exit 1
+          fi
+
+          echo "🔓 Force unlocking state with ID: $LOCK_ID"
+          echo "⚠️  Lock was created by: ${{ steps.check_lock.outputs.lock_who }}"
+          echo "⚠️  Lock was created at: ${{ steps.check_lock.outputs.lock_created }}"
+
+          terraform force-unlock -force "$LOCK_ID"
+
+          echo "✅ State successfully unlocked!"
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Verify unlock success
+        if: steps.check_lock.outputs.lock_exists == 'true'
+        run: |
+          cd infrastructure/terraform
+
+          echo "🧪 Verifying that state is now unlocked..."
+
+          if terraform plan -var-file="environments/${{ env.TF_ENV }}.tfvars" -var="backend_image=dummy:latest" -var="frontend_image=dummy:latest" -out=/dev/null >/dev/null 2>&1; then
+            echo "✅ Success! State is now unlocked and accessible"
+          else
+            echo "❌ State is still locked or has other issues"
+            terraform plan -var-file="environments/${{ env.TF_ENV }}.tfvars" -var="backend_image=dummy:latest" -var="frontend_image=dummy:latest" -out=/dev/null
+            exit 1
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Summary
+        run: |
+          echo "## Force Unlock Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ env.TF_ENV }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **AWS Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.check_lock.outputs.lock_exists }}" == "true" ]; then
+            echo "- **Action**: Force unlocked state" >> $GITHUB_STEP_SUMMARY
+            echo "- **Lock ID**: \`${{ steps.check_lock.outputs.detected_lock_id || github.event.inputs.lock_id }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Previous Owner**: \`${{ steps.check_lock.outputs.lock_who }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Created**: ${{ steps.check_lock.outputs.lock_created }}" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Result**: State successfully unlocked and verified" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Action**: No unlock needed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "ℹ️ **Result**: No state lock was found" >> $GITHUB_STEP_SUMMARY
+          fi
