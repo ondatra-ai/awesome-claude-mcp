@@ -37,23 +37,30 @@ while true; do
 
     echo -n "⏳ Checking state lock status... (elapsed: $((elapsed / 60))m $((elapsed % 60))s)"
 
-    # Try to acquire a state lock by running a harmless plan with detailed exit code
-    if terraform plan -detailed-exitcode -var-file="environments/${ENVIRONMENT}.tfvars" -out=/dev/null >/dev/null 2>&1; then
-        echo ""
-        echo "✅ State lock is available! Terraform can now proceed."
-        exit 0
-    else
-        # Check if the error is specifically about state lock
-        error_output=$(terraform plan -detailed-exitcode -var-file="environments/${ENVIRONMENT}.tfvars" -out=/dev/null 2>&1 || true)
-
-        if echo "$error_output" | grep -q "state lock"; then
-            echo " 🔒 Still locked"
-        else
+    # Try to acquire a state lock by running a harmless validate command
+    if terraform validate >/dev/null 2>&1; then
+        # If validate works, try a simple state command to check lock
+        if terraform state list >/dev/null 2>&1; then
             echo ""
-            echo "❌ Different error encountered (not a lock issue):"
-            echo "$error_output"
-            exit 1
+            echo "✅ State lock is available! Terraform can now proceed."
+            exit 0
+        else
+            # Check if the error is specifically about state lock
+            error_output=$(terraform state list 2>&1 || true)
+            if echo "$error_output" | grep -qi "lock\|acquire"; then
+                echo " 🔒 Still locked"
+            else
+                echo ""
+                echo "❌ Different error encountered (not a lock issue):"
+                echo "$error_output"
+                exit 1
+            fi
         fi
+    else
+        echo ""
+        echo "❌ Terraform validation failed:"
+        terraform validate
+        exit 1
     fi
 
     sleep $POLL_INTERVAL
