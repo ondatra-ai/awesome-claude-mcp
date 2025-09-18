@@ -13,6 +13,12 @@ variable "repositories" {
   }
 }
 
+variable "create_env_specific_repos" {
+  description = "Whether to create environment-specific repositories (service-env pattern)"
+  type        = bool
+  default     = true
+}
+
 variable "environment" {
   description = "Environment name (dev|staging|prod)"
   type        = string

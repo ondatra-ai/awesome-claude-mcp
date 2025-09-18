@@ -101,38 +101,34 @@ jobs:
         run: |
           cd services/backend
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          TIMESTAMP=$(date +%Y%m%d-%H%M)
-          IMAGE_TAG="${{ env.TF_ENV }}-${TIMESTAMP}-${SHORT_SHA}"
+          SERVICE_NAME="backend-${{ env.TF_ENV }}"
 
-          docker build -t backend:${IMAGE_TAG} .
-          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${IMAGE_TAG}
-          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:latest
-          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ env.TF_ENV }}-latest
+          docker build -t ${SERVICE_NAME}:${SHORT_SHA} .
+          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
+          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
 
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${IMAGE_TAG}
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:latest
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ env.TF_ENV }}-latest
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
 
-          echo "backend_image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "backend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "backend_service_name=${SERVICE_NAME}" >> $GITHUB_OUTPUT
         id: backend_build
 
       - name: Build and push frontend image
         run: |
           cd services/frontend
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          TIMESTAMP=$(date +%Y%m%d-%H%M)
-          IMAGE_TAG="${{ env.TF_ENV }}-${TIMESTAMP}-${SHORT_SHA}"
+          SERVICE_NAME="frontend-${{ env.TF_ENV }}"
 
-          docker build -t frontend:${IMAGE_TAG} .
-          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${IMAGE_TAG}
-          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:latest
-          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ env.TF_ENV }}-latest
+          docker build -t ${SERVICE_NAME}:${SHORT_SHA} .
+          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
+          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
 
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${IMAGE_TAG}
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:latest
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ env.TF_ENV }}-latest
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
 
-          echo "frontend_image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "frontend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "frontend_service_name=${SERVICE_NAME}" >> $GITHUB_OUTPUT
         id: frontend_build
 
       - name: Upload Terraform Plan
@@ -149,8 +145,8 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_backend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ steps.backend_build.outputs.backend_image_tag }}
-          TF_VAR_frontend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ steps.frontend_build.outputs.frontend_image_tag }}
+          TF_VAR_backend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ steps.backend_build.outputs.backend_service_name }}:${{ steps.backend_build.outputs.backend_image_tag }}
+          TF_VAR_frontend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ steps.frontend_build.outputs.frontend_service_name }}:${{ steps.frontend_build.outputs.frontend_image_tag }}
 
       - name: Force ECS service update
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
@@ -179,5 +175,5 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🐳 Docker Images Deployed:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend**: \`${{ steps.backend_build.outputs.backend_image_tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: \`${{ steps.frontend_build.outputs.frontend_image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: \`${{ steps.backend_build.outputs.backend_service_name }}:${{ steps.backend_build.outputs.backend_image_tag }}\` and \`${{ steps.backend_build.outputs.backend_service_name }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: \`${{ steps.frontend_build.outputs.frontend_service_name }}:${{ steps.frontend_build.outputs.frontend_image_tag }}\` and \`${{ steps.frontend_build.outputs.frontend_service_name }}:latest\`" >> $GITHUB_STEP_SUMMARY
