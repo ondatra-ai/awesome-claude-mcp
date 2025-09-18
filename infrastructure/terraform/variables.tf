@@ -11,11 +11,11 @@ variable "environment" {
 variable "backend_image" {
   description = "Backend Docker image URI"
   type        = string
-  default     = "nginx:alpine"
+  default     = ""
 }
 
 variable "frontend_image" {
   description = "Frontend Docker image URI"
   type        = string
-  default     = "nginx:alpine"
+  default     = ""
 }

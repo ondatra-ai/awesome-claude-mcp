@@ -91,7 +91,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = var.frontend_image
+      image     = local.frontend_image_url
       essential = true
       portMappings = [
         {
@@ -130,7 +130,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = var.backend_image
+      image     = local.backend_image_url
       essential = true
       portMappings = [
         {
@@ -175,6 +175,11 @@ resource "aws_ecs_service" "frontend" {
     assign_public_ip = true
   }
 
+  # Force deployment when task definition changes
+  triggers = {
+    task_definition = aws_ecs_task_definition.frontend.arn
+  }
+
   depends_on = [aws_ecs_task_definition.frontend]
 }
 
@@ -192,8 +197,20 @@ resource "aws_ecs_service" "backend" {
     assign_public_ip = true
   }
 
+  # Force deployment when task definition changes
+  triggers = {
+    task_definition = aws_ecs_task_definition.backend.arn
+  }
+
   depends_on = [aws_ecs_task_definition.backend]
 }
 
 
 data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
+locals {
+  # Construct ECR image URLs when variables are empty
+  backend_image_url = var.backend_image != "" ? var.backend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/backend-${var.environment}:latest"
+  frontend_image_url = var.frontend_image != "" ? var.frontend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/frontend-${var.environment}:latest"
+}

@@ -24,3 +24,5 @@ resource "aws_ecr_repository" "env_specific" {
     encryption_type = "AES256"
   }
 }
+
+data "aws_caller_identity" "current" {}

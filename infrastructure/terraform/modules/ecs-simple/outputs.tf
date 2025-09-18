@@ -22,3 +22,13 @@ output "backend_service_name" {
   description = "Backend service name"
   value       = aws_ecs_service.backend.name
 }
+
+output "backend_image_used" {
+  description = "Backend image URL being used"
+  value       = local.backend_image_url
+}
+
+output "frontend_image_used" {
+  description = "Frontend image URL being used"
+  value       = local.frontend_image_url
+}

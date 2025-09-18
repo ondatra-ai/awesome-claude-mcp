@@ -33,9 +33,10 @@ module "vpc" {
 
 
 module "ecr" {
-  source             = "./modules/ecr"
-  environment        = var.environment
-  create_base_repos  = false
+  source                    = "./modules/ecr"
+  environment               = var.environment
+  create_base_repos         = false
+  create_env_specific_repos = true
 }
 
 module "iam" {
@@ -51,4 +52,5 @@ module "ecs_simple" {
   task_role_arn      = module.iam.task_role_arn
   frontend_image     = var.frontend_image
   backend_image      = var.backend_image
+  environment        = var.environment
 }

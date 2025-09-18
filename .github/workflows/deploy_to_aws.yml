@@ -81,56 +81,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Get AWS Account ID
-        id: aws_account
-        run: |
-          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "aws_account_id=$AWS_ACCOUNT_ID" >> $GITHUB_OUTPUT
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Build and push backend image
-        run: |
-          cd services/backend
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          SERVICE_NAME="backend-${{ env.TF_ENV }}"
-
-          docker build -t ${SERVICE_NAME}:${SHORT_SHA} .
-          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
-          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
-
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
-
-          echo "backend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "backend_service_name=${SERVICE_NAME}" >> $GITHUB_OUTPUT
-        id: backend_build
-
-      - name: Build and push frontend image
-        run: |
-          cd services/frontend
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
-          SERVICE_NAME="frontend-${{ env.TF_ENV }}"
-
-          docker build -t ${SERVICE_NAME}:${SHORT_SHA} .
-          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
-          docker tag ${SERVICE_NAME}:${SHORT_SHA} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
-
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:${SHORT_SHA}
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${SERVICE_NAME}:latest
-
-          echo "frontend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "frontend_service_name=${SERVICE_NAME}" >> $GITHUB_OUTPUT
-        id: frontend_build
-
       - name: Upload Terraform Plan
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         uses: actions/upload-artifact@v4
@@ -139,23 +89,99 @@ jobs:
           path: infrastructure/terraform/plan.out
           retention-days: 7
 
-      - name: Terraform Apply
+      - name: Terraform Apply Infrastructure
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: make tf-apply TF_ENV=${{ env.TF_ENV }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_backend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ steps.backend_build.outputs.backend_service_name }}:${{ steps.backend_build.outputs.backend_image_tag }}
-          TF_VAR_frontend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ steps.frontend_build.outputs.frontend_service_name }}:${{ steps.frontend_build.outputs.frontend_image_tag }}
+
+      - name: Get Terraform outputs
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        id: tf_outputs
+        run: |
+          cd infrastructure/terraform
+          REGISTRY_ID=$(terraform output -raw ecr_registry_id)
+          BACKEND_REPO=$(terraform output -raw backend_repository_url)
+          FRONTEND_REPO=$(terraform output -raw frontend_repository_url)
+          echo "registry_id=$REGISTRY_ID" >> $GITHUB_OUTPUT
+          echo "backend_repo=$BACKEND_REPO" >> $GITHUB_OUTPUT
+          echo "frontend_repo=$FRONTEND_REPO" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Configure AWS credentials for ECR
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: |
+          cd services/backend
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
+
+          docker build -t backend-temp:${SHORT_SHA} .
+          docker tag backend-temp:${SHORT_SHA} ${{ steps.tf_outputs.outputs.backend_repo }}:${SHORT_SHA}
+          docker tag backend-temp:${SHORT_SHA} ${{ steps.tf_outputs.outputs.backend_repo }}:latest
+
+          docker push ${{ steps.tf_outputs.outputs.backend_repo }}:${SHORT_SHA}
+          docker push ${{ steps.tf_outputs.outputs.backend_repo }}:latest
+
+          echo "backend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "backend_image_uri=${{ steps.tf_outputs.outputs.backend_repo }}:${SHORT_SHA}" >> $GITHUB_OUTPUT
+        id: backend_build
+
+      - name: Build and push frontend image
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: |
+          cd services/frontend
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
+
+          docker build -t frontend-temp:${SHORT_SHA} .
+          docker tag frontend-temp:${SHORT_SHA} ${{ steps.tf_outputs.outputs.frontend_repo }}:${SHORT_SHA}
+          docker tag frontend-temp:${SHORT_SHA} ${{ steps.tf_outputs.outputs.frontend_repo }}:latest
+
+          docker push ${{ steps.tf_outputs.outputs.frontend_repo }}:${SHORT_SHA}
+          docker push ${{ steps.tf_outputs.outputs.frontend_repo }}:latest
+
+          echo "frontend_image_tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "frontend_image_uri=${{ steps.tf_outputs.outputs.frontend_repo }}:${SHORT_SHA}" >> $GITHUB_OUTPUT
+        id: frontend_build
+
+      - name: Terraform Plan Services Update
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: make tf-plan TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_backend_image: ${{ steps.backend_build.outputs.backend_image_uri }}
+          TF_VAR_frontend_image: ${{ steps.frontend_build.outputs.frontend_image_uri }}
+
+      - name: Terraform Apply Services Update
+        if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
+        run: make tf-apply TF_ENV=${{ env.TF_ENV }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_VAR_backend_image: ${{ steps.backend_build.outputs.backend_image_uri }}
+          TF_VAR_frontend_image: ${{ steps.frontend_build.outputs.frontend_image_uri }}
 
       - name: Force ECS service update
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
         run: |
-          aws ecs update-service --cluster awesome-claude-mcp-cluster-${{ env.TF_ENV }} --service backend --force-new-deployment --region ${{ env.AWS_REGION }}
-          aws ecs update-service --cluster awesome-claude-mcp-cluster-${{ env.TF_ENV }} --service frontend --force-new-deployment --region ${{ env.AWS_REGION }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          echo "ECS services will be automatically updated by Terraform Apply step"
+          echo "Task definitions were updated with new image URIs"
+          echo "Backend image: ${{ steps.backend_build.outputs.backend_image_uri }}"
+          echo "Frontend image: ${{ steps.frontend_build.outputs.frontend_image_uri }}"
 
       - name: Post-deployment verification
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
@@ -175,5 +201,10 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🐳 Docker Images Deployed:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend**: \`${{ steps.backend_build.outputs.backend_service_name }}:${{ steps.backend_build.outputs.backend_image_tag }}\` and \`${{ steps.backend_build.outputs.backend_service_name }}:latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: \`${{ steps.frontend_build.outputs.frontend_service_name }}:${{ steps.frontend_build.outputs.frontend_image_tag }}\` and \`${{ steps.frontend_build.outputs.frontend_service_name }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: \`${{ steps.backend_build.outputs.backend_image_uri }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: \`${{ steps.frontend_build.outputs.frontend_image_uri }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 ECR Information:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry ID**: \`${{ steps.tf_outputs.outputs.registry_id }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend Repository**: \`${{ steps.tf_outputs.outputs.backend_repo }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend Repository**: \`${{ steps.tf_outputs.outputs.frontend_repo }}\`" >> $GITHUB_STEP_SUMMARY

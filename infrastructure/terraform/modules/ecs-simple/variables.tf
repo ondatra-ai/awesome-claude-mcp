@@ -39,3 +39,8 @@ variable "desired_count" {
   type        = number
   default     = 1
 }
+
+variable "environment" {
+  description = "Environment name for ECR repository naming"
+  type        = string
+}
