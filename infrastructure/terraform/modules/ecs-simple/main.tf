@@ -211,6 +211,6 @@ data "aws_caller_identity" "current" {}
 
 locals {
   # Construct ECR image URLs when variables are empty
-  backend_image_url = var.backend_image != "" ? var.backend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/backend-${var.environment}:latest"
+  backend_image_url  = var.backend_image != "" ? var.backend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/backend-${var.environment}:latest"
   frontend_image_url = var.frontend_image != "" ? var.frontend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/frontend-${var.environment}:latest"
 }
