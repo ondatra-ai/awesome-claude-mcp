@@ -101,7 +101,7 @@ resource "aws_ecs_task_definition" "frontend" {
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = local.frontend_image_url
+      image     = var.frontend_image
       essential = true
       portMappings = [
         {
@@ -140,7 +140,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = local.backend_image_url
+      image     = var.backend_image
       essential = true
       portMappings = [
         {
@@ -217,10 +217,3 @@ resource "aws_ecs_service" "backend" {
 
 
 data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
-
-locals {
-  # Construct ECR image URLs when variables are empty
-  backend_image_url  = var.backend_image != "" ? var.backend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/backend-${var.environment}:latest"
-  frontend_image_url = var.frontend_image != "" ? var.frontend_image : "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/frontend-${var.environment}:latest"
-}

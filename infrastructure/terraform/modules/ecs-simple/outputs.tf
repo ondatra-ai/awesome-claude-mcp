@@ -25,10 +25,10 @@ output "backend_service_name" {
 
 output "backend_image_used" {
   description = "Backend image URL being used"
-  value       = local.backend_image_url
+  value       = var.backend_image
 }
 
 output "frontend_image_used" {
   description = "Frontend image URL being used"
-  value       = local.frontend_image_url
+  value       = var.frontend_image
 }

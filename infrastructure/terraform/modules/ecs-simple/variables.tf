@@ -13,15 +13,6 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
-variable "frontend_image" {
-  description = "Container image for frontend service"
-  type        = string
-}
-
-variable "backend_image" {
-  description = "Container image for backend service"
-  type        = string
-}
 
 
 variable "execution_role_arn" {
@@ -40,7 +31,12 @@ variable "desired_count" {
   default     = 1
 }
 
-variable "environment" {
-  description = "Environment name for ECR repository naming"
+variable "frontend_image" {
+  description = "Container image for frontend service"
+  type        = string
+}
+
+variable "backend_image" {
+  description = "Container image for backend service"
   type        = string
 }

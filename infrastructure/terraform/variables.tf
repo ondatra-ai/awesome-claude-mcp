@@ -9,13 +9,11 @@ variable "environment" {
 }
 
 variable "backend_image" {
-  description = "Backend Docker image URI"
+  description = "Backend Docker image URI (required)"
   type        = string
-  default     = ""
 }
 
 variable "frontend_image" {
-  description = "Frontend Docker image URI"
+  description = "Frontend Docker image URI (required)"
   type        = string
-  default     = ""
 }

@@ -52,5 +52,4 @@ module "ecs_simple" {
   task_role_arn      = module.iam.task_role_arn
   frontend_image     = var.frontend_image
   backend_image      = var.backend_image
-  environment        = var.environment
 }
