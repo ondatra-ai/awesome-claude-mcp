@@ -1,5 +1,5 @@
 variable "name" {
-  description = "ALB name (must be unique per account/region). Prefer including the environment, e.g., mcp-gde-alb-dev."
+  description = "ALB name (must be unique per account/region). Prefer including the environment, e.g., awesome-claude-mcp-alb-dev."
   type        = string
   nullable    = false
   validation {

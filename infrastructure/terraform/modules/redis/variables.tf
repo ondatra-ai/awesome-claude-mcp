@@ -25,12 +25,6 @@ variable "allowed_sg_ids" {
   type        = list(string)
 }
 
-variable "num_cache_clusters" {
-  description = "Number of cache nodes (1 for single node)"
-  type        = number
-  default     = 1
-}
-
 variable "name_prefix" {
   description = "Prefix to ensure Redis resource names are unique per environment (e.g., dev|staging|prod)"
   type        = string

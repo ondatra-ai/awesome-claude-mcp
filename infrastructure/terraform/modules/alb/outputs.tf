@@ -25,3 +25,13 @@ output "sg_id" {
   description = "ALB security group ID"
   value       = aws_security_group.alb.id
 }
+
+output "domain_name" {
+  description = "Custom domain name (if configured)"
+  value       = var.domain_name
+}
+
+output "route53_record_fqdn" {
+  description = "Route53 record FQDN (if domain is configured)"
+  value       = var.domain_name != null ? aws_route53_record.alb[0].fqdn : null
+}

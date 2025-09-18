@@ -30,20 +30,26 @@ resource "aws_security_group" "services" {
   description = "Allow ALB to reach services"
   vpc_id      = var.vpc_id
 
-  ingress {
-    description     = "Frontend from ALB"
-    from_port       = 3000
-    to_port         = 3000
-    protocol        = "tcp"
-    security_groups = [var.alb_sg_id]
+  dynamic "ingress" {
+    for_each = var.alb_sg_id != null ? [1] : []
+    content {
+      description     = "Frontend from ALB"
+      from_port       = 3000
+      to_port         = 3000
+      protocol        = "tcp"
+      security_groups = [var.alb_sg_id]
+    }
   }
 
-  ingress {
-    description     = "Backend from ALB"
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [var.alb_sg_id]
+  dynamic "ingress" {
+    for_each = var.alb_sg_id != null ? [1] : []
+    content {
+      description     = "Backend from ALB"
+      from_port       = 8080
+      to_port         = 8080
+      protocol        = "tcp"
+      security_groups = [var.alb_sg_id]
+    }
   }
 
   # Allow intra-services traffic to MCP on 9090
@@ -106,7 +112,7 @@ resource "aws_cloudwatch_log_group" "mcp" {
 }
 
 resource "aws_ecs_task_definition" "frontend" {
-  depends_on = [aws_cloudwatch_log_group.frontend]
+  depends_on               = [aws_cloudwatch_log_group.frontend]
   family                   = "frontend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -137,7 +143,7 @@ resource "aws_ecs_task_definition" "frontend" {
 }
 
 resource "aws_ecs_task_definition" "backend" {
-  depends_on = [aws_cloudwatch_log_group.backend]
+  depends_on               = [aws_cloudwatch_log_group.backend]
   family                   = "backend"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -168,7 +174,7 @@ resource "aws_ecs_task_definition" "backend" {
 }
 
 resource "aws_ecs_task_definition" "mcp" {
-  depends_on = [aws_cloudwatch_log_group.mcp]
+  depends_on               = [aws_cloudwatch_log_group.mcp]
   family                   = "mcp-service"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -201,15 +207,15 @@ resource "aws_ecs_task_definition" "mcp" {
 data "aws_region" "current" {}
 
 resource "aws_ecs_service" "frontend" {
-  name            = "frontend"
-  cluster         = aws_ecs_cluster.this.arn
-  task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = var.desired_count_frontend
-  launch_type     = "FARGATE"
+  name             = "frontend"
+  cluster          = aws_ecs_cluster.this.arn
+  task_definition  = aws_ecs_task_definition.frontend.arn
+  desired_count    = var.desired_count_frontend
+  launch_type      = "FARGATE"
   platform_version = "LATEST"
   network_configuration {
-    subnets         = var.private_subnet_ids
-    security_groups = [aws_security_group.services.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [aws_security_group.services.id]
     assign_public_ip = false
   }
   load_balancer {
@@ -220,15 +226,15 @@ resource "aws_ecs_service" "frontend" {
 }
 
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
-  cluster         = aws_ecs_cluster.this.arn
-  task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = var.desired_count_backend
-  launch_type     = "FARGATE"
+  name             = "backend"
+  cluster          = aws_ecs_cluster.this.arn
+  task_definition  = aws_ecs_task_definition.backend.arn
+  desired_count    = var.desired_count_backend
+  launch_type      = "FARGATE"
   platform_version = "LATEST"
   network_configuration {
-    subnets         = var.private_subnet_ids
-    security_groups = [aws_security_group.services.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [aws_security_group.services.id]
     assign_public_ip = false
   }
   load_balancer {
@@ -242,15 +248,15 @@ resource "aws_ecs_service" "backend" {
 }
 
 resource "aws_ecs_service" "mcp" {
-  name            = "mcp-service"
-  cluster         = aws_ecs_cluster.this.arn
-  task_definition = aws_ecs_task_definition.mcp.arn
-  desired_count   = var.desired_count_mcp
-  launch_type     = "FARGATE"
+  name             = "mcp-service"
+  cluster          = aws_ecs_cluster.this.arn
+  task_definition  = aws_ecs_task_definition.mcp.arn
+  desired_count    = var.desired_count_mcp
+  launch_type      = "FARGATE"
   platform_version = "LATEST"
   network_configuration {
-    subnets         = var.private_subnet_ids
-    security_groups = [aws_security_group.services.id]
+    subnets          = var.private_subnet_ids
+    security_groups  = [aws_security_group.services.id]
     assign_public_ip = false
   }
 }

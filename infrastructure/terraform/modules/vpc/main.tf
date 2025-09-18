@@ -5,41 +5,41 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = "${var.name}-vpc"
+    Name = "${var.name_prefix}-vpc"
   }
 }
 
 locals {
-  azs             = slice(data.aws_availability_zones.available.names, 0, 2)
-  public_cidrs    = [for i in range(2) : cidrsubnet(var.cidr_block, 8, i)]
-  private_cidrs   = [for i in range(2) : cidrsubnet(var.cidr_block, 8, i + 10)]
+  azs           = slice(data.aws_availability_zones.available.names, 0, 2)
+  public_cidrs  = [for i in range(2) : cidrsubnet(var.cidr_block, 8, i)]
+  private_cidrs = [for i in range(2) : cidrsubnet(var.cidr_block, 8, i + 10)]
 }
 
 resource "aws_subnet" "public" {
-  for_each = { for idx, az in local.azs : idx => { az = az, cidr = local.public_cidrs[idx] } }
+  for_each                = { for idx, az in local.azs : idx => { az = az, cidr = local.public_cidrs[idx] } }
   vpc_id                  = aws_vpc.this.id
   cidr_block              = each.value.cidr
   availability_zone       = each.value.az
   map_public_ip_on_launch = true
   tags = {
-    Name = "${var.name}-public-${each.key}"
+    Name = "${var.name_prefix}-public-${each.key}"
   }
 }
 
 resource "aws_subnet" "private" {
-  for_each = { for idx, az in local.azs : idx => { az = az, cidr = local.private_cidrs[idx] } }
+  for_each          = { for idx, az in local.azs : idx => { az = az, cidr = local.private_cidrs[idx] } }
   vpc_id            = aws_vpc.this.id
   cidr_block        = each.value.cidr
   availability_zone = each.value.az
   tags = {
-    Name = "${var.name}-private-${each.key}"
+    Name = "${var.name_prefix}-private-${each.key}"
   }
 }
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
   tags = {
-    Name = "${var.name}-igw"
+    Name = "${var.name_prefix}-igw"
   }
 }
 
@@ -54,7 +54,7 @@ resource "aws_nat_gateway" "this" {
   subnet_id     = each.value.id
   depends_on    = [aws_internet_gateway.this]
   tags = {
-    Name = "${var.name}-nat-${each.key}"
+    Name = "${var.name_prefix}-nat-${each.key}"
   }
 }
 
@@ -90,7 +90,7 @@ resource "aws_route_table_association" "private" {
 # Network ACLs (basic hardening)
 resource "aws_network_acl" "public" {
   vpc_id = aws_vpc.this.id
-  tags = { Name = "${var.name}-public-acl" }
+  tags   = { Name = "${var.name_prefix}-public-acl" }
 }
 
 resource "aws_network_acl_rule" "public_in_http" {
@@ -135,7 +135,7 @@ resource "aws_network_acl_association" "public" {
 
 resource "aws_network_acl" "private" {
   vpc_id = aws_vpc.this.id
-  tags = { Name = "${var.name}-private-acl" }
+  tags   = { Name = "${var.name_prefix}-private-acl" }
 }
 
 resource "aws_network_acl_rule" "private_in_from_vpc" {
@@ -165,3 +165,103 @@ resource "aws_network_acl_association" "private" {
   network_acl_id = aws_network_acl.private.id
   subnet_id      = each.value.id
 }
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name_prefix = "${var.name_prefix}-vpc-endpoints"
+  description = "Security group for VPC endpoints"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description = "HTTPS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.name_prefix}-vpc-endpoints-sg"
+  }
+}
+
+# VPC Endpoint for ECR API
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.name_prefix}-ecr-api-endpoint"
+  }
+}
+
+# VPC Endpoint for ECR DKR
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-ecr-dkr-endpoint"
+  }
+}
+
+# VPC Endpoint for CloudWatch Logs
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.name}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.public : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-logs-endpoint"
+  }
+}
+
+# VPC Endpoint for S3 (Gateway endpoint)
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.this.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.public.id]
+
+  tags = {
+    Name = "${var.name_prefix}-s3-endpoint"
+  }
+}
+
+# Data source for current region
+data "aws_region" "current" {}

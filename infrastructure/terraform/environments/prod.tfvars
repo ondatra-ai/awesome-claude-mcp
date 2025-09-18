@@ -1,6 +1,6 @@
-aws_region = "us-east-1"
+aws_region  = "us-east-1"
 environment = "prod"
-alb_name = "mcp-gde-alb-prod"
+# alb_name constructed dynamically as "awesome-claude-mcp-alb-prod"
 min_count_frontend = 2
 max_count_frontend = 6
 min_count_backend  = 2

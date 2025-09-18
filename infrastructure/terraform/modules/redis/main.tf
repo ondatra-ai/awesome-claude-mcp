@@ -24,18 +24,18 @@ resource "aws_elasticache_subnet_group" "this" {
 }
 
 resource "aws_elasticache_replication_group" "this" {
-  replication_group_id          = "${var.name_prefix}-redis-rg"
-  description                   = "Redis replication group"
-  engine                        = "redis"
-  engine_version                = var.engine_version
-  node_type                     = var.node_type
-  port                          = 6379
-  automatic_failover_enabled    = true
-  multi_az_enabled              = true
-  num_node_groups         = var.cluster_num_node_groups
-  replicas_per_node_group = var.cluster_replicas_per_node_group
-  at_rest_encryption_enabled    = true
-  transit_encryption_enabled    = true
-  subnet_group_name             = aws_elasticache_subnet_group.this.name
-  security_group_ids            = [aws_security_group.redis.id]
+  replication_group_id       = "${var.name_prefix}-redis-rg"
+  description                = "Redis replication group"
+  engine                     = "redis"
+  engine_version             = var.engine_version
+  node_type                  = var.node_type
+  port                       = 6379
+  automatic_failover_enabled = true
+  multi_az_enabled           = true
+  num_node_groups            = var.cluster_num_node_groups
+  replicas_per_node_group    = var.cluster_replicas_per_node_group
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  subnet_group_name          = aws_elasticache_subnet_group.this.name
+  security_group_ids         = [aws_security_group.redis.id]
 }

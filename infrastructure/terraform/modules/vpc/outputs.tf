@@ -17,3 +17,8 @@ output "vpc_cidr" {
   description = "VPC CIDR block"
   value       = var.cidr_block
 }
+
+output "vpc_endpoints_sg_id" {
+  description = "Security group ID for VPC endpoints"
+  value       = aws_security_group.vpc_endpoints.id
+}

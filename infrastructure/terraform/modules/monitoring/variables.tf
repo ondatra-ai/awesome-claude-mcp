@@ -1,5 +1,11 @@
+
+variable "dashboard_name" {
+  description = "CloudWatch dashboard name"
+  type        = string
+}
+
 variable "cluster_name" {
-  description = "ECS Cluster name for dashboard metrics"
+  description = "ECS cluster name for metrics"
   type        = string
 }
 

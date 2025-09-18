@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts tf-bootstrap tf-init tf-validate tf-plan tf-apply
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform lint-terraform-modules tf-bootstrap tf-init tf-validate tf-plan tf-apply
 
 # Default target
 help: ## Show available commands
@@ -120,3 +120,27 @@ lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible
 	@echo "🔍 Running golangci-lint on scripts/pr-triage..."
 	cd scripts/pr-triage && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
+
+lint-terraform: ## Run tflint on Terraform code (auto-fix when possible)
+	@echo "🔍 Running tflint on Terraform infrastructure..."
+	@echo "📦 Installing tflint plugins..."
+	tflint --init
+	@echo "🔧 Running tflint with auto-fix on infrastructure/terraform..."
+	tflint --fix --chdir=infrastructure/terraform
+	@echo "🔧 Running terraform fmt on infrastructure/terraform..."
+	terraform fmt -recursive infrastructure/terraform/
+	@echo "✅ Terraform linting completed!"
+
+lint-terraform-modules: ## Run tflint on all Terraform modules
+	@echo "🔍 Running tflint on Terraform modules..."
+	@echo "📦 Installing tflint plugins..."
+	tflint --init
+	@for module in infrastructure/terraform/modules/*; do \
+		if [ -d "$$module" ]; then \
+			echo "🔧 Linting module: $$module"; \
+			tflint --fix --chdir="$$module"; \
+		fi; \
+	done
+	@echo "🔧 Running terraform fmt on all modules..."
+	terraform fmt -recursive infrastructure/terraform/
+	@echo "✅ All Terraform modules linting completed!"

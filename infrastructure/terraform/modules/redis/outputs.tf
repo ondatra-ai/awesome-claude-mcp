@@ -1,6 +1,6 @@
 output "redis_endpoint" {
   description = "Redis primary endpoint"
-  value       = coalesce(
+  value = coalesce(
     aws_elasticache_replication_group.this.configuration_endpoint_address,
     aws_elasticache_replication_group.this.primary_endpoint_address
   )

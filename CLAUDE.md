@@ -35,6 +35,13 @@ Update this file once the project structure is established with:
 
 Currently empty - update this section as the codebase develops.
 
+## AWS Configuration
+
+- **AWS Profile**: `awesome.terraform` (configured in ~/.aws/credentials)
+- **AWS Region**: us-east-1
+- **Terraform Backend**: S3 bucket `terraform-awesome-claude-mcp`
+- Use AWS CLI with profile: `aws --profile awesome.terraform <command>`
+
 ## Notes
 
 - The .gitignore is configured for Go projects

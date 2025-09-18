@@ -1,7 +1,7 @@
-variable "name" {
+variable "name_prefix" {
   description = "Base name prefix for VPC resources"
   type        = string
-  default     = "mcp-gde"
+  default     = "awesome-claude-mcp"
 }
 
 variable "cidr_block" {
