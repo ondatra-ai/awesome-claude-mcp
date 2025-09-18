@@ -47,6 +47,11 @@ tf-validate: ## Terraform validate for ENV (ENV=dev|staging|prod)
 TF_PLAN ?= plan.out
 tf-plan: ## Terraform plan for ENV (ENV=dev|staging|prod)
 	@echo "🗺️  Terraform plan for $(TF_ENV)..."
+	@if [ -z "$$TF_VAR_backend_image" ] || [ -z "$$TF_VAR_frontend_image" ]; then \
+		echo "⚠️  TF_VAR_backend_image and TF_VAR_frontend_image must be set"; \
+		echo "💡 Example: TF_VAR_backend_image=195062990486.dkr.ecr.us-east-1.amazonaws.com/backend-$(TF_ENV):latest TF_VAR_frontend_image=195062990486.dkr.ecr.us-east-1.amazonaws.com/frontend-$(TF_ENV):latest make tf-plan TF_ENV=$(TF_ENV)"; \
+		exit 1; \
+	fi
 	terraform -chdir=$(TF_DIR) plan -var-file="environments/$(TF_ENV).tfvars" -out $(TF_PLAN)
 
 tf-apply: ## Terraform apply for ENV (ENV=dev|staging|prod)
