@@ -100,20 +100,40 @@ jobs:
       - name: Build and push backend image
         run: |
           cd services/backend
-          docker build -t backend:${{ github.sha }} .
-          docker tag backend:${{ github.sha }} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
-          docker tag backend:${{ github.sha }} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:latest
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
+          TIMESTAMP=$(date +%Y%m%d-%H%M)
+          IMAGE_TAG="${{ env.TF_ENV }}-${TIMESTAMP}-${SHORT_SHA}"
+
+          docker build -t backend:${IMAGE_TAG} .
+          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${IMAGE_TAG}
+          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:latest
+          docker tag backend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ env.TF_ENV }}-latest
+
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${IMAGE_TAG}
           docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:latest
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ env.TF_ENV }}-latest
+
+          echo "backend_image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        id: backend_build
 
       - name: Build and push frontend image
         run: |
           cd services/frontend
-          docker build -t frontend:${{ github.sha }} .
-          docker tag frontend:${{ github.sha }} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}
-          docker tag frontend:${{ github.sha }} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:latest
-          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-8)
+          TIMESTAMP=$(date +%Y%m%d-%H%M)
+          IMAGE_TAG="${{ env.TF_ENV }}-${TIMESTAMP}-${SHORT_SHA}"
+
+          docker build -t frontend:${IMAGE_TAG} .
+          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${IMAGE_TAG}
+          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:latest
+          docker tag frontend:${IMAGE_TAG} ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ env.TF_ENV }}-latest
+
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${IMAGE_TAG}
           docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:latest
+          docker push ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ env.TF_ENV }}-latest
+
+          echo "frontend_image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        id: frontend_build
 
       - name: Upload Terraform Plan
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
@@ -129,8 +149,8 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_VAR_backend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ github.sha }}
-          TF_VAR_frontend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ github.sha }}
+          TF_VAR_backend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/backend:${{ steps.backend_build.outputs.backend_image_tag }}
+          TF_VAR_frontend_image: ${{ steps.aws_account.outputs.aws_account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/frontend:${{ steps.frontend_build.outputs.frontend_image_tag }}
 
       - name: Force ECS service update
         if: ${{ github.event.inputs.deploy-plan-only != 'true' }}
@@ -157,3 +177,7 @@ jobs:
           echo "- **Backend**: S3 (terraform-awesome-claude-mcp)" >> $GITHUB_STEP_SUMMARY
           echo "- **State Key**: ${{ env.TF_ENV }}/terraform.tfstate" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🐳 Docker Images Deployed:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend**: \`${{ steps.backend_build.outputs.backend_image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: \`${{ steps.frontend_build.outputs.frontend_image_tag }}\`" >> $GITHUB_STEP_SUMMARY
