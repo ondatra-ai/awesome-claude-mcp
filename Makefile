@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform lint-terraform-modules tf-bootstrap tf-init tf-validate tf-plan tf-apply tf-plan-destroy tf-destroy
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform tf-bootstrap tf-init tf-validate tf-plan tf-apply tf-plan-destroy tf-destroy
 
 # Default target
 help: ## Show available commands
@@ -130,26 +130,21 @@ lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible
 	cd scripts/pr-triage && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
 
-lint-terraform: ## Run tflint on Terraform code (auto-fix when possible)
-	@echo "🔍 Running tflint on Terraform infrastructure..."
+lint-terraform: ## Run comprehensive Terraform linting, formatting, and validation on all configurations
+	@echo "🔍 Running comprehensive Terraform linting pipeline..."
 	@echo "📦 Installing tflint plugins..."
 	tflint --init
-	@echo "🔧 Running tflint with auto-fix on infrastructure/terraform..."
+	@echo "🔧 Running tflint with auto-fix on main infrastructure..."
 	tflint --fix --chdir=infrastructure/terraform
-	@echo "🔧 Running terraform fmt on infrastructure/terraform..."
-	terraform fmt -recursive infrastructure/terraform/
-	@echo "✅ Terraform linting completed!"
-
-lint-terraform-modules: ## Run tflint on all Terraform modules
-	@echo "🔍 Running tflint on Terraform modules..."
-	@echo "📦 Installing tflint plugins..."
-	tflint --init
+	@echo "🔧 Running tflint on all Terraform modules..."
 	@for module in infrastructure/terraform/modules/*; do \
 		if [ -d "$$module" ]; then \
-			echo "🔧 Linting module: $$module"; \
+			echo "  🔧 Linting module: $$module"; \
 			tflint --fix --chdir="$$module"; \
 		fi; \
 	done
-	@echo "🔧 Running terraform fmt on all modules..."
+	@echo "🎨 Running terraform fmt on all Terraform files..."
 	terraform fmt -recursive infrastructure/terraform/
-	@echo "✅ All Terraform modules linting completed!"
+	@echo "✅ Validating Terraform configuration..."
+	terraform -chdir=infrastructure/terraform validate
+	@echo "🎉 Comprehensive Terraform linting completed!"

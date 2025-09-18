@@ -1,8 +1,3 @@
-variable "name_prefix" {
-  description = "Name prefix for ECS resources"
-  type        = string
-  default     = "awesome-claude-mcp"
-}
 
 variable "cluster_name" {
   description = "ECS cluster name"
