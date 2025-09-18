@@ -48,6 +48,6 @@ module "ecs_simple" {
   public_subnet_ids  = module.vpc.public_subnet_ids
   execution_role_arn = module.iam.execution_role_arn
   task_role_arn      = module.iam.task_role_arn
-  frontend_image     = "195062990486.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
-  backend_image      = "195062990486.dkr.ecr.us-east-1.amazonaws.com/backend:v2"
+  frontend_image     = "nginx:alpine"
+  backend_image      = "nginx:alpine"
 }
