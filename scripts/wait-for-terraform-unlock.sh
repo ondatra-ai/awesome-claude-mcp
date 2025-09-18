@@ -37,17 +37,21 @@ while true; do
 
     echo -n "⏳ Checking state lock status... (elapsed: $((elapsed / 60))m $((elapsed % 60))s)"
 
-    # Try to acquire a state lock by attempting to refresh state
-    # This command tries to acquire a write lock just like plan/apply would
-    if terraform refresh -lock-timeout=1s -input=false >/dev/null 2>&1; then
+    # Try to acquire a state lock by attempting to force-unlock with a fake ID
+    # This will fail safely but tell us if there's an existing lock
+    if terraform force-unlock -force nonexistent-lock-id >/dev/null 2>&1; then
         echo ""
         echo "✅ State lock is available! Terraform can now proceed."
         exit 0
     else
         # Check if the error is specifically about state lock
-        error_output=$(terraform refresh -lock-timeout=1s -input=false 2>&1 || true)
-        if echo "$error_output" | grep -qi "lock\|acquire\|timeout.*lock"; then
+        error_output=$(terraform force-unlock -force nonexistent-lock-id 2>&1 || true)
+        if echo "$error_output" | grep -qi "lock.*found\|state.*locked\|cannot.*unlock"; then
             echo " 🔒 Still locked"
+        elif echo "$error_output" | grep -qi "no.*lock.*found\|lock.*not.*found"; then
+            echo ""
+            echo "✅ State lock is available! Terraform can now proceed."
+            exit 0
         else
             echo ""
             echo "❌ Different error encountered (not a lock issue):"
