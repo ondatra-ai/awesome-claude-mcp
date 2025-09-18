@@ -35,29 +35,17 @@ while true; do
         exit 1
     fi
 
-    echo -n "⏳ Checking state lock status... (elapsed: $((elapsed / 60))m $((elapsed % 60))s)"
+    echo -n "⏳ Checking S3 lock file... (elapsed: $((elapsed / 60))m $((elapsed % 60))s)"
 
-    # Try to acquire a state lock by attempting to force-unlock with a fake ID
-    # This will fail safely but tell us if there's an existing lock
-    if terraform force-unlock -force nonexistent-lock-id >/dev/null 2>&1; then
-        echo ""
-        echo "✅ State lock is available! Terraform can now proceed."
-        exit 0
+    # Check if Terraform lock file exists in S3
+    LOCK_FILE="terraform-awesome-claude-mcp/${ENVIRONMENT}/terraform.tfstate.lock"
+
+    if aws s3api head-object --bucket "terraform-awesome-claude-mcp" --key "$LOCK_FILE" >/dev/null 2>&1; then
+        echo " 🔒 Lock file exists in S3"
     else
-        # Check if the error is specifically about state lock
-        error_output=$(terraform force-unlock -force nonexistent-lock-id 2>&1 || true)
-        if echo "$error_output" | grep -qi "lock.*found\|state.*locked\|cannot.*unlock"; then
-            echo " 🔒 Still locked"
-        elif echo "$error_output" | grep -qi "no.*lock.*found\|lock.*not.*found"; then
-            echo ""
-            echo "✅ State lock is available! Terraform can now proceed."
-            exit 0
-        else
-            echo ""
-            echo "❌ Different error encountered (not a lock issue):"
-            echo "$error_output"
-            exit 1
-        fi
+        echo ""
+        echo "✅ No lock file found! Terraform can now proceed."
+        exit 0
     fi
 
     sleep $POLL_INTERVAL
