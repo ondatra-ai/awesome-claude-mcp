@@ -13,6 +13,11 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
+variable "public_subnet_ids" {
+  description = "Public subnet IDs for ECS services networking"
+  type        = list(string)
+}
+
 
 
 variable "execution_role_arn" {

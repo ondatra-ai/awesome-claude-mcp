@@ -20,7 +20,10 @@
       "Bash(make:*)",
       "Bash(git --no-pager status)",
       "Bash(git --no-pager diff)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(export AWS_PROFILE=awesome.terraform)",
+      "Bash(aws ecs describe-tasks:*)",
+      "Bash(aws ec2 describe-subnets:*)"
     ],
     "deny": [],
     "ask": []

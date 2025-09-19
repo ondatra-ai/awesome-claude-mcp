@@ -115,6 +115,30 @@ resource "aws_network_acl_rule" "public_in_https" {
   to_port        = 443
 }
 
+# Allow inbound traffic on port 3000 (frontend) from anywhere
+resource "aws_network_acl_rule" "public_in_frontend" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 120
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 3000
+  to_port        = 3000
+}
+
+# Allow inbound traffic on port 8080 (backend) from anywhere
+resource "aws_network_acl_rule" "public_in_backend" {
+  network_acl_id = aws_network_acl.public.id
+  rule_number    = 130
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 8080
+  to_port        = 8080
+}
+
 
 resource "aws_network_acl_rule" "public_out_all" {
   network_acl_id = aws_network_acl.public.id

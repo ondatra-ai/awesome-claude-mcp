@@ -48,6 +48,7 @@ module "ecs_simple" {
   cluster_name       = local.cluster_name
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_ids
   execution_role_arn = module.iam.execution_role_arn
   task_role_arn      = module.iam.task_role_arn
   frontend_image     = var.frontend_image
