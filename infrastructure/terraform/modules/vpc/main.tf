@@ -149,6 +149,30 @@ resource "aws_network_acl_rule" "private_in_from_vpc" {
   to_port        = 65535
 }
 
+# Allow inbound HTTPS from anywhere (for VPC endpoints and NAT gateway return traffic)
+resource "aws_network_acl_rule" "private_in_https" {
+  network_acl_id = aws_network_acl.private.id
+  rule_number    = 110
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 443
+  to_port        = 443
+}
+
+# Allow inbound ephemeral ports for return traffic (critical for ECR pulls)
+resource "aws_network_acl_rule" "private_in_ephemeral" {
+  network_acl_id = aws_network_acl.private.id
+  rule_number    = 120
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "allow"
+  cidr_block     = "0.0.0.0/0"
+  from_port      = 1024
+  to_port        = 65535
+}
+
 resource "aws_network_acl_rule" "private_out_all" {
   network_acl_id = aws_network_acl.private.id
   rule_number    = 100
@@ -234,15 +258,90 @@ resource "aws_vpc_endpoint" "logs" {
   }
 }
 
-# VPC Endpoint for S3 (Gateway endpoint)
+# VPC Endpoint for S3 (Gateway endpoint) with policy
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.this.id
   service_name      = "com.amazonaws.${data.aws_region.current.id}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [for rt in aws_route_table.private : rt.id]
 
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::prod-${data.aws_region.current.id}-starport-layer-bucket/*",
+          "arn:aws:s3:::*"
+        ]
+      }
+    ]
+  })
+
   tags = {
     Name = "${var.name_prefix}-s3-endpoint"
+  }
+}
+
+# VPC Endpoint for SSM (Systems Manager) - needed for ECS Exec and parameter store
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.id}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.private : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-ssm-endpoint"
+  }
+}
+
+# VPC Endpoint for SSM Messages - needed for ECS Exec
+resource "aws_vpc_endpoint" "ssm_messages" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.id}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.private : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-ssm-messages-endpoint"
+  }
+}
+
+# VPC Endpoint for EC2 Messages - needed for ECS Exec
+resource "aws_vpc_endpoint" "ec2_messages" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.id}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.private : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-ec2-messages-endpoint"
+  }
+}
+
+# VPC Endpoint for ECS - needed for ECS API calls
+resource "aws_vpc_endpoint" "ecs" {
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${data.aws_region.current.id}.ecs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = [for s in aws_subnet.private : s.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  private_dns_enabled = true
+
+  tags = {
+    Name = "${var.name_prefix}-ecs-endpoint"
   }
 }
 
