@@ -6,7 +6,7 @@ All services, including the Frontend Service (Next.js), Backend Service (Go Fibe
 
 ## Service Architecture
 
-The system will be implemented as a 3-service containerized architecture deployed on AWS ECS Fargate with Application Load Balancer, utilizing AWS services for infrastructure. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber), and MCP Service (Go with Mark3Labs MCP-Go library) following the design patterns established in the architecture document.
+The system will be implemented as a Dockerized architecture deployed to Railway. Railway provides managed environments (Development, Staging, Production), automatic TLS, and container orchestration. The monorepo ships two primary services—Frontend (Next.js) and Backend (Go Fiber)—with environment-specific variants (`-dev`, `-staging`) hosted as separate Railway services. MCP tooling is delivered via the backend service and extended as needed.
 
 ## Testing Requirements
 
@@ -19,19 +19,18 @@ Comprehensive testing pyramid including:
 
 ## Additional Technical Assumptions and Requests
 
-- **Backend Services:** Go 1.21.5 with Fiber framework for Backend and MCP services
+- **Backend Services:** Go 1.21.5 with Fiber framework (MCP tooling embedded in backend service)
 - **Frontend Service:** TypeScript with Next.js 14 (App Router) and modern React patterns
 - **MCP Protocol:** Mark3Labs MCP-Go library for MCP protocol implementation
-- AWS as cloud infrastructure provider (ECS Fargate, Application Load Balancer, CloudWatch)
-- Redis for token caching (AWS ElastiCache or similar)
+- Railway as the hosting provider (Docker deploys, managed TLS, custom domains)
+- Redis cache (Railway add-on or external provider) for token/session storage
 - Docker containerization with multi-stage builds for all services
-- New Relic + CloudWatch for monitoring and observability
+- Application logging handled within services; Railway logs used for deployment visibility
 - Standard MCP protocol implementation without extensions
 - OAuth tokens cached until expiry by default
 - No access controls or rate limiting in MVP (add in v2)
 - Fail-fast error handling - no automatic retries
-- All configuration via environment variables
-- Infrastructure as Code using Terraform
-- GitHub Actions for CI/CD pipeline with ECR integration
+- All configuration via environment variables managed per Railway environment
+- GitHub Actions + Railway CLI for CI/CD (`deploy_to_railway.yml`)
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations

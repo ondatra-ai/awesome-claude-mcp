@@ -35,6 +35,24 @@ Update this file once the project structure is established with:
 
 Currently empty - update this section as the codebase develops.
 
+## Railway Deployment
+
+- **Railway Project ID**: `801ad5e0-95bf-4ce6-977e-6f2fa37529fd`
+- **Environments**: `development`, `staging`, `production`
+- **Primary Services**:
+  - `frontend`, `backend` (production)
+  - `frontend-staging`, `backend-staging`
+  - `frontend-dev`, `backend-dev`
+- **Custom Domains**:
+  - Development: `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`
+  - Staging (planned): `staging.ondatra-ai.xyz`, `api.staging.ondatra-ai.xyz`
+  - Production (planned): `app.ondatra-ai.xyz`, `api.ondatra-ai.xyz`
+- **CLI Basics**:
+  - Authenticate: `railway login`
+  - Link project: `railway link --project 801ad5e0-95bf-4ce6-977e-6f2fa37529fd`
+  - Switch environment: `railway environment <development|staging|production>`
+  - Deploy service: `railway up --service <name> --path-as-root services/<frontend|backend>`
+
 ## Notes
 
 - The .gitignore is configured for Go projects

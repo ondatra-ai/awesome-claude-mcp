@@ -23,19 +23,18 @@
 - Health check endpoints for both services
 - README.md with setup and run instructions
 
-### Story 1.2: AWS Infrastructure Setup
+### Story 1.2: Railway Infrastructure Setup
 **As a** Developer/Maintainer
-**I want** to configure AWS infrastructure
+**I want** to configure Railway environments and services
 **So that** I have a deployable environment for the application
 
 **Acceptance Criteria:**
-- AWS account configured with appropriate IAM roles
-- ECS Fargate cluster created and configured
-- Application Load Balancer configured with proper target groups
-- VPC and networking configured for container communication
-- CloudWatch logging enabled for all services
-- Infrastructure defined in Terraform
-- Deployment successful to AWS ECS
+- Railway project created and linked to repository
+- Development, Staging, and Production environments defined
+- Railway services created for frontend/backend (including environment-specific variants)
+- Custom domains mapped (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
+- Environment variables configured per service (API URLs, OAuth secrets)
+- Deployment verified via Railway dashboard for each environment
 
 ### Story 1.3: Frontend Service Implementation
 **As a** Claude User
@@ -58,14 +57,13 @@
 **So that** code changes are safely deployed
 
 **Acceptance Criteria:**
-- GitHub Actions workflow configured for all services
-- Docker images built and pushed to ECR
+- GitHub Actions workflow (`deploy_to_railway.yml`) configured for all environments
+- Railway CLI installed and authenticated via GitHub secret (`RAILWAY_GITHUB_ACTIONS`)
 - Automated tests run on pull requests for each service
-- Successful builds deploy all services to AWS ECS
-- Blue-green deployment capability for zero downtime
-- Rollback capability implemented
-- Build status badges in README
-- Deployment notifications to Slack
+- Successful builds deploy targeted services to Railway environments based on branch naming
+- Manual workflow dispatch supports explicit environment selection
+- Build status badges in README (optional)
+- Deployment notifications to Slack (optional enhancement)
 
 ### Story 1.5: Monitoring Setup
 **As a** Developer/Maintainer
@@ -73,12 +71,11 @@
 **So that** I can track system health and performance
 
 **Acceptance Criteria:**
-- New Relic account configured
-- CloudWatch metrics enabled
-- Slack integration for alerts
-- Alerts for service down and >5% error rate
-- Dashboard showing key metrics
-- Logging pipeline established
+- Application logs accessible via Railway dashboard for each environment
+- Health checks exposed on backend services (`/health`) and validated by Railway
+- Optional third-party monitoring (e.g., Better Stack, Sentry) documented for future adoption
+- Alerts established for service downtime using Railway notifications or external tooling
+- Basic dashboard/reporting documented (Railway metrics, custom tooling TBD)
 
 ### Story 1.6: Testing Framework
 **As a** Developer/Maintainer

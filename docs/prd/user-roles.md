@@ -27,14 +27,14 @@ The MCP Google Docs Editor serves two distinct user personas, each with specific
 **Primary Use Case:** System development, deployment, and operational support
 
 **Key Responsibilities:**
-- Infrastructure setup and configuration (AWS, OAuth, monitoring)
+- Infrastructure setup and configuration (Railway environments, OAuth, monitoring)
 - Code development and testing for MCP server functionality
 - System monitoring, debugging, and performance optimization
 - Security management and token handling
 - CI/CD pipeline management and deployment processes
 
 **Key Characteristics:**
-- Technical expertise in Go, AWS, MCP protocol, and Google APIs
+- Technical expertise in Go, Railway CLI, MCP protocol, and Google APIs
 - Focused on system reliability, security, and performance
 - Responsible for maintaining 99% uptime and handling technical issues
 - Supports Claude Users through system stability and feature development
