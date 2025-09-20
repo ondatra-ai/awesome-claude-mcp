@@ -1,0 +1,13 @@
+name = "awesome-claude-mcp"
+
+[services.frontend]
+path = "services/frontend"
+build = "npm ci && npm run build"
+start = "node server.js"
+port = 3000
+
+[services.backend]
+path = "services/backend"
+build = "go build ./cmd/main.go"
+start = "./main"
+port = 8080
