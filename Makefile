@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts railway-login railway-link deploy deploy-dev deploy-staging deploy-prod deploy-service
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts
 
 # Default target
 help: ## Show available commands
@@ -22,67 +22,6 @@ init: ## Install dependencies and build Docker images with caching
 
 dev: ## Start all services with Docker Compose
 	docker compose up --build
-
-RAILWAY_PROJECT_ID=801ad5e0-95bf-4ce6-977e-6f2fa37529fd
-ENV ?= development
-
-railway-login: ## Authenticate Railway CLI
-	railway login
-
-railway-link: ## Link repository to Railway project
-	railway link --project $(RAILWAY_PROJECT_ID)
-
-deploy: ## Deploy services to Railway environment (ENV=development|staging|production)
-	@if [ -z "$(ENV)" ]; then \
-		echo "❌ ENV must be set to development, staging, or production"; \
-		exit 1; \
-	fi
-	@if [ "$(ENV)" = "development" ]; then \
-		services="frontend-dev backend-dev"; \
-	elif [ "$(ENV)" = "staging" ]; then \
-		services="frontend-staging backend-staging"; \
-	elif [ "$(ENV)" = "production" ]; then \
-		services="frontend backend"; \
-	else \
-		echo "❌ Unknown ENV: $(ENV)"; exit 1; \
-	fi; \
-	railway environment $(ENV); \
-	for svc in $$services; do \
-		if echo $$svc | grep -q "frontend"; then \
-			path="services/frontend"; \
-		else \
-			path="services/backend"; \
-		fi; \
-		echo "🚀 Deploying $$svc from $$path"; \
-		railway up --service $$svc --path-as-root $$path; \
-	done
-
-deploy-dev: ## Deploy development environment to Railway
-	$(MAKE) deploy ENV=development
-
-deploy-staging: ## Deploy staging environment to Railway
-	$(MAKE) deploy ENV=staging
-
-deploy-prod: ## Deploy production environment to Railway
-	$(MAKE) deploy ENV=production
-
-deploy-service: ## Deploy a single Railway service (SERVICE=frontend|backend|...)
-	@if [ -z "$(SERVICE)" ]; then \
-		echo "❌ SERVICE must be set"; \
-		exit 1; \
-	fi
-	@if [ -z "$(ENV)" ]; then \
-		echo "❌ ENV must be set"; \
-		exit 1; \
-	fi
-	railway environment $(ENV)
-	@if echo $(SERVICE) | grep -q "frontend"; then \
-		path="services/frontend"; \
-	else \
-		path="services/backend"; \
-	fi; \
-	echo "🚀 Deploying $(SERVICE) to $(ENV)"; \
-	railway up --service $(SERVICE) --path-as-root $$path
 
 test-unit: ## Run unit tests for both services
 	@echo "🧪 Running unit tests..."
