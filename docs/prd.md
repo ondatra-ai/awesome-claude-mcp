@@ -52,7 +52,7 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 - NFR5: The system shall support 30 daily active users
 - NFR6: The system shall process 100+ document edits per day
 - NFR7: The system shall use standard MCP protocol without custom extensions
-- NFR8: The system shall be deployable to AWS ECS Fargate infrastructure with containerized services
+- NFR8: The system shall be deployable to Railway-managed container infrastructure across development, staging, and production environments
 - NFR9: The system shall send Slack alerts when service is down or error rate exceeds 5%
 - NFR10: The system shall be released as open source with MIT license for MVP
 - NFR11: Every epic, user story, and task shall include comprehensive test coverage
@@ -66,7 +66,7 @@ All services, including the Frontend Service (Next.js), Backend Service (Go Fibe
 
 ### Service Architecture
 
-The system will be implemented as a 3-service containerized architecture deployed on AWS ECS Fargate with Application Load Balancer, utilizing AWS services for infrastructure. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber), and MCP Service (Go with Mark3Labs MCP-Go library) following the design patterns established in the architecture document.
+The system will be implemented as Dockerized services deployed to Railway environments. Railway manages container orchestration, TLS, and custom domains for Development, Staging, and Production. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber with MCP tooling), and optional future services following the design patterns established in the architecture document.
 
 ### Testing Requirements
 
@@ -149,7 +149,7 @@ This role distinction ensures clear separation between user-facing features and 
 
 The development will proceed through 9 distinct epics, each delivering deployable functionality that provides incremental value. The structure ensures that infrastructure and authentication are established before implementing document operations, with each operation fully completed with all formatting support before moving to the next.
 
-1. **Epic 1: Foundation & Infrastructure** - Establish project setup, AWS infrastructure, and deployable homepage
+1. **Epic 1: Foundation & Infrastructure** - Establish project setup, Railway infrastructure, and deployable homepage
 2. **Epic 2: OAuth Authentication** - Implement complete Google OAuth flow with multi-account support
 3. **Epic 3: MCP Server Setup** - Create MCP protocol server with tool registration and discovery
 4. **Epic 4: Replace All Operation** - Implement complete document replacement with full Markdown support
@@ -218,7 +218,7 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - GitHub Actions workflow configured for all services
 - Docker images built and pushed to ECR
 - Automated tests run on pull requests for each service
-- Successful builds deploy all services to AWS ECS
+- Successful builds deploy targeted services to Railway environments
 - Blue-green deployment capability for zero downtime
 - Rollback capability implemented
 - Build status badges in README
@@ -268,7 +268,7 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - OAuth 2.0 credentials generated
 - Redirect URIs configured
 - Scopes defined for Google Docs access
-- Credentials stored in AWS Secrets Manager
+- Credentials stored as Railway environment variables (or external secret manager if required)
 - Environment variables configured
 
 #### Story 2.2: OAuth Flow Implementation

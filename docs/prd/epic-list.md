@@ -4,7 +4,7 @@
 
 The development will proceed through 9 distinct epics, each delivering deployable functionality that provides incremental value. The structure ensures that infrastructure and authentication are established before implementing document operations, with each operation fully completed with all formatting support before moving to the next.
 
-1. **Epic 1: Foundation & Infrastructure** - Establish project setup, AWS infrastructure, and deployable homepage
+1. **Epic 1: Foundation & Infrastructure** - Establish project setup, Railway infrastructure, and deployable homepage
 2. **Epic 2: OAuth Authentication** - Implement complete Google OAuth flow with multi-account support
 3. **Epic 3: MCP Server Setup** - Create MCP protocol server with tool registration and discovery
 4. **Epic 4: Replace All Operation** - Implement complete document replacement with full Markdown support

@@ -393,10 +393,9 @@ GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URL=http://localhost:3000/auth/callback
 
-# AWS Configuration (handled by AWS SDK)
-# AWS_REGION set by Lambda environment
-# AWS_ACCESS_KEY_ID set by IAM role
-# AWS_SECRET_ACCESS_KEY set by IAM role
+# Railway Deployment (managed via CLI/UI)
+# RAILWAY_PROJECT_ID=801ad5e0-95bf-4ce6-977e-6f2fa37529fd
+# Railway injects environment variables per service (configured in dashboard)
 
 # Redis Configuration
 REDIS_URL=redis://localhost:6379

@@ -23,7 +23,7 @@
     - [Epic Overview](./epic-list.md#epic-overview)
   - [Epic 1: Foundation & Infrastructure](./epic-1-foundation-infrastructure.md)
     - [User Stories](./epic-1-foundation-infrastructure.md#user-stories)
-      - [Story 1.1: AWS Infrastructure Setup](./epic-1-foundation-infrastructure.md#story-11-aws-infrastructure-setup)
+      - [Story 1.2: Railway Infrastructure Setup](./epic-1-foundation-infrastructure.md#story-12-railway-infrastructure-setup)
       - [Story 1.2: Project Repository Setup](./epic-1-foundation-infrastructure.md#story-12-project-repository-setup)
       - [Story 1.3: Frontend Service Implementation](./epic-1-foundation-infrastructure.md#story-13-frontend-service-implementation)
       - [Story 1.4: CI/CD Pipeline](./epic-1-foundation-infrastructure.md#story-14-cicd-pipeline)
