@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -88,9 +89,19 @@ func createFiberApp() *fiber.App {
 		AppName:       "MCP Google Docs Editor - Backend",
 	})
 
+	defaultOrigins := []string{
+		"http://localhost:3000",
+		"https://dev.ondatra-ai.xyz",
+	}
+
+	allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if allowedOrigins == "" {
+		allowedOrigins = strings.Join(defaultOrigins, ",")
+	}
+
 	// Middleware setup
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000", // Frontend development server
+		AllowOrigins: allowedOrigins, // Comma separated list of allowed origins
 		AllowHeaders: "Origin, Content-Type, Accept",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
