@@ -1,6 +1,6 @@
 # MCP Google Docs Editor - Source Tree (Railway Deployment)
 
-This document summarizes the current monorepo layout after the migration to Railway. It replaces the prior AWS Infrastructure-as-Code structure.
+This document summarizes the current monorepo layout after the migration to Railway. It replaces the prior cloud Infrastructure-as-Code structure.
 
 ## Root Directory Overview
 
@@ -51,6 +51,6 @@ This document summarizes the current monorepo layout after the migration to Rail
 | Staging     | `staging`          | `frontend-staging`, `backend-staging` | `staging.ondatra-ai.xyz` (planned), `api.staging.ondatra-ai.xyz` (planned) |
 | Production  | `production`       | `frontend`, `backend` | `app.ondatra-ai.xyz` (planned), `api.ondatra-ai.xyz` (planned) |
 
-## Legacy AWS Structure
+## Legacy Cloud Structure
 
-The previous AWS infrastructure topology has been archived. If a future initiative revives it, consult historical commits prior to `2025-09-20` or the `docs/architecture.md` legacy appendix.
+The previous cloud-based infrastructure topology has been archived. If a future initiative revives it, consult historical commits prior to `2025-09-20` or the `docs/architecture.md` legacy appendix.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke AWS infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
+This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke cloud infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
@@ -585,16 +585,16 @@ paths:
 **Primary Database: PostgreSQL 15**
 - **Rationale:** ACID compliance for user data integrity, excellent JSON support for flexible schemas, proven reliability for 30+ concurrent users, supports both relational and document-like queries
 
-### Legacy AWS Architecture (Archived)
+### Legacy Cloud Architecture (Archived)
 
-> The sections below capture the original AWS Infrastructure-as-Code implementation plan from earlier revisions of the project. They are retained for historical reference and potential future migrations, but **Railway is the authoritative deployment platform**. Ignore these subsections when working on the current infrastructure unless explicitly reviving the AWS strategy.
+> The sections below capture the original cloud-focused implementation plan from earlier revisions of the project. They are retained for historical reference and potential future migrations, but **Railway is the authoritative deployment platform**. Ignore these subsections when working on the current infrastructure unless explicitly reviving the legacy approach.
 
-**Caching Layer: Redis 7 (AWS ElastiCache)**
+**Caching Layer: Redis 7 (ElastiCache)**
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
 
 **Current Deployment:**
 - **Local Development:** PostgreSQL + Redis containers in docker-compose.yml
-- **AWS Production:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
+- **Legacy Production Plan:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
 - **Container Support**: All services containerized for consistent environments across dev/staging/prod
 
 ### Database Schema

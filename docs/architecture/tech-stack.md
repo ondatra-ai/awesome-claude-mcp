@@ -1,6 +1,6 @@
 # MCP Google Docs Editor – Technology Stack (Railway Edition)
 
-This document captures the current technology stack after migrating from the legacy AWS-based deployment to Railway. It focuses on the components that are actively maintained today.
+This document captures the current technology stack after migrating from the legacy cloud-based deployment to Railway. It focuses on the components that are actively maintained today.
 
 - **Last Updated:** 2025-09-20
 - **Repository Layout:** Monorepo (`services/frontend`, `services/backend`)
@@ -58,4 +58,4 @@ This document captures the current technology stack after migrating from the leg
 
 ## Legacy Note
 
-The original AWS infrastructure stack has been archived. Refer to historical commits prior to `2025-09-20` if that infrastructure needs to be revisited.
+The original cloud infrastructure stack has been archived. Refer to historical commits prior to `2025-09-20` if that infrastructure needs to be revisited.
