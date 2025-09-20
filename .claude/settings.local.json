@@ -23,7 +23,8 @@
       "Bash(git add:*)",
       "Bash(export AWS_PROFILE=awesome.terraform)",
       "Bash(aws ecs describe-tasks:*)",
-      "Bash(aws ec2 describe-subnets:*)"
+      "Bash(aws ec2 describe-subnets:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
