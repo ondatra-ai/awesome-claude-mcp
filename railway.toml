@@ -13,10 +13,6 @@ healthcheck_path = "/"
 restart_policy_type = "on_failure"
 num_replicas = 1
 
-  [services.env]
-  NODE_ENV = "production"
-  NEXT_PUBLIC_BACKEND_URL = "{{ services.backend.internal_url }}"
-
 [[services]]
 name = "backend"
 root = "services/backend"
@@ -25,6 +21,3 @@ open_port = 8080
 healthcheck_path = "/health"
 restart_policy_type = "on_failure"
 num_replicas = 1
-
-  [services.env]
-  PORT = "8080"
