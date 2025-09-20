@@ -1,49 +1,33 @@
 import type { IHealthResponse, IVersionResponse } from '../interfaces/api';
 
-const sanitizeUrl = (url: string): string => url.replace(/\/$/, '');
-
-const resolveDefaultRemoteUrl = (hostname: string): string | null => {
-  if (hostname === 'dev.ondatra-ai.xyz') {
-    return 'https://api.dev.ondatra-ai.xyz';
-  }
-
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8080';
-  }
-
-  return null;
-};
-
 const resolveBaseUrl = (): string => {
-  const envValue = process.env.NEXT_PUBLIC_API_URL;
-  if (envValue && envValue.trim() !== '') {
-    return sanitizeUrl(envValue.trim());
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+  if (!raw) {
+    throw new Error(
+      'NEXT_PUBLIC_API_URL environment variable is required for API client'
+    );
   }
 
-  if (typeof window !== 'undefined') {
-    const inferred = resolveDefaultRemoteUrl(window.location.hostname);
-    if (inferred) {
-      return inferred;
-    }
-  }
-
-  return 'http://localhost:8080';
+  return raw.replace(/\/$/, '');
 };
 
-const withBaseUrl = (path: string): string => {
-  const baseUrl = resolveBaseUrl();
+const BASE_URL = resolveBaseUrl();
+
+const buildUrl = (path: string): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${BASE_URL}${normalizedPath}`;
+};
 
-  if (/^https?:\/\//i.test(baseUrl)) {
-    return `${baseUrl}${normalizedPath}`;
-  }
-
-  return `${baseUrl}${normalizedPath}`;
+const handleError = (response: Response, context: string): never => {
+  throw new Error(
+    `Failed to fetch ${context}: ${response.status} ${response.statusText}`
+  );
 };
 
 class ApiClient {
   async getVersion(): Promise<IVersionResponse> {
-    const response = await fetch(withBaseUrl('/version'), {
+    const response = await fetch(buildUrl('/version'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -51,14 +35,14 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch version: ${response.statusText}`);
+      handleError(response, 'version');
     }
 
     return response.json() as Promise<IVersionResponse>;
   }
 
   async getHealth(): Promise<IHealthResponse> {
-    const response = await fetch(withBaseUrl('/health'), {
+    const response = await fetch(buildUrl('/health'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -66,7 +50,7 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch health: ${response.statusText}`);
+      handleError(response, 'health');
     }
 
     return response.json() as Promise<IHealthResponse>;
