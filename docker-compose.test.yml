@@ -44,8 +44,6 @@ services:
     container_name: mcp-playwright-test
     environment:
       - CI=true
-      - PLAYWRIGHT_BASE_URL=http://localhost:3000
-      - BACKEND_URL=http://localhost:8080
     network_mode: host
     depends_on:
       backend:

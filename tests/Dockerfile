@@ -7,6 +7,7 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 COPY playwright.config.test.ts ./playwright.config.ts
+COPY config ./config/
 
 # Install dependencies
 RUN npm ci
