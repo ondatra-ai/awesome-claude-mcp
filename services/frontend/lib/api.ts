@@ -1,16 +1,49 @@
 import type { IHealthResponse, IVersionResponse } from '../interfaces/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const sanitizeUrl = (url: string): string => url.replace(/\/$/, '');
 
-class ApiClient {
-  private baseURL: string;
-
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+const resolveDefaultRemoteUrl = (hostname: string): string | null => {
+  if (hostname === 'dev.ondatra-ai.xyz') {
+    return 'https://api.dev.ondatra-ai.xyz';
   }
 
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8080';
+  }
+
+  return null;
+};
+
+const resolveBaseUrl = (): string => {
+  const envValue = process.env.NEXT_PUBLIC_API_URL;
+  if (envValue && envValue.trim() !== '') {
+    return sanitizeUrl(envValue.trim());
+  }
+
+  if (typeof window !== 'undefined') {
+    const inferred = resolveDefaultRemoteUrl(window.location.hostname);
+    if (inferred) {
+      return inferred;
+    }
+  }
+
+  return 'http://localhost:8080';
+};
+
+const withBaseUrl = (path: string): string => {
+  const baseUrl = resolveBaseUrl();
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (/^https?:\/\//i.test(baseUrl)) {
+    return `${baseUrl}${normalizedPath}`;
+  }
+
+  return `${baseUrl}${normalizedPath}`;
+};
+
+class ApiClient {
   async getVersion(): Promise<IVersionResponse> {
-    const response = await fetch(`${this.baseURL}/version`, {
+    const response = await fetch(withBaseUrl('/version'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +58,7 @@ class ApiClient {
   }
 
   async getHealth(): Promise<IHealthResponse> {
-    const response = await fetch(`${this.baseURL}/health`, {
+    const response = await fetch(withBaseUrl('/health'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
