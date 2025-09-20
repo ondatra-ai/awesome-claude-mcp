@@ -1,0 +1,101 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/pr-v*'
+      - 'staging/**'
+  workflow_dispatch:
+    inputs:
+      deploy-env:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - Development
+          - Staging
+          - Production
+        default: Development
+
+jobs:
+  deploy-to-railway:
+    if: ${{ (inputs.deploy-env || (github.ref_name == 'main' && 'Development') || (startsWith(github.ref_name, 'release/pr-v') && 'Production') || (startsWith(github.ref_name, 'staging/') && 'Staging') || 'None') != 'None' }}
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.deploy-env || (github.ref_name == 'main' && 'Development') || (startsWith(github.ref_name, 'release/pr-v') && 'Production') || (startsWith(github.ref_name, 'staging/') && 'Staging') || 'None' }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_GITHUB_ACTIONS }}
+      RAILWAY_PROJECT_ID: 801ad5e0-95bf-4ce6-977e-6f2fa37529fd
+      RAILWAY_TTY: "0"
+      TARGET_ENV: ${{ inputs.deploy-env || (github.ref_name == 'main' && 'Development') || (startsWith(github.ref_name, 'release/pr-v') && 'Production') || (startsWith(github.ref_name, 'staging/') && 'Staging') || 'None' }}
+    steps:
+      - name: Print environment context
+        run: |
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Resolved environment: ${TARGET_ENV}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Link Railway project
+        run: railway link --project "$RAILWAY_PROJECT_ID"
+
+      - name: Determine deployment targets
+        id: targets
+        run: |
+          set -euo pipefail
+
+          env_name="$TARGET_ENV"
+          if [ -z "$env_name" ] || [ "$env_name" = "None" ]; then
+            echo "No deployment targets for branch ${{ github.ref_name }}"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          case "$env_name" in
+            Development)
+              cli_env="development"
+              services="frontend-dev backend-dev"
+              ;;
+            Staging)
+              cli_env="staging"
+              services="frontend-staging backend-staging"
+              ;;
+            Production)
+              cli_env="production"
+              services="frontend backend"
+              ;;
+            *)
+              echo "Unknown environment: $env_name" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "cli_env=${cli_env}" >> "$GITHUB_OUTPUT"
+          echo "services=${services}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy services
+        if: steps.targets.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+
+          cli_env="${{ steps.targets.outputs.cli_env }}"
+          services="${{ steps.targets.outputs.services }}"
+
+          railway environment "$cli_env"
+
+          for svc in $services; do
+            if [[ "$svc" == frontend* ]]; then
+              path="services/frontend"
+            else
+              path="services/backend"
+            fi
+
+            echo "Deploying $svc from $path"
+            railway up --service "$svc" --path-as-root "$path"
+          done
