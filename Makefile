@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-terraform tf-bootstrap tf-init tf-validate tf-plan tf-apply tf-plan-destroy tf-destroy
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts railway-login railway-link deploy deploy-dev deploy-staging deploy-prod deploy-service
 
 # Default target
 help: ## Show available commands
@@ -23,53 +23,66 @@ init: ## Install dependencies and build Docker images with caching
 dev: ## Start all services with Docker Compose
 	docker compose up --build
 
-## Terraform helpers (use TF_ENV=dev|staging|prod, or ENV=... as an alias)
-# Prefer TF_ENV; fall back to ENV if provided
-TF_ENV ?= $(or $(ENV),dev)
-TF_DIR=infrastructure/terraform
-TF_BOOTSTRAP_DIR=infrastructure/terraform/bootstrap
+RAILWAY_PROJECT_ID=801ad5e0-95bf-4ce6-977e-6f2fa37529fd
+ENV ?= development
 
-tf-bootstrap: ## Bootstrap S3 backend (run once to create bucket and DynamoDB table)
-	@echo "🔧 Bootstrapping S3 backend infrastructure..."
-	terraform -chdir=$(TF_BOOTSTRAP_DIR) init
-	terraform -chdir=$(TF_BOOTSTRAP_DIR) plan -out=bootstrap.tfplan
-	terraform -chdir=$(TF_BOOTSTRAP_DIR) apply -auto-approve bootstrap.tfplan
-	@echo "✅ S3 backend bootstrap completed!"
+railway-login: ## Authenticate Railway CLI
+	railway login
 
-tf-init: ## Terraform init for ENV (ENV=dev|staging|prod)
-	@echo "🔧 Terraform init for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) init -backend-config=backend-$(TF_ENV).hcl
+railway-link: ## Link repository to Railway project
+	railway link --project $(RAILWAY_PROJECT_ID)
 
-tf-validate: ## Terraform validate for ENV (ENV=dev|staging|prod)
-	@echo "🧪 Terraform validate for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) validate
-
-TF_PLAN ?= plan.out
-tf-plan: ## Terraform plan for ENV (ENV=dev|staging|prod)
-	@echo "🗺️  Terraform plan for $(TF_ENV)..."
-	@if [ -z "$$TF_VAR_backend_image" ] || [ -z "$$TF_VAR_frontend_image" ]; then \
-		echo "⚠️  TF_VAR_backend_image and TF_VAR_frontend_image must be set"; \
-		echo "💡 Example: TF_VAR_backend_image=195062990486.dkr.ecr.us-east-1.amazonaws.com/backend-$(TF_ENV):latest TF_VAR_frontend_image=195062990486.dkr.ecr.us-east-1.amazonaws.com/frontend-$(TF_ENV):latest make tf-plan TF_ENV=$(TF_ENV)"; \
+deploy: ## Deploy services to Railway environment (ENV=development|staging|production)
+	@if [ -z "$(ENV)" ]; then \
+		echo "❌ ENV must be set to development, staging, or production"; \
 		exit 1; \
 	fi
-	terraform -chdir=$(TF_DIR) plan -var-file="environments/$(TF_ENV).tfvars" -out $(TF_PLAN)
+	@if [ "$(ENV)" = "development" ]; then \
+		services="frontend-dev backend-dev"; \
+	elif [ "$(ENV)" = "staging" ]; then \
+		services="frontend-staging backend-staging"; \
+	elif [ "$(ENV)" = "production" ]; then \
+		services="frontend backend"; \
+	else \
+		echo "❌ Unknown ENV: $(ENV)"; exit 1; \
+	fi; \
+	railway environment $(ENV); \
+	for svc in $$services; do \
+		if echo $$svc | grep -q "frontend"; then \
+			path="services/frontend"; \
+		else \
+			path="services/backend"; \
+		fi; \
+		echo "🚀 Deploying $$svc from $$path"; \
+		railway up --service $$svc --path-as-root $$path; \
+	done
 
-tf-apply: ## Terraform apply for ENV (ENV=dev|staging|prod)
-	@echo "🚀 Terraform apply for $(TF_ENV)..."
-	@if [ ! -f "$(TF_DIR)/$(TF_PLAN)" ]; then \
-	  echo "❌ Plan file '$(TF_PLAN)' not found in $(TF_DIR). Run 'make tf-plan TF_ENV=$(TF_ENV)' first."; \
-	  exit 1; \
+deploy-dev: ## Deploy development environment to Railway
+	$(MAKE) deploy ENV=development
+
+deploy-staging: ## Deploy staging environment to Railway
+	$(MAKE) deploy ENV=staging
+
+deploy-prod: ## Deploy production environment to Railway
+	$(MAKE) deploy ENV=production
+
+deploy-service: ## Deploy a single Railway service (SERVICE=frontend|backend|...)
+	@if [ -z "$(SERVICE)" ]; then \
+		echo "❌ SERVICE must be set"; \
+		exit 1; \
 	fi
-	terraform -chdir=$(TF_DIR) apply -auto-approve -input=false $(TF_PLAN)
-
-TF_DESTROY_PLAN ?= destroy.out
-tf-plan-destroy: ## Terraform plan destroy for ENV (ENV=dev|staging|prod)
-	@echo "🗑️  Terraform plan destroy for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) plan -destroy -var-file="environments/$(TF_ENV).tfvars" -out $(TF_DESTROY_PLAN)
-
-tf-destroy: ## Terraform destroy for ENV (ENV=dev|staging|prod)
-	@echo "🗑️  Terraform destroy for $(TF_ENV)..."
-	terraform -chdir=$(TF_DIR) destroy -var-file="environments/$(TF_ENV).tfvars" -auto-approve
+	@if [ -z "$(ENV)" ]; then \
+		echo "❌ ENV must be set"; \
+		exit 1; \
+	fi
+	railway environment $(ENV)
+	@if echo $(SERVICE) | grep -q "frontend"; then \
+		path="services/frontend"; \
+	else \
+		path="services/backend"; \
+	fi; \
+	echo "🚀 Deploying $(SERVICE) to $(ENV)"; \
+	railway up --service $(SERVICE) --path-as-root $$path
 
 test-unit: ## Run unit tests for both services
 	@echo "🧪 Running unit tests..."
@@ -134,22 +147,3 @@ lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible
 	@echo "🔍 Running golangci-lint on scripts/pr-triage..."
 	cd scripts/pr-triage && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
-
-lint-terraform: ## Run comprehensive Terraform linting, formatting, and validation on all configurations
-	@echo "🔍 Running comprehensive Terraform linting pipeline..."
-	@echo "📦 Installing tflint plugins..."
-	tflint --init
-	@echo "🔧 Running tflint with auto-fix on main infrastructure..."
-	tflint --fix --chdir=infrastructure/terraform
-	@echo "🔧 Running tflint on all Terraform modules..."
-	@for module in infrastructure/terraform/modules/*; do \
-		if [ -d "$$module" ]; then \
-			echo "  🔧 Linting module: $$module"; \
-			tflint --fix --chdir="$$module"; \
-		fi; \
-	done
-	@echo "🎨 Running terraform fmt on all Terraform files..."
-	terraform fmt -recursive infrastructure/terraform/
-	@echo "✅ Validating Terraform configuration..."
-	terraform -chdir=infrastructure/terraform validate
-	@echo "🎉 Comprehensive Terraform linting completed!"

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke AWS infrastructure and Terraform toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
+This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke AWS infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
@@ -587,7 +587,7 @@ paths:
 
 ### Legacy AWS Architecture (Archived)
 
-> The sections below capture the original AWS + Terraform implementation plan from earlier revisions of the project. They are retained for historical reference and potential future migrations, but **Railway is the authoritative deployment platform**. Ignore these subsections when working on the current infrastructure unless explicitly reviving the AWS strategy.
+> The sections below capture the original AWS Infrastructure-as-Code implementation plan from earlier revisions of the project. They are retained for historical reference and potential future migrations, but **Railway is the authoritative deployment platform**. Ignore these subsections when working on the current infrastructure unless explicitly reviving the AWS strategy.
 
 **Caching Layer: Redis 7 (AWS ElastiCache)**
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
@@ -858,35 +858,23 @@ mcp-google-docs-editor/
 │       ├── Dockerfile              # MCP service container definition
 │       └── .env                    # MCP service env vars
 │
-├── infrastructure/                 # Infrastructure as Code
-│   ├── terraform/
-│   │   ├── modules/
-│   │   │   ├── ecs/                # ECS Fargate module
-│   │   │   ├── alb/                # Application Load Balancer module
-│   │   │   ├── ecr/                # Container Registry module
-│   │   │   ├── vpc/                # Virtual Private Cloud module
-│   │   │   └── redis/              # ElastiCache Redis module
-│   │   ├── environments/
-│   │   │   ├── dev/                # Dev environment
-│   │   │   ├── staging/            # Staging environment
-│   │   │   └── prod/               # Production environment
-│   │   └── main.tf                 # Main Terraform config
-│   └── docker-compose.yml          # Local development environment
+├── services/
+│   ├── frontend/                   # Next.js application
+│   └── backend/                    # Go API + MCP tooling
+│
+├── docs/                           # Documentation (architecture, PRD, QA, stories)
+│   └── ...
 │
 ├── .github/
 │   └── workflows/
-│       ├── build-images.yml        # Docker image builds
-│       ├── deploy-ecs.yml          # ECS deployment
-│       └── pr-preview.yml          # PR preview environment
+│       └── deploy_to_railway.yml   # Railway deployment pipeline
 │
 ├── scripts/                        # Build and deploy scripts
 │   └── (various shell scripts)     # Complex automation logic
 │
-├── docs/                           # Documentation
-│   ├── prd.md                      # Product Requirements
-│   └── architecture.md             # This document
-│
 ├── Makefile                        # Primary build and deploy interface
+├── railway.toml                    # Railway service definitions
+├── service.toml                    # CLI defaults for Railway services
 ├── docker-compose.yml              # Local development stack
 ├── package.json                    # Monorepo root package
 ├── turbo.json                      # Turborepo config
@@ -896,42 +884,36 @@ mcp-google-docs-editor/
 
 ## Infrastructure and Deployment
 
-### Infrastructure as Code
-- **Tool:** Terraform 1.6.0
-- **Location:** `infrastructure/terraform/`
-- **Approach:** Modular Terraform for ECS Fargate, VPC, ALB, and supporting AWS services
+### Deployment Platform
+- **Provider:** Railway (managed containers, TLS, custom domains)
+- **Service Names:**
+  - Production: `frontend`, `backend`
+  - Staging: `frontend-staging`, `backend-staging`
+  - Development: `frontend-dev`, `backend-dev`
+- **Environments:** Railway environments mirror Git workflow (Development, Staging, Production)
+- **Custom Domains:** CNAME records map to Railway-provided hostnames (e.g., `dev.ondatra-ai.xyz → n8cwxlk7.up.railway.app`)
 
-### Deployment Strategy
-- **Containers:** Docker images built and pushed to ECR (Elastic Container Registry)
-- **Orchestration:** AWS ECS Fargate for serverless container management
-- **Load Balancing:** Application Load Balancer with target groups for each service
-- **CI/CD Platform:** GitHub Actions
-- **Pipeline Configuration:** `.github/workflows/build-images.yml`, `.github/workflows/deploy-ecs.yml`
-- **Infrastructure as Code:** Terraform modules for reproducible deployments
+### Deployment Workflow
+- **Infrastructure Definition:** `railway.toml` + `service.toml`
+- **Automation:** `.github/workflows/deploy_to_railway.yml` runs `railway up` per environment based on branch names or manual input
+- **Manual Deploy:** `make deploy ENV=development|staging|production`
+- **Secrets:** Managed via Railway environment variables
 
 ### Build and Deploy Automation
-- **Primary Interface:** Makefile in project root provides standardized commands (`make dev`, `make build`, `make deploy`)
-- **Complex Logic:** Shell scripts in `./scripts/` folder handle sophisticated automation tasks
-- **Approach:** Hybrid system where Makefile coordinates high-level operations and delegates complex logic to shell scripts
-- **Benefits:** Simple developer interface with powerful scripting capabilities for AWS operations and multi-service coordination
+- **Primary Interface:** Makefile provides commands for dependency setup, tests, linting, and Railway deployments
+- **CLI Requirements:** Railway CLI (`npm i -g @railway/cli`)
+- **Local Workflow:** `railway login` → `railway link` → `make deploy ENV=development`
 
-### ECS Service Configuration
-- **Frontend Service:** Next.js containers behind ALB target group on port 3000
-- **Backend API Service:** Go containers behind ALB target group on port 8080
-- **MCP Protocol Service:** Go containers with WebSocket support on port 8081
-- **Auto Scaling:** CPU and memory-based scaling policies
-- **Health Checks:** Application-level health endpoints
-
-### Environments
+### Environment Overview
 - **Development:**
-  - Local: Root-level `docker-compose.yml` with all services (frontend, backend, Redis, databases)
-  - AWS: Single ECS cluster with dev task definitions
+  - Railway services `frontend-dev`, `backend-dev`
+  - Custom domains `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`
 - **Staging:**
-  - Dedicated ECS cluster with staging configuration
-  - Separate ALB and target groups
+  - Railway services `frontend-staging`, `backend-staging`
+  - Planned custom domains `staging.ondatra-ai.xyz`, `api.staging.ondatra-ai.xyz`
 - **Production:**
-  - Production ECS cluster with high-availability configuration
-  - Multi-AZ deployment with auto-scaling
+  - Railway services `frontend`, `backend`
+  - Planned custom domains `app.ondatra-ai.xyz`, `api.ondatra-ai.xyz`
 
 ### Local Development Setup
 
@@ -1161,7 +1143,7 @@ Since this project has minimal UI components (only OAuth callback page), the pri
    - Implement remaining operations iteratively
 
 3. **DevOps Setup:**
-   - Create Terraform configurations for GCP resources
+   - (Legacy) Create Infrastructure-as-Code configurations for GCP resources
    - Set up GitHub Actions CI/CD pipeline
    - Configure monitoring and alerting
 
