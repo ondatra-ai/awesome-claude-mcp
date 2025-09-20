@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document specifies the exact technology stack for the MCP Google Docs Editor, including specific versions, rationale for selections, and configuration guidelines. The stack supports a full-stack application with Next.js frontend and Go backend services deployed on AWS infrastructure.
+This document specifies the exact technology stack for the MCP Google Docs Editor, including specific versions, rationale for selections, and configuration guidelines. The current deployment target is **Railway**, which hosts Dockerized frontend and backend services across Development, Staging, and Production environments. Legacy AWS- and Terraform-specific guidance is retained for historical context and potential future migrations; any sections explicitly labeled "Legacy" should be considered optional references.
 
 **Last Updated:** 2025-09-07
 **Version:** 1.0.0
@@ -11,19 +11,19 @@ This document specifies the exact technology stack for the MCP Google Docs Edito
 ## Stack Overview
 
 ### Architecture Pattern
-- **Frontend:** Single-page application with server-side rendering
-- **Backend:** Serverless microservices architecture
-- **Protocol:** REST API + WebSocket for MCP protocol
-- **Deployment:** Cloud-native with Infrastructure as Code
-- **Data:** Stateless with external caching layer
+- **Frontend:** Next.js application deployed as a Railway service
+- **Backend:** Go API deployed as a Railway service (future MCP tooling co-located)
+- **Protocol:** REST API today with planned WebSocket support for MCP protocol
+- **Deployment:** Railway CLI + GitHub Actions (`deploy_to_railway.yml`)
+- **Data:** Stateless with optional external caching layer (Redis)
 
 ### Technology Selection Principles
 1. **Proven Stability**: Choose mature technologies with strong community support
 2. **Developer Productivity**: Optimize for single developer efficiency
 3. **Scalability**: Support growth from MVP to enterprise usage
-4. **Cost Effectiveness**: AWS serverless for optimal cost/performance
-5. **Security**: Built-in security features and best practices
-6. **Maintenance**: Minimize operational overhead
+4. **Cost Effectiveness**: Railway managed hosting to avoid bespoke infra work
+5. **Security**: Managed TLS via Railway + secret management through environment variables
+6. **Maintenance**: Minimize operational overhead by leveraging Railway automation
 
 ## Service Architecture Technologies
 
@@ -54,7 +54,7 @@ go1.21.5 download
 
 **Build Configuration:**
 ```bash
-# Cross-compilation for AWS Lambda
+# Produce minimal Linux binaries for Railway deployment
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o main
 ```
 
@@ -840,7 +840,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 CMD ["./main"]
 ```
 
-### Infrastructure as Code: Terraform
+### Legacy Infrastructure as Code (Terraform) *Archived*
 
 **Version:** Latest stable (1.6.x)
 **Purpose:** AWS infrastructure provisioning and management
@@ -869,13 +869,13 @@ infrastructure/
 │   └── outputs.tf
 ```
 
-### Deployment: Docker + ECS with Terraform
+### Legacy Deployment: Docker + ECS with Terraform *Archived*
 
 **Purpose:** Container deployment and orchestration
 **Rationale:**
 - Consistent environments across development and production
 - Container-based deployment with ECS Fargate
-- Infrastructure as Code with Terraform
+- Infrastructure as Code with Terraform *(legacy reference)*
 - Integrated with ECR for container registry
 - Auto-scaling and load balancing
 

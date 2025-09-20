@@ -82,17 +82,16 @@ Comprehensive testing pyramid including:
 - **Backend Services:** Go 1.21.5 with Fiber framework for Backend and MCP services
 - **Frontend Service:** TypeScript with Next.js 14 (App Router) and modern React patterns
 - **MCP Protocol:** Mark3Labs MCP-Go library for MCP protocol implementation
-- AWS as cloud infrastructure provider (ECS Fargate, Application Load Balancer, CloudWatch)
-- Redis for token caching (AWS ElastiCache or similar)
+- Railway as the hosting platform (Docker deploys, managed TLS, custom domains)
+- Redis cache (Railway add-on or external provider) for token/session storage
 - Docker containerization with multi-stage builds for all services
-- New Relic + CloudWatch for monitoring and observability
+- Application logging emitted as structured JSON and inspected via Railway logs
 - Standard MCP protocol implementation without extensions
 - OAuth tokens cached until expiry by default
 - No access controls or rate limiting in MVP (add in v2)
 - Fail-fast error handling - no automatic retries
-- All configuration via environment variables
-- Infrastructure as Code using Terraform
-- GitHub Actions for CI/CD pipeline with ECR integration
+- All configuration via environment variables managed in Railway
+- GitHub Actions + Railway CLI for CI/CD (`deploy_to_railway.yml`)
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations
 
@@ -125,14 +124,13 @@ The MCP Google Docs Editor serves two distinct user personas, each with specific
 **Primary Use Case:** System development, deployment, and operational support
 
 **Key Responsibilities:**
-- Infrastructure setup and configuration (AWS, OAuth, monitoring)
+- Infrastructure setup and configuration (Railway environments, OAuth, monitoring)
 - Code development and testing for MCP server functionality
 - System monitoring, debugging, and performance optimization
 - Security management and token handling
 - CI/CD pipeline management and deployment processes
 
-**Key Characteristics:**
-- Technical expertise in Go, AWS, MCP protocol, and Google APIs
+- Technical expertise in Go, Railway CLI, MCP protocol, and Google APIs
 - Focused on system reliability, security, and performance
 - Responsible for maintaining 99% uptime and handling technical issues
 - Supports Claude Users through system stability and feature development
@@ -183,19 +181,18 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - README.md with setup instructions for all services
 - MIT license file added
 
-#### Story 1.2: AWS Infrastructure Setup
+#### Story 1.2: Railway Infrastructure Setup
 **As a** Developer/Maintainer
-**I want** to configure AWS infrastructure
+**I want** to configure Railway infrastructure
 **So that** I have a deployable environment for the application
 
 **Acceptance Criteria:**
-- AWS account configured with appropriate IAM roles
-- ECS Fargate cluster created and configured
-- Application Load Balancer configured with proper target groups
-- VPC and networking configured for container communication
-- CloudWatch logging enabled for all services
-- Infrastructure defined in Terraform
-- Deployment successful to AWS ECS
+- Railway project linked to the repository and CLI
+- Development, Staging, and Production environments created
+- Railway services created for frontend/back (including dev/staging variants)
+- Environment variables configured per service
+- Custom domains mapped and verified (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
+- Deployment successful via Railway CLI/GitHub Actions
 
 #### Story 1.3: Frontend Service Implementation
 **As a** Claude User

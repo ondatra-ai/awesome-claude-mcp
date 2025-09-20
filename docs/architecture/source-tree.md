@@ -1,3 +1,5 @@
+> **Note:** Sections describing Terraform/AWS structure are archived for historical reference. Railway is the current deployment platform.
+
 # MCP Google Docs Editor - Source Tree Organization
 
 ## Introduction
