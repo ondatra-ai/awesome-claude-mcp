@@ -16,7 +16,7 @@ type Comment struct {
 	Outdated bool   `json:"outdated"`
 }
 
-// HeuristicAnalysisResult captures the heuristic assessment outcome from Codex.
+// HeuristicAnalysisResult captures the heuristic assessment outcome from AI.
 type HeuristicAnalysisResult struct {
 	Score           int
 	Summary         string
@@ -25,7 +25,7 @@ type HeuristicAnalysisResult struct {
 	Alternatives    []map[string]string
 }
 
-// ThreadContext provides inputs for Codex analysis/implementation.
+// ThreadContext provides inputs for AI analysis/implementation.
 type ThreadContext struct {
 	PRNumber int
 	Thread   Thread
