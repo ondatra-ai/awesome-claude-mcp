@@ -27,7 +27,7 @@
 - NFR5: The system shall support 30 daily active users
 - NFR6: The system shall process 100+ document edits per day
 - NFR7: The system shall use standard MCP protocol without custom extensions
-- NFR8: The system shall be deployable to AWS ECS Fargate infrastructure with containerized services
+- NFR8: The system shall be deployable to Railway-managed container infrastructure across development, staging, and production environments
 - NFR9: The system shall send Slack alerts when service is down or error rate exceeds 5%
 - NFR10: The system shall be released as open source with MIT license for MVP
 - NFR11: Every epic, user story, and task shall include comprehensive test coverage

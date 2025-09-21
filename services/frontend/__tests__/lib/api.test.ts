@@ -1,8 +1,10 @@
-import { apiClient } from '@/lib/api';
+import { createApiClient } from '@/lib/api';
 
 // Mock fetch globally
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
+
+const apiClient = createApiClient('http://localhost:8080');
 
 describe('ApiClient', () => {
   beforeEach(() => {
@@ -31,11 +33,12 @@ describe('ApiClient', () => {
     it('throws error on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 500,
         statusText: 'Internal Server Error',
       });
 
       await expect(apiClient.getVersion()).rejects.toThrow(
-        'Failed to fetch version: Internal Server Error'
+        'Failed to fetch version: 500 Internal Server Error'
       );
     });
 
@@ -71,11 +74,12 @@ describe('ApiClient', () => {
     it('throws error on failed response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
+        status: 503,
         statusText: 'Service Unavailable',
       });
 
       await expect(apiClient.getHealth()).rejects.toThrow(
-        'Failed to fetch health: Service Unavailable'
+        'Failed to fetch health: 503 Service Unavailable'
       );
     });
 
@@ -86,24 +90,9 @@ describe('ApiClient', () => {
     });
   });
 
-  describe('constructor', () => {
-    it('uses default base URL when none provided', () => {
-      expect(apiClient).toBeDefined();
-      // We can't directly test private baseURL, but we can verify it works with default URL
-    });
-
-    it('uses environment variable for API URL if set', () => {
-      // This test verifies the API_BASE_URL constant logic
-      const originalEnv = process.env.NEXT_PUBLIC_API_URL;
-
-      // Clean up after test
-      if (originalEnv === undefined) {
-        delete process.env.NEXT_PUBLIC_API_URL;
-      } else {
-        process.env.NEXT_PUBLIC_API_URL = originalEnv;
-      }
-
-      expect(true).toBe(true); // Basic test to ensure the module loads correctly
+  describe('factory', () => {
+    it('throws when base URL is missing', () => {
+      expect(() => createApiClient('')).toThrow('Backend base URL is required to create ApiClient');
     });
   });
 });

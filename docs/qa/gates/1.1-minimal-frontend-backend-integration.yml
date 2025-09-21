@@ -1,20 +1,40 @@
 schema: 1
 story: '1.1'
-gate: CONCERNS
-status_reason: 'Full-stack foundation implemented successfully, minor issues present requiring tracking.'
-reviewer: 'Quinn'
-updated: '2025-09-10T15:52:00Z'
-top_issues:
-  - id: 'SEC-001'
-    severity: high
-    finding: 'Critical npm vulnerability detected in frontend dependencies'
-    suggested_action: 'Run npm audit fix to address critical security vulnerability'
-  - id: 'TEST-001'
-    severity: medium
-    finding: 'Frontend unit tests missing - only placeholder Jest configuration'
-    suggested_action: 'Add unit tests for React components and API client'
-  - id: 'MNT-001'
-    severity: low
-    finding: 'Docker compose version attribute is obsolete and generates warnings'
-    suggested_action: 'Remove version attribute from docker-compose.yml files'
+story_title: 'Minimal Frontend-Backend Integration Setup'
+gate: PASS
+status_reason: 'All acceptance criteria met; unit tests passing for both services.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-09-12T00:00:00Z'
+
+top_issues: []
 waiver: { active: false }
+
+quality_score: 100
+expires: '2025-09-26T00:00:00Z'
+
+evidence:
+  tests_reviewed: 20
+  risks_identified: 0
+  trace:
+    ac_covered: [1,2,3,4,5,6,7,8,9,10,11,12]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No secrets; dependency versions current.'
+  performance:
+    status: PASS
+    notes: 'Minimal stack; no bottlenecks observed.'
+  reliability:
+    status: PASS
+    notes: 'Health endpoints present; simple services.'
+  maintainability:
+    status: PASS
+    notes: 'Clear structure; tests in place.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Add an integration test hitting backend via compose in CI'
+      refs: ['services/frontend/lib/api.ts']

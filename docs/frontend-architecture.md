@@ -18,7 +18,7 @@
 
 This document provides comprehensive frontend architecture guidance for the MCP Google Docs Editor project. While the current MVP focuses primarily on MCP protocol implementation with minimal UI, this architecture establishes patterns and standards for future expansion into a full-featured web application.
 
-The frontend architecture aligns with the backend Go services and AWS infrastructure defined in the main architecture document, providing clear patterns for authentication, document management, operation monitoring, and user interaction.
+The frontend architecture aligns with the backend Go services and the Railway deployment model defined in the main architecture document, providing clear patterns for authentication, document management, operation monitoring, and user interaction.
 
 ## Component Design Patterns
 

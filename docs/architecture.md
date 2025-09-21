@@ -2,14 +2,14 @@
 
 ## Introduction
 
-This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, implementing AWS containerized infrastructure, monitoring, CI/CD pipeline, and core architectural patterns that will support all future epics.
+This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke cloud infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
-- **Backend:** Go microservices handling MCP protocol, OAuth, and Google Docs operations
-- **Communication:** REST API and WebSocket for real-time MCP protocol
-- **Infrastructure:** AWS ECS Fargate for containerized services, not Lambda
-- **Deployment:** Terraform Infrastructure as Code with GitHub Actions CI/CD
+- **Backend:** Go services handling REST APIs, MCP operations, and integrations with Google Docs
+- **Communication:** REST API today with planned WebSocket support for real-time MCP protocol
+- **Infrastructure:** Railway environments (Development, Staging, Production) running Dockerized services with managed networking and TLS
+- **Deployment:** Railway CLI + GitHub Actions workflow (`deploy_to_railway.yml`) for repeatable multi-environment releases
 
 ### Starter Template or Existing Project
 
@@ -25,27 +25,23 @@ No starter template will be used. We'll use **create-next-app** for the Next.js 
 
 ### Technical Summary
 
-The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and Go microservices for the backend. The frontend provides a responsive user interface for authentication, document management, and operation monitoring, while the Go backend handles MCP protocol communication, OAuth flows, and Google Docs API interactions. The system uses AWS Lambda for serverless Go services with API Gateway for REST endpoints and WebSocket support for real-time MCP communication. This architecture supports the PRD's goal of 99% operation success rate with comprehensive error handling and monitoring.
+The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and Go services for the backend. The frontend provides a responsive user interface for authentication, document management, and operation monitoring, while the Go backend handles REST APIs, OAuth flows, and integration points required for MCP tooling. Services are built into Docker images and deployed to Railway environments, which supply managed HTTPS endpoints, load balancing, and horizontal scaling without custom cloud infrastructure. This approach keeps the deployment footprint lightweight while satisfying the PRD's goal of reliability through automated builds, staged environments, and centralized observability.
 
 ### High Level Overview
 
-1. **Architectural Style:** 3-Service Microservices Architecture with containerized deployment
-2. **Repository Structure:** Monorepo structure containing frontend, backend, and MCP service code
+1. **Architectural Style:** Containerized services deployed to managed Railway environments
+2. **Repository Structure:** Monorepo containing the Next.js frontend and Go backend (future MCP-specific components live alongside the backend)
 3. **Service Architecture:**
-   - **Frontend Service:** Next.js containers for user interface, authentication flows, and document management UI
-   - **Backend Service:** Go API containers for user management, OAuth token management, session persistence, and user data operations
-   - **MCP Service:** Dedicated Go containers implementing MCP protocol for Claude Code and ChatGPT web interface communication, handling Google Docs API integration
-4. **Primary Data Flow:** User → ALB → Frontend Service → Backend Service (auth/user data) | Claude/ChatGPT → ALB → MCP Service → Google Docs API
+   - **Frontend Service:** Next.js container for user interface, authentication flows, and document management UI
+   - **Backend Service:** Go API container for user management, OAuth token management, and document operations
+   - **MCP Extensions (future):** Implemented as additional modules within the backend service and exposed via MCP tools
+4. **Primary Data Flow:** User → Railway HTTPS endpoint → Frontend Service → Backend Service → Google APIs
 5. **Key Architectural Decisions:**
-   - **3-Service Separation:** Clean boundaries between UI, user management, and MCP protocol concerns
-   - **Next.js 14 with App Router** for modern React features and optimal performance in Frontend Service
-   - **Go with Fiber framework** for high-performance Backend Service API operations
-   - **Go with Mark3Labs MCP-Go** for streamlined MCP Service protocol implementation
-   - **ECS Fargate** for serverless container management across all 3 services
-   - **MCP Protocol Implementation** using Mark3Labs MCP Go library for standardized Claude/ChatGPT integration
-   - **Redis caching (ElastiCache)** shared between Backend and MCP services for OAuth tokens
-   - **Application Load Balancer** routing HTTP to Frontend/Backend and WebSocket to MCP Service
-   - **Infrastructure as Code** using Terraform for reproducible AWS deployments
+   - **Service Separation:** Maintain clear boundaries between UI and backend integration responsibilities
+   - **Next.js 14 with App Router** to leverage modern React primitives and streaming rendering
+   - **Go with Fiber framework** for high-performance API handling and MCP tool execution
+   - **Railway Environments** for managed container orchestration (Development, Staging, Production)
+   - **Railway CLI + GitHub Actions** to provide reproducible deployments without standalone IaC tooling
 
 ### High Level Project Diagram
 
@@ -53,83 +49,46 @@ The MCP Google Docs Editor implements a modern full-stack architecture with Next
 graph TB
     subgraph "External Clients"
         U[User Browser]
-        CD[Claude Desktop/Code]
-        CW[ChatGPT Web]
+        Claude[Claude Desktop/Code]
+        ChatGPT[ChatGPT]
     end
 
-    subgraph "AWS Infrastructure"
-        CF[CloudFront CDN]
-        ALB[Application Load Balancer]
-
-        subgraph "ECS Fargate Cluster"
-            subgraph "Frontend Service"
-                FE1[Next.js Container 1]
-                FE2[Next.js Container 2]
-            end
-
-            subgraph "Backend Service"
-                BE1[Go Backend Container 1]
-                BE2[Go Backend Container 2]
-            end
-
-            subgraph "MCP Service"
-                MCP1[Go MCP Container 1]
-                MCP2[Go MCP Container 2]
-            end
+    subgraph "Railway Platform"
+        subgraph "Production"
+            FE[Frontend (Next.js)]
+            BE[Backend (Go)]
         end
-
-        EC[ElastiCache Redis]
-        SM[Secrets Manager]
-        RDS[(PostgreSQL RDS)]
-        CW[CloudWatch]
+        subgraph "Staging"
+            FES[Frontend Staging]
+            BES[Backend Staging]
+        end
+        subgraph "Development"
+            FED[Frontend Dev]
+            BED[Backend Dev]
+        end
     end
 
     subgraph "External Services"
-        GA[Google OAuth API]
+        GA[Google OAuth]
         GD[Google Docs API]
     end
 
-    %% User flows
-    U --> CF
-    CF --> ALB
-    ALB --> FE1
-    ALB --> FE2
+    U --> FE
+    FE --> BE
+    Claude --> BE
+    ChatGPT --> BE
+    BE --> GA
+    BE --> GD
 
-    %% Frontend to Backend communication
-    FE1 --> BE1
-    FE2 --> BE2
+    U -.-> FES
+    FES -.-> BES
+    BES -.-> GA
+    BES -.-> GD
 
-    %% MCP Client connections
-    CD -->|WebSocket/MCP| ALB
-    CW -->|WebSocket/MCP| ALB
-    ALB --> MCP1
-    ALB --> MCP2
-
-    %% Backend Service connections
-    BE1 --> EC
-    BE2 --> EC
-    BE1 --> RDS
-    BE2 --> RDS
-    BE1 --> SM
-    BE2 --> SM
-    BE1 --> GA
-    BE2 --> GA
-
-    %% MCP Service connections
-    MCP1 --> EC
-    MCP2 --> EC
-    MCP1 --> SM
-    MCP2 --> SM
-    MCP1 --> GD
-    MCP2 --> GD
-
-    %% Monitoring
-    BE1 --> CW
-    BE2 --> CW
-    MCP1 --> CW
-    MCP2 --> CW
-    FE1 --> CW
-    FE2 --> CW
+    U -.-> FED
+    FED -.-> BED
+    BED -.-> GA
+    BED -.-> GD
 ```
 
 ### Architectural and Design Patterns
@@ -145,18 +104,17 @@ graph TB
 
 Let me present the technology choices for your approval. These are critical decisions that will guide the entire implementation:
 
-### Cloud Infrastructure
-- **Provider:** AWS (Amazon Web Services)
-- **Container Platform:** ECS Fargate (serverless containers)
-- **Key Services:**
-  - Compute: ECS Fargate clusters for frontend and backend services
-  - Networking: Application Load Balancer, VPC, CloudFront CDN
-  - Storage: ElastiCache (Redis), RDS (if needed), S3 for static assets
-  - Monitoring: CloudWatch, AWS X-Ray for distributed tracing
-  - Security: Secrets Manager, IAM roles, Security Groups
-- **Deployment Regions:**
-  - Primary: us-east-1
-  - Future DR: us-west-2
+### Platform & Deployment
+- **Provider:** Railway.com managed container platform
+- **Environment Strategy:** Dedicated Railway environments for Development, Staging, and Production
+- **Key Capabilities:**
+  - Compute: Docker images deployed as Railway services (frontend, backend, and environment-specific variants)
+  - Networking: Managed HTTPS endpoints with automatic TLS, custom domains via CNAME records (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
+  - Secrets & Env Vars: Railway environment variables managed per service
+  - Observability: Railway deployment logs + custom application logging
+- **Deployment Tooling:**
+  - Railway CLI (`railway up`) executed by GitHub Actions (`.github/workflows/deploy_to_railway.yml`)
+  - Local developers can deploy with the same CLI after `railway login` and `railway link`
 
 ### Technology Stack Table
 
@@ -190,19 +148,16 @@ Let me present the technology choices for your approval. These are critical deci
 | **Backend Framework** | Fiber | 2.52.0 | HTTP framework for Backend Service | High performance, Express-like API, excellent middleware |
 | **MCP Protocol Library** | Mark3Labs MCP-Go | Latest | Streamlined Model Context Protocol implementation | Type-safe, stdio transport, LLM-optimized design |
 
-#### Infrastructure Technologies
+#### Platform Infrastructure
 
 | Category | Technology | Version | Purpose | Rationale |
 |----------|------------|---------|---------|-----------|
-| **Container Orchestration** | AWS ECS Fargate | Latest | Serverless containers | No EC2 management, auto-scaling, cost-effective |
-| **Load Balancer** | Application Load Balancer | Latest | Traffic distribution | Layer 7 routing, health checks, SSL termination |
-| **Container Registry** | Amazon ECR | Latest | Docker image storage | Integrated with ECS, secure, automated scanning |
-| **CDN** | CloudFront | Latest | Global content delivery | Fast static asset delivery, edge caching |
-| **Networking** | VPC | Latest | Virtual private cloud | Network isolation, security groups, subnets |
-| **Database** | PostgreSQL | 15 | Primary database | ACID compliance, JSON support, proven reliability |
-| **Database (AWS)** | RDS PostgreSQL | 15 | Managed database | Automated backups, scaling, maintenance |
-| **Cache** | Redis | 7 | High-performance cache | Session storage, OAuth tokens, operation status |
-| **Cache (AWS)** | ElastiCache Redis | 7 | Managed cache | High availability, automatic failover |
+| **Hosting Platform** | Railway | Latest | Managed container runtime & networking | Simplifies operations, automatic TLS, environment isolation |
+| **Build Artifacts** | Docker images | N/A | Deterministic deployment packages | Works with Railway's Docker deploy flow |
+| **Environments** | Railway environments (dev/staging/prod) | N/A | Isolated runtime stages | Mirrors branch strategy, supports GitHub Actions automation |
+| **Custom Domains** | CNAME records (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.) | N/A | Friendly HTTPS endpoints | Maps Railway services to branded URLs |
+| **Secrets Management** | Railway environment variables | N/A | Configuration & credentials | UI/CLI management, per-environment overrides |
+| **CI/CD** | GitHub Actions (`deploy_to_railway.yml`) | N/A | Automated deployments | Branch-based environment mapping, manual dispatch support |
 | **OAuth Library** | golang.org/x/oauth2 | 0.15.0 | OAuth 2.0 client | Official Google OAuth library, well-maintained |
 | **Google Docs Client** | google.golang.org/api/docs/v1 | 0.150.0 | Google Docs API interaction | Official Google API client |
 | **Markdown Parser** | goldmark | 1.6.0 | Markdown to AST conversion | Extensible, CommonMark compliant |
@@ -216,10 +171,9 @@ Let me present the technology choices for your approval. These are critical deci
 **Important:** These technology choices are definitive for the project. The stack provides:
 - **Next.js 14** with App Router for modern React development
 - **TypeScript** for type safety across the frontend
-- **Go 1.21.5** for high-performance backend services
-- **AWS Lambda** for serverless backend execution
-- **Vercel** for optimized Next.js hosting
-- **Redis** for session and token caching
+- **Go 1.21.5** for high-performance backend services packaged as Docker images
+- **Railway** for managed container hosting, TLS, and environment orchestration
+- **Redis (managed via Railway add-ons or external provider)** for session and token caching
 
 This combination ensures excellent performance, developer experience, and scalability.
 
@@ -631,12 +585,16 @@ paths:
 **Primary Database: PostgreSQL 15**
 - **Rationale:** ACID compliance for user data integrity, excellent JSON support for flexible schemas, proven reliability for 30+ concurrent users, supports both relational and document-like queries
 
-**Caching Layer: Redis 7 (AWS ElastiCache)**
+### Legacy Cloud Architecture (Archived)
+
+> The sections below capture the original cloud-focused implementation plan from earlier revisions of the project. They are retained for historical reference and potential future migrations, but **Railway is the authoritative deployment platform**. Ignore these subsections when working on the current infrastructure unless explicitly reviving the legacy approach.
+
+**Caching Layer: Redis 7 (ElastiCache)**
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
 
 **Current Deployment:**
 - **Local Development:** PostgreSQL + Redis containers in docker-compose.yml
-- **AWS Production:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
+- **Legacy Production Plan:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
 - **Container Support**: All services containerized for consistent environments across dev/staging/prod
 
 ### Database Schema
@@ -900,35 +858,23 @@ mcp-google-docs-editor/
 │       ├── Dockerfile              # MCP service container definition
 │       └── .env                    # MCP service env vars
 │
-├── infrastructure/                 # Infrastructure as Code
-│   ├── terraform/
-│   │   ├── modules/
-│   │   │   ├── ecs/                # ECS Fargate module
-│   │   │   ├── alb/                # Application Load Balancer module
-│   │   │   ├── ecr/                # Container Registry module
-│   │   │   ├── vpc/                # Virtual Private Cloud module
-│   │   │   └── redis/              # ElastiCache Redis module
-│   │   ├── environments/
-│   │   │   ├── dev/                # Dev environment
-│   │   │   ├── staging/            # Staging environment
-│   │   │   └── prod/               # Production environment
-│   │   └── main.tf                 # Main Terraform config
-│   └── docker-compose.yml          # Local development environment
+├── services/
+│   ├── frontend/                   # Next.js application
+│   └── backend/                    # Go API + MCP tooling
+│
+├── docs/                           # Documentation (architecture, PRD, QA, stories)
+│   └── ...
 │
 ├── .github/
 │   └── workflows/
-│       ├── build-images.yml        # Docker image builds
-│       ├── deploy-ecs.yml          # ECS deployment
-│       └── pr-preview.yml          # PR preview environment
+│       └── deploy_to_railway.yml   # Railway deployment pipeline
 │
 ├── scripts/                        # Build and deploy scripts
 │   └── (various shell scripts)     # Complex automation logic
 │
-├── docs/                           # Documentation
-│   ├── prd.md                      # Product Requirements
-│   └── architecture.md             # This document
-│
 ├── Makefile                        # Primary build and deploy interface
+├── railway.toml                    # Railway service definitions
+├── service.toml                    # CLI defaults for Railway services
 ├── docker-compose.yml              # Local development stack
 ├── package.json                    # Monorepo root package
 ├── turbo.json                      # Turborepo config
@@ -938,42 +884,36 @@ mcp-google-docs-editor/
 
 ## Infrastructure and Deployment
 
-### Infrastructure as Code
-- **Tool:** Terraform 1.6.0
-- **Location:** `infrastructure/terraform/`
-- **Approach:** Modular Terraform for ECS Fargate, VPC, ALB, and supporting AWS services
+### Deployment Platform
+- **Provider:** Railway (managed containers, TLS, custom domains)
+- **Service Names:**
+  - Production: `frontend`, `backend`
+  - Staging: `frontend-staging`, `backend-staging`
+  - Development: `frontend-dev`, `backend-dev`
+- **Environments:** Railway environments mirror Git workflow (Development, Staging, Production)
+- **Custom Domains:** CNAME records map to Railway-provided hostnames (e.g., `dev.ondatra-ai.xyz → n8cwxlk7.up.railway.app`)
 
-### Deployment Strategy
-- **Containers:** Docker images built and pushed to ECR (Elastic Container Registry)
-- **Orchestration:** AWS ECS Fargate for serverless container management
-- **Load Balancing:** Application Load Balancer with target groups for each service
-- **CI/CD Platform:** GitHub Actions
-- **Pipeline Configuration:** `.github/workflows/build-images.yml`, `.github/workflows/deploy-ecs.yml`
-- **Infrastructure as Code:** Terraform modules for reproducible deployments
+### Deployment Workflow
+- **Infrastructure Definition:** `railway.toml` + `service.toml`
+- **Automation:** `.github/workflows/deploy_to_railway.yml` runs `railway up` per environment based on branch names or manual input
+- **Manual Deploy:** `make deploy ENV=development|staging|production`
+- **Secrets:** Managed via Railway environment variables
 
 ### Build and Deploy Automation
-- **Primary Interface:** Makefile in project root provides standardized commands (`make dev`, `make build`, `make deploy`)
-- **Complex Logic:** Shell scripts in `./scripts/` folder handle sophisticated automation tasks
-- **Approach:** Hybrid system where Makefile coordinates high-level operations and delegates complex logic to shell scripts
-- **Benefits:** Simple developer interface with powerful scripting capabilities for AWS operations and multi-service coordination
+- **Primary Interface:** Makefile provides commands for dependency setup, tests, linting, and Railway deployments
+- **CLI Requirements:** Railway CLI (`npm i -g @railway/cli`)
+- **Local Workflow:** `railway login` → `railway link` → `make deploy ENV=development`
 
-### ECS Service Configuration
-- **Frontend Service:** Next.js containers behind ALB target group on port 3000
-- **Backend API Service:** Go containers behind ALB target group on port 8080
-- **MCP Protocol Service:** Go containers with WebSocket support on port 8081
-- **Auto Scaling:** CPU and memory-based scaling policies
-- **Health Checks:** Application-level health endpoints
-
-### Environments
+### Environment Overview
 - **Development:**
-  - Local: Root-level `docker-compose.yml` with all services (frontend, backend, Redis, databases)
-  - AWS: Single ECS cluster with dev task definitions
+  - Railway services `frontend-dev`, `backend-dev`
+  - Custom domains `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`
 - **Staging:**
-  - Dedicated ECS cluster with staging configuration
-  - Separate ALB and target groups
+  - Railway services `frontend-staging`, `backend-staging`
+  - Planned custom domains `staging.ondatra-ai.xyz`, `api.staging.ondatra-ai.xyz`
 - **Production:**
-  - Production ECS cluster with high-availability configuration
-  - Multi-AZ deployment with auto-scaling
+  - Railway services `frontend`, `backend`
+  - Planned custom domains `app.ondatra-ai.xyz`, `api.ondatra-ai.xyz`
 
 ### Local Development Setup
 
@@ -1203,7 +1143,7 @@ Since this project has minimal UI components (only OAuth callback page), the pri
    - Implement remaining operations iteratively
 
 3. **DevOps Setup:**
-   - Create Terraform configurations for GCP resources
+   - (Legacy) Create Infrastructure-as-Code configurations for GCP resources
    - Set up GitHub Actions CI/CD pipeline
    - Configure monitoring and alerting
 

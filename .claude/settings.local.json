@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr merge:*)",
+      "Bash(MAIN_BRANCH=\"main\")",
+      "Bash(if git show-ref --verify --quiet refs/heads/master)",
+      "Bash(then)",
+      "Bash(MAIN_BRANCH=\"master\")",
+      "Bash(fi)",
+      "Bash(echo:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(make lint-backend:*)",
+      "Bash(make lint-frontend:*)",
+      "Bash(make test-unit:*)",
+      "Bash(make:*)",
+      "Bash(git --no-pager status)",
+      "Bash(git --no-pager diff)",
+      "Bash(git add:*)",
+      "Bash(export AWS_PROFILE=awesome.terraform)",
+      "Bash(aws ecs describe-tasks:*)",
+      "Bash(aws ec2 describe-subnets:*)",
+      "Bash(curl:*)",
+      "Bash(git ls-tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

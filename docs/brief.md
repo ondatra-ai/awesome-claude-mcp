@@ -117,7 +117,7 @@ Within 1-2 years, evolve into a comprehensive Google Workspace MCP suite support
 - **Frontend:** No UI required (MCP protocol only)
 - **Backend:** Node.js or Python for MCP server implementation
 - **Database:** Optional Redis for OAuth token caching
-- **Hosting/Infrastructure:** Cloud-hosted service (AWS/GCP/Azure) with auto-scaling
+- **Hosting/Infrastructure:** Railway-managed container hosting with multi-environment support
 
 ### Architecture Considerations
 - **Repository Structure:** Single repository with MCP server implementation

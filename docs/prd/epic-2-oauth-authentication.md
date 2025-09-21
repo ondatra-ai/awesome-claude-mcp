@@ -14,7 +14,7 @@
 - OAuth 2.0 credentials generated
 - Redirect URIs configured
 - Scopes defined for Google Docs access
-- Credentials stored in AWS Secrets Manager
+- Credentials stored as Railway environment variables (or external secret manager if required)
 - Environment variables configured
 
 ### Story 2.2: OAuth Flow Implementation

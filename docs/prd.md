@@ -52,7 +52,7 @@ This project serves as the initial beachhead for a comprehensive Google Workspac
 - NFR5: The system shall support 30 daily active users
 - NFR6: The system shall process 100+ document edits per day
 - NFR7: The system shall use standard MCP protocol without custom extensions
-- NFR8: The system shall be deployable to AWS ECS Fargate infrastructure with containerized services
+- NFR8: The system shall be deployable to Railway-managed container infrastructure across development, staging, and production environments
 - NFR9: The system shall send Slack alerts when service is down or error rate exceeds 5%
 - NFR10: The system shall be released as open source with MIT license for MVP
 - NFR11: Every epic, user story, and task shall include comprehensive test coverage
@@ -66,7 +66,7 @@ All services, including the Frontend Service (Next.js), Backend Service (Go Fibe
 
 ### Service Architecture
 
-The system will be implemented as a 3-service containerized architecture deployed on AWS ECS Fargate with Application Load Balancer, utilizing AWS services for infrastructure. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber), and MCP Service (Go with Mark3Labs MCP-Go library) following the design patterns established in the architecture document.
+The system will be implemented as Dockerized services deployed to Railway environments. Railway manages container orchestration, TLS, and custom domains for Development, Staging, and Production. The architecture includes Frontend Service (Next.js), Backend Service (Go Fiber with MCP tooling), and optional future services following the design patterns established in the architecture document.
 
 ### Testing Requirements
 
@@ -82,17 +82,16 @@ Comprehensive testing pyramid including:
 - **Backend Services:** Go 1.21.5 with Fiber framework for Backend and MCP services
 - **Frontend Service:** TypeScript with Next.js 14 (App Router) and modern React patterns
 - **MCP Protocol:** Mark3Labs MCP-Go library for MCP protocol implementation
-- AWS as cloud infrastructure provider (ECS Fargate, Application Load Balancer, CloudWatch)
-- Redis for token caching (AWS ElastiCache or similar)
+- Railway as the hosting platform (Docker deploys, managed TLS, custom domains)
+- Redis cache (Railway add-on or external provider) for token/session storage
 - Docker containerization with multi-stage builds for all services
-- New Relic + CloudWatch for monitoring and observability
+- Application logging emitted as structured JSON and inspected via Railway logs
 - Standard MCP protocol implementation without extensions
 - OAuth tokens cached until expiry by default
 - No access controls or rate limiting in MVP (add in v2)
 - Fail-fast error handling - no automatic retries
-- All configuration via environment variables
-- Infrastructure as Code using Terraform
-- GitHub Actions for CI/CD pipeline with ECR integration
+- All configuration via environment variables managed in Railway
+- GitHub Actions + Railway CLI for CI/CD (`deploy_to_railway.yml`)
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations
 
@@ -125,14 +124,13 @@ The MCP Google Docs Editor serves two distinct user personas, each with specific
 **Primary Use Case:** System development, deployment, and operational support
 
 **Key Responsibilities:**
-- Infrastructure setup and configuration (AWS, OAuth, monitoring)
+- Infrastructure setup and configuration (Railway environments, OAuth, monitoring)
 - Code development and testing for MCP server functionality
 - System monitoring, debugging, and performance optimization
 - Security management and token handling
 - CI/CD pipeline management and deployment processes
 
-**Key Characteristics:**
-- Technical expertise in Go, AWS, MCP protocol, and Google APIs
+- Technical expertise in Go, Railway CLI, MCP protocol, and Google APIs
 - Focused on system reliability, security, and performance
 - Responsible for maintaining 99% uptime and handling technical issues
 - Supports Claude Users through system stability and feature development
@@ -151,7 +149,7 @@ This role distinction ensures clear separation between user-facing features and 
 
 The development will proceed through 9 distinct epics, each delivering deployable functionality that provides incremental value. The structure ensures that infrastructure and authentication are established before implementing document operations, with each operation fully completed with all formatting support before moving to the next.
 
-1. **Epic 1: Foundation & Infrastructure** - Establish project setup, AWS infrastructure, and deployable homepage
+1. **Epic 1: Foundation & Infrastructure** - Establish project setup, Railway infrastructure, and deployable homepage
 2. **Epic 2: OAuth Authentication** - Implement complete Google OAuth flow with multi-account support
 3. **Epic 3: MCP Server Setup** - Create MCP protocol server with tool registration and discovery
 4. **Epic 4: Replace All Operation** - Implement complete document replacement with full Markdown support
@@ -183,19 +181,18 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - README.md with setup instructions for all services
 - MIT license file added
 
-#### Story 1.2: AWS Infrastructure Setup
+#### Story 1.2: Railway Infrastructure Setup
 **As a** Developer/Maintainer
-**I want** to configure AWS infrastructure
+**I want** to configure Railway infrastructure
 **So that** I have a deployable environment for the application
 
 **Acceptance Criteria:**
-- AWS account configured with appropriate IAM roles
-- ECS Fargate cluster created and configured
-- Application Load Balancer configured with proper target groups
-- VPC and networking configured for container communication
-- CloudWatch logging enabled for all services
-- Infrastructure defined in Terraform
-- Deployment successful to AWS ECS
+- Railway project linked to the repository and CLI
+- Development, Staging, and Production environments created
+- Railway services created for frontend/back (including dev/staging variants)
+- Environment variables configured per service
+- Custom domains mapped and verified (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
+- Deployment successful via Railway CLI/GitHub Actions
 
 #### Story 1.3: Frontend Service Implementation
 **As a** Claude User
@@ -221,7 +218,7 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - GitHub Actions workflow configured for all services
 - Docker images built and pushed to ECR
 - Automated tests run on pull requests for each service
-- Successful builds deploy all services to AWS ECS
+- Successful builds deploy targeted services to Railway environments
 - Blue-green deployment capability for zero downtime
 - Rollback capability implemented
 - Build status badges in README
@@ -271,7 +268,7 @@ The development will proceed through 9 distinct epics, each delivering deployabl
 - OAuth 2.0 credentials generated
 - Redirect URIs configured
 - Scopes defined for Google Docs access
-- Credentials stored in AWS Secrets Manager
+- Credentials stored as Railway environment variables (or external secret manager if required)
 - Environment variables configured
 
 #### Story 2.2: OAuth Flow Implementation

@@ -1,0 +1,41 @@
+[project]
+name = "awesome-claude-mcp"
+
+[defaults]
+region = "us-east"
+
+[[services]]
+name = "frontend"
+root = "services/frontend"
+dockerfile = "Dockerfile"
+open_port = 3000
+healthcheck_path = "/"
+restart_policy_type = "on_failure"
+num_replicas = 1
+
+[[services]]
+name = "backend"
+root = "services/backend"
+dockerfile = "Dockerfile"
+open_port = 8080
+healthcheck_path = "/health"
+restart_policy_type = "on_failure"
+num_replicas = 1
+
+[[services]]
+name = "backend-dev"
+root = "services/backend"
+dockerfile = "Dockerfile"
+open_port = 8080
+healthcheck_path = "/health"
+restart_policy_type = "on_failure"
+num_replicas = 1
+
+[[services]]
+name = "frontend-dev"
+root = "services/frontend"
+dockerfile = "Dockerfile"
+open_port = 3000
+healthcheck_path = "/"
+restart_policy_type = "on_failure"
+num_replicas = 1
