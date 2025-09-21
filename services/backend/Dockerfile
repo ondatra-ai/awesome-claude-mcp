@@ -6,7 +6,7 @@ FROM golang:1.21-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache git ca-certificates wget
+RUN apk update && apk add --no-cache git ca-certificates wget && rm -rf /var/cache/apk/*
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.g
 FROM alpine:3.18
 
 # Install ca-certificates and wget for health checks
-RUN apk --no-cache add ca-certificates wget
+RUN apk update && apk add --no-cache ca-certificates wget && rm -rf /var/cache/apk/*
 
 # Create non-root user
 RUN addgroup -g 1001 -S appgroup && \
