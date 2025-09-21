@@ -9,6 +9,7 @@ services:
     environment:
       - PORT=8080
       - LOG_LEVEL=info
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,https://dev.ondatra-ai.xyz
     volumes:
       # Cache Go modules for faster development builds
       - go-mod-cache:/go/pkg/mod
