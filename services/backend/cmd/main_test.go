@@ -10,7 +10,7 @@ import (
 
 func TestVersionEndpoint_Success(t *testing.T) {
 	// Arrange
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
 
 	// Act
@@ -29,7 +29,7 @@ func TestVersionEndpoint_Success(t *testing.T) {
 
 func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	// Arrange
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
 
 	// Act
@@ -43,7 +43,7 @@ func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 
 func TestHealthEndpoint_Success(t *testing.T) {
 	// Arrange
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
 
 	// Act
@@ -64,7 +64,7 @@ func TestHealthEndpoint_Success(t *testing.T) {
 
 func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	// Arrange
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
 
 	// Act
@@ -78,7 +78,7 @@ func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 
 func TestNonExistentEndpoint_NotFound(t *testing.T) {
 	// Arrange
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
 
 	// Act
@@ -92,7 +92,7 @@ func TestNonExistentEndpoint_NotFound(t *testing.T) {
 
 func TestCreateFiberApp_ReturnsConfiguredApp(t *testing.T) {
 	// Act
-	app := createFiberApp()
+	app := createFiberApp("http://localhost:3000")
 
 	// Assert
 	assert.NotNil(t, app)

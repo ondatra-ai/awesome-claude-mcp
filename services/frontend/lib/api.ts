@@ -1,16 +1,28 @@
 import type { IHealthResponse, IVersionResponse } from '../interfaces/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const normalizeBaseUrl = (rawBaseUrl: string): string =>
+  rawBaseUrl.replace(/\/$/, '');
+
+const buildUrl = (baseUrl: string, path: string): string => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${normalizedPath}`;
+};
+
+const handleError = (response: Response, context: string): never => {
+  throw new Error(
+    `Failed to fetch ${context}: ${response.status} ${response.statusText}`
+  );
+};
 
 class ApiClient {
-  private baseURL: string;
+  private readonly baseUrl: string;
 
-  constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
   }
 
   async getVersion(): Promise<IVersionResponse> {
-    const response = await fetch(`${this.baseURL}/version`, {
+    const response = await fetch(buildUrl(this.baseUrl, '/version'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -18,14 +30,14 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch version: ${response.statusText}`);
+      handleError(response, 'version');
     }
 
     return response.json() as Promise<IVersionResponse>;
   }
 
   async getHealth(): Promise<IHealthResponse> {
-    const response = await fetch(`${this.baseURL}/health`, {
+    const response = await fetch(buildUrl(this.baseUrl, '/health'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -33,11 +45,17 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch health: ${response.statusText}`);
+      handleError(response, 'health');
     }
 
     return response.json() as Promise<IHealthResponse>;
   }
 }
 
-export const apiClient = new ApiClient();
+export const createApiClient = (rawBaseUrl: string): ApiClient => {
+  if (!rawBaseUrl || rawBaseUrl.trim() === '') {
+    throw new Error('Backend base URL is required to create ApiClient');
+  }
+
+  return new ApiClient(normalizeBaseUrl(rawBaseUrl.trim()));
+};

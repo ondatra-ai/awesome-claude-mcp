@@ -78,7 +78,7 @@ func setupLogger() {
 	}
 }
 
-func createFiberApp() *fiber.App {
+func createFiberApp(corsAllowedOrigins string) *fiber.App {
 	// Production-optimized Fiber setup per tech-stack.md
 	app := fiber.New(fiber.Config{
 		Prefork:       false, // Disable for development
@@ -90,7 +90,7 @@ func createFiberApp() *fiber.App {
 
 	// Middleware setup
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000", // Frontend development server
+		AllowOrigins: corsAllowedOrigins, // Comma separated list of allowed origins
 		AllowHeaders: "Origin, Content-Type, Accept",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
@@ -152,8 +152,14 @@ func main() {
 		Str("version", "1.0.0").
 		Msg("MCP Google Docs Editor Backend starting")
 
+	// Get CORS configuration
+	corsAllowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if corsAllowedOrigins == "" {
+		log.Fatal().Msg("CORS_ALLOWED_ORIGINS environment variable is required")
+	}
+
 	// Create and configure Fiber app
-	app := createFiberApp()
+	app := createFiberApp(corsAllowedOrigins)
 
 	// Setup routes
 	setupRoutes(app)

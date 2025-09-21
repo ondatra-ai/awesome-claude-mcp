@@ -9,6 +9,7 @@ services:
     environment:
       - PORT=8080
       - LOG_LEVEL=info
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,https://dev.ondatra-ai.xyz
     volumes:
       # Cache Go modules for faster development builds
       - go-mod-cache:/go/pkg/mod
@@ -19,8 +20,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - mcp-network
     restart: unless-stopped
     develop:
       watch:
@@ -33,12 +32,14 @@ services:
     build:
       context: ./services/frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
     container_name: mcp-frontend
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
     volumes:
@@ -54,8 +55,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - mcp-network
     restart: unless-stopped
     develop:
       watch:
@@ -65,10 +64,6 @@ services:
             - ./services/frontend/node_modules/
             - ./services/frontend/.next/
 
-networks:
-  mcp-network:
-    driver: bridge
-    name: mcp-network
 
 volumes:
   # Backend caching volumes
