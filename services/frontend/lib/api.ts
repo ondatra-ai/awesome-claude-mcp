@@ -1,19 +1,9 @@
 import type { IHealthResponse, IVersionResponse } from '../interfaces/api';
 
-const resolveBaseUrl = (): string => {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+const normalizeBaseUrl = (rawBaseUrl: string): string =>
+  rawBaseUrl.replace(/\/$/, '');
 
-  if (!raw) {
-    throw new Error(
-      'NEXT_PUBLIC_API_URL environment variable is required for API client'
-    );
-  }
-
-  return raw.replace(/\/$/, '');
-};
-
-const buildUrl = (path: string): string => {
-  const baseUrl = resolveBaseUrl();
+const buildUrl = (baseUrl: string, path: string): string => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseUrl}${normalizedPath}`;
 };
@@ -25,8 +15,14 @@ const handleError = (response: Response, context: string): never => {
 };
 
 class ApiClient {
+  private readonly baseUrl: string;
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
   async getVersion(): Promise<IVersionResponse> {
-    const response = await fetch(buildUrl('/version'), {
+    const response = await fetch(buildUrl(this.baseUrl, '/version'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -41,7 +37,7 @@ class ApiClient {
   }
 
   async getHealth(): Promise<IHealthResponse> {
-    const response = await fetch(buildUrl('/health'), {
+    const response = await fetch(buildUrl(this.baseUrl, '/health'), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -56,4 +52,10 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient();
+export const createApiClient = (rawBaseUrl: string): ApiClient => {
+  if (!rawBaseUrl || rawBaseUrl.trim() === '') {
+    throw new Error('Backend base URL is required to create ApiClient');
+  }
+
+  return new ApiClient(normalizeBaseUrl(rawBaseUrl.trim()));
+};
