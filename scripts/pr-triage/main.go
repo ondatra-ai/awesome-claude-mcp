@@ -12,22 +12,18 @@ import (
 )
 
 // createAIClient creates an AI client based on the engine name.
-func createAIClient(engine string) AIClient {
-	switch engine {
-	case "claude":
-		return NewClaudeStrategy()
-	case "codex":
-		return NewCodexStrategy()
-	default:
-		return nil
+func createAIClient(engine string) (AIClient, error) {
+	if engine != "claude" {
+		return nil, fmt.Errorf("unsupported engine: %s (only 'claude' is supported)", engine)
 	}
+	return NewClaudeStrategy()
 }
 
 // pr-triage CLI entrypoint
 //
 // Flags:
 //
-//	-engine string AI engine: "claude" (default) or "codex"
+//	-engine string AI engine: "claude" (default)
 func main() {
 	log.SetFlags(0)
 
@@ -43,16 +39,16 @@ func main() {
 	}
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
 
-	engine := flag.String("engine", "claude", "AI engine: claude|codex")
+	engine := flag.String("engine", "claude", "AI engine: claude")
 	flag.Parse()
 
 	// Log selected engine to stderr for visibility without affecting stdout blocks
 	fmt.Fprintf(os.Stderr, "pr-triage engine: %s\n", *engine)
 
 	// Validate engine before setting up context
-	aiClient := createAIClient(*engine)
-	if aiClient == nil {
-		log.Printf("unsupported engine: %s (supported: claude, codex)", *engine)
+	aiClient, err := createAIClient(*engine)
+	if err != nil {
+		log.Printf("failed to create AI client: %v", err)
 		os.Exit(1)
 	}
 
@@ -73,7 +69,7 @@ func main() {
 	// Create runner with all components
 	runner := NewRunner(prFetcher, threadsFetcher, resolver, analyzer, implementer)
 
-	err := runner.Run(ctx)
+	err = runner.Run(ctx)
 
 	stop() // Always call stop before exit
 

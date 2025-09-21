@@ -25,6 +25,8 @@
       "Bash(aws ecs describe-tasks:*)",
       "Bash(aws ec2 describe-subnets:*)",
       "Bash(curl:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
       "Bash(git ls-tree:*)"
     ],
     "deny": [],
