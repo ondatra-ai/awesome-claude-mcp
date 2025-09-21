@@ -34,13 +34,13 @@ services:
       context: ./services/frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://backend:8080
+        NEXT_PUBLIC_API_URL: http://localhost:8080
     container_name: mcp-frontend
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
     volumes:
