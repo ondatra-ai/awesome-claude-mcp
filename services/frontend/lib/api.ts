@@ -12,11 +12,10 @@ const resolveBaseUrl = (): string => {
   return raw.replace(/\/$/, '');
 };
 
-const BASE_URL = resolveBaseUrl();
-
 const buildUrl = (path: string): string => {
+  const baseUrl = resolveBaseUrl();
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${BASE_URL}${normalizedPath}`;
+  return `${baseUrl}${normalizedPath}`;
 };
 
 const handleError = (response: Response, context: string): never => {
