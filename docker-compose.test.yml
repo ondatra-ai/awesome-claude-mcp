@@ -10,8 +10,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
-    networks:
-      - test-network
     restart: "no"
 
   frontend:
@@ -21,10 +19,10 @@ services:
     container_name: mcp-frontend-test
     build:
       args:
-        NEXT_PUBLIC_API_URL: http://backend:8080
+        NEXT_PUBLIC_API_URL: http://localhost:8080
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
       - PORT=3000
       - HOSTNAME=0.0.0.0
     depends_on:
@@ -36,8 +34,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
-    networks:
-      - test-network
     restart: "no"
 
   playwright-test:
@@ -60,14 +56,6 @@ services:
       - ./test-results:/app/test-results
       - ./playwright-report:/app/playwright-report
 
-networks:
-  test-network:
-    driver: bridge
-    name: mcp-test-network
-  # Also define mcp-network for compatibility (inherited from base compose)
-  mcp-network:
-    driver: bridge
-    name: mcp-network
 
 volumes:
   # Inherit volumes from base compose file

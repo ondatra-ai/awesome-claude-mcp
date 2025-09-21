@@ -19,8 +19,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - mcp-network
     restart: unless-stopped
     develop:
       watch:
@@ -56,8 +54,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - mcp-network
     restart: unless-stopped
     develop:
       watch:
@@ -67,10 +63,6 @@ services:
             - ./services/frontend/node_modules/
             - ./services/frontend/.next/
 
-networks:
-  mcp-network:
-    driver: bridge
-    name: mcp-network
 
 volumes:
   # Backend caching volumes
