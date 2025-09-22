@@ -24,10 +24,14 @@ This document establishes comprehensive coding standards for the MCP Google Docs
 - **MCP Compliance**: Strictly follow MCP protocol standards without custom extensions
 - **OAuth Security**: Secure token handling with encryption at rest
 - **Configuration**: All configuration via environment variables, no hardcoded values
+- **Single Entity Single File**: Each file should contain exactly one primary entity (struct, interface, service, etc.) to maximize modularity and maintainability
 
 ## Go Backend Standards
 
 ### File Organization
+
+**Single Entity Single File Principle:**
+Following the principle that each file should contain exactly one primary entity, organize code into focused, single-responsibility files:
 
 ```text
 backend/
@@ -35,18 +39,65 @@ backend/
 │   ├── api/main.go        # REST API server
 │   └── mcp/main.go        # MCP WebSocket server
 ├── internal/              # Internal packages (not importable externally)
-│   ├── api/               # HTTP handlers and middleware
-│   ├── mcp/               # MCP protocol implementation
-│   ├── auth/              # OAuth and authentication
-│   ├── operations/        # Document operations
-│   ├── docs/              # Google Docs integration
-│   ├── cache/             # Redis caching
-│   └── config/            # Configuration management
+│   ├── domain/            # Business domain entities
+│   │   ├── models/        # One model per file
+│   │   │   ├── document.go        # Document entity only
+│   │   │   ├── user.go            # User entity only
+│   │   │   └── operation.go       # Operation entity only
+│   │   └── ports/         # One interface per file
+│   │       ├── document_service.go    # DocumentService interface
+│   │       ├── auth_service.go        # AuthService interface
+│   │       └── cache_service.go       # CacheService interface
+│   ├── adapters/          # External service adapters
+│   │   ├── google/        # Google services integration
+│   │   │   ├── docs_client.go         # Google Docs API client
+│   │   │   ├── auth_client.go         # Google OAuth client
+│   │   │   └── token_validator.go     # Token validation logic
+│   │   ├── cache/         # Cache implementations
+│   │   │   ├── redis_client.go        # Redis client implementation
+│   │   │   └── memory_cache.go        # In-memory cache implementation
+│   │   └── http/          # HTTP handlers
+│   │       ├── document_handler.go    # Document operation handlers
+│   │       ├── auth_handler.go        # Authentication handlers
+│   │       └── health_handler.go      # Health check handlers
+│   ├── application/       # Application services
+│   │   ├── services/      # One service per file
+│   │   │   ├── document_service.go    # Document business logic
+│   │   │   ├── auth_service.go        # Authentication business logic
+│   │   │   └── operation_service.go   # Operation orchestration
+│   │   └── commands/      # Command handlers
+│   │       ├── replace_all_command.go # Replace all operation
+│   │       ├── append_command.go      # Append operation
+│   │       └── insert_command.go      # Insert operations
+│   └── infrastructure/    # Infrastructure concerns
+│       ├── config/        # Configuration management
+│       │   ├── config.go              # Configuration struct
+│       │   └── loader.go              # Configuration loading logic
+│       ├── logging/       # Logging infrastructure
+│       │   ├── logger.go              # Logger interface
+│       │   └── structured_logger.go   # Structured logger implementation
+│       └── server/        # Server infrastructure
+│           ├── http_server.go         # HTTP server setup
+│           └── mcp_server.go          # MCP WebSocket server setup
 ├── pkg/                   # Public packages (importable)
-│   ├── errors/            # Custom error types
-│   └── utils/             # Utility functions
+│   ├── errors/            # One error type per file
+│   │   ├── domain_errors.go           # Domain-specific errors
+│   │   ├── auth_errors.go             # Authentication errors
+│   │   └── validation_errors.go       # Validation errors
+│   └── utils/             # Utility functions (one responsibility per file)
+│       ├── string_utils.go            # String manipulation utilities
+│       ├── time_utils.go              # Time-related utilities
+│       └── validation_utils.go        # Validation utilities
 └── deployments/           # Docker and deployment configs
 ```
+
+**Key Principles:**
+- **One Primary Entity**: Each `.go` file contains exactly one main struct, interface, or service
+- **Clear Naming**: File names directly reflect the contained entity (e.g., `document.go` contains `Document` struct)
+- **Focused Responsibility**: Each file has a single, well-defined purpose
+- **Easy Navigation**: Developers can quickly locate specific functionality
+- **Improved Testability**: Smaller, focused files are easier to unit test
+- **Better Maintainability**: Changes to one entity don't affect unrelated code
 
 ### Naming Conventions
 
@@ -84,6 +135,64 @@ var ErrDocumentNotFound = errors.New("document not found")
 ```
 
 ### Code Structure
+
+**Single Entity Per File Examples:**
+```go
+// document.go - Contains only Document entity and its methods
+package models
+
+type Document struct {
+    ID       string    `json:"id"`
+    Title    string    `json:"title"`
+    Content  string    `json:"content"`
+    Created  time.Time `json:"created"`
+    Modified time.Time `json:"modified"`
+}
+
+func (d *Document) IsEmpty() bool {
+    return d.Content == ""
+}
+
+func (d *Document) UpdateContent(content string) {
+    d.Content = content
+    d.Modified = time.Now()
+}
+```
+
+```go
+// document_service.go - Contains only DocumentService interface
+package ports
+
+import "context"
+
+type DocumentService interface {
+    GetDocument(ctx context.Context, id string) (*models.Document, error)
+    ReplaceAllContent(ctx context.Context, id, content string) error
+    AppendContent(ctx context.Context, id, content string) error
+    PrependContent(ctx context.Context, id, content string) error
+}
+```
+
+```go
+// document_handler.go - Contains only HTTP handlers for document operations
+package http
+
+type DocumentHandler struct {
+    service ports.DocumentService
+    logger  logging.Logger
+}
+
+func NewDocumentHandler(service ports.DocumentService, logger logging.Logger) *DocumentHandler {
+    return &DocumentHandler{
+        service: service,
+        logger:  logger,
+    }
+}
+
+func (h *DocumentHandler) HandleReplaceAll(w http.ResponseWriter, r *http.Request) {
+    // Implementation focused only on HTTP handling
+}
+```
 
 **Function Design:**
 ```go
@@ -224,9 +333,9 @@ frontend/
 
 ### Naming Conventions
 
-**Components:**
+**Components (Single Entity Per File):**
 ```tsx
-// PascalCase for components and interfaces
+// DocumentEditor.tsx - Contains only DocumentEditor component
 interface DocumentEditorProps {
     documentId: string;
     onSave: (content: string) => void;
@@ -234,6 +343,25 @@ interface DocumentEditorProps {
 
 export function DocumentEditor({ documentId, onSave }: DocumentEditorProps) {
     // Component implementation
+}
+```
+
+```tsx
+// DocumentList.tsx - Contains only DocumentList component
+interface DocumentListProps {
+    documents: Document[];
+    onSelect: (id: string) => void;
+}
+
+export function DocumentList({ documents, onSelect }: DocumentListProps) {
+    // Component implementation
+}
+```
+
+```tsx
+// useDocuments.ts - Contains only useDocuments hook
+export function useDocuments() {
+    // Custom hook implementation
 }
 ```
 
