@@ -616,6 +616,22 @@ E2E tests must be fully automatable without manual intervention:
 - No external dependency configuration needed
 - Tests must be idempotent and repeatable
 
+**Automatable Requirements Criteria:**
+Requirements are considered automatable if they meet ALL of these criteria:
+- No manual setup or authentication steps required
+- Deterministic, measurable outcomes
+- No external dependency configuration needed
+- No human interaction during execution
+- Services must be pre-configured and running
+- Executable in CI environment without manual intervention
+
+**Excluded from automation:**
+- Requirements with GIVEN/WHEN/THEN scenarios (may require manual steps)
+- File/directory structure validation and filesystem checks
+- Infrastructure setup requirements
+- Authentication configuration requirements
+- External service configuration requirements
+
 **Requirements Traceability:**
 All automated E2E tests must follow the functional requirements (FR) traceability system defined in `docs/requirements.md`:
 

@@ -4,6 +4,23 @@
 
 This document establishes naming conventions for automated End-to-End (E2E) tests to ensure consistency, traceability, and maintainability. This document covers only automatable tests that can run without manual intervention.
 
+## Automatable Requirements Criteria
+
+**Requirements are considered automatable if they meet ALL of these criteria:**
+- No manual setup or authentication steps required
+- Deterministic, measurable outcomes
+- No external dependency configuration needed
+- No human interaction during execution
+- Services must be pre-configured and running
+- Executable in CI environment without manual intervention
+
+**Excluded from automation:**
+- Requirements with GIVEN/WHEN/THEN scenarios (may require manual steps)
+- File/directory structure validation and filesystem checks
+- Infrastructure setup requirements
+- Authentication configuration requirements
+- External service configuration requirements
+
 ## Core Naming Principles
 
 ### 1. FR-ID Integration
