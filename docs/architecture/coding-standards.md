@@ -607,6 +607,78 @@ func LoadConfig() (*Config, error) {
 - **Framework**: Playwright for cross-browser testing
 - **Organization**: Service-specific test directories (frontend/, backend/, mcp-service/)
 
+### E2E Testing Standards
+
+**Requirements Traceability:**
+All E2E tests must follow the functional requirements (FR) traceability system defined in `docs/requirements.md`:
+
+```typescript
+// Every test MUST include its FR-ID in the test name
+test('FR-00001 should access version endpoint directly', async ({ request }) => {
+  // FR-00001: Backend /version endpoint returns 1.0.0
+  // Source: Story 1.1 (1.1-E2E-001)
+
+  const response = await request.get('/version');
+  expect(response.status()).toBe(200);
+  const data = await response.json();
+  expect(data.version).toBe('1.0.0');
+});
+```
+
+**Naming Conventions:**
+- **Pattern**: `FR-XXXXX should [action] [expected result]`
+- **Examples**:
+  - `FR-00007 should fetch and display backend version`
+  - `FR-00014 should load homepage within 2 seconds`
+  - `FR-00010 should start all services correctly with docker-compose`
+
+**Test Organization:**
+```
+tests/e2e/
+├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
+├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009, FR-00014)
+├── docker-compose.spec.ts    # Infrastructure tests (FR-00010, FR-00011)
+├── railway.spec.ts           # Railway infrastructure tests (FR-00015 to FR-00019)
+├── documentation.spec.ts     # Documentation tests (FR-00012, FR-00013)
+└── helpers/                  # Shared utilities and fixtures
+```
+
+**Test Structure Requirements:**
+```typescript
+test.describe('Backend API Endpoints', () => {
+  test('FR-00001 should access version endpoint directly', async ({ request }) => {
+    // Arrange
+    const endpoint = '/version';
+
+    // Act
+    const response = await request.get(endpoint);
+
+    // Assert
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    expect(data.version).toBe('1.0.0');
+  });
+});
+```
+
+**Required Elements:**
+1. **FR-ID in test name**: `FR-XXXXX` prefix for traceability
+2. **Source comment**: Reference to requirements document
+3. **Data test IDs**: Use `data-testid` for reliable element selection
+4. **Clear assertions**: Specific, measurable expectations
+5. **Performance requirements**: Include timing assertions where specified
+
+**Quality Gates:**
+- All E2E tests must map to documented requirements in `docs/requirements.md`
+- Test names must include FR-ID for bidirectional traceability
+- Performance tests must validate timing requirements (e.g., 2-second load times)
+- Infrastructure tests must validate deployment and orchestration
+
+**Documentation:**
+- Complete naming conventions available in `docs/e2e-naming.md`
+- Requirements mapping and gap analysis in `docs/requirements.md`
+- Update both documents when adding new E2E tests
+
 ### Test Data Management
 
 ```go
