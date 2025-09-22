@@ -636,24 +636,16 @@ test('FR-00001 should access version endpoint directly', async ({ request }) => 
 - **Pattern**: `FR-XXXXX should [action] [expected result]`
 - **Examples**:
   - `FR-00007 should fetch and display backend version`
-  - `FR-00010 should load homepage within 2 seconds`
+  - `FR-00014 should load homepage within 2 seconds`
   - `FR-00005 should verify CORS headers for frontend requests`
 
-**Automated Test Organization:**
+**Test Organization:**
 ```
 tests/e2e/
 ├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
 ├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009)
-├── performance.spec.ts       # Performance tests (FR-00010) - planned
+├── performance.spec.ts       # Performance tests (FR-00014) - planned
 └── helpers/                  # Shared utilities and fixtures
-```
-
-**Manual Test Documentation:**
-```
-docs/manual-tests/
-├── infrastructure/           # Infrastructure setup tests (FR-M001, FR-M002)
-├── documentation/           # Documentation validation tests (FR-M003, FR-M004)
-└── railway/                 # Railway infrastructure tests (FR-M005 to FR-M009)
 ```
 
 **Test Structure Requirements:**
@@ -674,7 +666,7 @@ test.describe('Backend API Endpoints', () => {
 });
 ```
 
-**Required Elements for Automated Tests:**
+**Required Elements:**
 1. **FR-ID in test name**: `FR-XXXXX` prefix for traceability
 2. **Source comment**: Reference to requirements document
 3. **Data test IDs**: Use `data-testid` for reliable element selection
@@ -683,16 +675,10 @@ test.describe('Backend API Endpoints', () => {
 6. **No manual steps**: Tests must run without human intervention
 
 **Quality Gates:**
-- All automated E2E tests must map to documented requirements in `docs/requirements.md`
+- All E2E tests must map to documented requirements in `docs/requirements.md`
 - Test names must include FR-ID for bidirectional traceability
 - Performance tests must validate timing requirements (e.g., 2-second load times)
 - Tests must be executable in CI environment without manual setup
-
-**Manual Verification Standards:**
-- Manual tests use FR-M prefix (e.g., FR-M001)
-- Documented in `docs/manual-tests/` with step-by-step procedures
-- Include prerequisites, test steps, expected results, and verification checklists
-- Separate from automated test coverage metrics
 
 **Documentation:**
 - Complete naming conventions available in `docs/e2e-naming.md`

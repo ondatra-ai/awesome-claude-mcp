@@ -12,12 +12,6 @@ This document provides a mapping of End-to-End (E2E) test requirements that can 
 - Not require external dependency configuration
 - Not require human interaction during execution
 
-**Requirements excluded from automation:**
-- Infrastructure setup (docker-compose up, service deployment)
-- Authentication flows (OAuth, CLI login, API keys)
-- Environment configuration (Railway setup, DNS, custom domains)
-- Documentation validation (README accuracy, setup instructions)
-
 ## Automatable Requirements (10 total)
 
 ### Backend API Requirements (5/5 - 100% implemented)
@@ -80,66 +74,11 @@ This document provides a mapping of End-to-End (E2E) test requirements that can 
 
 ### Performance Requirements (0/1 - 0% implemented)
 
-**FR-00010**: Homepage loads within 2 seconds
-- **Source**: Story 1.1 (1.1-E2E-009) - renumbered from FR-00014
+**FR-00014**: Homepage loads within 2 seconds
+- **Source**: Story 1.1 (1.1-E2E-009)
 - **Status**: ❌ Not Implemented
 - **Implementation**: None
 - **Automation**: Playwright performance measurement with timing assertions
-
-## Manual Verification Requirements (Not Automated)
-
-The following requirements require manual setup or human intervention and are tracked separately with FR-M prefixes:
-
-### Infrastructure Setup (Manual)
-
-**FR-M001**: Docker-compose starts all services correctly
-- **Source**: Story 1.1 (1.1-E2E-004)
-- **Manual Steps**: `docker-compose up`, service health verification
-- **Why Manual**: Requires infrastructure orchestration
-
-**FR-M002**: Playwright test framework executes successfully
-- **Source**: Story 1.1 (1.1-E2E-005)
-- **Manual Steps**: Framework installation, configuration validation
-- **Why Manual**: Environment setup dependency
-
-### Documentation Validation (Manual)
-
-**FR-M003**: README setup instructions work step-by-step
-- **Source**: Story 1.1 (1.1-E2E-007)
-- **Manual Steps**: Fresh environment setup following instructions
-- **Why Manual**: Human interpretation of documentation required
-
-**FR-M004**: Full development environment operational from fresh setup
-- **Source**: Story 1.1 (1.1-E2E-008)
-- **Manual Steps**: Complete environment setup from scratch
-- **Why Manual**: Complex multi-tool installation and configuration
-
-### Railway Infrastructure (Manual)
-
-**FR-M005**: Railway project linked and CLI authenticated
-- **Source**: Story 1.2 (RLY-001, RLY-002)
-- **Manual Steps**: CLI authentication, project linking
-- **Why Manual**: Authentication flow requires user interaction
-
-**FR-M006**: GitHub Actions workflow deploys successfully
-- **Source**: Story 1.2 (RLY-003)
-- **Manual Steps**: Workflow trigger, deployment monitoring
-- **Why Manual**: CI/CD pipeline requires push or manual dispatch
-
-**FR-M007**: Services created for each Railway environment
-- **Source**: Story 1.2 (RLY-004)
-- **Manual Steps**: Railway service configuration
-- **Why Manual**: Platform-specific setup required
-
-**FR-M008**: Custom domains mapped and verified
-- **Source**: Story 1.2 (RLY-005, RLY-006)
-- **Manual Steps**: DNS configuration, certificate validation
-- **Why Manual**: External DNS dependency
-
-**FR-M009**: Environment variables configured per service
-- **Source**: Story 1.2 (RLY-007)
-- **Manual Steps**: Railway dashboard configuration
-- **Why Manual**: Platform-specific configuration
 
 ## Coverage Analysis
 
@@ -161,11 +100,7 @@ The following requirements require manual setup or human intervention and are tr
 
 | FR ID | Description | Priority | Implementation Plan |
 |-------|-------------|----------|-------------------|
-| FR-00010 | Performance (2s load time) | High | Add to homepage.spec.ts with timing assertions |
-
-### 📋 Manual Verification Items (9 requirements)
-
-Manual verification requirements (FR-M001 through FR-M009) are documented for completeness but not included in automation coverage metrics.
+| FR-00014 | Performance (2s load time) | High | Add to homepage.spec.ts with timing assertions |
 
 ## Test File Organization
 
@@ -173,14 +108,14 @@ Manual verification requirements (FR-M001 through FR-M009) are documented for co
 tests/e2e/
 ├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
 ├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009)
-└── performance.spec.ts       # Performance tests (FR-00010) - planned
+└── performance.spec.ts       # Performance tests (FR-00014) - planned
 ```
 
 ## Implementation Priority
 
 ### 🔴 High Priority (Immediate)
-1. **FR-00010**: Performance testing (2-second load requirement)
-   - Add timing assertions to homepage.spec.ts
+1. **FR-00014**: Performance testing (2-second load requirement)
+   - Add timing assertions to homepage.spec.ts or create performance.spec.ts
    - Validate load time under 2000ms
 
 ### ✅ Complete Coverage
@@ -202,7 +137,6 @@ tests/e2e/
 - **Total Automatable Requirements**: 10
 - **Currently Automated**: 9 (90%)
 - **Remaining**: 1 (10%)
-- **Manual Verification Items**: 9 (tracked separately)
 - **Test Execution Time**: < 5 minutes for full suite
 - **Test Reliability**: > 95% pass rate in CI environment
 
