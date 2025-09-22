@@ -1,4 +1,4 @@
-package main
+package prtriage
 
 import (
 	"context"
@@ -61,4 +61,12 @@ func (c *claudeStrategy) ExecutePrompt(ctx context.Context, prompt string, mode 
 	default:
 		return "", fmt.Errorf("unsupported execution mode: %v", mode)
 	}
+}
+
+// CreateAIClient creates an AI client based on the engine name.
+func CreateAIClient(engine string) (AIClient, error) {
+	if engine != "claude" {
+		return nil, fmt.Errorf("unsupported engine: %s (only 'claude' is supported)", engine)
+	}
+	return NewClaudeStrategy()
 }

@@ -1,4 +1,4 @@
-package main
+package prtriage
 
 import (
 	"context"
@@ -112,4 +112,31 @@ func printActionBlock(id, _ string, file string, line int, summary string) {
 	}
 
 	slog.Info("Action completed", "thread", id, "location", fmt.Sprintf("%s:%d", file, line), "summary", summary)
+}
+
+// RunPRTriage creates and runs the complete PR triage process
+func RunPRTriage(ctx context.Context, engineType string) error {
+	// Create AI client
+	aiClient, err := CreateAIClient(engineType)
+	if err != nil {
+		return fmt.Errorf("failed to create AI client: %w", err)
+	}
+
+	// Create GitHub client
+	ghClient := NewGitHubCLIClient()
+
+	// Create GitHub operation components
+	prFetcher := NewPRNumberFetcher(ghClient)
+	threadsFetcher := NewThreadsFetcher(ghClient)
+	resolver := NewThreadResolver(ghClient)
+
+	// Create AI operation components
+	analyzer := NewThreadAnalyzer(aiClient)
+	implementer := NewThreadImplementer(aiClient)
+
+	// Create runner with all components
+	runner := NewRunner(prFetcher, threadsFetcher, resolver, analyzer, implementer)
+
+	// Run pr-triage logic
+	return runner.Run(ctx)
 }
