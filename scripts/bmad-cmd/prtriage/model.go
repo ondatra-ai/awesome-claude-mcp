@@ -1,4 +1,4 @@
-package main
+package prtriage
 
 // Thread represents a PR review thread with its comments.
 type Thread struct {

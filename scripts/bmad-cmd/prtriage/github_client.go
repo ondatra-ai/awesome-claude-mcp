@@ -1,4 +1,4 @@
-package main
+package prtriage
 
 import (
 	"context"
