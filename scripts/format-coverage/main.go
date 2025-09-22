@@ -4,13 +4,13 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "log"
-    "os"
-    "os/exec"
-    "strconv"
-    "strings"
+	"bufio"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 )
 
 type FileCoverage struct {
@@ -24,32 +24,32 @@ type FileCoverage struct {
 var repoPrefix string
 
 func getRepoPrefix() string {
-    if repoPrefix != "" {
-        return repoPrefix
-    }
-    out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
-    if err != nil {
-        return ""
-    }
-    url := strings.TrimSpace(string(out))
-    ownerRepo := ""
-    if strings.HasPrefix(url, "git@") {
-        // git@github.com:owner/repo.git
-        parts := strings.SplitN(url, ":", 2)
-        if len(parts) == 2 {
-            ownerRepo = strings.TrimSuffix(parts[1], ".git")
-        }
-    } else {
-        // https://github.com/owner/repo.git or similar
-        idx := strings.Index(url, "github.com/")
-        if idx != -1 {
-            ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
-        }
-    }
-    if ownerRepo != "" {
-        repoPrefix = "github.com/" + ownerRepo + "/"
-    }
-    return repoPrefix
+	if repoPrefix != "" {
+		return repoPrefix
+	}
+	out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
+	if err != nil {
+		return ""
+	}
+	url := strings.TrimSpace(string(out))
+	ownerRepo := ""
+	if strings.HasPrefix(url, "git@") {
+		// git@github.com:owner/repo.git
+		parts := strings.SplitN(url, ":", 2)
+		if len(parts) == 2 {
+			ownerRepo = strings.TrimSuffix(parts[1], ".git")
+		}
+	} else {
+		// https://github.com/owner/repo.git or similar
+		idx := strings.Index(url, "github.com/")
+		if idx != -1 {
+			ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
+		}
+	}
+	if ownerRepo != "" {
+		repoPrefix = "github.com/" + ownerRepo + "/"
+	}
+	return repoPrefix
 }
 
 func main() {
@@ -114,13 +114,13 @@ func processCoverageLine(line string, fileCoverage map[string]*FileCoverage) err
 		return err
 	}
 
-    coverageCount, err := strconv.Atoi(parts[2])
-    if err != nil {
-        return fmt.Errorf("invalid coverage count: %w", err)
-    }
+	coverageCount, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return fmt.Errorf("invalid coverage count: %w", err)
+	}
 
-    initializeFileCoverage(fileCoverage, filePath)
-    processLineRange(fileCoverage[filePath], filePath, startLine, endLine, coverageCount)
+	initializeFileCoverage(fileCoverage, filePath)
+	processLineRange(fileCoverage[filePath], filePath, startLine, endLine, coverageCount)
 
 	return nil
 }
@@ -189,33 +189,33 @@ func initializeFileCoverage(fileCoverage map[string]*FileCoverage, filePath stri
 }
 
 func processLineRange(coverage *FileCoverage, filePath string, startLine, endLine, coverageCount int) {
-    sourceLines, err := loadSourceFile(filePath)
-    if err != nil {
-        addBasicLineRange(coverage, startLine, endLine, coverageCount)
-        return
-    }
+	sourceLines, err := loadSourceFile(filePath)
+	if err != nil {
+		addBasicLineRange(coverage, startLine, endLine, coverageCount)
+		return
+	}
 
-    addSmartFilteredLines(coverage, sourceLines, startLine, endLine, coverageCount)
+	addSmartFilteredLines(coverage, sourceLines, startLine, endLine, coverageCount)
 }
 
 func addBasicLineRange(coverage *FileCoverage, startLine, endLine, coverageCount int) {
-    for line := startLine; line <= endLine; line++ {
-        coverage.SmartLinesSet[line] = true
-        if coverageCount > 0 {
-            coverage.SmartCoveredLinesSet[line] = true
-        }
-    }
+	for line := startLine; line <= endLine; line++ {
+		coverage.SmartLinesSet[line] = true
+		if coverageCount > 0 {
+			coverage.SmartCoveredLinesSet[line] = true
+		}
+	}
 }
 
 func addSmartFilteredLines(coverage *FileCoverage, sourceLines []string, startLine, endLine, coverageCount int) {
-    for line := startLine; line <= endLine; line++ {
-        if isExecutableLine(sourceLines, line) {
-            coverage.SmartLinesSet[line] = true
-            if coverageCount > 0 {
-                coverage.SmartCoveredLinesSet[line] = true
-            }
-        }
-    }
+	for line := startLine; line <= endLine; line++ {
+		if isExecutableLine(sourceLines, line) {
+			coverage.SmartLinesSet[line] = true
+			if coverageCount > 0 {
+				coverage.SmartCoveredLinesSet[line] = true
+			}
+		}
+	}
 }
 
 func calculateCoveragePercentages(fileCoverage map[string]*FileCoverage) {
@@ -248,11 +248,11 @@ func calculateMaxPathLength(fileCoverage map[string]*FileCoverage) int {
 	maxLen := 0
 
 	for filePath := range fileCoverage {
-        rp := getRepoPrefix()
-        shortPath := filePath
-        if rp != "" {
-            shortPath = strings.TrimPrefix(filePath, rp)
-        }
+		rp := getRepoPrefix()
+		shortPath := filePath
+		if rp != "" {
+			shortPath = strings.TrimPrefix(filePath, rp)
+		}
 		if len(shortPath) > maxLen {
 			maxLen = len(shortPath)
 		}
@@ -293,11 +293,11 @@ func getSortedFiles(fileCoverage map[string]*FileCoverage) []string {
 func printCoverageRows(fileCoverage map[string]*FileCoverage, sortedFiles []string, maxLen int) {
 	for _, filePath := range sortedFiles {
 		coverage := fileCoverage[filePath]
-        rp := getRepoPrefix()
-        shortPath := filePath
-        if rp != "" {
-            shortPath = strings.TrimPrefix(filePath, rp)
-        }
+		rp := getRepoPrefix()
+		shortPath := filePath
+		if rp != "" {
+			shortPath = strings.TrimPrefix(filePath, rp)
+		}
 
 		if len(coverage.SmartLinesSet) == 0 {
 			fmt.Printf("│ %-*s │   --   │\n", maxLen, shortPath)
@@ -387,11 +387,11 @@ func calculateStats(fileCoverage map[string]*FileCoverage, sortedFiles []string)
 // Helper functions for smart filtering
 func loadSourceFile(modulePath string) ([]string, error) {
 	// Accept both module-qualified and repo-relative paths.
-    rp := getRepoPrefix()
-    filePath := modulePath
-    if rp != "" {
-        filePath = strings.TrimPrefix(modulePath, rp)
-    }
+	rp := getRepoPrefix()
+	filePath := modulePath
+	if rp != "" {
+		filePath = strings.TrimPrefix(modulePath, rp)
+	}
 	// If the path still doesn't exist relative to CWD (repo root), bail and let caller fall back.
 	if _, statErr := os.Stat(filePath); statErr != nil {
 		return nil, fmt.Errorf("failed to locate source file %s: %w", filePath, statErr)

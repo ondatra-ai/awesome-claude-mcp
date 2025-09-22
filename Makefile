@@ -90,9 +90,9 @@ lint-frontend: ## Run ESLint and Prettier on frontend code (auto-fix when possib
 	npx prettier --write services/frontend/ --ignore-path services/frontend/.prettierignore --config services/frontend/.prettierrc.json
 	@echo "✅ Frontend linting completed!"
 
-lint-scripts: ## Run Go linter on scripts/pr-triage code (auto-fix when possible)
-	@echo "🔧 Running go fmt to fix formatting..."
-	gofmt -l -w scripts/pr-triage
-	@echo "🔍 Running golangci-lint on scripts/pr-triage..."
-	cd scripts/pr-triage && golangci-lint run --fix .
+lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
+	@echo "🔧 Running go fmt to fix formatting on all Go scripts..."
+	find scripts/ -name "*.go" -exec gofmt -l -w {} \;
+	@echo "🔍 Running golangci-lint on bmad-cli..."
+	cd scripts/bmad-cli && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
