@@ -1,205 +1,213 @@
-# E2E Test Requirements Mapping
+# E2E Test Requirements Mapping (Automatable Only)
 
 ## Overview
 
-This document provides a comprehensive mapping of all End-to-End (E2E) test requirements extracted from QA assessments to their actual implementations. Each requirement is assigned a unique FR-XXXXX identifier for clear traceability.
+This document provides a mapping of End-to-End (E2E) test requirements that can be fully automated without manual intervention. Only requirements that can run programmatically with pre-configured services are included.
 
-## Functional Requirements
+## Automation Criteria
 
-### Backend API Requirements
+**Requirements included in this document must:**
+- Be executable without manual setup or authentication
+- Have deterministic, measurable outcomes
+- Not require external dependency configuration
+- Not require human interaction during execution
+
+**Requirements excluded from automation:**
+- Infrastructure setup (docker-compose up, service deployment)
+- Authentication flows (OAuth, CLI login, API keys)
+- Environment configuration (Railway setup, DNS, custom domains)
+- Documentation validation (README accuracy, setup instructions)
+
+## Automatable Requirements (10 total)
+
+### Backend API Requirements (5/5 - 100% implemented)
 
 **FR-00001**: Backend /version endpoint returns 1.0.0
 - **Source**: Story 1.1 (1.1-E2E-001)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/backend-api.spec.ts` - "FR-00001 should access version endpoint directly"
+- **Automation**: HTTP GET request validation
 
 **FR-00002**: Backend /health endpoint returns healthy status
 - **Source**: Story 1.1 (1.1-E2E-006)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/backend-api.spec.ts` - "FR-00002 should access health endpoint directly"
+- **Automation**: HTTP GET request validation
 
 **FR-00003**: Backend handles 404 for non-existent endpoints
 - **Source**: Not in original requirements (orphaned test)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/backend-api.spec.ts` - "FR-00003 should handle 404 for non-existent endpoints"
+- **Automation**: HTTP GET request with error validation
 
 **FR-00004**: Backend rejects invalid HTTP methods
 - **Source**: Not in original requirements (orphaned test)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/backend-api.spec.ts` - "FR-00004 should handle method not allowed for POST on version endpoint"
+- **Automation**: HTTP POST request with error validation
 
 **FR-00005**: Backend provides CORS headers for frontend
 - **Source**: Not in original requirements (orphaned test)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/backend-api.spec.ts` - "FR-00005 should verify CORS headers for frontend requests"
+- **Automation**: HTTP request with Origin header validation
 
-### Frontend UI Requirements
+### Frontend UI Requirements (4/4 - 100% implemented)
 
 **FR-00006**: Frontend single-page application loads successfully
 - **Source**: Story 1.1 (1.1-E2E-002)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/homepage.spec.ts` - "FR-00006 should load homepage and display title"
+- **Automation**: Playwright page load and element validation
 
 **FR-00007**: Homepage displays backend version at bottom
 - **Source**: Story 1.1 (1.1-E2E-003)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/homepage.spec.ts` - "FR-00007 should fetch and display backend version"
+- **Automation**: Playwright element content validation
 
 **FR-00008**: Homepage displays welcome card with features
 - **Source**: Not in original requirements (orphaned test)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/homepage.spec.ts` - "FR-00008 should display welcome card with features"
+- **Automation**: Playwright element visibility validation
 
 **FR-00009**: Homepage has responsive design
 - **Source**: Not in original requirements (orphaned test)
 - **Status**: ✅ Implemented
 - **Implementation**: `tests/e2e/homepage.spec.ts` - "FR-00009 should have responsive design"
+- **Automation**: Playwright viewport testing
 
-### Infrastructure Requirements
+### Performance Requirements (0/1 - 0% implemented)
 
-**FR-00010**: Docker-compose starts all services correctly
+**FR-00010**: Homepage loads within 2 seconds
+- **Source**: Story 1.1 (1.1-E2E-009) - renumbered from FR-00014
+- **Status**: ❌ Not Implemented
+- **Implementation**: None
+- **Automation**: Playwright performance measurement with timing assertions
+
+## Manual Verification Requirements (Not Automated)
+
+The following requirements require manual setup or human intervention and are tracked separately with FR-M prefixes:
+
+### Infrastructure Setup (Manual)
+
+**FR-M001**: Docker-compose starts all services correctly
 - **Source**: Story 1.1 (1.1-E2E-004)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: `docker-compose up`, service health verification
+- **Why Manual**: Requires infrastructure orchestration
 
-**FR-00011**: Playwright test framework executes successfully
+**FR-M002**: Playwright test framework executes successfully
 - **Source**: Story 1.1 (1.1-E2E-005)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Framework installation, configuration validation
+- **Why Manual**: Environment setup dependency
 
-### Documentation Requirements
+### Documentation Validation (Manual)
 
-**FR-00012**: README setup instructions work step-by-step
+**FR-M003**: README setup instructions work step-by-step
 - **Source**: Story 1.1 (1.1-E2E-007)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Fresh environment setup following instructions
+- **Why Manual**: Human interpretation of documentation required
 
-**FR-00013**: Full development environment operational from fresh setup
+**FR-M004**: Full development environment operational from fresh setup
 - **Source**: Story 1.1 (1.1-E2E-008)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Complete environment setup from scratch
+- **Why Manual**: Complex multi-tool installation and configuration
 
-### Performance Requirements
+### Railway Infrastructure (Manual)
 
-**FR-00014**: Homepage loads within 2 seconds
-- **Source**: Story 1.1 (1.1-E2E-009)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
-
-### Railway Infrastructure Requirements
-
-**FR-00015**: Railway project linked and CLI authenticated
+**FR-M005**: Railway project linked and CLI authenticated
 - **Source**: Story 1.2 (RLY-001, RLY-002)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: CLI authentication, project linking
+- **Why Manual**: Authentication flow requires user interaction
 
-**FR-00016**: GitHub Actions workflow deploys successfully
+**FR-M006**: GitHub Actions workflow deploys successfully
 - **Source**: Story 1.2 (RLY-003)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Workflow trigger, deployment monitoring
+- **Why Manual**: CI/CD pipeline requires push or manual dispatch
 
-**FR-00017**: Services created for each Railway environment
+**FR-M007**: Services created for each Railway environment
 - **Source**: Story 1.2 (RLY-004)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Railway service configuration
+- **Why Manual**: Platform-specific setup required
 
-**FR-00018**: Custom domains mapped and verified
+**FR-M008**: Custom domains mapped and verified
 - **Source**: Story 1.2 (RLY-005, RLY-006)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: DNS configuration, certificate validation
+- **Why Manual**: External DNS dependency
 
-**FR-00019**: Environment variables configured per service
+**FR-M009**: Environment variables configured per service
 - **Source**: Story 1.2 (RLY-007)
-- **Status**: ❌ Not Implemented
-- **Implementation**: None
+- **Manual Steps**: Railway dashboard configuration
+- **Why Manual**: Platform-specific configuration
 
 ## Coverage Analysis
 
-### ✅ Implemented Tests (9/19 - 47%)
+### ✅ Automated Tests (9/10 - 90% implemented)
 
-| FR ID | Test Name | File |
-|-------|-----------|------|
-| FR-00001 | should access version endpoint directly | backend-api.spec.ts |
-| FR-00002 | should access health endpoint directly | backend-api.spec.ts |
-| FR-00003 | should handle 404 for non-existent endpoints | backend-api.spec.ts |
-| FR-00004 | should handle method not allowed for POST on version endpoint | backend-api.spec.ts |
-| FR-00005 | should verify CORS headers for frontend requests | backend-api.spec.ts |
-| FR-00006 | should load homepage and display title | homepage.spec.ts |
-| FR-00007 | should fetch and display backend version | homepage.spec.ts |
-| FR-00008 | should display welcome card with features | homepage.spec.ts |
-| FR-00009 | should have responsive design | homepage.spec.ts |
+| FR ID | Test Name | File | Automation Type |
+|-------|-----------|------|-----------------|
+| FR-00001 | should access version endpoint directly | backend-api.spec.ts | API Testing |
+| FR-00002 | should access health endpoint directly | backend-api.spec.ts | API Testing |
+| FR-00003 | should handle 404 for non-existent endpoints | backend-api.spec.ts | Error Testing |
+| FR-00004 | should handle method not allowed for POST on version endpoint | backend-api.spec.ts | Error Testing |
+| FR-00005 | should verify CORS headers for frontend requests | backend-api.spec.ts | Header Testing |
+| FR-00006 | should load homepage and display title | homepage.spec.ts | UI Testing |
+| FR-00007 | should fetch and display backend version | homepage.spec.ts | Integration Testing |
+| FR-00008 | should display welcome card with features | homepage.spec.ts | UI Testing |
+| FR-00009 | should have responsive design | homepage.spec.ts | Responsive Testing |
 
-### ❌ Not Implemented Requirements (10/19 - 53%)
+### ❌ Missing Automated Tests (1/10 - 10% remaining)
 
-| FR ID | Description | Priority | Recommendation |
-|-------|-------------|----------|----------------|
-| FR-00010 | Docker-compose orchestration | High | Add docker-compose.spec.ts |
-| FR-00011 | Playwright framework validation | Medium | Add to setup tests |
-| FR-00012 | README validation | Low | Add documentation.spec.ts |
-| FR-00013 | Fresh setup validation | Medium | Add setup.spec.ts |
-| FR-00014 | Performance (2s load time) | High | Add to homepage.spec.ts |
-| FR-00015 | Railway authentication | Medium | Add railway.spec.ts |
-| FR-00016 | GitHub Actions deployment | High | Add ci-cd.spec.ts |
-| FR-00017 | Railway environments | Medium | Add to railway.spec.ts |
-| FR-00018 | Custom domains | Low | Add to railway.spec.ts |
-| FR-00019 | Environment variables | Medium | Add to railway.spec.ts |
+| FR ID | Description | Priority | Implementation Plan |
+|-------|-------------|----------|-------------------|
+| FR-00010 | Performance (2s load time) | High | Add to homepage.spec.ts with timing assertions |
 
-### 🔍 Tests Without Original Requirements (5 tests)
+### 📋 Manual Verification Items (9 requirements)
 
-These tests were created but not traced to original requirements. They have been formalized with FR-IDs:
+Manual verification requirements (FR-M001 through FR-M009) are documented for completeness but not included in automation coverage metrics.
 
-- **FR-00003**: 404 error handling - Essential for API robustness
-- **FR-00004**: Method validation - Important for API security
-- **FR-00005**: CORS validation - Critical for frontend-backend communication
-- **FR-00008**: Feature card display - Important for UI completeness
-- **FR-00009**: Responsive design - Essential for multi-device support
+## Test File Organization
 
-**Recommendation**: These should be formally added to the next QA assessment review as they represent valuable test coverage.
+```
+tests/e2e/
+├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
+├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009)
+└── performance.spec.ts       # Performance tests (FR-00010) - planned
+```
 
-## Gap Analysis Summary
+## Implementation Priority
 
-### Priority Rankings for Implementation
+### 🔴 High Priority (Immediate)
+1. **FR-00010**: Performance testing (2-second load requirement)
+   - Add timing assertions to homepage.spec.ts
+   - Validate load time under 2000ms
 
-#### 🔴 High Priority (Missing Critical Tests)
-1. **FR-00014**: Performance testing (2-second load requirement)
-2. **FR-00010**: Docker orchestration validation
-3. **FR-00016**: CI/CD deployment verification
+### ✅ Complete Coverage
+- All API endpoints (5/5)
+- All UI components (4/4)
+- Error handling scenarios
+- Cross-browser responsiveness
 
-#### 🟡 Medium Priority (Infrastructure & Setup)
-1. **FR-00011**: Playwright framework validation
-2. **FR-00013**: Fresh environment setup
-3. **FR-00015**: Railway authentication
-4. **FR-00017**: Railway environments
-5. **FR-00019**: Environment variables
+## Automation Quality Gates
 
-#### 🟢 Low Priority (Documentation & Domains)
-1. **FR-00012**: README validation
-2. **FR-00018**: Custom domain verification
+- **Coverage**: 90% of automatable requirements implemented
+- **Test Execution**: All tests run without manual intervention
+- **Environment**: Tests assume services are pre-configured and running
+- **Reliability**: Tests are idempotent and deterministic
+- **Maintenance**: Clear FR-ID traceability for all tests
 
-### Recommendations
+## Success Metrics
 
-#### Immediate Actions
-1. **Add Performance Test**: Implement FR-00014 in homepage.spec.ts
-2. **Add Infrastructure Tests**: Create docker-compose.spec.ts for FR-00010
-3. **Add CI/CD Tests**: Create deployment verification for FR-00016
-
-#### Future Improvements
-1. **Railway Test Suite**: Create comprehensive railway.spec.ts
-2. **Documentation Tests**: Add automated README validation
-3. **Setup Validation**: Create fresh environment tests
-
-### Metrics
-
-- **Total Requirements**: 19
-- **Implemented**: 9 (47%)
-- **Not Implemented**: 10 (53%)
-- **Orphaned Tests Formalized**: 5
-- **High Priority Missing**: 3
-- **Medium Priority Missing**: 5
-- **Low Priority Missing**: 2
+- **Total Automatable Requirements**: 10
+- **Currently Automated**: 9 (90%)
+- **Remaining**: 1 (10%)
+- **Manual Verification Items**: 9 (tracked separately)
+- **Test Execution Time**: < 5 minutes for full suite
+- **Test Reliability**: > 95% pass rate in CI environment
 
 ---
 
-**Last Updated**: Created with comprehensive E2E requirements mapping
-**Next Review**: When new user stories are added or QA assessments updated
+**Last Updated**: Refactored to include only automatable requirements
+**Next Review**: When new automatable test scenarios are identified
 **Maintainer**: Test Architecture Team

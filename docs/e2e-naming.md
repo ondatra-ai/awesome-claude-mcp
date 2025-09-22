@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document establishes comprehensive naming conventions for End-to-End (E2E) tests to ensure consistency, traceability, and maintainability across the test suite.
+This document establishes naming conventions for automated End-to-End (E2E) tests to ensure consistency, traceability, and maintainability. This document covers only automatable tests that can run without manual intervention.
 
 ## Core Naming Principles
 
@@ -32,7 +32,7 @@ test('FR-00007 should fetch and display backend version', async ({ page }) => {
   // Implementation
 });
 
-test('FR-00014 should load homepage within 2 seconds', async ({ page }) => {
+test('FR-00010 should load homepage within 2 seconds', async ({ page }) => {
   // Implementation
 });
 ```
@@ -68,73 +68,98 @@ test('FR-00007 should fetch and display backend version', async ({ page }) => {}
 // UI component tests
 test('FR-00008 should display welcome card with features', async ({ page }) => {});
 test('FR-00009 should have responsive design', async ({ page }) => {});
+```
 
+### Performance Tests
+
+**File**: `tests/e2e/performance.spec.ts` (planned)
+
+```typescript
 // Performance tests
-test('FR-00014 should load homepage within 2 seconds', async ({ page }) => {});
+test('FR-00010 should load homepage within 2 seconds', async ({ page }) => {});
 ```
 
-### Infrastructure Tests
+## Manual Test Documentation (Not Automated)
 
-**File**: `tests/e2e/docker-compose.spec.ts` (planned)
+For requirements that cannot be automated (infrastructure setup, authentication flows, documentation validation), manual test procedures are documented separately with FR-M prefixes.
 
-```typescript
-// Service orchestration tests
-test('FR-00010 should start all services correctly with docker-compose', async () => {});
-test('FR-00011 should execute Playwright test framework successfully', async () => {});
-```
+### Manual Test Categories
 
-### Railway Infrastructure Tests
+1. **Infrastructure Setup (FR-M001, FR-M002)**: Docker orchestration, framework setup
+2. **Documentation Validation (FR-M003, FR-M004)**: README verification, environment setup
+3. **Railway Infrastructure (FR-M005 through FR-M009)**: Authentication, deployment, domain configuration
 
-**File**: `tests/e2e/railway.spec.ts` (planned)
+### Manual Test Documentation Format
 
-```typescript
-// Authentication tests
-test('FR-00015 should link Railway project and authenticate CLI', async () => {});
+```markdown
+# Manual Test: FR-M001 - Docker-compose Service Orchestration
 
-// Deployment tests
-test('FR-00016 should deploy successfully via GitHub Actions workflow', async () => {});
+## Prerequisites
+- Docker and docker-compose installed
+- Project repository cloned
 
-// Environment tests
-test('FR-00017 should create services for each Railway environment', async () => {});
-test('FR-00019 should configure environment variables per service', async () => {});
+## Test Steps
+1. Navigate to project root
+2. Execute `docker-compose up`
+3. Verify all services start successfully
+4. Validate service health endpoints
 
-// Domain tests
-test('FR-00018 should map and verify custom domains', async () => {});
-```
+## Expected Results
+- All containers start without errors
+- Services respond to health checks
+- Frontend can communicate with backend
 
-### Documentation Tests
-
-**File**: `tests/e2e/documentation.spec.ts` (planned)
-
-```typescript
-// Setup validation tests
-test('FR-00012 should validate README setup instructions work step-by-step', async () => {});
-test('FR-00013 should validate full development environment operational from fresh setup', async () => {});
+## Verification
+- [ ] Backend container running on port 8080
+- [ ] Frontend container running on port 3000
+- [ ] Services communicate successfully
 ```
 
 ## File Organization
 
-### Directory Structure
+### Automated Test Directory Structure
 
 ```
 tests/e2e/
 ├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
-├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009, FR-00014)
-├── docker-compose.spec.ts    # Infrastructure tests (FR-00010, FR-00011)
-├── railway.spec.ts           # Railway infrastructure tests (FR-00015 to FR-00019)
-├── documentation.spec.ts     # Documentation tests (FR-00012, FR-00013)
+├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009)
+├── performance.spec.ts       # Performance tests (FR-00010) - planned
 └── helpers/                  # Shared utilities and fixtures
     ├── api-helpers.ts
-    ├── page-helpers.ts
-    └── railway-helpers.ts
+    └── page-helpers.ts
 ```
 
-### File Naming Rules
+### Manual Test Documentation Structure
+
+```
+docs/manual-tests/
+├── infrastructure/
+│   ├── FR-M001-docker-compose.md
+│   └── FR-M002-playwright-setup.md
+├── documentation/
+│   ├── FR-M003-readme-validation.md
+│   └── FR-M004-fresh-setup.md
+└── railway/
+    ├── FR-M005-auth.md
+    ├── FR-M006-github-actions.md
+    ├── FR-M007-environments.md
+    ├── FR-M008-domains.md
+    └── FR-M009-variables.md
+```
+
+### Automated Test File Naming Rules
 
 1. **Descriptive Domains**: File names should reflect the domain being tested
 2. **Kebab Case**: Use kebab-case for file names (e.g., `backend-api.spec.ts`)
-3. **Spec Suffix**: All test files must end with `.spec.ts`
+3. **Spec Suffix**: All automated test files must end with `.spec.ts`
 4. **Logical Grouping**: Group related FR-IDs in the same file when they test the same system component
+
+### Manual Test File Naming Rules
+
+1. **FR-M Prefix**: All manual test files use FR-M prefix format (e.g., `FR-M001-docker-compose.md`)
+2. **Descriptive Names**: Clear indication of what is being tested manually
+3. **Markdown Format**: All manual test documentation in `.md` format
+4. **Category Grouping**: Organize by category in subdirectories
 
 ## Test Structure Standards
 
@@ -216,7 +241,7 @@ test('FR-00001 should access version and health endpoints', async ({ page }) => 
 
 ```typescript
 // Performance tests should specify timing requirements
-test('FR-00014 should load homepage within 2 seconds', async ({ page }) => {
+test('FR-00010 should load homepage within 2 seconds', async ({ page }) => {
   const startTime = Date.now();
 
   await page.goto('/');
@@ -252,9 +277,9 @@ Each test must maintain bidirectional traceability:
 ### Requirements Comments
 
 ```typescript
-test('FR-00010 should start all services correctly with docker-compose', async () => {
-  // REQUIREMENT: FR-00010 - Docker-compose starts all services correctly
-  // SOURCE: Story 1.1 (1.1-E2E-004)
+test('FR-00010 should load homepage within 2 seconds', async ({ page }) => {
+  // REQUIREMENT: FR-00010 - Homepage loads within 2 seconds
+  // SOURCE: Story 1.1 (1.1-E2E-009) - renumbered from FR-00014
   // STATUS: Not Implemented
   // PRIORITY: High
 
@@ -273,12 +298,20 @@ When requirements change:
 3. Update source comments
 4. Verify traceability matrix
 
-### Adding New Tests
+### Adding New Automated Tests
 
-1. Assign next available FR-ID in `docs/requirements.md`
-2. Follow naming conventions exactly
-3. Add to appropriate test file
-4. Update requirements mapping
+1. Verify the requirement is automatable (no manual setup required)
+2. Assign next available FR-ID in `docs/requirements.md`
+3. Follow naming conventions exactly
+4. Add to appropriate automated test file
+5. Update requirements mapping
+
+### Adding New Manual Tests
+
+1. Assign FR-M prefix ID for manual requirements
+2. Create manual test documentation in `docs/manual-tests/`
+3. Follow manual test documentation format
+4. Organize by category in appropriate subdirectory
 
 ### Removing Tests
 
@@ -288,6 +321,6 @@ When requirements change:
 
 ---
 
-**Last Updated**: Created with comprehensive E2E naming conventions
-**Next Review**: When new test files are added or naming patterns change
+**Last Updated**: Updated to focus on automatable tests only
+**Next Review**: When new automatable test scenarios are identified
 **Maintainer**: Test Architecture Team
