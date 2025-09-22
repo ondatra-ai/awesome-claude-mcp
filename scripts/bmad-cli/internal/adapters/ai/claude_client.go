@@ -1,4 +1,4 @@
-package prtriage
+package ai
 
 import (
 	"context"
@@ -8,35 +8,30 @@ import (
 	"github.com/lancekrogers/claude-code-go/pkg/claude/dangerous"
 )
 
-// claudeStrategy implements AIClient interface using Claude Code Go SDK.
-type claudeStrategy struct {
+type ClaudeClient struct {
 	client          *claude.ClaudeClient
 	dangerousClient *dangerous.DangerousClient
 }
 
-// NewClaudeStrategy creates a new Claude AI client strategy.
-func NewClaudeStrategy() (AIClient, error) {
+func NewClaudeClient() (*ClaudeClient, error) {
 	client := claude.NewClient("claude")
 
-	// For ApplyMode, also initialize dangerous client
 	dangerousClient, err := dangerous.NewDangerousClient("claude")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dangerous client: %w", err)
 	}
 
-	return &claudeStrategy{
+	return &ClaudeClient{
 		client:          client,
 		dangerousClient: dangerousClient,
 	}, nil
 }
 
-// Name returns the client identifier.
-func (c *claudeStrategy) Name() string {
+func (c *ClaudeClient) Name() string {
 	return "Claude"
 }
 
-// ExecutePrompt executes a prompt using Claude Code Go SDK.
-func (c *claudeStrategy) ExecutePrompt(ctx context.Context, prompt string, mode ExecutionMode) (string, error) {
+func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode ExecutionMode) (string, error) {
 	switch mode {
 	case PlanMode:
 		opts := &claude.RunOptions{
@@ -61,12 +56,4 @@ func (c *claudeStrategy) ExecutePrompt(ctx context.Context, prompt string, mode 
 	default:
 		return "", fmt.Errorf("unsupported execution mode: %v", mode)
 	}
-}
-
-// CreateAIClient creates an AI client based on the engine name.
-func CreateAIClient(engine string) (AIClient, error) {
-	if engine != "claude" {
-		return nil, fmt.Errorf("unsupported engine: %s (only 'claude' is supported)", engine)
-	}
-	return NewClaudeStrategy()
 }

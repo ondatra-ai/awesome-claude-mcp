@@ -44,58 +44,58 @@ type TestResult struct {
 }
 
 func main() {
-    var (
-        testResults map[string]*TestResult
-        err         error
-    )
+	var (
+		testResults map[string]*TestResult
+		err         error
+	)
 
-    args := os.Args[1:]
-    if len(args) >= 1 && (args[0] == "-h" || args[0] == "--help") {
-        fmt.Fprintf(os.Stderr, "Usage: %s [PATH-TO_go-test-json | -]\n", os.Args[0])
-        os.Exit(2)
-    }
-    if len(args) >= 1 {
-        if args[0] == "-" {
-            testResults, err = parseTestJSONFromReader(os.Stdin)
-        } else {
-            testResults, err = parseTestJSON(args[0])
-        }
-    } else {
-        testResults, err = parseTestJSONFromReader(os.Stdin)
-    }
+	args := os.Args[1:]
+	if len(args) >= 1 && (args[0] == "-h" || args[0] == "--help") {
+		fmt.Fprintf(os.Stderr, "Usage: %s [PATH-TO_go-test-json | -]\n", os.Args[0])
+		os.Exit(2)
+	}
+	if len(args) >= 1 {
+		if args[0] == "-" {
+			testResults, err = parseTestJSONFromReader(os.Stdin)
+		} else {
+			testResults, err = parseTestJSON(args[0])
+		}
+	} else {
+		testResults, err = parseTestJSONFromReader(os.Stdin)
+	}
 
-    if err != nil {
-        log.Fatalf("Error parsing test JSON: %v", err)
-    }
+	if err != nil {
+		log.Fatalf("Error parsing test JSON: %v", err)
+	}
 
-    displayGotestdoxReport(testResults)
+	displayGotestdoxReport(testResults)
 }
 
 func parseTestJSON(filename string) (map[string]*TestResult, error) {
-    file, err := os.Open(filename)
-    if err != nil {
-        return nil, fmt.Errorf("failed to open file: %w", err)
-    }
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
 
-    defer func() { _ = file.Close() }()
+	defer func() { _ = file.Close() }()
 
-    return parseTestJSONFromReader(file)
+	return parseTestJSONFromReader(file)
 }
 
 func parseTestJSONFromReader(reader io.Reader) (map[string]*TestResult, error) {
-    testResults := make(map[string]*TestResult)
-    scanner := bufio.NewScanner(reader)
+	testResults := make(map[string]*TestResult)
+	scanner := bufio.NewScanner(reader)
 	// Increase buffer in case of long output lines
 	const maxScannerTokenSize = 1024 * 1024
 
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, maxScannerTokenSize)
 
-    for scanner.Scan() {
-        line := strings.TrimSpace(scanner.Text())
-        if line == "" || !strings.HasPrefix(line, "{") {
-            continue
-        }
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || !strings.HasPrefix(line, "{") {
+			continue
+		}
 
 		var event TestEvent
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
@@ -109,11 +109,11 @@ func parseTestJSONFromReader(reader io.Reader) (map[string]*TestResult, error) {
 		testKey := event.Package + "::" + event.Test
 		result := getOrCreateTestResult(testResults, testKey, event)
 		updateTestResult(result, event)
-    }
-    if err := scanner.Err(); err != nil {
-        return testResults, fmt.Errorf("scan error: %w", err)
-    }
-    return testResults, nil
+	}
+	if err := scanner.Err(); err != nil {
+		return testResults, fmt.Errorf("scan error: %w", err)
+	}
+	return testResults, nil
 }
 
 func getOrCreateTestResult(testResults map[string]*TestResult, testKey string, event TestEvent) *TestResult {
@@ -172,30 +172,30 @@ func displayGotestdoxReport(testResults map[string]*TestResult) {
 var repoPrefix string
 
 func getRepoPrefix() string {
-    if repoPrefix != "" {
-        return repoPrefix
-    }
-    out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
-    if err != nil {
-        return ""
-    }
-    url := strings.TrimSpace(string(out))
-    ownerRepo := ""
-    if strings.HasPrefix(url, "git@") {
-        parts := strings.SplitN(url, ":", 2)
-        if len(parts) == 2 {
-            ownerRepo = strings.TrimSuffix(parts[1], ".git")
-        }
-    } else {
-        idx := strings.Index(url, "github.com/")
-        if idx != -1 {
-            ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
-        }
-    }
-    if ownerRepo != "" {
-        repoPrefix = "github.com/" + ownerRepo + "/"
-    }
-    return repoPrefix
+	if repoPrefix != "" {
+		return repoPrefix
+	}
+	out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
+	if err != nil {
+		return ""
+	}
+	url := strings.TrimSpace(string(out))
+	ownerRepo := ""
+	if strings.HasPrefix(url, "git@") {
+		parts := strings.SplitN(url, ":", 2)
+		if len(parts) == 2 {
+			ownerRepo = strings.TrimSuffix(parts[1], ".git")
+		}
+	} else {
+		idx := strings.Index(url, "github.com/")
+		if idx != -1 {
+			ownerRepo = strings.TrimSuffix(url[idx+len("github.com/"):], ".git")
+		}
+	}
+	if ownerRepo != "" {
+		repoPrefix = "github.com/" + ownerRepo + "/"
+	}
+	return repoPrefix
 }
 
 func groupTestsByPackage(testResults map[string]*TestResult) map[string][]*TestResult {
