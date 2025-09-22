@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:scripts/bmad-cli/internal/application/prompts/yaml_parser.go
 package prompts
+========
+package prtriage
+>>>>>>>> main:scripts/bmad-cli/prtriage/yaml_parser.go
 
 import (
 	"fmt"
