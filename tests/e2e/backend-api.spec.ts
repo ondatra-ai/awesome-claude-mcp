@@ -5,7 +5,10 @@ const { backendUrl, frontendUrl } = getEnvironmentConfig(process.env.E2E_ENV);
 
 test.describe('Backend API E2E Tests', () => {
 
-  test('should access version endpoint directly', async ({ request }) => {
+  test('FR-00001 should access version endpoint directly', async ({ request }) => {
+    // FR-00001: Backend /version endpoint returns 1.0.0
+    // Source: Story 1.1 (1.1-E2E-001)
+
     const response = await request.get(`${backendUrl}/version`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -15,7 +18,10 @@ test.describe('Backend API E2E Tests', () => {
     expect(data.version).toBe('1.0.0');
   });
 
-  test('should access health endpoint directly', async ({ request }) => {
+  test('FR-00002 should access health endpoint directly', async ({ request }) => {
+    // FR-00002: Backend /health endpoint returns healthy status
+    // Source: Story 1.1 (1.1-E2E-006)
+
     const response = await request.get(`${backendUrl}/health`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -26,17 +32,26 @@ test.describe('Backend API E2E Tests', () => {
     expect(data).toHaveProperty('timestamp');
   });
 
-  test('should handle 404 for non-existent endpoints', async ({ request }) => {
+  test('FR-00003 should handle 404 for non-existent endpoints', async ({ request }) => {
+    // FR-00003: Backend handles 404 for non-existent endpoints
+    // Source: Not in original requirements (orphaned test)
+
     const response = await request.get(`${backendUrl}/nonexistent`);
     expect(response.status()).toBe(404);
   });
 
-  test('should handle method not allowed for POST on version endpoint', async ({ request }) => {
+  test('FR-00004 should handle method not allowed for POST on version endpoint', async ({ request }) => {
+    // FR-00004: Backend rejects invalid HTTP methods
+    // Source: Not in original requirements (orphaned test)
+
     const response = await request.post(`${backendUrl}/version`);
     expect(response.status()).toBe(405);
   });
 
-  test('should verify CORS headers for frontend requests', async ({ request }) => {
+  test('FR-00005 should verify CORS headers for frontend requests', async ({ request }) => {
+    // FR-00005: Backend provides CORS headers for frontend
+    // Source: Not in original requirements (orphaned test)
+
     const response = await request.get(`${backendUrl}/version`, {
       headers: {
         'Origin': frontendUrl
