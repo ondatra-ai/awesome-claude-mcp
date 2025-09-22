@@ -1,4 +1,4 @@
-module bmad-cmd
+module bmad-cli
 
 go 1.25.1
 

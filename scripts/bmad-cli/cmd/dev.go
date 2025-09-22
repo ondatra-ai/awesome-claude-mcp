@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bmad-cmd/prtriage"
+	"bmad-cli/prtriage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -43,7 +43,7 @@ var prTriageCmd = &cobra.Command{
 		engineType := viper.GetString("engine.type")
 
 		// Log selected engine to stderr for visibility
-		fmt.Fprintf(os.Stderr, "bmad-cmd dev pr-triage engine: %s\n", engineType)
+		fmt.Fprintf(os.Stderr, "bmad-cli dev pr-triage engine: %s\n", engineType)
 
 		// Run pr-triage using the prtriage package
 		err := prtriage.RunPRTriage(ctx, engineType)

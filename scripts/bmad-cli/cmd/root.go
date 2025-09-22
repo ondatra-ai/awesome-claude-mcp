@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "bmad-cmd",
+	Use:   "bmad-cli",
 	Short: "BMAD CLI tool",
 }
 
@@ -23,8 +23,8 @@ func init() {
 }
 
 func initConfig() {
-	// Always use ./scripts/bmad-cmd/bmad-cmd.yml
-	viper.SetConfigFile("./scripts/bmad-cmd/bmad-cmd.yml")
+	// Always use ./scripts/bmad-cli/bmad-cli.yml
+	viper.SetConfigFile("./scripts/bmad-cli/bmad-cli.yml")
 	viper.SetConfigType("yaml")
 	viper.ReadInConfig()
 

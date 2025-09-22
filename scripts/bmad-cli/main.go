@@ -1,6 +1,6 @@
 package main
 
-import "bmad-cmd/cmd"
+import "bmad-cli/cmd"
 
 func main() {
 	cmd.Execute()
