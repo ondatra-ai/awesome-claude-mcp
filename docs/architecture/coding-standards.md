@@ -321,7 +321,7 @@ test('EE-00001-04: should access version endpoint directly', async ({ request })
 
 **Cross-References:**
 - Complete naming conventions: `docs/test-naming.md`
-- Requirements mapping and scenarios: `docs/requirements.md`
+- Requirements mapping and scenarios: `docs/requirements.yml`
 
 **Test Structure (AAA Pattern):**
 ```go
@@ -685,7 +685,7 @@ Requirements are considered automatable if they meet ALL of these criteria:
 - External service configuration requirements
 
 **Test Scenario Traceability:**
-All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.md` and `docs/test-naming.md` for complete traceability mapping.
+All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.yml` and `docs/test-naming.md` for complete traceability mapping.
 
 **Detailed Test Organization:**
 ```
@@ -738,7 +738,7 @@ test.describe('Backend API Endpoints', () => {
 **Quality Gates:**
 - All tests must use Scenario ID system or be marked as ORPHAN
 - Test names must include Scenario ID for bidirectional traceability
-- All Scenario IDs must exist in `docs/requirements.md`
+- All Scenario IDs must exist in `docs/requirements.yml`
 - Performance tests must validate timing requirements (e.g., 2-second load times)
 - Tests must be executable in CI environment without manual setup
 - Orphan tests should be minimized and regularly reviewed

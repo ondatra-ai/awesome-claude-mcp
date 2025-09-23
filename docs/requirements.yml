@@ -1,0 +1,252 @@
+# E2E Test Requirements (Automatable Only)
+metadata:
+  title: "E2E Test Requirements (Automatable Only)"
+  version: "1.0"
+  last_updated: "2025-09-23"
+
+requirements:
+  FR-00001:
+    title: "Backend /version endpoint returns 1.0.0"
+    story_id: "1.1-E2E-001"
+    story_reference: "Story 1.1"
+    category: "backend"
+    scenarios:
+      UT-00001-01:
+        description: "handler should return correct version"
+        file_path: "services/backend/cmd/main_test.go"
+        steps:
+          - given: "version handler function exists"
+          - when: "handler is called with valid HTTP request"
+          - then: "JSON response {\"version\": \"1.0.0\"} is returned"
+      UT-00001-02:
+        description: "handler should reject invalid methods"
+        file_path: "services/backend/cmd/main_test.go"
+        steps:
+          - given: "version endpoint receives invalid HTTP method"
+          - when: "non-GET request is made to /version"
+          - then: "appropriate HTTP error status is returned"
+      IT-00001-03:
+        description: "server responds with correct status"
+        file_path: "tests/integration/backend.test.ts"
+        steps:
+          - given: "Fiber server is running with version endpoint"
+          - when: "HTTP GET request is made to /version"
+          - then: "server responds with correct JSON and 200 status"
+      EE-00001-04:
+        description: "service returns version with headers"
+        file_path: "tests/e2e/backend-api.spec.ts"
+        steps:
+          - given: "full backend service is deployed and running"
+          - when: "external HTTP client calls /version endpoint"
+          - then: "service responds with \"1.0.0\" and proper HTTP headers"
+
+  FR-00002:
+    title: "Backend /health endpoint returns healthy status"
+    story_id: "1.1-E2E-006"
+    story_reference: "Story 1.1"
+    category: "backend"
+    scenarios:
+      UT-00002-01:
+        description: "health check handler returns correct status"
+        file_path: "services/backend/cmd/main_test.go"
+        steps:
+          - given: "health check handler functions exist"
+          - when: "handlers are called"
+          - then: "correct health status responses are returned"
+      EE-00002-02:
+        description: "health endpoint accessible via HTTP"
+        file_path: "tests/e2e/backend-api.spec.ts"
+        steps:
+          - given: "services are running with health endpoints"
+          - when: "health check URLs are accessed via HTTP"
+          - then: "both services respond with healthy status"
+
+  FR-00003:
+    title: "Backend handles 404 for non-existent endpoints"
+    category: "backend"
+    scenarios:
+      EE-00003-01:
+        description: "returns 404 for non-existent endpoints"
+        file_path: "tests/e2e/backend-api.spec.ts"
+        steps:
+          - given: "backend service is running"
+          - when: "GET request is sent to non-existent endpoint"
+          - then: "service returns 404 status code"
+          - and: "response indicates endpoint was not found"
+
+  FR-00004:
+    title: "Backend rejects invalid HTTP methods"
+    category: "backend"
+    scenarios:
+      EE-00004-01:
+        description: "returns 405 for POST on version endpoint"
+        file_path: "tests/e2e/backend-api.spec.ts"
+        steps:
+          - given: "backend service is running"
+          - when: "POST request is sent to /version endpoint"
+          - then: "service returns 405 Method Not Allowed status code"
+          - and: "response indicates method is not allowed"
+
+  FR-00005:
+    title: "Backend provides CORS headers for frontend"
+    category: "backend"
+    scenarios:
+      EE-00005-01:
+        description: "includes CORS headers for frontend requests"
+        file_path: "tests/e2e/backend-api.spec.ts"
+        steps:
+          - given: "backend service is running"
+          - when: "request with Origin header from frontend domain is sent"
+          - then: "response includes appropriate CORS headers"
+          - and: "Access-Control-Allow-Origin header allows frontend domain"
+
+  FR-00006:
+    title: "Frontend single-page application loads successfully"
+    story_id: "1.1-E2E-002"
+    story_reference: "Story 1.1"
+    category: "frontend"
+    scenarios:
+      UT-00006-01:
+        description: "homepage component renders without errors"
+        file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
+        steps:
+          - given: "homepage React component is defined"
+          - when: "component is rendered in test environment"
+          - then: "component renders without errors and displays expected content"
+      UT-00006-02:
+        description: "component handles props correctly"
+        file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
+        steps:
+          - given: "component receives props for configuration"
+          - when: "props are passed to component"
+          - then: "component handles props correctly and renders accordingly"
+      IT-00006-03:
+        description: "Next.js routes serve pages correctly"
+        file_path: "tests/integration/frontend.test.ts"
+        steps:
+          - given: "Next.js App Router is configured"
+          - when: "application routes are accessed"
+          - then: "pages are served correctly by Next.js framework"
+      EE-00006-04:
+        description: "SPA loads in browser"
+        file_path: "tests/e2e/homepage.spec.ts"
+        steps:
+          - given: "frontend application is built and served"
+          - when: "browser navigates to application URL"
+          - then: "single-page application loads and renders in browser"
+
+  FR-00007:
+    title: "Homepage displays backend version at bottom"
+    story_id: "1.1-E2E-003"
+    story_reference: "Story 1.1"
+    category: "frontend"
+    scenarios:
+      UT-00007-01:
+        description: "API client constructs correct request"
+        file_path: "services/frontend/__tests__/lib/api.test.ts"
+        steps:
+          - given: "API client utility exists"
+          - when: "API client constructs version request"
+          - then: "correct HTTP request structure is created"
+      UT-00007-02:
+        description: "version component displays \"1.0.0\""
+        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+        steps:
+          - given: "version display component receives version data"
+          - when: "component is rendered with version \"1.0.0\""
+          - then: "version text is displayed at bottom of page"
+      UT-00007-03:
+        description: "handles API errors gracefully"
+        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+        steps:
+          - given: "API call fails with network error"
+          - when: "version fetch encounters failure"
+          - then: "error state is handled gracefully with user-friendly message"
+      UT-00007-04:
+        description: "shows loading state during fetch"
+        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+        steps:
+          - given: "API call is in progress"
+          - when: "version is being fetched from backend"
+          - then: "loading state is displayed to user"
+      IT-00007-05:
+        description: "frontend fetches from backend successfully"
+        file_path: "tests/integration/fullstack.test.ts"
+        steps:
+          - given: "frontend and backend services are running"
+          - when: "frontend makes API call to backend version endpoint"
+          - then: "version \"1.0.0\" is successfully retrieved and displayed"
+      EE-00007-06:
+        description: "version appears at bottom of page"
+        file_path: "tests/e2e/homepage.spec.ts"
+        steps:
+          - given: "full stack application is running"
+          - when: "user loads homepage in browser"
+          - then: "backend version \"1.0.0\" appears at bottom of page"
+
+  FR-00008:
+    title: "Homepage displays welcome card with features"
+    category: "frontend"
+    scenarios:
+      EE-00008-01:
+        description: "welcome card is visible"
+        file_path: "tests/e2e/homepage.spec.ts"
+        steps:
+          - given: "frontend application is loaded"
+          - when: "user views homepage"
+          - then: "welcome card is visible"
+          - and: "welcome card displays key features"
+
+  FR-00009:
+    title: "Homepage has responsive design"
+    category: "frontend"
+    scenarios:
+      EE-00009-01:
+        description: "adapts to different viewport sizes"
+        file_path: "tests/e2e/homepage.spec.ts"
+        steps:
+          - given: "frontend application is loaded"
+          - when: "browser is resized to different viewport sizes"
+          - then: "homepage layout adapts responsively"
+          - and: "all elements remain accessible and properly positioned"
+
+  FR-00010:
+    title: "Homepage loads within 2 seconds"
+    story_id: "1.1-E2E-009"
+    story_reference: "Story 1.1"
+    category: "performance"
+    scenarios:
+      EE-00010-01:
+        description: "page loads under 2000ms"
+        file_path: "tests/e2e/performance.spec.ts"
+        steps:
+          - given: "frontend application is deployed"
+          - when: "user navigates to homepage"
+          - then: "page fully loads in under 2000ms"
+          - and: "all critical resources are loaded within time limit"
+
+# Schema validation and tooling support
+schema:
+  requirement_id_pattern: "^FR-\\d{5}$"
+  scenario_id_pattern: "^(UT|IT|EE)-\\d{5}-\\d{2}$"
+  categories: ["backend", "frontend", "performance", "integration"]
+  gherkin_keywords: ["given", "when", "then", "and", "but"]
+
+# Cross-references to related documentation
+references:
+  test_naming: "docs/test-naming.md"
+  coding_standards: "docs/architecture/coding-standards.md"
+  test_files:
+    unit_tests:
+      - "services/backend/cmd/main_test.go"
+      - "services/frontend/__tests__/lib/api.test.ts"
+      - "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+      - "services/frontend/__tests__/components/HomePage.test.tsx"
+    integration_tests:
+      - "tests/integration/backend.test.ts"
+      - "tests/integration/frontend.test.ts"
+      - "tests/integration/fullstack.test.ts"
+    e2e_tests:
+      - "tests/e2e/backend-api.spec.ts"
+      - "tests/e2e/homepage.spec.ts"
+      - "tests/e2e/performance.spec.ts"

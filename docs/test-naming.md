@@ -55,7 +55,7 @@ test('ORPHAN: should validate request headers', async ({ request }) => {
 
 ### 1. Scenario ID Integration
 
-All test names **MUST** include their Scenario ID as defined in `docs/requirements.md`:
+All test names **MUST** include their Scenario ID as defined in `docs/requirements.yml`:
 
 ```typescript
 // ✅ Correct - Mapped scenario
@@ -406,7 +406,7 @@ test('EE-00010-01: should load homepage within 2 seconds', async ({ page }) => {
 
 When requirements change:
 
-1. Update `docs/requirements.md` first
+1. Update `docs/requirements.yml` first
 2. Update scenario IDs in test names to match new requirements
 3. Update source comments
 4. Verify traceability matrix
@@ -414,7 +414,7 @@ When requirements change:
 ### Adding New Tests
 
 1. Verify the requirement is automatable (no manual setup required)
-2. Assign next available Scenario ID in `docs/requirements.md`
+2. Assign next available Scenario ID in `docs/requirements.yml`
 3. Follow naming conventions exactly
 4. Add to appropriate test file
 5. Update requirements mapping
@@ -432,7 +432,7 @@ When requirements change:
 All tests must pass these checks:
 
 - Contains valid Scenario ID (UT/IT/EE-XXXXX-YY) or ORPHAN prefix
-- Scenario ID exists in `docs/requirements.md`
+- Scenario ID exists in `docs/requirements.yml`
 - Description is clear and action-based
 - File is in correct directory for test type
 - No forbidden patterns used
