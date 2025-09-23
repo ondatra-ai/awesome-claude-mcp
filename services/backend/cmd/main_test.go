@@ -9,6 +9,9 @@ import (
 )
 
 func TestVersionEndpoint_Success(t *testing.T) {
+	// UT-00001-01: handler should return correct version
+	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -28,6 +31,9 @@ func TestVersionEndpoint_Success(t *testing.T) {
 }
 
 func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
+	// UT-00001-02: handler should reject invalid methods
+	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -42,6 +48,9 @@ func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 }
 
 func TestHealthEndpoint_Success(t *testing.T) {
+	// UT-00002-01: health check handler returns correct status
+	// Source: FR-00002 - Backend /health endpoint returns healthy status
+
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -63,6 +72,9 @@ func TestHealthEndpoint_Success(t *testing.T) {
 }
 
 func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
+	// ORPHAN: validates edge case for health endpoint method validation
+	// Reason: Method validation for health endpoint not specified in requirements
+
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -77,6 +89,9 @@ func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 }
 
 func TestNonExistentEndpoint_NotFound(t *testing.T) {
+	// ORPHAN: validates 404 handling for unit tests
+	// Reason: Covered by EE-00003-01 at E2E level, but useful for unit testing
+
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -91,6 +106,9 @@ func TestNonExistentEndpoint_NotFound(t *testing.T) {
 }
 
 func TestCreateFiberApp_ReturnsConfiguredApp(t *testing.T) {
+	// ORPHAN: validates Fiber app configuration
+	// Reason: Testing internal framework setup not specified in requirements
+
 	// Act
 	app := createFiberApp("http://localhost:3000")
 
