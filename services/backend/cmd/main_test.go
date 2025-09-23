@@ -62,10 +62,7 @@ func TestUT_00002_01_HealthEndpoint_Success(t *testing.T) {
 	assert.NotEmpty(t, healthResp.Timestamp)
 }
 
-func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
-	// ORPHAN: validates edge case for health endpoint method validation
-	// Reason: Method validation for health endpoint not specified in requirements
-
+func TestORPHAN_HealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -79,10 +76,7 @@ func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	assert.Equal(t, 405, resp.StatusCode)
 }
 
-func TestNonExistentEndpoint_NotFound(t *testing.T) {
-	// ORPHAN: validates 404 handling for unit tests
-	// Reason: Covered by EE_00003_01 at E2E level, but useful for unit testing
-
+func TestORPHAN_NonExistentEndpoint_NotFound(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -96,10 +90,7 @@ func TestNonExistentEndpoint_NotFound(t *testing.T) {
 	assert.Equal(t, 404, resp.StatusCode)
 }
 
-func TestCreateFiberApp_ReturnsConfiguredApp(t *testing.T) {
-	// ORPHAN: validates Fiber app configuration
-	// Reason: Testing internal framework setup not specified in requirements
-
+func TestORPHAN_CreateFiberApp_ReturnsConfiguredApp(t *testing.T) {
 	// Act
 	app := createFiberApp("http://localhost:3000")
 

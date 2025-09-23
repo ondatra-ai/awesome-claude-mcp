@@ -55,7 +55,6 @@ describe('ApiClient', () => {
 
   describe('getHealth', () => {
     it('ORPHAN: should return health data on successful response', async () => {
-      // Reason: Health endpoint is tested at E2E level, this is additional unit coverage
       const mockHealthResponse = {
         status: 'healthy',
         timestamp: '2023-01-01T00:00:00Z',
@@ -77,8 +76,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle health API errors', async () => {
-      // Reason: Health endpoint error handling not part of functional requirements
-
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 503,
@@ -91,8 +88,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle health network errors', async () => {
-      // Reason: Health endpoint error handling not part of functional requirements
-
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(apiClient.getHealth()).rejects.toThrow('Network error');
@@ -101,8 +96,6 @@ describe('ApiClient', () => {
 
   describe('factory', () => {
     it('ORPHAN: should validate base URL is required', () => {
-      // Reason: Input validation for API client factory not part of functional requirements
-
       expect(() => createApiClient('')).toThrow(
         'Backend base URL is required to create ApiClient'
       );
