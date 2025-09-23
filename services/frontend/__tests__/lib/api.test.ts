@@ -103,7 +103,9 @@ describe('ApiClient', () => {
     it('ORPHAN: should validate base URL is required', () => {
       // Reason: Input validation for API client factory not part of functional requirements
 
-      expect(() => createApiClient('')).toThrow('Backend base URL is required to create ApiClient');
+      expect(() => createApiClient('')).toThrow(
+        'Backend base URL is required to create ApiClient'
+      );
     });
   });
 });
