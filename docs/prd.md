@@ -263,13 +263,13 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Pre-commit hooks for testing all services
 - Example tests for each service and test type
 
-## Epic 2: OAuth Authentication
+## Epic 4: OAuth Authentication
 
 **Goal:** Implement complete Google OAuth 2.0 authentication flow with multi-account support
 
 ### User Stories
 
-#### Story 2.1: OAuth Configuration
+#### Story 4.1: OAuth Configuration
 **As a** Developer/Maintainer
 **I want** to configure Google OAuth application
 **So that** users can authenticate with Google
@@ -282,7 +282,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Credentials stored as Railway environment variables (or external secret manager if required)
 - Environment variables configured
 
-#### Story 2.2: OAuth Flow Implementation
+#### Story 4.2: OAuth Flow Implementation
 **As a** Claude User
 **I want** to authenticate with my Google account
 **So that** the service can access my documents
@@ -295,7 +295,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Error handling for auth failures
 - Success redirect to settings page
 
-#### Story 2.3: Token Management
+#### Story 4.3: Token Management
 **As a** Developer/Maintainer
 **I want** to securely manage OAuth tokens
 **So that** user sessions remain valid
@@ -308,7 +308,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Token retrieval by user ID
 - Secure token deletion capability
 
-#### Story 2.4: Multi-Account Support
+#### Story 4.4: Multi-Account Support
 **As a** Claude User
 **I want** to connect multiple Google accounts
 **So that** I can edit documents from different accounts
@@ -321,7 +321,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Remove account functionality
 - Default account designation
 
-#### Story 2.5: Authentication Error Handling
+#### Story 4.5: Authentication Error Handling
 **As a** Claude User
 **I want** clear authentication error messages
 **So that** I can resolve authentication issues
