@@ -255,21 +255,73 @@ logger.Error("document operation failed",
 
 ### Testing Standards
 
-**Test File Organization:**
-- Test files alongside implementation: `document_test.go`
-- Integration tests: `tests/integration/`
-- E2E tests: `tests/e2e/` (organized by service: frontend/, backend/, mcp-service/)
+#### Test Naming Conventions and Scenario IDs
 
-**Test Naming:**
+**All tests must follow the Scenario ID traceability system** for complete coverage and maintainability. This provides bidirectional links between functional requirements and test implementations.
+
+**Scenario ID Format:**
+- **Unit Tests**: `UT-XXXXX-YY` format or marked as `ORPHAN`
+- **Integration Tests**: `IT-XXXXX-YY` format or marked as `ORPHAN`
+- **End-to-End Tests**: `EE-XXXXX-YY` format or marked as `ORPHAN`
+- **XXXXX**: FR number (00001, 00002, etc.)
+- **YY**: Globally sequential within each FR (01, 02, 03...)
+
+**Test Naming Patterns:**
+- **With scenario**: `[SCENARIO-ID]: should [action] [expected result]`
+- **Orphan tests**: `ORPHAN: should [action] [expected result]`
+
+**Go Test Examples:**
 ```go
-func TestReplaceAllContent_ValidDocument_Success(t *testing.T) {
+func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
+    // UT-00001-01: handler should return correct version
+    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
     // Arrange, Act, Assert pattern
 }
 
-func TestReplaceAllContent_EmptyDocID_ReturnsError(t *testing.T) {
-    // Test error conditions
+func TestHealthHandler_DatabaseDown_HandlesGracefully(t *testing.T) {
+    // ORPHAN: validates error handling not specified in requirements
+    // Reason: Testing internal resilience not part of functional requirements
+
+    // Test implementation
 }
 ```
+
+**TypeScript Test Examples:**
+```typescript
+test('UT-00007-01: should construct correct request for version', async () => {
+  // UT-00007-01: API client constructs correct request
+  // Source: FR-00007 - Homepage displays backend version at bottom
+
+  // Test implementation
+});
+
+test('ORPHAN: should handle network timeout gracefully', () => {
+  // ORPHAN: Testing network resilience not specified in requirements
+  // Consider: Should this be added as a new functional requirement?
+
+  // Test implementation
+});
+```
+
+**E2E Test Examples:**
+```typescript
+test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+  // EE-00001-04: service returns version with headers
+  // Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
+  const response = await request.get('/version');
+  expect(response.status()).toBe(200);
+});
+```
+
+**Test File Organization:**
+- Unit test files alongside implementation: `document_test.go`
+- See detailed organization structure in E2E Testing Standards section below
+
+**Cross-References:**
+- Complete naming conventions: `docs/test-naming.md`
+- Requirements mapping and scenarios: `docs/requirements.md`
 
 **Test Structure (AAA Pattern):**
 ```go
@@ -633,44 +685,9 @@ Requirements are considered automatable if they meet ALL of these criteria:
 - External service configuration requirements
 
 **Test Scenario Traceability:**
-All tests must follow the scenario ID system defined in `docs/requirements.md` and `docs/test-naming.md`:
+All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.md` and `docs/test-naming.md` for complete traceability mapping.
 
-**Scenario ID Format:**
-- **UT-XXXXX-YY**: Unit Test scenarios
-- **IT-XXXXX-YY**: Integration Test scenarios
-- **EE-XXXXX-YY**: End-to-End Test scenarios
-- XXXXX: FR number (00001, 00002, etc.)
-- YY: Globally sequential within each FR (01, 02, 03...)
-
-```typescript
-// Every test MUST include its Scenario ID in the test name
-test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
-  // EE-00001-04: service returns version with headers
-  // Source: FR-00001 - Backend /version endpoint returns 1.0.0
-
-  const response = await request.get('/version');
-  expect(response.status()).toBe(200);
-  const data = await response.json();
-  expect(data.version).toBe('1.0.0');
-});
-
-// Tests without mapped scenarios MUST be marked as ORPHAN
-test('ORPHAN: should validate request headers', async ({ request }) => {
-  // ORPHAN: This test validates functionality not covered by FR requirements
-  // Test implementation
-});
-```
-
-**Naming Conventions:**
-- **Pattern with scenario**: `[SCENARIO-ID]: should [action] [expected result]`
-- **Pattern for orphan**: `ORPHAN: should [action] [expected result]`
-- **Examples**:
-  - `EE-00007-06: should fetch and display backend version`
-  - `EE-00010-01: should load homepage within 2 seconds`
-  - `EE-00005-01: should verify CORS headers for frontend requests`
-  - `ORPHAN: should handle malformed JSON gracefully`
-
-**Test Organization:**
+**Detailed Test Organization:**
 ```
 tests/
 ├── e2e/                          # End-to-End tests
@@ -726,71 +743,6 @@ test.describe('Backend API Endpoints', () => {
 - Tests must be executable in CI environment without manual setup
 - Orphan tests should be minimized and regularly reviewed
 
-**Documentation:**
-- Complete naming conventions available in `docs/test-naming.md`
-- Requirements mapping and scenario definitions in `docs/requirements.md`
-- Update both documents when adding new tests or scenarios
-
-### Test Scenario Traceability System
-
-**Overview:**
-All tests in the codebase must follow the Scenario ID traceability system to ensure complete coverage and maintainability. This system provides bidirectional links between functional requirements and test implementations.
-
-**Scenario ID Rules:**
-- **Unit Tests**: Must use `UT-XXXXX-YY` format or be marked as `ORPHAN`
-- **Integration Tests**: Must use `IT-XXXXX-YY` format or be marked as `ORPHAN`
-- **E2E Tests**: Must use `EE-XXXXX-YY` format or be marked as `ORPHAN`
-- **Orphan Tests**: Must use `ORPHAN: [description]` format
-
-**Implementation Examples:**
-
-**Go Unit Tests:**
-```go
-func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
-    // UT-00001-01: handler should return correct version
-    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
-
-    // Test implementation
-}
-
-func TestOrphanFunction_EdgeCase_HandlesGracefully(t *testing.T) {
-    // ORPHAN: validates edge case not covered by functional requirements
-    // Reason: Testing internal error handling not specified in requirements
-
-    // Test implementation
-}
-```
-
-**TypeScript Unit Tests:**
-```typescript
-test('UT-00007-01: API client should construct correct request', () => {
-  // UT-00007-01: API client constructs correct request
-  // Source: FR-00007 - Homepage displays backend version at bottom
-
-  // Test implementation
-});
-
-test('ORPHAN: should handle network timeout gracefully', () => {
-  // ORPHAN: Testing network resilience not specified in requirements
-  // Consider: Should this be added as a new functional requirement?
-
-  // Test implementation
-});
-```
-
-**Test File Updates:**
-When implementing this system, update all existing test files:
-
-1. Map existing tests to appropriate Scenario IDs
-2. Mark unmapped tests as ORPHAN with explanatory comments
-3. Ensure all Scenario IDs reference valid requirements in `docs/requirements.md`
-4. Review ORPHAN tests for potential requirement creation
-
-**Validation Process:**
-- All Scenario IDs must exist in the requirements document
-- No duplicate Scenario IDs across the codebase
-- ORPHAN tests must include reason for non-mapping
-- Regular reviews to minimize orphan test count
 
 ### Test Data Management
 
