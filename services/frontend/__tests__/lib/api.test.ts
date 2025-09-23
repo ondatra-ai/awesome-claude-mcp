@@ -33,7 +33,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle API errors gracefully', async () => {
-      // ORPHAN: Testing error handling not specified in requirements
       // Note: This could map to UT-00007-03 if error handling is considered part of version display
 
       mockFetch.mockResolvedValueOnce({
@@ -48,7 +47,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle network errors', async () => {
-      // ORPHAN: Testing network error handling not specified in requirements
       // Note: This could map to UT-00007-03 if error handling is considered part of version display
 
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -59,7 +57,6 @@ describe('ApiClient', () => {
 
   describe('getHealth', () => {
     it('ORPHAN: should return health data on successful response', async () => {
-      // ORPHAN: Testing health endpoint functionality not specified in requirements
       // Reason: Health endpoint is tested at E2E level, this is additional unit coverage
       const mockHealthResponse = {
         status: 'healthy',
@@ -82,7 +79,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle health API errors', async () => {
-      // ORPHAN: Testing health endpoint error handling not specified in requirements
       // Reason: Health endpoint error handling not part of functional requirements
 
       mockFetch.mockResolvedValueOnce({
@@ -97,7 +93,6 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle health network errors', async () => {
-      // ORPHAN: Testing health endpoint network error handling not specified in requirements
       // Reason: Health endpoint error handling not part of functional requirements
 
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -108,7 +103,6 @@ describe('ApiClient', () => {
 
   describe('factory', () => {
     it('ORPHAN: should validate base URL is required', () => {
-      // ORPHAN: Testing API client factory validation not specified in requirements
       // Reason: Input validation for API client factory not part of functional requirements
 
       expect(() => createApiClient('')).toThrow('Backend base URL is required to create ApiClient');

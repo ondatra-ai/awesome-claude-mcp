@@ -337,7 +337,6 @@ test('ORPHAN: should handle malformed JSON gracefully', async ({ request }) => {
 
 ```typescript
 test('ORPHAN: should validate Content-Type header', async ({ request }) => {
-  // ORPHAN: This test validates HTTP header handling not specified in requirements
   // Consider: Should this be added as a new functional requirement?
 
   // Test implementation

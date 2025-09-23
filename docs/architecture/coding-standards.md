@@ -280,7 +280,6 @@ func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
 }
 
 func TestHealthHandler_DatabaseDown_HandlesGracefully(t *testing.T) {
-    // ORPHAN: validates error handling not specified in requirements
     // Reason: Testing internal resilience not part of functional requirements
 
     // Test implementation
@@ -297,7 +296,6 @@ test('UT-00007-01: should construct correct request for version', async () => {
 });
 
 test('ORPHAN: should handle network timeout gracefully', () => {
-  // ORPHAN: Testing network resilience not specified in requirements
   // Consider: Should this be added as a new functional requirement?
 
   // Test implementation
