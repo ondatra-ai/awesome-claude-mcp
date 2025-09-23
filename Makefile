@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts
+.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-docs
 
 SUPPORTED_E2E_ENVS := local dev
 E2E_ENV ?= local
@@ -96,3 +96,8 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	@echo "🔍 Running golangci-lint on bmad-cli..."
 	cd scripts/bmad-cli && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
+
+lint-docs: ## Validate requirements.yml against Yamale schema
+	@echo "🔍 Validating requirements.yml against schema..."
+	yamale -s docs/requirements-schema.yaml docs/requirements.yml
+	@echo "✅ Requirements validation completed!"
