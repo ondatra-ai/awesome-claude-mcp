@@ -147,18 +147,18 @@ This role distinction ensures clear separation between user-facing features and 
 
 ### Epic Overview
 
-The development will proceed through 11 distinct epics, each delivering deployable functionality that provides incremental value. The structure ensures that infrastructure and operational tooling are established before implementing document operations, with each operation fully completed with all formatting support before moving to the next.
+The development will proceed through 10 distinct epics, each delivering deployable functionality that provides incremental value. The structure ensures that infrastructure and operational tooling are established before implementing document operations, with each operation fully completed with all formatting support before moving to the next.
 
 1. **Epic 1: Foundation & Infrastructure** ✅ COMPLETE - Establish project setup, Railway infrastructure, and deployable homepage
 2. **Epic 2: DevOps & Monitoring Infrastructure** - Comprehensive monitoring, observability, and development tooling
+3. **Epic 3: MCP Server Setup** - Create MCP protocol server with tool registration and discovery
 4. **Epic 4: OAuth Authentication** - Implement complete Google OAuth flow with multi-account support
-5. **Epic 5: MCP Server Setup** - Create MCP protocol server with tool registration and discovery
-6. **Epic 6: Replace All Operation** - Implement complete document replacement with full Markdown support
-7. **Epic 7: Append Operation** - Add content appending with formatting preservation
-8. **Epic 8: Prepend Operation** - Add content prepending with formatting preservation
-9. **Epic 9: Replace Match Operation** - Implement pattern-based replacement with exact matching
-10. **Epic 10: Insert Before Operation** - Add anchor-based insertion before matched text
-11. **Epic 11: Insert After Operation** - Complete anchor-based insertion after matched text
+5. **Epic 5: Replace All Operation** - Implement complete document replacement with full Markdown support
+6. **Epic 6: Append Operation** - Add content appending with formatting preservation
+7. **Epic 7: Prepend Operation** - Add content prepending with formatting preservation
+8. **Epic 8: Replace Match Operation** - Implement pattern-based replacement with exact matching
+9. **Epic 9: Insert Before Operation** - Add anchor-based insertion before matched text
+10. **Epic 10: Insert After Operation** - Complete anchor-based insertion after matched text
 
 ## Epic 1: Foundation & Infrastructure ✅ COMPLETE
 
@@ -405,13 +405,13 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Connection pooling if needed
 - Connection state tracking
 
-## Epic 4: Replace All Operation
+## Epic 5: Replace All Operation
 
 **Goal:** Implement complete document replacement with full Markdown formatting support
 
 ### User Stories
 
-#### Story 4.1: Replace All Command Handler
+#### Story 5.1: Replace All Command Handler
 **As a** Claude User
 **I want** to replace entire document content
 **So that** I can update documents completely
@@ -424,7 +424,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Success response with preview URL
 - Operation logging implemented
 
-#### Story 4.2: Markdown Parser Integration
+#### Story 5.2: Markdown Parser Integration
 **As a** Developer/Maintainer
 **I want** to parse Markdown content
 **So that** I can convert it to Google Docs format
@@ -437,7 +437,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Custom extensions configured
 - Performance optimized
 
-#### Story 4.3: Heading Conversion
+#### Story 5.3: Heading Conversion
 **As a** Claude User
 **I want** Markdown headings converted properly
 **So that** document structure is preserved
@@ -450,7 +450,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Special characters handled
 - Heading IDs preserved if present
 
-#### Story 4.4: List Formatting
+#### Story 5.4: List Formatting
 **As a** Claude User
 **I want** all list types converted
 **So that** document organization is maintained
@@ -463,7 +463,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Mixed list types handled
 - List spacing preserved
 
-#### Story 4.5: Text Formatting
+#### Story 5.5: Text Formatting
 **As a** Claude User
 **I want** text formatting preserved
 **So that** emphasis and links work correctly
@@ -476,7 +476,7 @@ The development will proceed through 11 distinct epics, each delivering deployab
 - Code blocks formatted with background
 - Combined formatting handled
 
-#### Story 4.6: Document Update Integration
+#### Story 5.6: Document Update Integration
 **As a** Developer/Maintainer
 **I want** to update Google Docs efficiently
 **So that** changes are applied correctly

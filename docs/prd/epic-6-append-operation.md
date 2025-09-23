@@ -1,10 +1,10 @@
-# Epic 5: Append Operation
+# Epic 6: Append Operation
 
 **Goal:** Add content appending capability with formatting preservation
 
 ## User Stories
 
-### Story 5.1: Append Command Handler
+### Story 6.1: Append Command Handler
 **As a** Claude User
 **I want** to append content to documents
 **So that** I can add information without replacing existing content
@@ -17,7 +17,7 @@
 - Success response provided
 - Operation metrics tracked
 
-### Story 5.2: Document Position Detection
+### Story 6.2: Document Position Detection
 **As a** Developer/Maintainer
 **I want** to find the document end position
 **So that** I can append content correctly
@@ -30,7 +30,7 @@
 - Section breaks considered
 - Performance optimized
 
-### Story 5.3: Content Insertion
+### Story 6.3: Content Insertion
 **As a** Developer/Maintainer
 **I want** to insert content at specific position
 **So that** append operation works correctly
@@ -43,7 +43,7 @@
 - Document flow maintained
 - Undo information available
 
-### Story 5.4: Format Preservation
+### Story 6.4: Format Preservation
 **As a** Claude User
 **I want** existing formatting preserved
 **So that** document consistency is maintained

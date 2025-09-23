@@ -1,10 +1,10 @@
-# Epic 6: Prepend Operation
+# Epic 7: Prepend Operation
 
 **Goal:** Add content prepending capability with document structure preservation
 
 ## User Stories
 
-### Story 6.1: Prepend Command Handler
+### Story 7.1: Prepend Command Handler
 **As a** Claude User
 **I want** to prepend content to documents
 **So that** I can add information at the beginning
@@ -17,7 +17,7 @@
 - Success response provided
 - Error handling complete
 
-### Story 6.2: Beginning Position Handling
+### Story 7.2: Beginning Position Handling
 **As a** Developer/Maintainer
 **I want** to identify document beginning
 **So that** I can prepend content correctly
@@ -30,7 +30,7 @@
 - Proper insertion point determined
 - Edge cases handled
 
-### Story 6.3: Content Shifting
+### Story 7.3: Content Shifting
 **As a** Developer/Maintainer
 **I want** to shift existing content properly
 **So that** nothing is lost during prepend
