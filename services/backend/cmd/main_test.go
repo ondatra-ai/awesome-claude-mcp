@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestVersionEndpoint_Success(t *testing.T) {
+func TestUT_00001_01_VersionEndpoint_Success(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -27,7 +27,7 @@ func TestVersionEndpoint_Success(t *testing.T) {
 	assert.Equal(t, "1.0.0", versionResp.Version)
 }
 
-func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
+func TestUT_00001_02_VersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -41,7 +41,7 @@ func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 	assert.Equal(t, 405, resp.StatusCode)
 }
 
-func TestHealthEndpoint_Success(t *testing.T) {
+func TestUT_00002_01_HealthEndpoint_Success(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
