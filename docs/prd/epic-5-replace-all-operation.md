@@ -1,10 +1,10 @@
-# Epic 4: Replace All Operation
+# Epic 5: Replace All Operation
 
 **Goal:** Implement complete document replacement with full Markdown formatting support
 
 ## User Stories
 
-### Story 4.1: Replace All Command Handler
+### Story 5.1: Replace All Command Handler
 **As a** Claude User
 **I want** to replace entire document content
 **So that** I can update documents completely
@@ -17,7 +17,7 @@
 - Success response with preview URL
 - Operation logging implemented
 
-### Story 4.2: Markdown Parser Integration
+### Story 5.2: Markdown Parser Integration
 **As a** Developer/Maintainer
 **I want** to parse Markdown content
 **So that** I can convert it to Google Docs format
@@ -30,7 +30,7 @@
 - Custom extensions configured
 - Performance optimized
 
-### Story 4.3: Heading Conversion
+### Story 5.3: Heading Conversion
 **As a** Claude User
 **I want** Markdown headings converted properly
 **So that** document structure is preserved
@@ -43,7 +43,7 @@
 - Special characters handled
 - Heading IDs preserved if present
 
-### Story 4.4: List Formatting
+### Story 5.4: List Formatting
 **As a** Claude User
 **I want** all list types converted
 **So that** document organization is maintained
@@ -56,7 +56,7 @@
 - Mixed list types handled
 - List spacing preserved
 
-### Story 4.5: Text Formatting
+### Story 5.5: Text Formatting
 **As a** Claude User
 **I want** text formatting preserved
 **So that** emphasis and links work correctly
@@ -69,7 +69,7 @@
 - Code blocks formatted with background
 - Combined formatting handled
 
-### Story 4.6: Document Update Integration
+### Story 5.6: Document Update Integration
 **As a** Developer/Maintainer
 **I want** to update Google Docs efficiently
 **So that** changes are applied correctly

@@ -1,10 +1,10 @@
-# Epic 9: Insert After Operation
+# Epic 10: Insert After Operation
 
 **Goal:** Complete anchor-based insertion with after-match positioning
 
 ## User Stories
 
-### Story 9.1: Insert After Command Handler
+### Story 10.1: Insert After Command Handler
 **As a** Claude User
 **I want** to insert content after specific text
 **So that** I can append related information
@@ -17,7 +17,7 @@
 - Success response provided
 - Complete MVP functionality
 
-### Story 9.2: After Position Calculation
+### Story 10.2: After Position Calculation
 **As a** Developer/Maintainer
 **I want** to find position after anchor text
 **So that** I can insert content correctly
@@ -30,7 +30,7 @@
 - Special elements handled
 - Position validation complete
 
-### Story 9.3: After Insertion Implementation
+### Story 10.3: After Insertion Implementation
 **As a** Developer/Maintainer
 **I want** to insert content after anchor
 **So that** additions appear in correct location
@@ -43,7 +43,7 @@
 - Structure preserved
 - All operations complete
 
-### Story 9.4: MVP Completion Validation
+### Story 10.4: MVP Completion Validation
 **As a** Developer/Maintainer
 **I want** to validate MVP completeness
 **So that** we can prepare for launch
