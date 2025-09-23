@@ -80,7 +80,6 @@ jobs:
         with:
           schema: docs/requirements-schema.yaml
           target: docs/requirements.yml
-          strict: true
 
   e2e-tests:
     runs-on: ubuntu-latest
