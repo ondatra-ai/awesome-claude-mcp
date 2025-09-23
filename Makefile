@@ -98,6 +98,6 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	@echo "✅ Scripts linting completed!"
 
 lint-docs: ## Validate requirements.yml against Yamale schema
-	@echo "🔍 Validating requirements.yml against schema..."
+	@echo "🔍 Validating requirements.yml against schema (strict mode)..."
 	yamale -s docs/requirements-schema.yaml docs/requirements.yml
 	@echo "✅ Requirements validation completed!"
