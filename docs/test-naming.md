@@ -275,7 +275,6 @@ import { test, expect } from '@playwright/test';
 // Group related tests with descriptive names
 test.describe('Backend API Endpoints', () => {
   test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
-    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
     // Requirements: Version must be returned via HTTP GET with proper headers
 
     // Arrange
@@ -296,7 +295,6 @@ test.describe('Backend API Endpoints', () => {
 
 ```typescript
 test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
-  // Source: FR-00007 - Homepage displays backend version at bottom
   // Requirements: Version must be fetched from /version endpoint and displayed
 
   await page.goto('/');

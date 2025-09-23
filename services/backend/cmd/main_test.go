@@ -9,8 +9,6 @@ import (
 )
 
 func TestVersionEndpoint_Success(t *testing.T) {
-	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
-
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -30,8 +28,6 @@ func TestVersionEndpoint_Success(t *testing.T) {
 }
 
 func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
-	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
-
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
@@ -46,8 +42,6 @@ func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 }
 
 func TestHealthEndpoint_Success(t *testing.T) {
-	// Source: FR-00002 - Backend /health endpoint returns healthy status
-
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)

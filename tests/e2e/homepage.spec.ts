@@ -2,8 +2,6 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Homepage E2E Tests', () => {
   test('EE-00006-04: should load homepage and display title', async ({ page }) => {
-    // Source: FR-00006 - Frontend single-page application loads successfully
-
     await page.goto('/');
 
     // Check that the page loads successfully
@@ -17,8 +15,6 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('EE-00008-01: should display welcome card with features', async ({ page }) => {
-    // Source: FR-00008 - Homepage displays welcome card with features
-
     await page.goto('/');
 
     // Check welcome card title
@@ -34,8 +30,6 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
-    // Source: FR-00007 - Homepage displays backend version at bottom
-
     await page.goto('/');
 
     // Check that backend version section is present
@@ -58,8 +52,6 @@ test.describe('Homepage E2E Tests', () => {
   });
 
   test('EE-00009-01: should have responsive design', async ({ page }) => {
-    // Source: FR-00009 - Homepage has responsive design
-
     await page.goto('/');
 
     // Test mobile viewport
