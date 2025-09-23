@@ -1,0 +1,46 @@
+# Yamale schema for docs/requirements.yml
+# Full validation including regex patterns for requirement and scenario IDs
+
+metadata:
+  title: str()
+  version: str()
+  last_updated: str()
+
+# Requirements section - validates structure AND ID patterns
+requirements: map(key=regex(r'^FR-\d{5}$'), val=include('requirement'))
+
+schema:
+  requirement_id_pattern: str()
+  scenario_id_pattern: str()
+  categories: list(str())
+  gherkin_keywords: list(str())
+
+references:
+  test_naming: str()
+  coding_standards: str()
+  test_files:
+    unit_tests: list(str())
+    integration_tests: list(str())
+    e2e_tests: list(str())
+
+---
+# Include definitions
+
+requirement:
+  title: str()
+  story_id: str(required=False)
+  story_reference: str(required=False)
+  category: enum('backend', 'frontend', 'performance', 'integration')
+  scenarios: map(key=regex(r'^(UT|IT|EE)_\d{5}_\d{2}$'), val=include('scenario'))
+
+scenario:
+  description: str()
+  file_path: str()
+  steps: list(include('step'), min=1)
+
+step:
+  given: str(required=False)
+  when: str(required=False)
+  then: str(required=False)
+  and: str(required=False)
+  but: str(required=False)

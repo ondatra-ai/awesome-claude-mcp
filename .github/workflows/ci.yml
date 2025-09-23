@@ -68,6 +68,19 @@ jobs:
       - name: Run frontend linting
         run: make lint-frontend
 
+  validate-requirements:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate requirements.yml with Yamale
+        uses: nrkno/yaml-schema-validator-github-action@v5.1.0
+        with:
+          schema: docs/requirements-schema.yaml
+          target: docs/requirements.yml
+
   e2e-tests:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}

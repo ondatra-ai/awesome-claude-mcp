@@ -255,21 +255,103 @@ logger.Error("document operation failed",
 
 ### Testing Standards
 
-**Test File Organization:**
-- Test files alongside implementation: `document_test.go`
-- Integration tests: `tests/integration/`
-- E2E tests: `tests/e2e/` (organized by service: frontend/, backend/, mcp-service/)
+#### Test Naming Conventions and Scenario IDs
 
-**Test Naming:**
+**All tests must follow the Scenario ID traceability system** for complete coverage and maintainability. This provides bidirectional links between functional requirements and test implementations.
+
+**Scenario ID Format:**
+- **Unit Tests**: `UT_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
+- **Integration Tests**: `IT_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
+- **End-to-End Tests**: `EE_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
+- **XXXXX**: FR number (00001, 00002, etc.)
+- **YY**: Globally sequential within each FR (01, 02, 03...)
+
+**Test Naming Patterns:**
+- **With scenario**: `[SCENARIO_ID]: should [action] [expected result]`
+- **Orphan tests**: `ORPHAN: should [action] [expected result]`
+
+**Go Test Function Naming:**
+Go test functions **must include the scenario ID** in the function name for direct traceability:
+
 ```go
-func TestReplaceAllContent_ValidDocument_Success(t *testing.T) {
-    // Arrange, Act, Assert pattern
+// Format: Test[SCENARIO_ID]_DescriptiveName
+func TestUT_00001_01_VersionEndpoint_Success(t *testing.T) {
+    // Arrange
+    app := createFiberApp("http://localhost:3000")
+    setupRoutes(app)
+
+    // Act
+    req := httptest.NewRequest("GET", "/version", nil)
+    resp, err := app.Test(req)
+
+    // Assert
+    assert.NoError(t, err)
+    assert.Equal(t, 200, resp.StatusCode)
 }
 
-func TestReplaceAllContent_EmptyDocID_ReturnsError(t *testing.T) {
-    // Test error conditions
+func TestUT_00002_01_HealthEndpoint_Success(t *testing.T) {
+    // Test implementation for health endpoint
+}
+
+// Orphan tests must include ORPHAN prefix in function name
+func TestORPHAN_HealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
+    // Test implementation
 }
 ```
+
+**JavaScript/TypeScript Test Naming:**
+JavaScript and TypeScript tests include the scenario ID in the test description string:
+
+```typescript
+// Jest/Vitest tests
+test('UT_00007_01: should construct correct request for version', async () => {
+  const mockVersionResponse = { version: '1.0.0' };
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => mockVersionResponse,
+  });
+
+  const result = await apiClient.getVersion();
+  expect(result).toEqual(mockVersionResponse);
+});
+
+test('ORPHAN: should handle network timeout gracefully', () => {
+  // Test implementation
+});
+```
+
+```typescript
+// Playwright E2E tests
+test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
+  const response = await request.get('/version');
+  expect(response.status()).toBe(200);
+  const data = await response.json();
+  expect(data.version).toBe('1.0.0');
+});
+
+test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
+  await page.goto('/');
+  const versionElement = await page.waitForSelector('[data-testid="backend-version"]');
+  const versionText = await versionElement.textContent();
+  expect(versionText).toContain('1.0.0');
+});
+```
+
+**Naming Consistency Rules:**
+1. **Underscore Format**: All scenario IDs use underscores (`UT_00001_01`) for 100% consistency between code and YAML
+2. **Function Names (Go)**: Include scenario ID directly in function name for immediate traceability
+3. **Test Descriptions (JS/TS)**: Include scenario ID at the start of test description string
+4. **ORPHAN Marking**: Tests without mapped scenarios must be clearly marked as `ORPHAN`
+5. **ORPHAN Go Functions**: Must include `ORPHAN` prefix in function name: `TestORPHAN_DescriptiveName`
+6. **Descriptive Suffixes**: Use clear, action-based descriptions after scenario ID
+
+**Test File Organization:**
+- Unit test files alongside implementation: `document_test.go`
+- See detailed organization structure in E2E Testing Standards section below
+
+**Cross-References:**
+- Complete naming conventions: `docs/test-naming.md`
+- Requirements mapping and scenarios: `docs/requirements.yml`
 
 **Test Structure (AAA Pattern):**
 ```go
@@ -609,44 +691,55 @@ func LoadConfig() (*Config, error) {
 
 ### E2E Testing Standards
 
-**Requirements Traceability:**
-All E2E tests must follow the functional requirements (FR) traceability system defined in `docs/requirements.md`:
+**Automation Prerequisites:**
+E2E tests must be fully automatable without manual intervention:
+- Services must be already running (via CI or docker-compose)
+- No manual authentication steps required
+- No external dependency configuration needed
+- Tests must be idempotent and repeatable
 
-```typescript
-// Every test MUST include its FR-ID in the test name
-test('FR-00001 should access version endpoint directly', async ({ request }) => {
-  // FR-00001: Backend /version endpoint returns 1.0.0
-  // Source: Story 1.1 (1.1-E2E-001)
+**Automatable Requirements Criteria:**
+Requirements are considered automatable if they meet ALL of these criteria:
+- No manual setup or authentication steps required
+- Deterministic, measurable outcomes
+- No external dependency configuration needed
+- No human interaction during execution
+- Services must be pre-configured and running
+- Executable in CI environment without manual intervention
 
-  const response = await request.get('/version');
-  expect(response.status()).toBe(200);
-  const data = await response.json();
-  expect(data.version).toBe('1.0.0');
-});
+**Excluded from automation:**
+- Requirements with GIVEN/WHEN/THEN scenarios (may require manual steps)
+- File/directory structure validation and filesystem checks
+- Infrastructure setup requirements
+- Authentication configuration requirements
+- External service configuration requirements
+
+**Test Scenario Traceability:**
+All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.yml` and `docs/test-naming.md` for complete traceability mapping.
+
+**Detailed Test Organization:**
 ```
+tests/
+├── e2e/                          # End-to-End tests
+│   ├── backend-api.spec.ts       # Backend API tests (EE-00001-04 to EE-00005-01)
+│   ├── homepage.spec.ts          # Frontend UI tests (EE-00006-04 to EE-00009-01)
+│   ├── performance.spec.ts       # Performance tests (EE_00010_01)
+│   └── helpers/                  # Shared utilities and fixtures
+├── integration/                  # Integration tests
+│   ├── backend.test.ts           # Backend integration (IT_00001_03)
+│   ├── frontend.test.ts          # Frontend integration (IT_00006_03)
+│   └── fullstack.test.ts         # Full-stack integration (IT_00007_05)
+└── unit/                         # Unit test helpers (tests co-located with source)
 
-**Naming Conventions:**
-- **Pattern**: `FR-XXXXX should [action] [expected result]`
-- **Examples**:
-  - `FR-00007 should fetch and display backend version`
-  - `FR-00014 should load homepage within 2 seconds`
-  - `FR-00010 should start all services correctly with docker-compose`
-
-**Test Organization:**
-```
-tests/e2e/
-├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
-├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009, FR-00014)
-├── docker-compose.spec.ts    # Infrastructure tests (FR-00010, FR-00011)
-├── railway.spec.ts           # Railway infrastructure tests (FR-00015 to FR-00019)
-├── documentation.spec.ts     # Documentation tests (FR-00012, FR-00013)
-└── helpers/                  # Shared utilities and fixtures
+services/
+├── backend/cmd/main_test.go      # Backend unit tests (UT-00001-01, UT-00002-01)
+└── frontend/__tests__/lib/api.test.ts  # Frontend unit tests (UT_00007_01)
 ```
 
 **Test Structure Requirements:**
 ```typescript
 test.describe('Backend API Endpoints', () => {
-  test('FR-00001 should access version endpoint directly', async ({ request }) => {
+  test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
     // Arrange
     const endpoint = '/version';
 
@@ -662,22 +755,21 @@ test.describe('Backend API Endpoints', () => {
 ```
 
 **Required Elements:**
-1. **FR-ID in test name**: `FR-XXXXX` prefix for traceability
-2. **Source comment**: Reference to requirements document
-3. **Data test IDs**: Use `data-testid` for reliable element selection
+1. **Scenario ID or ORPHAN prefix**: Clear identification in test name
+2. **Source comment**: Reference to requirements document and scenario description
+3. **Data test IDs**: Use `data-testid` for reliable element selection (E2E tests)
 4. **Clear assertions**: Specific, measurable expectations
 5. **Performance requirements**: Include timing assertions where specified
+6. **No manual steps**: Tests must run without human intervention
 
 **Quality Gates:**
-- All E2E tests must map to documented requirements in `docs/requirements.md`
-- Test names must include FR-ID for bidirectional traceability
+- All tests must use Scenario ID system or be marked as ORPHAN
+- Test names must include Scenario ID for bidirectional traceability
+- All Scenario IDs must exist in `docs/requirements.yml`
 - Performance tests must validate timing requirements (e.g., 2-second load times)
-- Infrastructure tests must validate deployment and orchestration
+- Tests must be executable in CI environment without manual setup
+- Orphan tests should be minimized and regularly reviewed
 
-**Documentation:**
-- Complete naming conventions available in `docs/e2e-naming.md`
-- Requirements mapping and gap analysis in `docs/requirements.md`
-- Update both documents when adding new E2E tests
 
 ### Test Data Management
 

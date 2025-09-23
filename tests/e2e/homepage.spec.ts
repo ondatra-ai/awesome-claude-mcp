@@ -1,10 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Homepage E2E Tests', () => {
-  test('FR-00006 should load homepage and display title', async ({ page }) => {
-    // FR-00006: Frontend single-page application loads successfully
-    // Source: Story 1.1 (1.1-E2E-002)
-
+  test('EE_00006_04: should load homepage and display title', async ({ page }) => {
     await page.goto('/');
 
     // Check that the page loads successfully
@@ -17,10 +14,7 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('hero-description')).toContainText('A Model Context Protocol integration for seamless Google Docs editing');
   });
 
-  test('FR-00008 should display welcome card with features', async ({ page }) => {
-    // FR-00008: Homepage displays welcome card with features
-    // Source: Not in original requirements (orphaned test)
-
+  test('EE_00008_01: should display welcome card with features', async ({ page }) => {
     await page.goto('/');
 
     // Check welcome card title
@@ -35,10 +29,7 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('feature-ai-integration-desc')).toContainText('Compatible with Claude Code and ChatGPT');
   });
 
-  test('FR-00007 should fetch and display backend version', async ({ page }) => {
-    // FR-00007: Homepage displays backend version at bottom
-    // Source: Story 1.1 (1.1-E2E-003)
-
+  test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
     await page.goto('/');
 
     // Check that backend version section is present
@@ -60,10 +51,7 @@ test.describe('Homepage E2E Tests', () => {
     }
   });
 
-  test('FR-00009 should have responsive design', async ({ page }) => {
-    // FR-00009: Homepage has responsive design
-    // Source: Not in original requirements (orphaned test)
-
+  test('EE_00009_01: should have responsive design', async ({ page }) => {
     await page.goto('/');
 
     // Test mobile viewport

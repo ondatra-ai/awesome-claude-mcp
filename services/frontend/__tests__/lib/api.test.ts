@@ -12,7 +12,7 @@ describe('ApiClient', () => {
   });
 
   describe('getVersion', () => {
-    it('returns version data on successful response', async () => {
+    it('UT_00007_01: should construct correct request for version', async () => {
       const mockVersionResponse = { version: '1.0.0' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -30,7 +30,9 @@ describe('ApiClient', () => {
       });
     });
 
-    it('throws error on failed response', async () => {
+    it('ORPHAN: should handle API errors gracefully', async () => {
+      // Note: This could map to UT_00007_03 if error handling is considered part of version display
+
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -42,7 +44,9 @@ describe('ApiClient', () => {
       );
     });
 
-    it('handles network errors', async () => {
+    it('ORPHAN: should handle network errors', async () => {
+      // Note: This could map to UT_00007_03 if error handling is considered part of version display
+
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(apiClient.getVersion()).rejects.toThrow('Network error');
@@ -50,7 +54,7 @@ describe('ApiClient', () => {
   });
 
   describe('getHealth', () => {
-    it('returns health data on successful response', async () => {
+    it('ORPHAN: should return health data on successful response', async () => {
       const mockHealthResponse = {
         status: 'healthy',
         timestamp: '2023-01-01T00:00:00Z',
@@ -71,7 +75,7 @@ describe('ApiClient', () => {
       });
     });
 
-    it('throws error on failed response', async () => {
+    it('ORPHAN: should handle health API errors', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 503,
@@ -83,7 +87,7 @@ describe('ApiClient', () => {
       );
     });
 
-    it('handles network errors', async () => {
+    it('ORPHAN: should handle health network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(apiClient.getHealth()).rejects.toThrow('Network error');
@@ -91,8 +95,10 @@ describe('ApiClient', () => {
   });
 
   describe('factory', () => {
-    it('throws when base URL is missing', () => {
-      expect(() => createApiClient('')).toThrow('Backend base URL is required to create ApiClient');
+    it('ORPHAN: should validate base URL is required', () => {
+      expect(() => createApiClient('')).toThrow(
+        'Backend base URL is required to create ApiClient'
+      );
     });
   });
 });
