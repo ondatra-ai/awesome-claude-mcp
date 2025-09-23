@@ -260,49 +260,90 @@ logger.Error("document operation failed",
 **All tests must follow the Scenario ID traceability system** for complete coverage and maintainability. This provides bidirectional links between functional requirements and test implementations.
 
 **Scenario ID Format:**
-- **Unit Tests**: `UT-XXXXX-YY` format or marked as `ORPHAN`
-- **Integration Tests**: `IT-XXXXX-YY` format or marked as `ORPHAN`
-- **End-to-End Tests**: `EE-XXXXX-YY` format or marked as `ORPHAN`
+- **Unit Tests**: `UT_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
+- **Integration Tests**: `IT_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
+- **End-to-End Tests**: `EE_XXXXX_YY` format (using underscores) or marked as `ORPHAN`
 - **XXXXX**: FR number (00001, 00002, etc.)
 - **YY**: Globally sequential within each FR (01, 02, 03...)
 
 **Test Naming Patterns:**
-- **With scenario**: `[SCENARIO-ID]: should [action] [expected result]`
+- **With scenario**: `[SCENARIO_ID]: should [action] [expected result]`
 - **Orphan tests**: `ORPHAN: should [action] [expected result]`
 
-**Go Test Examples:**
+**Go Test Function Naming:**
+Go test functions **must include the scenario ID** in the function name for direct traceability:
+
 ```go
-func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
-    // Arrange, Act, Assert pattern
+// Format: Test[SCENARIO_ID]_DescriptiveName
+func TestUT_00001_01_VersionEndpoint_Success(t *testing.T) {
+    // Arrange
+    app := createFiberApp("http://localhost:3000")
+    setupRoutes(app)
+
+    // Act
+    req := httptest.NewRequest("GET", "/version", nil)
+    resp, err := app.Test(req)
+
+    // Assert
+    assert.NoError(t, err)
+    assert.Equal(t, 200, resp.StatusCode)
 }
 
-func TestHealthHandler_DatabaseDown_HandlesGracefully(t *testing.T) {
-    // Reason: Testing internal resilience not part of functional requirements
+func TestUT_00002_01_HealthEndpoint_Success(t *testing.T) {
+    // Test implementation for health endpoint
+}
 
+// Orphan tests must include ORPHAN prefix in function name
+func TestORPHAN_HealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
     // Test implementation
 }
 ```
 
-**TypeScript Test Examples:**
+**JavaScript/TypeScript Test Naming:**
+JavaScript and TypeScript tests include the scenario ID in the test description string:
+
 ```typescript
+// Jest/Vitest tests
 test('UT_00007_01: should construct correct request for version', async () => {
-  // Test implementation
+  const mockVersionResponse = { version: '1.0.0' };
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => mockVersionResponse,
+  });
+
+  const result = await apiClient.getVersion();
+  expect(result).toEqual(mockVersionResponse);
 });
 
 test('ORPHAN: should handle network timeout gracefully', () => {
-  // Consider: Should this be added as a new functional requirement?
-
   // Test implementation
 });
 ```
 
-**E2E Test Examples:**
 ```typescript
+// Playwright E2E tests
 test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
   const response = await request.get('/version');
   expect(response.status()).toBe(200);
+  const data = await response.json();
+  expect(data.version).toBe('1.0.0');
+});
+
+test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
+  await page.goto('/');
+  const versionElement = await page.waitForSelector('[data-testid="backend-version"]');
+  const versionText = await versionElement.textContent();
+  expect(versionText).toContain('1.0.0');
 });
 ```
+
+**Naming Consistency Rules:**
+1. **Underscore Format**: All scenario IDs use underscores (`UT_00001_01`) for 100% consistency between code and YAML
+2. **Function Names (Go)**: Include scenario ID directly in function name for immediate traceability
+3. **Test Descriptions (JS/TS)**: Include scenario ID at the start of test description string
+4. **ORPHAN Marking**: Tests without mapped scenarios must be clearly marked as `ORPHAN`
+5. **ORPHAN Go Functions**: Must include `ORPHAN` prefix in function name: `TestORPHAN_DescriptiveName`
+6. **Descriptive Suffixes**: Use clear, action-based descriptions after scenario ID
 
 **Test File Organization:**
 - Unit test files alongside implementation: `document_test.go`
