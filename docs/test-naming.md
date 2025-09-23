@@ -39,7 +39,7 @@ Where:
 
 **With mapped scenario:**
 ```typescript
-test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
   // Test implementation
 });
 ```
@@ -59,7 +59,7 @@ All test names **MUST** include their Scenario ID as defined in `docs/requiremen
 
 ```typescript
 // ✅ Correct - Mapped scenario
-test('EE-00001-04: should access version endpoint directly', async ({ page }) => {
+test('EE_00001_04: should access version endpoint directly', async ({ page }) => {
   // Test implementation
 });
 
@@ -80,11 +80,11 @@ Test names should clearly describe the action being tested:
 
 ```typescript
 // Pattern: [SCENARIO-ID]: should [action] [expected result]
-test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
+test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
   // Implementation
 });
 
-test('EE-00010-01: should load homepage within 2 seconds', async ({ page }) => {
+test('EE_00010_01: should load homepage within 2 seconds', async ({ page }) => {
   // Implementation
 });
 ```
@@ -115,16 +115,16 @@ func TestHealthHandler_ValidRequest_ReturnsHealthyStatus(t *testing.T) {
 
 ```typescript
 // Component tests
-test('UT-00006-01: homepage component should render without errors', () => {
+test('UT_00006_01: homepage component should render without errors', () => {
   // Implementation
 });
 
-test('UT-00006-02: component should handle props correctly', () => {
+test('UT_00006_02: component should handle props correctly', () => {
   // Implementation
 });
 
 // API client tests
-test('UT-00007-01: API client should construct correct request', () => {
+test('UT_00007_01: API client should construct correct request', () => {
   // Implementation
 });
 ```
@@ -134,7 +134,7 @@ test('UT-00007-01: API client should construct correct request', () => {
 **Backend Integration** - `tests/integration/backend.test.ts`
 
 ```typescript
-test('IT-00001-03: server should respond with correct status', async () => {
+test('IT_00001_03: server should respond with correct status', async () => {
   // Implementation
 });
 ```
@@ -142,7 +142,7 @@ test('IT-00001-03: server should respond with correct status', async () => {
 **Frontend Integration** - `tests/integration/frontend.test.ts`
 
 ```typescript
-test('IT-00006-03: Next.js routes should serve pages correctly', async () => {
+test('IT_00006_03: Next.js routes should serve pages correctly', async () => {
   // Implementation
 });
 ```
@@ -150,7 +150,7 @@ test('IT-00006-03: Next.js routes should serve pages correctly', async () => {
 **Full-Stack Integration** - `tests/integration/fullstack.test.ts`
 
 ```typescript
-test('IT-00007-05: frontend should fetch from backend successfully', async () => {
+test('IT_00007_05: frontend should fetch from backend successfully', async () => {
   // Implementation
 });
 ```
@@ -161,23 +161,23 @@ test('IT-00007-05: frontend should fetch from backend successfully', async () =>
 
 ```typescript
 test.describe('Backend API Endpoints', () => {
-  test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+  test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
     // Implementation
   });
 
-  test('EE-00002-02: should access health endpoint directly', async ({ request }) => {
+  test('EE_00002_02: should access health endpoint directly', async ({ request }) => {
     // Implementation
   });
 
-  test('EE-00003-01: should handle 404 for non-existent endpoints', async ({ request }) => {
+  test('EE_00003_01: should handle 404 for non-existent endpoints', async ({ request }) => {
     // Implementation
   });
 
-  test('EE-00004-01: should handle method not allowed for POST on version endpoint', async ({ request }) => {
+  test('EE_00004_01: should handle method not allowed for POST on version endpoint', async ({ request }) => {
     // Implementation
   });
 
-  test('EE-00005-01: should verify CORS headers for frontend requests', async ({ request }) => {
+  test('EE_00005_01: should verify CORS headers for frontend requests', async ({ request }) => {
     // Implementation
   });
 });
@@ -187,19 +187,19 @@ test.describe('Backend API Endpoints', () => {
 
 ```typescript
 test.describe('Frontend Homepage', () => {
-  test('EE-00006-04: should load homepage and display title', async ({ page }) => {
+  test('EE_00006_04: should load homepage and display title', async ({ page }) => {
     // Implementation
   });
 
-  test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
+  test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
     // Implementation
   });
 
-  test('EE-00008-01: should display welcome card with features', async ({ page }) => {
+  test('EE_00008_01: should display welcome card with features', async ({ page }) => {
     // Implementation
   });
 
-  test('EE-00009-01: should have responsive design', async ({ page }) => {
+  test('EE_00009_01: should have responsive design', async ({ page }) => {
     // Implementation
   });
 });
@@ -209,7 +209,7 @@ test.describe('Frontend Homepage', () => {
 
 ```typescript
 test.describe('Performance Requirements', () => {
-  test('EE-00010-01: should load homepage within 2 seconds', async ({ page }) => {
+  test('EE_00010_01: should load homepage within 2 seconds', async ({ page }) => {
     const startTime = Date.now();
 
     await page.goto('/');
@@ -230,14 +230,14 @@ tests/
 ├── e2e/                          # End-to-End tests
 │   ├── backend-api.spec.ts       # Backend API tests (EE-00001-04 to EE-00005-01)
 │   ├── homepage.spec.ts          # Frontend UI tests (EE-00006-04 to EE-00009-01)
-│   ├── performance.spec.ts       # Performance tests (EE-00010-01)
+│   ├── performance.spec.ts       # Performance tests (EE_00010_01)
 │   └── helpers/                  # Shared utilities and fixtures
 │       ├── api-helpers.ts
 │       └── page-helpers.ts
 ├── integration/                  # Integration tests
-│   ├── backend.test.ts           # Backend integration (IT-00001-03)
-│   ├── frontend.test.ts          # Frontend integration (IT-00006-03)
-│   └── fullstack.test.ts         # Full-stack integration (IT-00007-05)
+│   ├── backend.test.ts           # Backend integration (IT_00001_03)
+│   ├── frontend.test.ts          # Frontend integration (IT_00006_03)
+│   └── fullstack.test.ts         # Full-stack integration (IT_00007_05)
 └── unit/                         # Unit test helpers (tests are co-located with source)
     └── helpers/
         ├── mock-helpers.ts
@@ -250,7 +250,7 @@ services/
 └── frontend/
     └── __tests__/
         ├── lib/
-        │   └── api.test.ts       # API client tests (UT-00007-01)
+        │   └── api.test.ts       # API client tests (UT_00007_01)
         └── components/
             ├── HomePage.test.tsx         # Component tests (UT-00006-01, UT-00006-02)
             └── VersionDisplay.test.tsx   # Version component tests (UT-00007-02, UT-00007-03, UT-00007-04)
@@ -274,7 +274,7 @@ import { test, expect } from '@playwright/test';
 
 // Group related tests with descriptive names
 test.describe('Backend API Endpoints', () => {
-  test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+  test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
     // Requirements: Version must be returned via HTTP GET with proper headers
 
     // Arrange
@@ -294,7 +294,7 @@ test.describe('Backend API Endpoints', () => {
 ### Comment Standards
 
 ```typescript
-test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
+test('EE_00007_06: should fetch and display backend version', async ({ page }) => {
   // Requirements: Version must be fetched from /version endpoint and displayed
 
   await page.goto('/');
@@ -358,13 +358,13 @@ Every test **MUST** include:
 test('should load homepage', async ({ page }) => {});
 
 // ❌ Vague description
-test('EE-00001-04: should work', async ({ page }) => {});
+test('EE_00001_04: should work', async ({ page }) => {});
 
 // ❌ Implementation details in name
-test('EE-00001-04: should call axios.get with /version', async ({ page }) => {});
+test('EE_00001_04: should call axios.get with /version', async ({ page }) => {});
 
 // ❌ Multiple responsibilities
-test('EE-00001-04: should access version and health endpoints', async ({ page }) => {});
+test('EE_00001_04: should access version and health endpoints', async ({ page }) => {});
 ```
 
 ## Integration with Requirements
@@ -379,7 +379,7 @@ Each test must maintain bidirectional traceability:
 ### Requirements Comments
 
 ```typescript
-test('EE-00010-01: should load homepage within 2 seconds', async ({ page }) => {
+test('EE_00010_01: should load homepage within 2 seconds', async ({ page }) => {
   // SCENARIO: EE-00010-01 - page loads under 2000ms
   // REQUIREMENT: FR-00010 - Homepage loads within 2 seconds
   // SOURCE: Story 1.1 (1.1-E2E-009)

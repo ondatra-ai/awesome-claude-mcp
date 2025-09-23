@@ -81,7 +81,7 @@ func TestHealthEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 
 func TestNonExistentEndpoint_NotFound(t *testing.T) {
 	// ORPHAN: validates 404 handling for unit tests
-	// Reason: Covered by EE-00003-01 at E2E level, but useful for unit testing
+	// Reason: Covered by EE_00003_01 at E2E level, but useful for unit testing
 
 	// Arrange
 	app := createFiberApp("http://localhost:3000")

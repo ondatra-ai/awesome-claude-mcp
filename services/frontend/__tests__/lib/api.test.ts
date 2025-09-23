@@ -12,7 +12,7 @@ describe('ApiClient', () => {
   });
 
   describe('getVersion', () => {
-    it('UT-00007-01: should construct correct request for version', async () => {
+    it('UT_00007_01: should construct correct request for version', async () => {
       const mockVersionResponse = { version: '1.0.0' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -31,7 +31,7 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle API errors gracefully', async () => {
-      // Note: This could map to UT-00007-03 if error handling is considered part of version display
+      // Note: This could map to UT_00007_03 if error handling is considered part of version display
 
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -45,7 +45,7 @@ describe('ApiClient', () => {
     });
 
     it('ORPHAN: should handle network errors', async () => {
-      // Note: This could map to UT-00007-03 if error handling is considered part of version display
+      // Note: This could map to UT_00007_03 if error handling is considered part of version display
 
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 

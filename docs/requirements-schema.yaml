@@ -31,7 +31,7 @@ requirement:
   story_id: str(required=False)
   story_reference: str(required=False)
   category: enum('backend', 'frontend', 'performance', 'integration')
-  scenarios: map(key=regex(r'^(UT|IT|EE)-\d{5}-\d{2}$'), val=include('scenario'))
+  scenarios: map(key=regex(r'^(UT|IT|EE)_\d{5}_\d{2}$'), val=include('scenario'))
 
 scenario:
   description: str()

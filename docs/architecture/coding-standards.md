@@ -285,7 +285,7 @@ func TestHealthHandler_DatabaseDown_HandlesGracefully(t *testing.T) {
 
 **TypeScript Test Examples:**
 ```typescript
-test('UT-00007-01: should construct correct request for version', async () => {
+test('UT_00007_01: should construct correct request for version', async () => {
   // Test implementation
 });
 
@@ -298,7 +298,7 @@ test('ORPHAN: should handle network timeout gracefully', () => {
 
 **E2E Test Examples:**
 ```typescript
-test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
   const response = await request.get('/version');
   expect(response.status()).toBe(200);
 });
@@ -682,23 +682,23 @@ tests/
 ├── e2e/                          # End-to-End tests
 │   ├── backend-api.spec.ts       # Backend API tests (EE-00001-04 to EE-00005-01)
 │   ├── homepage.spec.ts          # Frontend UI tests (EE-00006-04 to EE-00009-01)
-│   ├── performance.spec.ts       # Performance tests (EE-00010-01)
+│   ├── performance.spec.ts       # Performance tests (EE_00010_01)
 │   └── helpers/                  # Shared utilities and fixtures
 ├── integration/                  # Integration tests
-│   ├── backend.test.ts           # Backend integration (IT-00001-03)
-│   ├── frontend.test.ts          # Frontend integration (IT-00006-03)
-│   └── fullstack.test.ts         # Full-stack integration (IT-00007-05)
+│   ├── backend.test.ts           # Backend integration (IT_00001_03)
+│   ├── frontend.test.ts          # Frontend integration (IT_00006_03)
+│   └── fullstack.test.ts         # Full-stack integration (IT_00007_05)
 └── unit/                         # Unit test helpers (tests co-located with source)
 
 services/
 ├── backend/cmd/main_test.go      # Backend unit tests (UT-00001-01, UT-00002-01)
-└── frontend/__tests__/lib/api.test.ts  # Frontend unit tests (UT-00007-01)
+└── frontend/__tests__/lib/api.test.ts  # Frontend unit tests (UT_00007_01)
 ```
 
 **Test Structure Requirements:**
 ```typescript
 test.describe('Backend API Endpoints', () => {
-  test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+  test('EE_00001_04: should access version endpoint directly', async ({ request }) => {
     // Arrange
     const endpoint = '/version';
 
