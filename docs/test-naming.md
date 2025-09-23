@@ -98,16 +98,16 @@ test('EE-00010-01: should load homepage within 2 seconds', async ({ page }) => {
 ```go
 // Version handler tests
 func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
-    // UT-00001-01: handler should return correct version
+    // Implementation
 }
 
 func TestVersionHandler_InvalidMethod_ReturnsError(t *testing.T) {
-    // UT-00001-02: handler should reject invalid methods
+    // Implementation
 }
 
 // Health check tests
 func TestHealthHandler_ValidRequest_ReturnsHealthyStatus(t *testing.T) {
-    // UT-00002-01: health check handler returns correct status
+    // Implementation
 }
 ```
 
@@ -275,7 +275,6 @@ import { test, expect } from '@playwright/test';
 // Group related tests with descriptive names
 test.describe('Backend API Endpoints', () => {
   test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
-    // EE-00001-04: service returns version with headers
     // Source: FR-00001 - Backend /version endpoint returns 1.0.0
     // Requirements: Version must be returned via HTTP GET with proper headers
 
@@ -297,7 +296,6 @@ test.describe('Backend API Endpoints', () => {
 
 ```typescript
 test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
-  // EE-00007-06: version appears at bottom of page
   // Source: FR-00007 - Homepage displays backend version at bottom
   // Requirements: Version must be fetched from /version endpoint and displayed
 

@@ -9,7 +9,6 @@ import (
 )
 
 func TestVersionEndpoint_Success(t *testing.T) {
-	// UT-00001-01: handler should return correct version
 	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
 	// Arrange
@@ -31,7 +30,6 @@ func TestVersionEndpoint_Success(t *testing.T) {
 }
 
 func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
-	// UT-00001-02: handler should reject invalid methods
 	// Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
 	// Arrange
@@ -48,7 +46,6 @@ func TestVersionEndpoint_WrongMethod_MethodNotAllowed(t *testing.T) {
 }
 
 func TestHealthEndpoint_Success(t *testing.T) {
-	// UT-00002-01: health check handler returns correct status
 	// Source: FR-00002 - Backend /health endpoint returns healthy status
 
 	// Arrange

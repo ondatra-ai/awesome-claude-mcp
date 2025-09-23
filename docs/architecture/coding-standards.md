@@ -273,7 +273,6 @@ logger.Error("document operation failed",
 **Go Test Examples:**
 ```go
 func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
-    // UT-00001-01: handler should return correct version
     // Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
     // Arrange, Act, Assert pattern
@@ -289,7 +288,6 @@ func TestHealthHandler_DatabaseDown_HandlesGracefully(t *testing.T) {
 **TypeScript Test Examples:**
 ```typescript
 test('UT-00007-01: should construct correct request for version', async () => {
-  // UT-00007-01: API client constructs correct request
   // Source: FR-00007 - Homepage displays backend version at bottom
 
   // Test implementation
@@ -305,7 +303,6 @@ test('ORPHAN: should handle network timeout gracefully', () => {
 **E2E Test Examples:**
 ```typescript
 test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
-  // EE-00001-04: service returns version with headers
   // Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
   const response = await request.get('/version');
@@ -708,7 +705,6 @@ services/
 ```typescript
 test.describe('Backend API Endpoints', () => {
   test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
-    // EE-00001-04: service returns version with headers
     // Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
     // Arrange

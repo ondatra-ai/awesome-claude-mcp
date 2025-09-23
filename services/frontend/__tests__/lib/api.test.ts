@@ -13,7 +13,6 @@ describe('ApiClient', () => {
 
   describe('getVersion', () => {
     it('UT-00007-01: should construct correct request for version', async () => {
-      // UT-00007-01: API client constructs correct request
       // Source: FR-00007 - Homepage displays backend version at bottom
       const mockVersionResponse = { version: '1.0.0' };
       mockFetch.mockResolvedValueOnce({
