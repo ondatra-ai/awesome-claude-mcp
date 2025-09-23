@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Homepage E2E Tests', () => {
-  test('FR-00006 should load homepage and display title', async ({ page }) => {
-    // FR-00006: Frontend single-page application loads successfully
-    // Source: Story 1.1 (1.1-E2E-002)
+  test('EE-00006-04: should load homepage and display title', async ({ page }) => {
+    // EE-00006-04: SPA loads in browser
+    // Source: FR-00006 - Frontend single-page application loads successfully
 
     await page.goto('/');
 
@@ -17,9 +17,9 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('hero-description')).toContainText('A Model Context Protocol integration for seamless Google Docs editing');
   });
 
-  test('FR-00008 should display welcome card with features', async ({ page }) => {
-    // FR-00008: Homepage displays welcome card with features
-    // Source: Not in original requirements (orphaned test)
+  test('EE-00008-01: should display welcome card with features', async ({ page }) => {
+    // EE-00008-01: welcome card is visible
+    // Source: FR-00008 - Homepage displays welcome card with features
 
     await page.goto('/');
 
@@ -35,9 +35,9 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('feature-ai-integration-desc')).toContainText('Compatible with Claude Code and ChatGPT');
   });
 
-  test('FR-00007 should fetch and display backend version', async ({ page }) => {
-    // FR-00007: Homepage displays backend version at bottom
-    // Source: Story 1.1 (1.1-E2E-003)
+  test('EE-00007-06: should fetch and display backend version', async ({ page }) => {
+    // EE-00007-06: version appears at bottom of page
+    // Source: FR-00007 - Homepage displays backend version at bottom
 
     await page.goto('/');
 
@@ -60,9 +60,9 @@ test.describe('Homepage E2E Tests', () => {
     }
   });
 
-  test('FR-00009 should have responsive design', async ({ page }) => {
-    // FR-00009: Homepage has responsive design
-    // Source: Not in original requirements (orphaned test)
+  test('EE-00009-01: should have responsive design', async ({ page }) => {
+    // EE-00009-01: adapts to different viewport sizes
+    // Source: FR-00009 - Homepage has responsive design
 
     await page.goto('/');
 

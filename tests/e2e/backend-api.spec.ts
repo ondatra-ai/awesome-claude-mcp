@@ -5,9 +5,9 @@ const { backendUrl, frontendUrl } = getEnvironmentConfig(process.env.E2E_ENV);
 
 test.describe('Backend API E2E Tests', () => {
 
-  test('FR-00001 should access version endpoint directly', async ({ request }) => {
-    // FR-00001: Backend /version endpoint returns 1.0.0
-    // Source: Story 1.1 (1.1-E2E-001)
+  test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+    // EE-00001-04: service returns version with headers
+    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
     const response = await request.get(`${backendUrl}/version`);
     expect(response.ok()).toBeTruthy();
@@ -18,9 +18,9 @@ test.describe('Backend API E2E Tests', () => {
     expect(data.version).toBe('1.0.0');
   });
 
-  test('FR-00002 should access health endpoint directly', async ({ request }) => {
-    // FR-00002: Backend /health endpoint returns healthy status
-    // Source: Story 1.1 (1.1-E2E-006)
+  test('EE-00002-02: should access health endpoint directly', async ({ request }) => {
+    // EE-00002-02: health endpoint accessible via HTTP
+    // Source: FR-00002 - Backend /health endpoint returns healthy status
 
     const response = await request.get(`${backendUrl}/health`);
     expect(response.ok()).toBeTruthy();
@@ -32,25 +32,25 @@ test.describe('Backend API E2E Tests', () => {
     expect(data).toHaveProperty('timestamp');
   });
 
-  test('FR-00003 should handle 404 for non-existent endpoints', async ({ request }) => {
-    // FR-00003: Backend handles 404 for non-existent endpoints
-    // Source: Not in original requirements (orphaned test)
+  test('EE-00003-01: should handle 404 for non-existent endpoints', async ({ request }) => {
+    // EE-00003-01: returns 404 for non-existent endpoints
+    // Source: FR-00003 - Backend handles 404 for non-existent endpoints
 
     const response = await request.get(`${backendUrl}/nonexistent`);
     expect(response.status()).toBe(404);
   });
 
-  test('FR-00004 should handle method not allowed for POST on version endpoint', async ({ request }) => {
-    // FR-00004: Backend rejects invalid HTTP methods
-    // Source: Not in original requirements (orphaned test)
+  test('EE-00004-01: should handle method not allowed for POST on version endpoint', async ({ request }) => {
+    // EE-00004-01: returns 405 for POST on version endpoint
+    // Source: FR-00004 - Backend rejects invalid HTTP methods
 
     const response = await request.post(`${backendUrl}/version`);
     expect(response.status()).toBe(405);
   });
 
-  test('FR-00005 should verify CORS headers for frontend requests', async ({ request }) => {
-    // FR-00005: Backend provides CORS headers for frontend
-    // Source: Not in original requirements (orphaned test)
+  test('EE-00005-01: should verify CORS headers for frontend requests', async ({ request }) => {
+    // EE-00005-01: includes CORS headers for frontend requests
+    // Source: FR-00005 - Backend provides CORS headers for frontend
 
     const response = await request.get(`${backendUrl}/version`, {
       headers: {

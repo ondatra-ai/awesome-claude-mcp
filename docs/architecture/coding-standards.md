@@ -632,42 +632,70 @@ Requirements are considered automatable if they meet ALL of these criteria:
 - Authentication configuration requirements
 - External service configuration requirements
 
-**Requirements Traceability:**
-All automated E2E tests must follow the functional requirements (FR) traceability system defined in `docs/requirements.md`:
+**Test Scenario Traceability:**
+All tests must follow the scenario ID system defined in `docs/requirements.md` and `docs/test-naming.md`:
+
+**Scenario ID Format:**
+- **UT-XXXXX-YY**: Unit Test scenarios
+- **IT-XXXXX-YY**: Integration Test scenarios
+- **EE-XXXXX-YY**: End-to-End Test scenarios
+- XXXXX: FR number (00001, 00002, etc.)
+- YY: Globally sequential within each FR (01, 02, 03...)
 
 ```typescript
-// Every test MUST include its FR-ID in the test name
-test('FR-00001 should access version endpoint directly', async ({ request }) => {
-  // FR-00001: Backend /version endpoint returns 1.0.0
-  // Source: Story 1.1 (1.1-E2E-001)
+// Every test MUST include its Scenario ID in the test name
+test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+  // EE-00001-04: service returns version with headers
+  // Source: FR-00001 - Backend /version endpoint returns 1.0.0
 
   const response = await request.get('/version');
   expect(response.status()).toBe(200);
   const data = await response.json();
   expect(data.version).toBe('1.0.0');
 });
+
+// Tests without mapped scenarios MUST be marked as ORPHAN
+test('ORPHAN: should validate request headers', async ({ request }) => {
+  // ORPHAN: This test validates functionality not covered by FR requirements
+  // Test implementation
+});
 ```
 
 **Naming Conventions:**
-- **Pattern**: `FR-XXXXX should [action] [expected result]`
+- **Pattern with scenario**: `[SCENARIO-ID]: should [action] [expected result]`
+- **Pattern for orphan**: `ORPHAN: should [action] [expected result]`
 - **Examples**:
-  - `FR-00007 should fetch and display backend version`
-  - `FR-00014 should load homepage within 2 seconds`
-  - `FR-00005 should verify CORS headers for frontend requests`
+  - `EE-00007-06: should fetch and display backend version`
+  - `EE-00010-01: should load homepage within 2 seconds`
+  - `EE-00005-01: should verify CORS headers for frontend requests`
+  - `ORPHAN: should handle malformed JSON gracefully`
 
 **Test Organization:**
 ```
-tests/e2e/
-├── backend-api.spec.ts       # Backend API tests (FR-00001 to FR-00005)
-├── homepage.spec.ts          # Frontend UI tests (FR-00006 to FR-00009)
-├── performance.spec.ts       # Performance tests (FR-00014) - planned
-└── helpers/                  # Shared utilities and fixtures
+tests/
+├── e2e/                          # End-to-End tests
+│   ├── backend-api.spec.ts       # Backend API tests (EE-00001-04 to EE-00005-01)
+│   ├── homepage.spec.ts          # Frontend UI tests (EE-00006-04 to EE-00009-01)
+│   ├── performance.spec.ts       # Performance tests (EE-00010-01)
+│   └── helpers/                  # Shared utilities and fixtures
+├── integration/                  # Integration tests
+│   ├── backend.test.ts           # Backend integration (IT-00001-03)
+│   ├── frontend.test.ts          # Frontend integration (IT-00006-03)
+│   └── fullstack.test.ts         # Full-stack integration (IT-00007-05)
+└── unit/                         # Unit test helpers (tests co-located with source)
+
+services/
+├── backend/cmd/main_test.go      # Backend unit tests (UT-00001-01, UT-00002-01)
+└── frontend/__tests__/lib/api.test.ts  # Frontend unit tests (UT-00007-01)
 ```
 
 **Test Structure Requirements:**
 ```typescript
 test.describe('Backend API Endpoints', () => {
-  test('FR-00001 should access version endpoint directly', async ({ request }) => {
+  test('EE-00001-04: should access version endpoint directly', async ({ request }) => {
+    // EE-00001-04: service returns version with headers
+    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
     // Arrange
     const endpoint = '/version';
 
@@ -683,23 +711,86 @@ test.describe('Backend API Endpoints', () => {
 ```
 
 **Required Elements:**
-1. **FR-ID in test name**: `FR-XXXXX` prefix for traceability
-2. **Source comment**: Reference to requirements document
-3. **Data test IDs**: Use `data-testid` for reliable element selection
+1. **Scenario ID or ORPHAN prefix**: Clear identification in test name
+2. **Source comment**: Reference to requirements document and scenario description
+3. **Data test IDs**: Use `data-testid` for reliable element selection (E2E tests)
 4. **Clear assertions**: Specific, measurable expectations
 5. **Performance requirements**: Include timing assertions where specified
 6. **No manual steps**: Tests must run without human intervention
 
 **Quality Gates:**
-- All E2E tests must map to documented requirements in `docs/requirements.md`
-- Test names must include FR-ID for bidirectional traceability
+- All tests must use Scenario ID system or be marked as ORPHAN
+- Test names must include Scenario ID for bidirectional traceability
+- All Scenario IDs must exist in `docs/requirements.md`
 - Performance tests must validate timing requirements (e.g., 2-second load times)
 - Tests must be executable in CI environment without manual setup
+- Orphan tests should be minimized and regularly reviewed
 
 **Documentation:**
-- Complete naming conventions available in `docs/e2e-naming.md`
-- Requirements mapping and gap analysis in `docs/requirements.md`
-- Update both documents when adding new E2E tests
+- Complete naming conventions available in `docs/test-naming.md`
+- Requirements mapping and scenario definitions in `docs/requirements.md`
+- Update both documents when adding new tests or scenarios
+
+### Test Scenario Traceability System
+
+**Overview:**
+All tests in the codebase must follow the Scenario ID traceability system to ensure complete coverage and maintainability. This system provides bidirectional links between functional requirements and test implementations.
+
+**Scenario ID Rules:**
+- **Unit Tests**: Must use `UT-XXXXX-YY` format or be marked as `ORPHAN`
+- **Integration Tests**: Must use `IT-XXXXX-YY` format or be marked as `ORPHAN`
+- **E2E Tests**: Must use `EE-XXXXX-YY` format or be marked as `ORPHAN`
+- **Orphan Tests**: Must use `ORPHAN: [description]` format
+
+**Implementation Examples:**
+
+**Go Unit Tests:**
+```go
+func TestVersionHandler_ValidRequest_ReturnsCorrectVersion(t *testing.T) {
+    // UT-00001-01: handler should return correct version
+    // Source: FR-00001 - Backend /version endpoint returns 1.0.0
+
+    // Test implementation
+}
+
+func TestOrphanFunction_EdgeCase_HandlesGracefully(t *testing.T) {
+    // ORPHAN: validates edge case not covered by functional requirements
+    // Reason: Testing internal error handling not specified in requirements
+
+    // Test implementation
+}
+```
+
+**TypeScript Unit Tests:**
+```typescript
+test('UT-00007-01: API client should construct correct request', () => {
+  // UT-00007-01: API client constructs correct request
+  // Source: FR-00007 - Homepage displays backend version at bottom
+
+  // Test implementation
+});
+
+test('ORPHAN: should handle network timeout gracefully', () => {
+  // ORPHAN: Testing network resilience not specified in requirements
+  // Consider: Should this be added as a new functional requirement?
+
+  // Test implementation
+});
+```
+
+**Test File Updates:**
+When implementing this system, update all existing test files:
+
+1. Map existing tests to appropriate Scenario IDs
+2. Mark unmapped tests as ORPHAN with explanatory comments
+3. Ensure all Scenario IDs reference valid requirements in `docs/requirements.md`
+4. Review ORPHAN tests for potential requirement creation
+
+**Validation Process:**
+- All Scenario IDs must exist in the requirements document
+- No duplicate Scenario IDs across the codebase
+- ORPHAN tests must include reason for non-mapping
+- Regular reviews to minimize orphan test count
 
 ### Test Data Management
 
