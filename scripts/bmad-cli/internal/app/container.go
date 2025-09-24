@@ -23,6 +23,7 @@ type Container struct {
 	GitHub      ports.GitHubService
 	AI          ports.AIService
 	PRTriageCmd *commands.PRTriageCommand
+	USCreateCmd *commands.USCreateCommand
 }
 
 func NewContainer() (*Container, error) {
@@ -42,6 +43,7 @@ func NewContainer() (*Container, error) {
 
 	orchestrator := services.NewPRTriageOrchestrator(githubService, aiService, logger)
 	prTriageCmd := commands.NewPRTriageCommand(orchestrator)
+	usCreateCmd := commands.NewUSCreateCommand()
 
 	return &Container{
 		Config:      cfg,
@@ -50,6 +52,7 @@ func NewContainer() (*Container, error) {
 		GitHub:      githubService,
 		AI:          aiService,
 		PRTriageCmd: prTriageCmd,
+		USCreateCmd: usCreateCmd,
 	}, nil
 }
 

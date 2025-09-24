@@ -20,6 +20,7 @@ func Execute() {
 	}
 
 	rootCmd.AddCommand(NewDevCommand(container))
+	rootCmd.AddCommand(NewSMCommand(container))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
