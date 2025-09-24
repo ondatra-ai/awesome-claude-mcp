@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:scripts/bmad-cli/internal/adapters/ai/claude_client.go
 package ai
-========
-package prtriage
->>>>>>>> main:scripts/bmad-cli/prtriage/claude_strategy.go
 
 import (
 	"context"
@@ -67,5 +63,5 @@ func CreateAIClient(engine string) (AIClient, error) {
 	if engine != "claude" {
 		return nil, fmt.Errorf("unsupported engine: %s (only 'claude' is supported)", engine)
 	}
-	return NewClaudeStrategy()
+	return NewClaudeClient()
 }
