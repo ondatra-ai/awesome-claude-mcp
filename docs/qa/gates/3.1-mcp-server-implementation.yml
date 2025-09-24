@@ -1,0 +1,28 @@
+schema: 1
+story: '3.1'
+gate: CONCERNS
+status_reason: 'Story is well-structured but has potential security and testability gaps for production MCP server.'
+reviewer: 'Quinn'
+updated: '2025-09-24T16:30:00Z'
+top_issues:
+  - id: 'SEC-001'
+    severity: medium
+    finding: 'No explicit authentication/authorization mechanism for MCP clients specified'
+    suggested_action: 'Define client authentication strategy - API keys, OAuth, or certificate-based auth'
+  - id: 'SEC-002'
+    severity: medium
+    finding: 'WebSocket connection security measures not specified (WSS, rate limiting)'
+    suggested_action: 'Specify TLS requirements and implement connection rate limiting'
+  - id: 'TEST-001'
+    severity: medium
+    finding: 'No load testing specified for concurrent connection requirements (10+)'
+    suggested_action: 'Add load testing scenarios to validate concurrent connection performance'
+  - id: 'ARCH-001'
+    severity: low
+    finding: 'Tool registration mechanism not specified in this foundational story'
+    suggested_action: 'Consider adding tool registry interface placeholder for future stories'
+  - id: 'DOC-001'
+    severity: low
+    finding: 'MCP protocol version compatibility not specified'
+    suggested_action: 'Document which MCP protocol version(s) will be supported'
+waiver: { active: false }
