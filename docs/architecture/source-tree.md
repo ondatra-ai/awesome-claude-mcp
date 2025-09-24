@@ -33,7 +33,13 @@ This document summarizes the current monorepo layout after the migration to Rail
 
 ### `services/backend`
 - Go module with Fiber HTTP server (`cmd/main.go` entry point)
-- REST endpoints (`/health`, `/version`) plus MCP tooling integration points
+- REST endpoints (`/health`, `/version`) for user management API
+- Dockerfile multi-stage build for Railway deployments
+
+### `services/mcp-service`
+- Go module with Mark3Labs MCP-Go server (`cmd/main.go` entry point)
+- MCP protocol WebSocket endpoints for Claude AI communication
+- Tool registration and Google Docs operations
 - Dockerfile multi-stage build for Railway deployments
 
 ## Deployment Configuration
@@ -47,9 +53,9 @@ This document summarizes the current monorepo layout after the migration to Rail
 
 | Environment | Railway Environment | Services | Domains |
 |-------------|--------------------|----------|---------|
-| Development | `development`      | `frontend-dev`, `backend-dev` | `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz` |
-| Staging     | `staging`          | `frontend-staging`, `backend-staging` | `staging.ondatra-ai.xyz` (planned), `api.staging.ondatra-ai.xyz` (planned) |
-| Production  | `production`       | `frontend`, `backend` | `app.ondatra-ai.xyz` (planned), `api.ondatra-ai.xyz` (planned) |
+| Development | `development`      | `frontend-dev`, `backend-dev`, `mcp-service-dev` | `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, `mcp.dev.ondatra-ai.xyz` |
+| Staging     | `staging`          | `frontend-staging`, `backend-staging`, `mcp-service-staging` | `staging.ondatra-ai.xyz` (planned), `api.staging.ondatra-ai.xyz` (planned), `mcp.staging.ondatra-ai.xyz` (planned) |
+| Production  | `production`       | `frontend`, `backend`, `mcp-service` | `app.ondatra-ai.xyz` (planned), `api.ondatra-ai.xyz` (planned), `mcp.ondatra-ai.xyz` (planned) |
 
 ## Legacy Cloud Structure
 
