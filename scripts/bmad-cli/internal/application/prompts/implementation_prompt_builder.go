@@ -13,7 +13,7 @@ func NewImplementationPromptBuilder(engine *TemplateEngine) *ImplementationPromp
 func (b *ImplementationPromptBuilder) Build(threadCtx models.ThreadContext) (string, error) {
 	return b.engine.BuildFromTemplate(
 		threadCtx,
-		"scripts/pr-triage/apply.prompt.tpl",
+		"./templates/apply.prompt.tpl",
 		"",
 	)
 }

@@ -13,7 +13,7 @@ func NewHeuristicPromptBuilder(engine *TemplateEngine) *HeuristicPromptBuilder {
 func (b *HeuristicPromptBuilder) Build(threadCtx models.ThreadContext) (string, error) {
 	return b.engine.BuildFromTemplate(
 		threadCtx,
-		"scripts/pr-triage/heuristic.prompt.tpl",
+		"./templates/heuristic.prompt.tpl",
 		".bmad-core/checklists/triage-heuristic-checklist.md",
 	)
 }
