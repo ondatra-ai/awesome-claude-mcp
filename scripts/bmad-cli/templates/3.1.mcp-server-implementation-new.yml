@@ -55,7 +55,8 @@ dev_notes:
   previous_story_insights: "No previous stories exist - this is the first story in the project."
 
   technology_stack_and_framework_context:
-    source: "[Source: architecture/tech-stack.md#Backend Stack]"
+    file: architecture/tech-stack.md
+    anchor: Backend Stack
     language: "Go 1.21 for backend services"
     framework: "Fiber 2.x for HTTP routing (`services/backend/cmd/main.go`)"
     mcp_integration: "Mark3Labs MCP-Go library (latest) for Model Context Protocol tools"
@@ -63,7 +64,8 @@ dev_notes:
     config: "viper 1.x for environment/config management (reads Railway env vars)"
 
   architecture_and_component_integration:
-    source: "[Source: architecture.md#Backend Components]"
+    file: architecture.md
+    anchor: Backend Components
     description: "The MCP Protocol Handler is a key backend component with these responsibilities:"
     responsibilities:
       - "Handle MCP protocol communication with Claude AI"
@@ -76,40 +78,51 @@ dev_notes:
     technology_stack: "Go stdlib net/http, gorilla/websocket for WebSocket support"
 
   file_structure_and_organization:
-    source: "[Source: architecture.md#Source Tree]"
+    file: architecture.md
+    anchor: Source Tree
     description: "MCP service as separate service alongside frontend and backend:"
-    structure: |
-      services/
-      ├── frontend/                   # Next.js App Router frontend
-      ├── backend/                    # Go API for user management
-      └── mcp-service/                # MCP Service - Mark3Labs Implementation (NEW - this story)
-          ├── cmd/
-          │   └── main.go             # MCP server entry point with Mark3Labs library
-          ├── internal/
-          │   ├── server/
-          │   │   ├── mcp.go          # Mark3Labs MCP server setup and configuration
-          │   │   ├── tools.go        # Tool registration with schema validation
-          │   │   ├── handlers.go     # Strongly-typed tool handlers
-          │   │   └── middleware.go   # Recovery and capability middleware
-          │   ├── operations/
-          │   │   ├── processor.go    # Operation processor with parameter validation
-          │   │   └── validator.go    # Parameter validation with enum/pattern support
-          │   ├── docs/
-          │   │   ├── service.go      # Document service
-          │   │   ├── client.go       # Google Docs client
-          │   │   └── converter.go    # Markdown converter
-          │   └── auth/
-          │       ├── oauth.go        # Google OAuth for service accounts
-          │       └── tokens.go       # Token validation with backend
+    files:
+      - file: "services/frontend/"
+        description: "Next.js App Router frontend"
+      - file: "services/backend/"
+        description: "Go API for user management"
+      - file: "services/mcp-service/"
+        description: "MCP Service - Mark3Labs Implementation (NEW - this story)"
+      - file: "services/mcp-service/cmd/main.go"
+        description: "MCP server entry point with Mark3Labs library"
+      - file: "services/mcp-service/internal/server/mcp.go"
+        description: "Mark3Labs MCP server setup and configuration"
+      - file: "services/mcp-service/internal/server/tools.go"
+        description: "Tool registration with schema validation"
+      - file: "services/mcp-service/internal/server/handlers.go"
+        description: "Strongly-typed tool handlers"
+      - file: "services/mcp-service/internal/server/middleware.go"
+        description: "Recovery and capability middleware"
+      - file: "services/mcp-service/internal/operations/processor.go"
+        description: "Operation processor with parameter validation"
+      - file: "services/mcp-service/internal/operations/validator.go"
+        description: "Parameter validation with enum/pattern support"
+      - file: "services/mcp-service/internal/docs/service.go"
+        description: "Document service"
+      - file: "services/mcp-service/internal/docs/client.go"
+        description: "Google Docs client"
+      - file: "services/mcp-service/internal/docs/converter.go"
+        description: "Markdown converter"
+      - file: "services/mcp-service/internal/auth/oauth.go"
+        description: "Google OAuth for service accounts"
+      - file: "services/mcp-service/internal/auth/tokens.go"
+        description: "Token validation with backend"
 
   mcp_integration_requirements:
-    source: "[Source: architecture.md#Tech Stack]"
+    file: architecture.md
+    anchor: Tech Stack
     mcp_protocol_library: "Mark3Labs MCP-Go (latest) for streamlined Model Context Protocol implementation"
     features: "Type-safe, stdio transport, LLM-optimized design"
     integration_point: "Embedded in backend service"
 
   configuration_management:
-    source: "[Source: architecture/coding-standards.md#Environment Variables]"
+    file: architecture/coding-standards.md
+    anchor: Environment Variables
     description: "Required environment variables for MCP server:"
     environment_variables:
       MCP_PORT: "8081                    # MCP WebSocket server port"
@@ -118,7 +131,8 @@ dev_notes:
       LOG_FORMAT: "json                  # Structured logging format"
 
   connection_management_requirements:
-    source: "[Source: architecture.md#Core Workflows]"
+    file: architecture.md
+    anchor: Core Workflows
     description: "From the MCP protocol workflow diagram:"
     requirements:
       - "Handle tool calls from Claude AI"
@@ -128,7 +142,8 @@ dev_notes:
       - "Process requests and return formatted responses"
 
   error_handling_standards:
-    source: "[Source: architecture/coding-standards.md#Error Handling Security]"
+    file: architecture/coding-standards.md
+    anchor: Error Handling Security
     requirements:
       - "Use structured error responses with codes and messages"
       - "Log internal errors but return generic messages to clients"
@@ -136,7 +151,8 @@ dev_notes:
       - "Follow security practices for error exposure"
 
   testing_requirements:
-    source: "[Source: architecture/coding-standards.md#Testing Standards]"
+    file: architecture/coding-standards.md
+    anchor: Testing Standards
     unit_tests: "Test WebSocket connection handling, message parsing, and response formatting"
     integration_tests: "Test MCP protocol compliance with mock Claude client"
     coverage_requirement: "85% for business logic, 80% overall"
@@ -144,7 +160,8 @@ dev_notes:
     framework: "Go standard testing package with testify for assertions"
 
   logging_standards:
-    source: "[Source: architecture/coding-standards.md#Structured Logging]"
+    file: architecture/coding-standards.md
+    anchor: Structured Logging
     description: "Required structured logging format for MCP operations:"
     code_example: |
       ```go
@@ -156,7 +173,8 @@ dev_notes:
       ```
 
   performance_requirements:
-    source: "[Source: architecture/coding-standards.md#Performance Standards]"
+    file: architecture/coding-standards.md
+    anchor: Performance Standards
     connection_establishment: "< 1 second"
     message_processing: "< 100ms per message"
     concurrent_connection_support: "10+ connections"
