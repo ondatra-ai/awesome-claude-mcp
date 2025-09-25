@@ -1,0 +1,104 @@
+# Yamale schema for story template validation
+# Validates story templates like 3.1.mcp-server-implementation.yml
+
+story:
+  id: str()
+  title: str()
+  as_a: str()
+  i_want: str()
+  so_that: str()
+  status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED', 'DRAFT')
+  acceptance_criteria: list(include('acceptance_criterion'), min=1)
+  notes: str(required=False)
+
+tasks: list(include('task'), min=1)
+
+dev_notes:
+  previous_story_insights: str(required=False)
+  technology_stack: include('tech_stack')
+  architecture: include('architecture')
+  file_structure: include('file_structure')
+  configuration: include('config', required=False)
+  performance_requirements: map(str(), str(), required=False)
+
+configuration: include('config', required=False)
+performance_requirements: map(str(), str(), required=False)
+
+testing:
+  test_location: str()
+  frameworks: list(str(), min=1)
+  requirements: list(str(), min=1)
+  coverage: include('coverage')
+
+change_log: list(include('change_entry'), required=False)
+qa_results: include('qa_review', required=False)
+dev_agent_record: include('agent_record', required=False)
+
+---
+# Include definitions
+
+acceptance_criterion:
+  id: str()
+  description: str()
+
+task:
+  name: str()
+  acceptance_criteria: list(str(), min=1)
+  subtasks: list(str(), min=1)
+  status: enum('pending', 'in_progress', 'complete', 'blocked')
+
+tech_stack:
+  language: str()
+  framework: str(required=False)
+  mcp_integration: str(required=False)
+  logging: str(required=False)
+  config: str(required=False)
+
+architecture:
+  component: str()
+  responsibilities: list(str(), min=1)
+  dependencies: list(str(), required=False)
+  tech_stack: list(str(), required=False)
+
+file_structure:
+  files: list(regex(r'^services/.*'), min=1)
+
+config:
+  environment_variables: map(str(), str(), required=False)
+  secrets: list(str(), required=False)
+  feature_flags: map(str(), bool(), required=False)
+
+coverage:
+  business_logic: regex(r'^\d+%$')
+  overall: regex(r'^\d+%$')
+
+change_entry:
+  date: regex(r'^\d{4}-\d{2}-\d{2}$')
+  version: regex(r'^\d+\.\d+(\.\d+)?$')
+  description: str()
+  author: str()
+
+qa_review:
+  review_date: regex(r'^\d{4}-\d{2}-\d{2}$')
+  reviewed_by: str()
+  assessment: include('assessment')
+  gate_status: enum('APPROVED', 'CONCERNS', 'BLOCKED', 'PENDING')
+  gate_reference: regex(r'^docs/qa/gates/.*\.yml$')
+
+assessment:
+  summary: str()
+  strengths: list(str(), required=False)
+  improvements: list(str(), required=False)
+  risk_level: enum('Low', 'Medium', 'High', 'Critical')
+  risk_reason: str()
+  testability_score: int(min=0, max=10)
+  testability_max: int(min=10, max=10)
+  testability_notes: str(required=False)
+  implementation_readiness: int(min=0, max=10)
+  implementation_readiness_max: int(min=10, max=10)
+
+agent_record:
+  agent_model_used: any(str(), null())
+  debug_log_references: list(str())
+  completion_notes: list(str())
+  file_list: list(str())

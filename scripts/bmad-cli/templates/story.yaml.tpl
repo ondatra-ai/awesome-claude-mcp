@@ -1,13 +1,13 @@
-id: "{{.ID}}"
-title: "{{.Title}}"
-status: "{{.Status}}"
-as_a: "{{.AsA}}"
-i_want: "{{.IWant}}"
-so_that: "{{.SoThat}}"
-
-acceptance_criteria:{{range .AcceptanceCriteria}}
-  - id: {{.ID}}
-    description: "{{.Description}}"{{end}}
+story:
+  id: "{{.ID}}"
+  title: "{{.Title}}"
+  as_a: "{{.AsA}}"
+  i_want: "{{.IWant}}"
+  so_that: "{{.SoThat}}"
+  status: "{{.Status}}"
+  acceptance_criteria:{{range .AcceptanceCriteria}}
+    - id: {{.ID}}
+      description: "{{.Description}}"{{end}}
 
 tasks:{{range .Tasks}}
   - name: "{{.Name}}"
@@ -36,10 +36,8 @@ dev_notes:
       - "{{.}}"{{end}}
 
   file_structure:
-    service_path: "{{.DevNotes.FileStructure.ServicePath}}"
-    structure:{{range $key, $value := .DevNotes.FileStructure.Structure}}
-      {{$key}}:{{range $subkey, $items := $value}}{{range $items}}
-        - "{{.}}"{{end}}{{end}}{{end}}
+    files:{{range .DevNotes.FileStructure.Files}}
+      - "{{.}}"{{end}}
 
   configuration:
     environment_variables:{{range $key, $value := .DevNotes.Configuration.EnvironmentVariables}}

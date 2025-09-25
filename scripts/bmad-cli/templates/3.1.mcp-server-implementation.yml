@@ -80,26 +80,19 @@ dev_notes:
       - "gorilla/websocket"
 
   file_structure:
-    service_path: "services/mcp-service/"
-    structure:
-      cmd:
-        - "main.go # MCP server entry point with Mark3Labs library"
-      internal:
-        server:
-          - "mcp.go # Mark3Labs MCP server setup and configuration"
-          - "tools.go # Tool registration with schema validation"
-          - "handlers.go # Strongly-typed tool handlers"
-          - "middleware.go # Recovery and capability middleware"
-        operations:
-          - "processor.go # Operation processor with parameter validation"
-          - "validator.go # Parameter validation with enum/pattern support"
-        docs:
-          - "service.go # Document service"
-          - "client.go # Google Docs client"
-          - "converter.go # Markdown converter"
-        auth:
-          - "oauth.go # Google OAuth for service accounts"
-          - "tokens.go # Token validation with backend"
+    files:
+      - "services/mcp-service/cmd/main.go # MCP server entry point with Mark3Labs library"
+      - "services/mcp-service/internal/server/mcp.go # Mark3Labs MCP server setup and configuration"
+      - "services/mcp-service/internal/server/tools.go # Tool registration with schema validation"
+      - "services/mcp-service/internal/server/handlers.go # Strongly-typed tool handlers"
+      - "services/mcp-service/internal/server/middleware.go # Recovery and capability middleware"
+      - "services/mcp-service/internal/operations/processor.go # Operation processor with parameter validation"
+      - "services/mcp-service/internal/operations/validator.go # Parameter validation with enum/pattern support"
+      - "services/mcp-service/internal/docs/service.go # Document service"
+      - "services/mcp-service/internal/docs/client.go # Google Docs client"
+      - "services/mcp-service/internal/docs/converter.go # Markdown converter"
+      - "services/mcp-service/internal/auth/oauth.go # Google OAuth for service accounts"
+      - "services/mcp-service/internal/auth/tokens.go # Token validation with backend"
 
   configuration:
     environment_variables:
