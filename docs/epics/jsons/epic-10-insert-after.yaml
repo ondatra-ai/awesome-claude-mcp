@@ -1,0 +1,70 @@
+epic:
+  id: 10
+  name: "Insert After Operation"
+  status: "PLANNED"
+  goal: "Complete anchor-based insertion with after-match positioning"
+
+stories:
+  - id: "10.1"
+    title: "Insert After Command Handler"
+    persona: "Claude User"
+    want: "to insert content after specific text"
+    rationale: "I can append related information"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Command handler for insert_after created"
+      - "Anchor text matching working"
+      - "Content inserted after match"
+      - "First match only (MVP)"
+      - "Success response provided"
+      - "Complete MVP functionality"
+
+  - id: "10.2"
+    title: "After Position Calculation"
+    persona: "Developer/Maintainer"
+    want: "to find position after anchor text"
+    rationale: "I can insert content correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "After position calculated accurately"
+      - "Paragraph endings considered"
+      - "Section boundaries respected"
+      - "Spacing requirements met"
+      - "Special elements handled"
+      - "Position validation complete"
+
+  - id: "10.3"
+    title: "After Insertion Implementation"
+    persona: "Developer/Maintainer"
+    want: "to insert content after anchor"
+    rationale: "additions appear in correct location"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Content inserted after anchor"
+      - "Natural flow maintained"
+      - "Formatting consistent"
+      - "No overlap with anchor"
+      - "Structure preserved"
+      - "All operations complete"
+
+  - id: "10.4"
+    title: "MVP Completion Validation"
+    persona: "Developer/Maintainer"
+    want: "to validate MVP completeness"
+    rationale: "we can prepare for launch"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "All 6 operations functional"
+      - "All Markdown elements supported"
+      - "99% success rate achieved"
+      - "10-minute setup confirmed"
+      - "Monitoring operational"
+      - "Ready for October 15, 2025 launch"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []

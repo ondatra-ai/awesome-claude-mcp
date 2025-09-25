@@ -1,0 +1,84 @@
+epic:
+  id: 4
+  name: "OAuth Authentication"
+  status: "PLANNED"
+  goal: "Implement complete Google OAuth 2.0 authentication flow with multi-account support"
+
+stories:
+  - id: "4.1"
+    title: "OAuth Configuration"
+    persona: "Developer/Maintainer"
+    want: "to configure Google OAuth application"
+    rationale: "users can authenticate with Google"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Google Cloud project created"
+      - "OAuth 2.0 credentials generated"
+      - "Redirect URIs configured"
+      - "Scopes defined for Google Docs access"
+      - "Credentials stored as Railway environment variables (or external secret manager if required)"
+      - "Environment variables configured"
+
+  - id: "4.2"
+    title: "OAuth Flow Implementation"
+    persona: "Claude User"
+    want: "to authenticate with my Google account"
+    rationale: "the service can access my documents"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "OAuth initiation endpoint created"
+      - "Google consent screen displayed with permissions"
+      - "Authorization code exchange implemented"
+      - "Tokens received and validated"
+      - "Error handling for auth failures"
+      - "Success redirect to settings page"
+
+  - id: "4.3"
+    title: "Token Management"
+    persona: "Developer/Maintainer"
+    want: "to securely manage OAuth tokens"
+    rationale: "user sessions remain valid"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Tokens encrypted before storage"
+      - "Redis cache integration for tokens"
+      - "Token refresh logic implemented"
+      - "Expiry handling automated"
+      - "Token retrieval by user ID"
+      - "Secure token deletion capability"
+
+  - id: "4.4"
+    title: "Multi-Account Support"
+    persona: "Claude User"
+    want: "to connect multiple Google accounts"
+    rationale: "I can edit documents from different accounts"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Support multiple tokens per user"
+      - "Account selection mechanism"
+      - "Account switching capability"
+      - "Display connected accounts"
+      - "Remove account functionality"
+      - "Default account designation"
+
+  - id: "4.5"
+    title: "Authentication Error Handling"
+    persona: "Claude User"
+    want: "clear authentication error messages"
+    rationale: "I can resolve authentication issues"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Structured error responses for auth failures"
+      - "Token refresh failure handling"
+      - "Clear error codes and messages"
+      - "Guidance for resolution steps"
+      - "Logging of auth errors"
+      - "Immediate error return without retry"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []

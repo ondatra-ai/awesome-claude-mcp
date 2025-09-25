@@ -1,0 +1,84 @@
+epic:
+  id: 3
+  name: "MCP Server Setup"
+  status: "PLANNED"
+  goal: "Create functional MCP protocol server with tool registration and bidirectional communication"
+
+stories:
+  - id: "3.1"
+    title: "MCP Server Implementation"
+    persona: "Developer/Maintainer"
+    want: "to implement MCP protocol server"
+    rationale: "Claude can communicate with the service"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "WebSocket server implemented"
+      - "HTTP endpoint for MCP available"
+      - "Message parsing and validation"
+      - "Response formatting to MCP standard"
+      - "Connection management handled"
+      - "Concurrent connection support"
+
+  - id: "3.2"
+    title: "Tool Registration"
+    persona: "Claude User"
+    want: "to discover available tools"
+    rationale: "I know what operations are available"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Tool definition schema created"
+      - "Tool registration endpoint working"
+      - "Tool capabilities described clearly"
+      - "Parameter schemas defined"
+      - "Version information included"
+      - "Dynamic or static registration (TBD after testing)"
+
+  - id: "3.3"
+    title: "Message Protocol Handler"
+    persona: "Developer/Maintainer"
+    want: "to process MCP messages correctly"
+    rationale: "operations are executed properly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Request message parsing implemented"
+      - "Command routing to handlers"
+      - "Response message formatting"
+      - "Error message standards followed"
+      - "Message validation complete"
+      - "Correlation ID tracking"
+
+  - id: "3.4"
+    title: "MCP Error Handling"
+    persona: "Claude User"
+    want: "standard MCP error responses"
+    rationale: "I can handle failures appropriately"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Standard MCP error format used"
+      - "Error codes properly categorized"
+      - "Descriptive error messages provided"
+      - "Stack traces excluded from production"
+      - "Error logging implemented"
+      - "Rate limit errors handled"
+
+  - id: "3.5"
+    title: "Connection Management"
+    persona: "Developer/Maintainer"
+    want: "robust connection handling"
+    rationale: "communication remains stable"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "WebSocket heartbeat implemented"
+      - "Connection timeout handling"
+      - "Reconnection logic for clients"
+      - "Graceful shutdown handling"
+      - "Connection pooling if needed"
+      - "Connection state tracking"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []

@@ -1,0 +1,56 @@
+epic:
+  id: 7
+  name: "Prepend Operation"
+  status: "PLANNED"
+  goal: "Add content prepending capability with document structure preservation"
+
+stories:
+  - id: "7.1"
+    title: "Prepend Command Handler"
+    persona: "Claude User"
+    want: "to prepend content to documents"
+    rationale: "I can add information at the beginning"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Command handler for prepend created"
+      - "Content inserted at document start"
+      - "Existing content pushed down"
+      - "Title/headers preserved if needed"
+      - "Success response provided"
+      - "Error handling complete"
+
+  - id: "7.2"
+    title: "Beginning Position Handling"
+    persona: "Developer/Maintainer"
+    want: "to identify document beginning"
+    rationale: "I can prepend content correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "First position identified correctly"
+      - "Title handling logic implemented"
+      - "Table of contents considered"
+      - "Cover page detection"
+      - "Proper insertion point determined"
+      - "Edge cases handled"
+
+  - id: "7.3"
+    title: "Content Shifting"
+    persona: "Developer/Maintainer"
+    want: "to shift existing content properly"
+    rationale: "nothing is lost during prepend"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Existing content preserved completely"
+      - "Content moved down correctly"
+      - "Formatting maintained during shift"
+      - "Page breaks adjusted"
+      - "References updated if needed"
+      - "Performance acceptable"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []

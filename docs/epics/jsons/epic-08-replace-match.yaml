@@ -1,0 +1,70 @@
+epic:
+  id: 8
+  name: "Replace Match Operation"
+  status: "PLANNED"
+  goal: "Implement exact text matching and replacement functionality"
+
+stories:
+  - id: "8.1"
+    title: "Replace Match Command Handler"
+    persona: "Claude User"
+    want: "to replace specific text matches"
+    rationale: "I can update specific content sections"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Command handler for replace_match created"
+      - "Exact text matching implemented"
+      - "First match only replaced (MVP)"
+      - "Case-sensitive matching option"
+      - "Success response with match count"
+      - "No regex support in MVP"
+
+  - id: "8.2"
+    title: "Text Search Implementation"
+    persona: "Developer/Maintainer"
+    want: "to search for text in documents"
+    rationale: "I can find replacement targets"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Document text retrieval working"
+      - "Exact match algorithm implemented"
+      - "First occurrence identified"
+      - "Position information captured"
+      - "Search performance optimized"
+      - "Special characters handled"
+
+  - id: "8.3"
+    title: "Match Replacement"
+    persona: "Developer/Maintainer"
+    want: "to replace matched text"
+    rationale: "content is updated correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Matched text replaced accurately"
+      - "Surrounding content preserved"
+      - "Formatting maintained or updated"
+      - "Replacement position correct"
+      - "Document structure intact"
+      - "Operation reversible (future)"
+
+  - id: "8.4"
+    title: "Match Error Handling"
+    persona: "Claude User"
+    want: "clear feedback on match failures"
+    rationale: "I can adjust my search parameters"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "No match found error returned"
+      - "Partial match suggestions (v2)"
+      - "Multiple match warning (v2)"
+      - "Case sensitivity reminder"
+      - "Alternative search hints"
+      - "Error logged properly"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []

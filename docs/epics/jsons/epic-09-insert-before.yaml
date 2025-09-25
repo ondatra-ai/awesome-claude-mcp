@@ -1,0 +1,56 @@
+epic:
+  id: 9
+  name: "Insert Before Operation"
+  status: "PLANNED"
+  goal: "Enable content insertion before matched anchor text"
+
+stories:
+  - id: "9.1"
+    title: "Insert Before Command Handler"
+    persona: "Claude User"
+    want: "to insert content before specific text"
+    rationale: "I can add context to existing content"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Command handler for insert_before created"
+      - "Anchor text matching working"
+      - "Content inserted before match"
+      - "First match only (MVP)"
+      - "Success response provided"
+      - "Position tracking accurate"
+
+  - id: "9.2"
+    title: "Anchor Position Detection"
+    persona: "Developer/Maintainer"
+    want: "to find anchor text position"
+    rationale: "I can insert content before it"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Anchor search implemented"
+      - "Exact position determined"
+      - "Before position calculated"
+      - "Paragraph boundaries respected"
+      - "Format boundaries considered"
+      - "Performance acceptable"
+
+  - id: "9.3"
+    title: "Before Insertion Logic"
+    persona: "Developer/Maintainer"
+    want: "to insert content before anchor"
+    rationale: "document flows naturally"
+    status: "PLANNED"
+    acceptance_criteria:
+      - "Content inserted at correct position"
+      - "Anchor text unchanged"
+      - "Spacing handled properly"
+      - "Formatting applied correctly"
+      - "Document structure maintained"
+      - "No content overwritten"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []
+
+priority_considerations: []
