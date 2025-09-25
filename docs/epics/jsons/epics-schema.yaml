@@ -1,6 +1,3 @@
-# Yamale schema for epic YAML files
-# Validates the structure and content of epic YAML documents
-
 epic:
   id: int(min=1, max=100)
   name: str()
@@ -9,8 +6,24 @@ epic:
   completion_summary: str(required=False)
   context: str()
 
-stories: list(any())
+stories: list(include('story'), min=1)
 
 dependencies: list(str())
 success_criteria: list(str())
 technical_notes: list(str())
+
+---
+story:
+  id: str()
+  title: str()
+  as_a: str()
+  i_want: str()
+  so_that: str()
+  status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
+  acceptance_criteria: list(include('acceptance_criterion'), min=1)
+  notes: str(required=False)
+
+---
+acceptance_criterion:
+  id: str()
+  description: str()

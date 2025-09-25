@@ -28,18 +28,18 @@ epic:
   status: <enum>                  # COMPLETE|PLANNED|IN_PROGRESS|BLOCKED|CANCELLED
   goal: <string>                  # Epic objective
   completion_summary: <string>    # Optional: Summary for completed epics
-  context: <string>               # Optional: Additional context
+  context: <string>               # Required: Additional context (empty string if none)
 
 stories:
   - id: <string>                  # Story identifier (e.g., "1.1", "2.3")
     title: <string>               # Story title
-    persona: <string>             # User persona ("As a...")
-    want: <string>                # User need ("I want...")
-    rationale: <string>           # Business value ("So that...")
+    as_a: <string>                # User persona ("As a...")
+    i_want: <string>              # User need ("I want...")
+    so_that: <string>             # Business value ("So that...")
     status: <enum>                # Story status
-    acceptance_criteria:          # List of acceptance criteria
-      - <string>
-      - <string>
+    acceptance_criteria:          # List of acceptance criteria objects
+      - id: <string>              # Criteria ID (e.g., "AC-1")
+        description: <string>     # Criteria description
     notes: <string>               # Optional: Additional notes
 
 dependencies:                     # List of epic dependencies
