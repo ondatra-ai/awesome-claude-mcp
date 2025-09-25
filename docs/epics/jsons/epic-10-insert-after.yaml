@@ -3,6 +3,7 @@ epic:
   name: "Insert After Operation"
   status: "PLANNED"
   goal: "Complete anchor-based insertion with after-match positioning"
+  context: ""
 
 stories:
   - id: "10.1"

@@ -3,6 +3,7 @@ epic:
   name: "MCP Server Setup"
   status: "PLANNED"
   goal: "Create functional MCP protocol server with tool registration and bidirectional communication"
+  context: ""
 
 stories:
   - id: "3.1"

@@ -3,6 +3,7 @@ epic:
   name: "Append Operation"
   status: "PLANNED"
   goal: "Add content appending capability with formatting preservation"
+  context: ""
 
 stories:
   - id: "6.1"

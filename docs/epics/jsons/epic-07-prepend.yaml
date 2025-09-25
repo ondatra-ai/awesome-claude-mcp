@@ -3,6 +3,7 @@ epic:
   name: "Prepend Operation"
   status: "PLANNED"
   goal: "Add content prepending capability with document structure preservation"
+  context: ""
 
 stories:
   - id: "7.1"

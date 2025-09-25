@@ -7,20 +7,10 @@ epic:
   status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
   goal: str()
   completion_summary: str(required=False)
-  context: str(required=False)
+  context: str()
 
-stories: list(include('story'), min=1)
+stories: list(any())
 
 dependencies: list(str())
 success_criteria: list(str())
 technical_notes: list(str())
-# Include definitions
-story:
-  id: str()
-  title: str()
-  persona: str()
-  want: str()
-  rationale: str()
-  status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
-  acceptance_criteria: list(str(), min=1)
-  notes: str(required=False)

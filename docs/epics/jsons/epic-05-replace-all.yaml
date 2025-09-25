@@ -3,6 +3,7 @@ epic:
   name: "Replace All Operation"
   status: "PLANNED"
   goal: "Implement complete document replacement with full Markdown formatting support"
+  context: ""
 
 stories:
   - id: "5.1"

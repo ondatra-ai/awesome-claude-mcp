@@ -3,6 +3,7 @@ epic:
   name: "OAuth Authentication"
   status: "PLANNED"
   goal: "Implement complete Google OAuth 2.0 authentication flow with multi-account support"
+  context: ""
 
 stories:
   - id: "4.1"
