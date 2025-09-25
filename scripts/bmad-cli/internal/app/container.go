@@ -11,6 +11,7 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/logging"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/template"
@@ -38,7 +39,8 @@ func NewContainer() (*Container, error) {
 	githubService := github.NewGitHubService(shellExec)
 
 	// Setup user story creation dependencies (no AI required)
-	storyFactory := services.NewStoryFactory()
+	epicLoader := epic.NewEpicLoader()
+	storyFactory := services.NewStoryFactory(epicLoader)
 	templateProcessor := template.NewTemplateProcessor("templates/story.yaml.tpl")
 	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
 	usCreateCmd := commands.NewUSCreateCommand(storyFactory, templateProcessor, yamaleValidator)

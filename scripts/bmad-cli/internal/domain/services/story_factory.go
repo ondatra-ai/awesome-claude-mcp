@@ -7,15 +7,110 @@ import (
 	"time"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/epic"
 )
 
-type StoryFactory struct{}
+type StoryFactory struct {
+	epicLoader *epic.EpicLoader
+}
 
-func NewStoryFactory() *StoryFactory {
-	return &StoryFactory{}
+func NewStoryFactory(epicLoader *epic.EpicLoader) *StoryFactory {
+	return &StoryFactory{
+		epicLoader: epicLoader,
+	}
 }
 
 func (f *StoryFactory) CreateStory(storyNumber string) *story.StoryDocument {
+	// Try to load story from epic file first
+	loadedStory, err := f.epicLoader.LoadStoryFromEpic(storyNumber)
+	if err != nil {
+		// Fallback to generating story if loading fails
+		fmt.Printf("Warning: Could not load story from epic file: %v. Using default generation.\n", err)
+		return f.createDefaultStory(storyNumber)
+	}
+
+	// Use loaded story data
+	epic, storyNum := f.parseStoryNumber(storyNumber)
+	component := f.getComponentFromTitle(loadedStory.Title)
+
+	return &story.StoryDocument{
+		Story: *loadedStory,
+		Tasks: []story.Task{
+			{
+				Name:               fmt.Sprintf("Implement %s", component),
+				AcceptanceCriteria: []string{"AC-1", "AC-2"},
+				Subtasks: []string{
+					"Create domain models",
+					"Implement business logic",
+					"Add error handling",
+					"Write comprehensive tests",
+				},
+				Status: "pending",
+			},
+		},
+		DevNotes: story.DevNotes{
+			PreviousStoryInsights: "This is a new story without previous implementation insights",
+			TechnologyStack: story.TechnologyStack{
+				Language:       "Go",
+				Framework:      "Standard library",
+				MCPIntegration: f.getMCPIntegration(epic, storyNum),
+				Logging:        "slog",
+				Config:         "viper",
+			},
+			Architecture: story.Architecture{
+				Component:        component,
+				Responsibilities: f.getResponsibilities(epic, storyNum),
+				Dependencies:     f.getDependencies(epic, storyNum),
+				TechStack:        []string{"Go", "YAML", "HTTP", "JSON"},
+			},
+			FileStructure: story.FileStructure{
+				Files: f.getFiles(epic, storyNum),
+			},
+			Configuration: story.Configuration{
+				EnvironmentVariables: map[string]string{
+					"LOG_LEVEL":     "info",
+					"PORT":          "8080",
+					"TEMPLATE_PATH": "templates/",
+				},
+			},
+			PerformanceRequirements: story.PerformanceRequirements{
+				ConnectionEstablishment: "< 100ms",
+				MessageProcessing:       "< 50ms",
+				ConcurrentConnections:   "100",
+				MemoryUsage:            "< 100MB",
+			},
+		},
+		Testing: story.Testing{
+			TestLocation: "services/backend/tests",
+			Frameworks:   []string{"testing", "testify"},
+			Requirements: []string{
+				"Unit tests for all public methods",
+				"Integration tests for external dependencies",
+				"End-to-end tests for complete workflows",
+			},
+			Coverage: map[string]string{
+				"business_logic": "80%",
+				"overall":        "75%",
+			},
+		},
+		ChangeLog: []story.ChangeLogEntry{
+			{
+				Date:        time.Now().Format("2006-01-02"),
+				Version:     "1.0.0",
+				Description: "Initial story creation",
+				Author:      "bmad-cli",
+			},
+		},
+		DevAgentRecord: story.DevAgentRecord{
+			AgentModelUsed:      nil,
+			DebugLogReferences:  []string{},
+			CompletionNotes:     []string{},
+			FileList:           []string{},
+		},
+	}
+}
+
+func (f *StoryFactory) createDefaultStory(storyNumber string) *story.StoryDocument {
 	epic, storyNum := f.parseStoryNumber(storyNumber)
 	title := f.generateTitle(epic, storyNum)
 	component := f.getComponentName(epic, storyNum)
@@ -106,6 +201,25 @@ func (f *StoryFactory) CreateStory(storyNumber string) *story.StoryDocument {
 			CompletionNotes:     []string{},
 			FileList:           []string{},
 		},
+	}
+}
+
+func (f *StoryFactory) getComponentFromTitle(title string) string {
+	// Extract component name from title
+	switch title {
+	case "MCP Server Implementation":
+		return "MCP Server"
+	case "Tool Registration":
+		return "Tool Registry"
+	case "Message Protocol Handler":
+		return "Message Handler"
+	case "MCP Error Handling":
+		return "Error Handler"
+	case "Connection Management":
+		return "Connection Manager"
+	default:
+		// Default: use the title as component name
+		return title
 	}
 }
 
