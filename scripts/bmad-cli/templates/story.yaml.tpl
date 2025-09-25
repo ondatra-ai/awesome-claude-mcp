@@ -11,7 +11,8 @@ story:
 
 tasks:{{range .Tasks}}
   - name: "{{.Name}}"
-    acceptance_criteria: {{.AcceptanceCriteria}}
+    acceptance_criteria:{{range .AcceptanceCriteria}}
+      - "{{.}}"{{end}}
     subtasks:{{range .Subtasks}}
       - "{{.}}"{{end}}
     status: "{{.Status}}"

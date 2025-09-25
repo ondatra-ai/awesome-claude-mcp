@@ -38,12 +38,12 @@ dev_agent_record: include('agent_record', required=False)
 # Include definitions
 
 acceptance_criteria:
-  id: regex(r'^AC-\d+$')
+  id: regex('^AC-[0-9]+$')
   description: str()
 
 task:
   name: str()
-  acceptance_criteria: list(regex(r'^AC-\d+$'), min=1)
+  acceptance_criteria: list(regex('^AC-[0-9]+$'), min=1)
   subtasks: list(str(), min=1)
   status: enum('pending', 'in_progress', 'complete', 'blocked')
 

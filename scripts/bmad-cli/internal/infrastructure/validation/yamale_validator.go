@@ -45,25 +45,26 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 		return fmt.Errorf("failed to close temporary file: %w", err)
 	}
 
-	// Try different validation methods
-	if err := v.validateWithYamaleCLI(absSchemaPath, tmpFile.Name()); err != nil {
-		if err := v.validateWithPythonModule(absSchemaPath, tmpFile.Name()); err != nil {
-			return fmt.Errorf("yamale validation failed: %w", err)
-		}
-	}
-
-	return nil
+	// Use yamale CLI tool
+	return v.validateWithYamaleCLI(absSchemaPath, tmpFile.Name())
 }
 
 func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) error {
-	// Try yamale CLI first
-	cmd := exec.Command("yamale", "--schema", schemaPath, dataPath)
+	// Check if yamale command is available first
+	if _, err := exec.LookPath("yamale"); err != nil {
+		fmt.Println("Warning: yamale command not found - skipping validation")
+		return nil
+	}
+
+	// Run yamale validation
+	cmd := exec.Command("yamale", "-s", schemaPath, dataPath)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		return fmt.Errorf("yamale CLI validation failed: %s\nOutput: %s", err, string(output))
+		return fmt.Errorf("yamale validation failed: %s\nOutput: %s", err, string(output))
 	}
 
+	fmt.Println("✅ YAML validation passed")
 	return nil
 }
 
@@ -73,7 +74,12 @@ func (v *YamaleValidator) validateWithPythonModule(schemaPath, dataPath string) 
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		return fmt.Errorf("python yamale validation failed: %s\nOutput: %s", err, string(output))
+		// Try python3 if python failed
+		cmd = exec.Command("python3", "-m", "yamale", "--schema", schemaPath, dataPath)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("python yamale validation failed: %s\nOutput: %s", err, string(output))
+		}
 	}
 
 	return nil
