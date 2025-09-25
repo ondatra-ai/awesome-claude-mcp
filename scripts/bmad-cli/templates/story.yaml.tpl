@@ -1,12 +1,9 @@
-story:
-  id: "{{.Story.ID}}"
-  title: "{{.Story.Title}}"
-  status: "{{.Story.Status}}"
-
-user_story:
-  as_a: "{{.UserStory.AsA}}"
-  i_want: "{{.UserStory.IWant}}"
-  so_that: "{{.UserStory.SoThat}}"
+id: "{{.ID}}"
+title: "{{.Title}}"
+status: "{{.Status}}"
+as_a: "{{.AsA}}"
+i_want: "{{.IWant}}"
+so_that: "{{.SoThat}}"
 
 acceptance_criteria:{{range .AcceptanceCriteria}}
   - id: {{.ID}}

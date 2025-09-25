@@ -7,73 +7,103 @@ epic:
 stories:
   - id: "4.1"
     title: "OAuth Configuration"
-    persona: "Developer/Maintainer"
-    want: "to configure Google OAuth application"
-    rationale: "users can authenticate with Google"
+    as_a: "Developer/Maintainer"
+    i_want: "to configure Google OAuth application"
+    so_that: "users can authenticate with Google"
     status: "PLANNED"
     acceptance_criteria:
-      - "Google Cloud project created"
-      - "OAuth 2.0 credentials generated"
-      - "Redirect URIs configured"
-      - "Scopes defined for Google Docs access"
-      - "Credentials stored as Railway environment variables (or external secret manager if required)"
-      - "Environment variables configured"
+      - id: AC-1
+        description: "Google Cloud project created"
+      - id: AC-2
+        description: "OAuth 2.0 credentials generated"
+      - id: AC-3
+        description: "Redirect URIs configured"
+      - id: AC-4
+        description: "Scopes defined for Google Docs access"
+      - id: AC-5
+        description: "Credentials stored as Railway environment variables (or external secret manager if required)"
+      - id: AC-6
+        description: "Environment variables configured"
 
   - id: "4.2"
     title: "OAuth Flow Implementation"
-    persona: "Claude User"
-    want: "to authenticate with my Google account"
-    rationale: "the service can access my documents"
+    as_a: "Claude User"
+    i_want: "to authenticate with my Google account"
+    so_that: "the service can access my documents"
     status: "PLANNED"
     acceptance_criteria:
-      - "OAuth initiation endpoint created"
-      - "Google consent screen displayed with permissions"
-      - "Authorization code exchange implemented"
-      - "Tokens received and validated"
-      - "Error handling for auth failures"
-      - "Success redirect to settings page"
+      - id: AC-1
+        description: "OAuth initiation endpoint created"
+      - id: AC-2
+        description: "Google consent screen displayed with permissions"
+      - id: AC-3
+        description: "Authorization code exchange implemented"
+      - id: AC-4
+        description: "Tokens received and validated"
+      - id: AC-5
+        description: "Error handling for auth failures"
+      - id: AC-6
+        description: "Success redirect to settings page"
 
   - id: "4.3"
     title: "Token Management"
-    persona: "Developer/Maintainer"
-    want: "to securely manage OAuth tokens"
-    rationale: "user sessions remain valid"
+    as_a: "Developer/Maintainer"
+    i_want: "to securely manage OAuth tokens"
+    so_that: "user sessions remain valid"
     status: "PLANNED"
     acceptance_criteria:
-      - "Tokens encrypted before storage"
-      - "Redis cache integration for tokens"
-      - "Token refresh logic implemented"
-      - "Expiry handling automated"
-      - "Token retrieval by user ID"
-      - "Secure token deletion capability"
+      - id: AC-1
+        description: "Tokens encrypted before storage"
+      - id: AC-2
+        description: "Redis cache integration for tokens"
+      - id: AC-3
+        description: "Token refresh logic implemented"
+      - id: AC-4
+        description: "Expiry handling automated"
+      - id: AC-5
+        description: "Token retrieval by user ID"
+      - id: AC-6
+        description: "Secure token deletion capability"
 
   - id: "4.4"
     title: "Multi-Account Support"
-    persona: "Claude User"
-    want: "to connect multiple Google accounts"
-    rationale: "I can edit documents from different accounts"
+    as_a: "Claude User"
+    i_want: "to connect multiple Google accounts"
+    so_that: "I can edit documents from different accounts"
     status: "PLANNED"
     acceptance_criteria:
-      - "Support multiple tokens per user"
-      - "Account selection mechanism"
-      - "Account switching capability"
-      - "Display connected accounts"
-      - "Remove account functionality"
-      - "Default account designation"
+      - id: AC-1
+        description: "Support multiple tokens per user"
+      - id: AC-2
+        description: "Account selection mechanism"
+      - id: AC-3
+        description: "Account switching capability"
+      - id: AC-4
+        description: "Display connected accounts"
+      - id: AC-5
+        description: "Remove account functionality"
+      - id: AC-6
+        description: "Default account designation"
 
   - id: "4.5"
     title: "Authentication Error Handling"
-    persona: "Claude User"
-    want: "clear authentication error messages"
-    rationale: "I can resolve authentication issues"
+    as_a: "Claude User"
+    i_want: "clear authentication error messages"
+    so_that: "I can resolve authentication issues"
     status: "PLANNED"
     acceptance_criteria:
-      - "Structured error responses for auth failures"
-      - "Token refresh failure handling"
-      - "Clear error codes and messages"
-      - "Guidance for resolution steps"
-      - "Logging of auth errors"
-      - "Immediate error return without retry"
+      - id: AC-1
+        description: "Structured error responses for auth failures"
+      - id: AC-2
+        description: "Token refresh failure handling"
+      - id: AC-3
+        description: "Clear error codes and messages"
+      - id: AC-4
+        description: "Guidance for resolution steps"
+      - id: AC-5
+        description: "Logging of auth errors"
+      - id: AC-6
+        description: "Immediate error return without retry"
 
 dependencies: []
 

@@ -7,45 +7,63 @@ epic:
 stories:
   - id: "7.1"
     title: "Prepend Command Handler"
-    persona: "Claude User"
-    want: "to prepend content to documents"
-    rationale: "I can add information at the beginning"
+    as_a: "Claude User"
+    i_want: "to prepend content to documents"
+    so_that: "I can add information at the beginning"
     status: "PLANNED"
     acceptance_criteria:
-      - "Command handler for prepend created"
-      - "Content inserted at document start"
-      - "Existing content pushed down"
-      - "Title/headers preserved if needed"
-      - "Success response provided"
-      - "Error handling complete"
+      - id: AC-1
+        description: "Command handler for prepend created"
+      - id: AC-2
+        description: "Content inserted at document start"
+      - id: AC-3
+        description: "Existing content pushed down"
+      - id: AC-4
+        description: "Title/headers preserved if needed"
+      - id: AC-5
+        description: "Success response provided"
+      - id: AC-6
+        description: "Error handling complete"
 
   - id: "7.2"
     title: "Beginning Position Handling"
-    persona: "Developer/Maintainer"
-    want: "to identify document beginning"
-    rationale: "I can prepend content correctly"
+    as_a: "Developer/Maintainer"
+    i_want: "to identify document beginning"
+    so_that: "I can prepend content correctly"
     status: "PLANNED"
     acceptance_criteria:
-      - "First position identified correctly"
-      - "Title handling logic implemented"
-      - "Table of contents considered"
-      - "Cover page detection"
-      - "Proper insertion point determined"
-      - "Edge cases handled"
+      - id: AC-1
+        description: "First position identified correctly"
+      - id: AC-2
+        description: "Title handling logic implemented"
+      - id: AC-3
+        description: "Table of contents considered"
+      - id: AC-4
+        description: "Cover page detection"
+      - id: AC-5
+        description: "Proper insertion point determined"
+      - id: AC-6
+        description: "Edge cases handled"
 
   - id: "7.3"
     title: "Content Shifting"
-    persona: "Developer/Maintainer"
-    want: "to shift existing content properly"
-    rationale: "nothing is lost during prepend"
+    as_a: "Developer/Maintainer"
+    i_want: "to shift existing content properly"
+    so_that: "nothing is lost during prepend"
     status: "PLANNED"
     acceptance_criteria:
-      - "Existing content preserved completely"
-      - "Content moved down correctly"
-      - "Formatting maintained during shift"
-      - "Page breaks adjusted"
-      - "References updated if needed"
-      - "Performance acceptable"
+      - id: AC-1
+        description: "Existing content preserved completely"
+      - id: AC-2
+        description: "Content moved down correctly"
+      - id: AC-3
+        description: "Formatting maintained during shift"
+      - id: AC-4
+        description: "Page breaks adjusted"
+      - id: AC-5
+        description: "References updated if needed"
+      - id: AC-6
+        description: "Performance acceptable"
 
 dependencies: []
 
