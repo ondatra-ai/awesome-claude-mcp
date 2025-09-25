@@ -55,8 +55,7 @@ dev_notes:
   previous_story_insights: "No previous stories exist - this is the first story in the project."
 
   technology_stack_and_framework_context:
-    file: architecture/tech-stack.md
-    anchor: Backend Stack
+    source: "architecture/tech-stack.md#Backend Stack"
     language: "Go 1.21 for backend services"
     framework: "Fiber 2.x for HTTP routing (`services/backend/cmd/main.go`)"
     mcp_integration: "Mark3Labs MCP-Go library (latest) for Model Context Protocol tools"
@@ -64,8 +63,7 @@ dev_notes:
     config: "viper 1.x for environment/config management (reads Railway env vars)"
 
   architecture_and_component_integration:
-    file: architecture.md
-    anchor: Backend Components
+    source: "architecture.md#Backend Components"
     description: "The MCP Protocol Handler is a key backend component with these responsibilities:"
     responsibilities:
       - "Handle MCP protocol communication with Claude AI"
@@ -78,8 +76,7 @@ dev_notes:
     technology_stack: "Go stdlib net/http, gorilla/websocket for WebSocket support"
 
   file_structure_and_organization:
-    file: architecture.md
-    anchor: Source Tree
+    source: "architecture.md#Source Tree"
     description: "MCP service as separate service alongside frontend and backend:"
     files:
       - file: "services/frontend/"
@@ -114,15 +111,13 @@ dev_notes:
         description: "Token validation with backend"
 
   mcp_integration_requirements:
-    file: architecture.md
-    anchor: Tech Stack
+    source: "architecture.md#Tech Stack"
     mcp_protocol_library: "Mark3Labs MCP-Go (latest) for streamlined Model Context Protocol implementation"
     features: "Type-safe, stdio transport, LLM-optimized design"
     integration_point: "Embedded in backend service"
 
   configuration_management:
-    file: architecture/coding-standards.md
-    anchor: Environment Variables
+    source: "architecture/coding-standards.md#Environment Variables"
     description: "Required environment variables for MCP server:"
     environment_variables:
       MCP_PORT: "8081                    # MCP WebSocket server port"
@@ -131,8 +126,7 @@ dev_notes:
       LOG_FORMAT: "json                  # Structured logging format"
 
   connection_management_requirements:
-    file: architecture.md
-    anchor: Core Workflows
+    source: "architecture.md#Core Workflows"
     description: "From the MCP protocol workflow diagram:"
     requirements:
       - "Handle tool calls from Claude AI"
@@ -142,8 +136,7 @@ dev_notes:
       - "Process requests and return formatted responses"
 
   error_handling_standards:
-    file: architecture/coding-standards.md
-    anchor: Error Handling Security
+    source: "architecture/coding-standards.md#Error Handling Security"
     requirements:
       - "Use structured error responses with codes and messages"
       - "Log internal errors but return generic messages to clients"
@@ -151,8 +144,7 @@ dev_notes:
       - "Follow security practices for error exposure"
 
   testing_requirements:
-    file: architecture/coding-standards.md
-    anchor: Testing Standards
+    source: "architecture/coding-standards.md#Testing Standards"
     unit_tests: "Test WebSocket connection handling, message parsing, and response formatting"
     integration_tests: "Test MCP protocol compliance with mock Claude client"
     coverage_requirement: "85% for business logic, 80% overall"
@@ -160,8 +152,7 @@ dev_notes:
     framework: "Go standard testing package with testify for assertions"
 
   logging_standards:
-    file: architecture/coding-standards.md
-    anchor: Structured Logging
+    source: "architecture/coding-standards.md#Structured Logging"
     description: "Required structured logging format for MCP operations:"
     code_example: |
       ```go
@@ -173,8 +164,7 @@ dev_notes:
       ```
 
   performance_requirements:
-    file: architecture/coding-standards.md
-    anchor: Performance Standards
+    source: "architecture/coding-standards.md#Performance Standards"
     connection_establishment: "< 1 second"
     message_processing: "< 100ms per message"
     concurrent_connection_support: "10+ connections"
