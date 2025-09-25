@@ -3,15 +3,73 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
+	"regexp"
+
+	"bmad-cli/internal/domain/services"
+	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/infrastructure/validation"
 )
 
-type USCreateCommand struct{}
+type USCreateCommand struct {
+	factory   *services.StoryFactory
+	processor *template.TemplateProcessor
+	validator *validation.YamaleValidator
+}
 
-func NewUSCreateCommand() *USCreateCommand {
-	return &USCreateCommand{}
+func NewUSCreateCommand(factory *services.StoryFactory, processor *template.TemplateProcessor, validator *validation.YamaleValidator) *USCreateCommand {
+	return &USCreateCommand{
+		factory:   factory,
+		processor: processor,
+		validator: validator,
+	}
 }
 
 func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error {
-	fmt.Printf("creating user story number %s\n", storyNumber)
+	// Validate story number format
+	if err := c.validateStoryNumber(storyNumber); err != nil {
+		return fmt.Errorf("invalid story number format: %w", err)
+	}
+
+	fmt.Printf("Creating user story %s...\n", storyNumber)
+
+	// 1. Create story document with defaults
+	storyDoc := c.factory.CreateStory(storyNumber)
+
+	// 2. Process template to generate YAML
+	yamlContent, err := c.processor.ProcessTemplate(storyDoc)
+	if err != nil {
+		return fmt.Errorf("failed to process template: %w", err)
+	}
+
+	// 3. Validate with Yamale
+	if err := c.validator.Validate(yamlContent); err != nil {
+		return fmt.Errorf("YAML validation failed: %w", err)
+	}
+
+	// 4. Generate filename and save to file
+	filename := c.generateFilename(storyNumber, storyDoc.Story.Title)
+	if err := os.WriteFile(filename, []byte(yamlContent), 0644); err != nil {
+		return fmt.Errorf("failed to save story file: %w", err)
+	}
+
+	fmt.Printf("✅ User story created successfully: %s\n", filename)
 	return nil
+}
+
+func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
+	// Expected format: X.Y (e.g., 3.1, 3.2, 4.1)
+	matched, err := regexp.MatchString(`^\d+\.\d+$`, storyNumber)
+	if err != nil {
+		return fmt.Errorf("regex error: %w", err)
+	}
+	if !matched {
+		return fmt.Errorf("story number must be in format X.Y (e.g., 3.1, 3.2)")
+	}
+	return nil
+}
+
+func (c *USCreateCommand) generateFilename(storyNumber, title string) string {
+	slug := c.factory.SlugifyTitle(title)
+	return fmt.Sprintf("%s-%s.yaml", storyNumber, slug)
 }

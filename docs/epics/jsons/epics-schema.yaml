@@ -20,10 +20,10 @@ story:
   i_want: str()
   so_that: str()
   status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
-  acceptance_criteria: list(include('acceptance_criterion'), min=1)
+  acceptance_criteria: list(include('acceptance_criteria'), min=1)
   notes: str(required=False)
 
 ---
-acceptance_criterion:
-  id: str()
+acceptance_criteria:
+  id: regex(r'^AC \d+$')
   description: str()

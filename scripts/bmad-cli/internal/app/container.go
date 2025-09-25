@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -14,6 +13,8 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/logging"
 	"bmad-cli/internal/infrastructure/shell"
+	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/infrastructure/validation"
 )
 
 type Container struct {
@@ -36,14 +37,22 @@ func NewContainer() (*Container, error) {
 
 	githubService := github.NewGitHubService(shellExec)
 
-	aiService, err := ai.NewAIService(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AI service: %w", err)
-	}
+	// Setup user story creation dependencies (no AI required)
+	storyFactory := services.NewStoryFactory()
+	templateProcessor := template.NewTemplateProcessor("templates/story.yaml.tpl")
+	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
+	usCreateCmd := commands.NewUSCreateCommand(storyFactory, templateProcessor, yamaleValidator)
 
-	orchestrator := services.NewPRTriageOrchestrator(githubService, aiService, logger)
-	prTriageCmd := commands.NewPRTriageCommand(orchestrator)
-	usCreateCmd := commands.NewUSCreateCommand()
+	// AI service and PR triage are optional - only create if needed
+	var aiService ports.AIService
+	var prTriageCmd *commands.PRTriageCommand
+
+	// Try to create AI service, but don't fail if it's not available
+	if aiSvc, err := ai.NewAIService(cfg); err == nil {
+		aiService = aiSvc
+		orchestrator := services.NewPRTriageOrchestrator(githubService, aiService, logger)
+		prTriageCmd = commands.NewPRTriageCommand(orchestrator)
+	}
 
 	return &Container{
 		Config:      cfg,
