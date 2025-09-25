@@ -237,12 +237,6 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - **Railway Infrastructure**: Existing Railway environments and services
 - **CI/CD Pipeline**: Existing GitHub Actions workflow
 
-## Priority Considerations
-This epic can be prioritized alongside feature development epics. Consider business priorities:
-- **High Priority**: If operational visibility is critical for production readiness
-- **Medium Priority**: If feature development (OAuth, Google Docs integration) takes precedence
-- **Incremental**: Stories can be implemented individually as operational needs arise
-
 ## Success Criteria
 - Zero-downtime deployments with full observability
 - Sub-5-minute mean time to detection (MTTD) for critical issues

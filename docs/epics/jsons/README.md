@@ -51,12 +51,6 @@ success_criteria:                 # List of success metrics
 technical_notes:                  # List of technical considerations
   - <string>
 
-priority_considerations:          # Priority information (flexible structure)
-  status: <string>
-  notes: <string>
-  high_priority: <string>
-  medium_priority: <string>
-  incremental: <string>
 ```
 
 ## Status Values

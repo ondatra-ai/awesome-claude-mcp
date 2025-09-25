@@ -112,8 +112,3 @@ technical_notes:
   - "Ensure monitoring doesn't impact application performance"
   - "Design for multi-environment monitoring (dev/staging/prod)"
   - "Plan for monitoring data retention and compliance requirements"
-
-priority_considerations:
-  high_priority: "If operational visibility is critical for production readiness"
-  medium_priority: "If feature development (OAuth, Google Docs integration) takes precedence"
-  incremental: "Stories can be implemented individually as operational needs arise"

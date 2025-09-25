@@ -140,7 +140,3 @@ success_criteria:
 technical_notes:
   - "Monitoring requirements moved to Epic 2"
   - "Test coverage reporting moved to Epic 2 for better operational focus"
-
-priority_considerations:
-  status: "Critical (completed)"
-  notes: "Foundation epic - required before all other development"
