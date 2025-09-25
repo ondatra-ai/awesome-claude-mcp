@@ -1,30 +1,27 @@
 story:
   id: "3.1"
   title: "MCP Server Implementation"
-  status: "Draft"
-
-user_story:
   as_a: "Developer/Maintainer"
   i_want: "to implement MCP protocol server"
   so_that: "Claude can communicate with the service"
-
-acceptance_criteria:
-  - id: 1
-    description: "WebSocket server implemented"
-  - id: 2
-    description: "HTTP endpoint for MCP available"
-  - id: 3
-    description: "Message parsing and validation"
-  - id: 4
-    description: "Response formatting to MCP standard"
-  - id: 5
-    description: "Connection management handled"
-  - id: 6
-    description: "Concurrent connection support"
+  status: "DRAFT"
+  acceptance_criteria:
+    - id: AC-1
+      description: "WebSocket server implemented"
+    - id: AC-2
+      description: "HTTP endpoint for MCP available"
+    - id: AC-3
+      description: "Message parsing and validation"
+    - id: AC-4
+      description: "Response formatting to MCP standard"
+    - id: AC-5
+      description: "Connection management handled"
+    - id: AC-6
+      description: "Concurrent connection support"
 
 tasks:
   - name: "Set up WebSocket server infrastructure"
-    acceptance_criteria: [1, 5, 6]
+    acceptance_criteria: [AC-1, AC-5, AC-6]
     subtasks:
       - "Configure WebSocket endpoint `/mcp` with protocol upgrade"
       - "Implement connection lifecycle management (connect, disconnect, error handling)"
@@ -33,7 +30,7 @@ tasks:
     status: "pending"
 
   - name: "Implement HTTP endpoint for MCP protocol"
-    acceptance_criteria: [2]
+    acceptance_criteria: [AC-2]
     subtasks:
       - "Create HTTP handler that upgrades to WebSocket protocol"
       - "Add proper CORS handling for Claude client connections"
@@ -41,7 +38,7 @@ tasks:
     status: "pending"
 
   - name: "Build MCP message processing system"
-    acceptance_criteria: [3, 4]
+    acceptance_criteria: [AC-3, AC-4]
     subtasks:
       - "Implement message parsing for incoming MCP requests"
       - "Add message validation against MCP protocol standards"
@@ -50,7 +47,7 @@ tasks:
     status: "pending"
 
   - name: "Integrate with existing backend infrastructure"
-    acceptance_criteria: [1, 2, 5, 6]
+    acceptance_criteria: [AC-1, AC-2, AC-5, AC-6]
     subtasks:
       - "Connect to OAuth Manager for token validation"
       - "Integrate with Cache Manager for session management"
