@@ -16,6 +16,11 @@ type TaskGenerator interface {
 	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]string) ([]story.Task, error)
 }
 
+// DevNotesGenerator interface for generating dev notes
+type DevNotesGenerator interface {
+	GenerateDevNotes(ctx context.Context, story *story.Story, architectureDocs map[string]string) (*story.DevNotes, error)
+}
+
 // ArchitectureLoader interface for loading architecture documents
 type ArchitectureLoader interface {
 	LoadAllArchitectureDocs() (map[string]string, error)
@@ -24,13 +29,15 @@ type ArchitectureLoader interface {
 type StoryFactory struct {
 	epicLoader         *epic.EpicLoader
 	taskGenerator      TaskGenerator
+	devNotesGenerator  DevNotesGenerator
 	architectureLoader ArchitectureLoader
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, devNotesGenerator DevNotesGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		taskGenerator:      taskGenerator,
+		devNotesGenerator:  devNotesGenerator,
 		architectureLoader: architectureLoader,
 	}
 }
@@ -48,41 +55,16 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 		return nil, fmt.Errorf("failed to generate tasks: %w", err)
 	}
 
+	// Generate dev_notes using AI - fail on any error
+	devNotes, err := f.generateDevNotes(ctx, loadedStory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
+	}
+
 	return &story.StoryDocument{
-		Story: *loadedStory,
-		Tasks: tasks,
-		DevNotes: story.DevNotes{
-			PreviousStoryInsights: "This is a new story without previous implementation insights",
-			TechnologyStack: story.TechnologyStack{
-				Language:       "Go",
-				Framework:      "Standard library",
-				MCPIntegration: "MCP integration as needed",
-				Logging:        "slog",
-				Config:         "viper",
-			},
-			Architecture: story.Architecture{
-				Component:        loadedStory.Title,
-				Responsibilities: []string{"Implement core functionality", "Handle business logic"},
-				Dependencies:     []string{"context", "fmt", "log/slog"},
-				TechStack:        []string{"Go", "YAML", "HTTP", "JSON"},
-			},
-			FileStructure: story.FileStructure{
-				Files: []string{"services/backend/internal/story/implementation.go"},
-			},
-			Configuration: story.Configuration{
-				EnvironmentVariables: map[string]string{
-					"LOG_LEVEL":     "info",
-					"PORT":          "8080",
-					"TEMPLATE_PATH": "templates/",
-				},
-			},
-			PerformanceRequirements: story.PerformanceRequirements{
-				ConnectionEstablishment: "< 100ms",
-				MessageProcessing:       "< 50ms",
-				ConcurrentConnections:   "100",
-				MemoryUsage:             "< 100MB",
-			},
-		},
+		Story:    *loadedStory,
+		Tasks:    tasks,
+		DevNotes: *devNotes,
 		Testing: story.Testing{
 			TestLocation: "services/backend/tests",
 			Frameworks:   []string{"testing", "testify"},
@@ -139,4 +121,23 @@ func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Sto
 
 	fmt.Printf("✅ Generated %d tasks using AI\n", len(tasks))
 	return tasks, nil
+}
+
+// generateDevNotes generates dev_notes using AI - fails on any error
+func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.Story) (*story.DevNotes, error) {
+
+	// Load architecture documents - fail immediately if any are missing
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
+	}
+
+	// Generate dev_notes using AI - fail if AI generation fails
+	devNotes, err := f.devNotesGenerator.GenerateDevNotes(ctx, loadedStory, architectureDocs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate dev_notes using AI: %w", err)
+	}
+
+	fmt.Printf("✅ Generated dev_notes using AI\n")
+	return devNotes, nil
 }
