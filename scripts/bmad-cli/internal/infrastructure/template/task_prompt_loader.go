@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
@@ -13,13 +12,13 @@ import (
 
 // TaskPromptLoader loads and processes the task generation prompt template
 type TaskPromptLoader struct {
-	templatePath string
+	templateFilePath string
 }
 
 // NewTaskPromptLoader creates a new TaskPromptLoader instance
-func NewTaskPromptLoader(templatePath string) *TaskPromptLoader {
+func NewTaskPromptLoader(templateFilePath string) *TaskPromptLoader {
 	return &TaskPromptLoader{
-		templatePath: templatePath,
+		templateFilePath: templateFilePath,
 	}
 }
 
@@ -48,10 +47,9 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 
 // loadTemplateFile loads the template file from disk
 func (l *TaskPromptLoader) loadTemplateFile() (string, error) {
-	templateFile := filepath.Join(l.templatePath, "us-create.tasks.prompt.tpl")
-	content, err := os.ReadFile(templateFile)
+	content, err := os.ReadFile(l.templateFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read template file %s: %w", templateFile, err)
+		return "", fmt.Errorf("failed to read template file %s: %w", l.templateFilePath, err)
 	}
 	return string(content), nil
 }

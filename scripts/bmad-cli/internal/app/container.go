@@ -44,7 +44,7 @@ func NewContainer() (*Container, error) {
 	architectureLoader := docs.NewArchitectureLoader(cfg)
 
 	// Setup task prompt loader
-	taskPromptLoader := template.NewTaskPromptLoader("templates")
+	taskPromptLoader := template.NewTaskPromptLoader("templates/us-create.tasks.prompt.tpl")
 
 	// Setup AI task generation - required for operation
 	claudeClient, err := ai.NewClaudeClient()
