@@ -46,8 +46,8 @@ agent:
 To prepare a comprehensive, self-contained story file by breaking down acceptance criteria into actionable and measurable tasks using the Story Template. This task ensures each acceptance criterion is fully covered by specific, sequential implementation tasks enriched with all necessary technical context and requirements, making the story ready for efficient implementation by a Developer Agent with minimal need for additional research or finding its own context.
 
 ## Instructions
-1. Read: 
-  - `MCP Google Docs Editor - Frontend Architecture Document`, 
+1. Read:
+  - `MCP Google Docs Editor - Frontend Architecture Document`,
   - `MCP Google Docs Editor - Architecture Document`,
   - `MCP Google Docs Editor - Coding Standards`
   - `MCP Google Docs Editor - Source Tree`.
@@ -67,7 +67,9 @@ To prepare a comprehensive, self-contained story file by breaking down acceptanc
   - Include unit testing as explicit subtasks based on the Testing Strategy
   - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
 3. Output format:
-Use the following template to output tasks
+CRITICAL: Your response must contain ONLY the YAML output below, with NO additional text, explanations, or commentary.
+Start your response with ```yaml and end with ```.
+
 ```yaml
 tasks:
   - name: "Name"
@@ -79,6 +81,8 @@ tasks:
       - "Subtask2"
     status: "pending"
 ```
+
+REMINDER: Output ONLY the YAML block with tasks. No explanatory text before or after.
 
 ## User Story
 ```yaml

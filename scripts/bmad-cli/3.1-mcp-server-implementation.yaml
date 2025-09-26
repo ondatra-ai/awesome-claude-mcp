@@ -20,15 +20,83 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Implement MCP Server Implementation"
+  - name: "Set up MCP protocol infrastructure with Mark3Labs"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
     subtasks:
-      - "Create domain models"
-      - "Implement business logic"
-      - "Add error handling"
-      - "Write comprehensive tests"
+      - "Initialize Go module with Mark3Labs MCP-Go dependency"
+      - "Create MCP server entry point using Mark3Labs stdio transport"
+      - "Configure MCP server with proper capabilities and tool discovery"
+      - "Set up HTTP-to-WebSocket bridge for Claude communication"
+      - "Implement connection lifecycle management and error recovery"
+      - "Add structured logging for MCP protocol events"
+    status: "pending"
+
+  - name: "Implement document operation message parsing"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Define MCP tool schemas for all six document operations"
+      - "Implement parameter validation using Mark3Labs schema validation"
+      - "Create request parsing with enum validation for operation types"
+      - "Add anchor text validation for positioned operations"
+      - "Implement error response formatting to MCP standard"
+      - "Add input sanitization for document IDs and content"
+    status: "pending"
+
+  - name: "Build Google Docs integration layer"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Implement Google Docs API client with batch operations"
+      - "Create Markdown to Google Docs API request converter"
+      - "Add document access validation and permission checking"
+      - "Implement replace_all operation with content replacement"
+      - "Add append and prepend operations with positioning logic"
+      - "Create match-based operations (replace_match, insert_before, insert_after)"
+    status: "pending"
+
+  - name: "Set up OAuth authentication and token management"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-5"
+    subtasks:
+      - "Implement Google OAuth 2.0 flow for document access"
+      - "Create secure token storage with encryption at rest"
+      - "Add token refresh mechanism for expired credentials"
+      - "Implement user session management across connections"
+      - "Add permission validation for document operations"
+      - "Create auth middleware for MCP tool execution"
+    status: "pending"
+
+  - name: "Implement concurrent connection handling"
+    acceptance_criteria:
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Create goroutine-based connection pool management"
+      - "Implement per-user connection tracking and limits"
+      - "Add connection state management (active, idle, closed)"
+      - "Create connection cleanup on client disconnect"
+      - "Implement graceful shutdown with connection draining"
+      - "Add monitoring for connection metrics and health"
+    status: "pending"
+
+  - name: "Add comprehensive error handling and monitoring"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
+    subtasks:
+      - "Implement MCP-compliant error response formatting"
+      - "Add structured logging for all operations and errors"
+      - "Create error recovery mechanisms for transient failures"
+      - "Add operation timeout handling with proper cleanup"
+      - "Implement health check endpoints for service monitoring"
+      - "Add metrics collection for operation success rates"
     status: "pending"
 
 dev_notes:
@@ -37,24 +105,19 @@ dev_notes:
   technology_stack:
     language: "Go"
     framework: "Standard library"
-    mcp_integration: "Core MCP protocol implementation required"
+    mcp_integration: "MCP integration as needed"
     logging: "slog"
     config: "viper"
 
   architecture:
     component: "MCP Server"
     responsibilities:
-      - "Handle MCP protocol requests"
-      - "Manage server lifecycle"
-      - "Provide tool registration"
-      - "Handle client connections"
+      - "Implement core functionality"
+      - "Handle business logic"
     dependencies:
       - "context"
       - "fmt"
       - "log/slog"
-      - "net/http"
-      - "encoding/json"
-      - "gorilla/mux"
     tech_stack:
       - "Go"
       - "YAML"
@@ -63,9 +126,7 @@ dev_notes:
 
   file_structure:
     files:
-      - "services/backend/internal/mcp/server.go"
-      - "services/backend/internal/mcp/handlers.go"
-      - "services/backend/internal/mcp/protocol.go"
+      - "services/backend/internal/story/implementation.go"
 
   configuration:
     environment_variables:

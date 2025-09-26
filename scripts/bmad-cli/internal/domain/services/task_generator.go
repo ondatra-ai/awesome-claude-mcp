@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -47,8 +48,40 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 		return nil, fmt.Errorf("failed to generate tasks with AI: %w", err)
 	}
 
+	// Create tmp directory if it doesn't exist
+	if err := os.MkdirAll("./tmp", 0755); err != nil {
+		return nil, fmt.Errorf("failed to create tmp directory: %w", err)
+	}
+
+	// Write full AI response to file for debugging
+	responseFile := "./tmp/3.1-full-response.txt"
+	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
+		return nil, fmt.Errorf("failed to write response file: %w", err)
+	}
+	fmt.Printf("💾 Full AI response saved to: %s\n", responseFile)
+
 	// Parse the AI response
 	tasks, err := g.parseTasksFromResponse(response)
+	if err != nil {
+		// If parsing fails, let's save the extracted YAML block for debugging
+		yamlBlock := g.extractYAMLBlock(response)
+		yamlFile := "./tmp/3.1-extracted-yaml.yml"
+		if yamlBlock != "" {
+			if err := os.WriteFile(yamlFile, []byte(yamlBlock), 0644); err == nil {
+				fmt.Printf("💾 Extracted YAML block saved to: %s\n", yamlFile)
+			}
+		}
+		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+	}
+
+	// Save successfully parsed tasks to YAML file
+	tasksYAML, err := yaml.Marshal(map[string][]story.Task{"tasks": tasks})
+	if err == nil {
+		tasksFile := "./tmp/3.1-tasks.yml"
+		if err := os.WriteFile(tasksFile, tasksYAML, 0644); err == nil {
+			fmt.Printf("✅ Parsed tasks saved to: %s\n", tasksFile)
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
