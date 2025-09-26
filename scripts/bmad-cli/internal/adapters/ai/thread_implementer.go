@@ -3,20 +3,20 @@ package ai
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"bmad-cli/internal/application/prompts"
-	"bmad-cli/internal/common/utils"
 	"bmad-cli/internal/domain/models"
 )
 
 type ThreadImplementer struct {
-	client        AIClient
+	client        *ClaudeClient
 	promptBuilder *prompts.ImplementationPromptBuilder
 }
 
 func NewThreadImplementer(
-	client AIClient,
+	client *ClaudeClient,
 	promptBuilder *prompts.ImplementationPromptBuilder,
 ) *ThreadImplementer {
 	return &ThreadImplementer{
@@ -31,16 +31,21 @@ func (ti *ThreadImplementer) Implement(ctx context.Context, threadContext models
 		return "", fmt.Errorf("failed to build implementation prompt: %w", err)
 	}
 
-	utils.DebugLogWithSeparator(ti.client.Name()+" implementation prompt", prompt)
+	slog.Debug("Implementation prompt", "client", ti.client.Name(), "prompt", prompt)
 
 	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, ApplyMode)
 	if err != nil {
 		return "", fmt.Errorf("AI client implementation failed: %w", err)
 	}
 
-	utils.DebugLogWithSeparator(ti.client.Name()+" implementation output", rawOutput)
+	slog.Debug("Implementation output", "client", ti.client.Name(), "output", rawOutput)
 
-	summary := strings.TrimSpace(utils.FirstLine(rawOutput))
+	// Extract first line as summary
+	lines := strings.Split(rawOutput, "\n")
+	summary := ""
+	if len(lines) > 0 {
+		summary = strings.TrimSpace(lines[0])
+	}
 	if summary == "" {
 		summary = "Applied changes as requested"
 	}

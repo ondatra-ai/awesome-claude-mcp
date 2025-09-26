@@ -14,16 +14,14 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
-	"bmad-cli/internal/infrastructure/logging"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
 )
 
 type Container struct {
-	Config      config.ConfigProvider
-	Logger      logging.Logger
-	Shell       shell.Executor
+	Config      *config.ViperConfig
+	Shell       *shell.CommandRunner
 	GitHub      ports.GitHubService
 	AI          ports.AIService
 	PRTriageCmd *commands.PRTriageCommand
@@ -37,7 +35,6 @@ func NewContainer() (*Container, error) {
 	}
 
 	configureLogging()
-	logger := logging.NewSlogLogger()
 
 	shellExec := shell.NewCommandRunner()
 
@@ -72,13 +69,12 @@ func NewContainer() (*Container, error) {
 	// Try to create AI service, but don't fail if it's not available
 	if aiSvc, err := ai.NewAIService(cfg); err == nil {
 		aiService = aiSvc
-		orchestrator := services.NewPRTriageOrchestrator(githubService, aiService, logger)
+		orchestrator := services.NewPRTriageOrchestrator(githubService, aiService)
 		prTriageCmd = commands.NewPRTriageCommand(orchestrator)
 	}
 
 	return &Container{
 		Config:      cfg,
-		Logger:      logger,
 		Shell:       shellExec,
 		GitHub:      githubService,
 		AI:          aiService,

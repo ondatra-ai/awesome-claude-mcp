@@ -11,13 +11,13 @@ import (
 )
 
 type ThreadAnalyzer struct {
-	client        AIClient
+	client        *ClaudeClient
 	promptBuilder *prompts.HeuristicPromptBuilder
 	parser        *prompts.YAMLParser
 }
 
 func NewThreadAnalyzer(
-	client AIClient,
+	client *ClaudeClient,
 	promptBuilder *prompts.HeuristicPromptBuilder,
 	parser *prompts.YAMLParser,
 ) *ThreadAnalyzer {

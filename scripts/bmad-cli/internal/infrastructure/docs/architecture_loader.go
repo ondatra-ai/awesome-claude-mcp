@@ -3,20 +3,17 @@ package docs
 import (
 	"fmt"
 	"os"
-)
 
-// ConfigProvider interface for accessing configuration
-type ConfigProvider interface {
-	GetString(key string) string
-}
+	"bmad-cli/internal/infrastructure/config"
+)
 
 // ArchitectureLoader loads architecture documents using configured paths
 type ArchitectureLoader struct {
-	config ConfigProvider
+	config *config.ViperConfig
 }
 
 // NewArchitectureLoader creates a new ArchitectureLoader instance
-func NewArchitectureLoader(config ConfigProvider) *ArchitectureLoader {
+func NewArchitectureLoader(config *config.ViperConfig) *ArchitectureLoader {
 	return &ArchitectureLoader{
 		config: config,
 	}

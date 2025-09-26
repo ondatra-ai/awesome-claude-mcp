@@ -72,11 +72,3 @@ func (c *ClaudeClient) GenerateContent(ctx context.Context, prompt string) (stri
 
 	return result.Result, nil
 }
-
-// CreateAIClient creates an AI client based on the engine name.
-func CreateAIClient(engine string) (AIClient, error) {
-	if engine != "claude" {
-		return nil, fmt.Errorf("unsupported engine: %s (only 'claude' is supported)", engine)
-	}
-	return NewClaudeClient()
-}

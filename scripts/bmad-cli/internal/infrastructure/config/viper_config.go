@@ -28,11 +28,3 @@ func (c *ViperConfig) GetString(key string) string {
 	}
 	return c.viper.GetString(key)
 }
-
-func (c *ViperConfig) GetInt(key string) int {
-	return c.viper.GetInt(key)
-}
-
-func (c *ViperConfig) SetDefault(key string, value interface{}) {
-	c.viper.SetDefault(key, value)
-}
