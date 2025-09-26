@@ -20,174 +20,119 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Setup MCP Server Infrastructure with Mark3Labs Library"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-5"
-    subtasks:
-      - "Initialize Go module for MCP service with Mark3Labs MCP-Go dependency"
-      - "Create main.go entry point with Mark3Labs MCP server setup"
-      - "Implement stdio transport configuration for Claude communication"
-      - "Configure structured logging with zerolog for MCP protocol events"
-      - "Setup graceful shutdown handling for MCP server connections"
-      - "Create Dockerfile with multi-stage build for Railway deployment"
-    status: "pending"
-
-  - name: "Implement WebSocket Server for MCP Protocol"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-6"
-    subtasks:
-      - "Configure WebSocket endpoint at /mcp for protocol communication"
-      - "Implement connection upgrade from HTTP to WebSocket"
-      - "Setup concurrent connection handling with goroutines"
-      - "Implement connection pooling and resource management"
-      - "Add WebSocket ping/pong heartbeat mechanism for connection health"
-      - "Configure connection timeouts and cleanup procedures"
-    status: "pending"
-
-  - name: "Create HTTP Endpoints for MCP Service"
-    acceptance_criteria:
-      - "AC-2"
-    subtasks:
-      - "Implement /health endpoint with service status checks"
-      - "Create /version endpoint returning MCP service version"
-      - "Setup CORS middleware for cross-origin requests"
-      - "Configure HTTP server with proper timeouts and limits"
-      - "Add request logging middleware with correlation IDs"
-      - "Implement graceful HTTP server shutdown"
-    status: "pending"
-
-  - name: "Implement MCP Message Parsing and Validation"
-    acceptance_criteria:
-      - "AC-3"
-    subtasks:
-      - "Define MCP message types with strongly-typed structs"
-      - "Implement JSON-RPC 2.0 message parsing with validation"
-      - "Create parameter validation for tool execution requests"
-      - "Setup enum validation for operation types (replace_all, append, etc.)"
-      - "Implement schema validation for document IDs and content"
-      - "Add error handling for malformed MCP messages"
-    status: "pending"
-
-  - name: "Build MCP Response Formatting System"
-    acceptance_criteria:
-      - "AC-4"
-    subtasks:
-      - "Implement MCP-compliant JSON-RPC response formatting"
-      - "Create success response structures with operation results"
-      - "Setup error response formatting with proper error codes"
-      - "Implement tool execution result serialization"
-      - "Add response validation to ensure MCP protocol compliance"
-      - "Create response logging for debugging and monitoring"
-    status: "pending"
-
-  - name: "Setup Connection Management and State Tracking"
-    acceptance_criteria:
-      - "AC-5"
-      - "AC-6"
-    subtasks:
-      - "Implement connection registry for active MCP sessions"
-      - "Create connection state tracking (connected, authenticated, idle)"
-      - "Setup connection cleanup on disconnect or timeout"
-      - "Implement connection rate limiting per client"
-      - "Add connection metrics collection (active connections, throughput)"
-      - "Create connection health monitoring and alerting"
-    status: "pending"
-
-  - name: "Register Google Docs MCP Tools"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-3"
-    subtasks:
-      - "Register replace_all tool with parameter schema validation"
-      - "Register append tool with content and document ID validation"
-      - "Register prepend tool with structured parameter definitions"
-      - "Register replace_match tool with anchor text validation"
-      - "Register insert_before and insert_after tools with positioning parameters"
-      - "Implement tool discovery response for Claude client capability negotiation"
-    status: "pending"
-
-  - name: "Integrate Google OAuth Authentication"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-5"
-    subtasks:
-      - "Setup Google OAuth 2.0 client configuration"
-      - "Implement OAuth token validation for incoming MCP requests"
-      - "Create token refresh mechanism for expired credentials"
-      - "Setup secure token storage with Redis integration"
-      - "Implement user context extraction from OAuth tokens"
-      - "Add authentication middleware for tool execution endpoints"
-    status: "pending"
-
-  - name: "Build Document Service Integration Layer"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-4"
-    subtasks:
-      - "Create Google Docs API client with proper authentication"
-      - "Implement document access permission validation"
-      - "Setup document operation execution with batch update requests"
-      - "Create markdown to Google Docs format converter"
-      - "Implement operation result tracking and status reporting"
-      - "Add circuit breaker for Google API reliability"
-    status: "pending"
-
-  - name: "Implement Error Handling and Recovery"
-    acceptance_criteria:
-      - "AC-3"
-      - "AC-4"
-    subtasks:
-      - "Create MCP-specific error types with proper error codes"
-      - "Implement document not found error handling"
-      - "Setup permission denied error responses with user guidance"
-      - "Add network timeout and retry logic for Google API calls"
-      - "Create malformed request error handling with validation details"
-      - "Implement structured error logging for debugging support"
-    status: "pending"
-
-  - name: "Configure Railway Deployment Pipeline"
+  - name: "Set up Go module structure and core MCP server configuration"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
     subtasks:
-      - "Update railway.toml with mcp-service configuration"
-      - "Configure environment variables for MCP service in Railway dashboard"
-      - "Setup health check endpoints for Railway service monitoring"
-      - "Configure custom domain mapping for MCP WebSocket endpoints"
-      - "Update GitHub Actions workflow for MCP service deployment"
-      - "Test deployment across development, staging, and production environments"
+      - "Create services/mcp-service directory structure following single entity per file principle"
+      - "Initialize Go module with Mark3Labs MCP-Go dependency"
+      - "Set up configuration management using Viper for environment variables"
+      - "Create cmd/main.go entry point with proper structure"
+      - "Define internal package structure (server/, operations/, docs/, auth/, cache/)"
     status: "pending"
 
-  - name: "Create Comprehensive Test Suite"
+  - name: "Implement WebSocket server infrastructure with Mark3Labs MCP-Go library"
+    acceptance_criteria:
+      - "AC-1"
+    subtasks:
+      - "Configure Mark3Labs MCP server with stdio transport"
+      - "Set up WebSocket upgrade handling from HTTP endpoint"
+      - "Implement proper goroutine management for WebSocket connections"
+      - "Add logging with structured JSON format using zerolog"
+      - "Configure server middleware for recovery and capability handling"
+    status: "pending"
+
+  - name: "Create HTTP endpoint for MCP health check and status monitoring"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Implement /health endpoint returning service status"
+      - "Add /mcp endpoint for WebSocket upgrade capability"
+      - "Configure Fiber HTTP server on designated MCP port (8081)"
+      - "Implement proper CORS configuration for Claude AI domains"
+      - "Add endpoint documentation following OpenAPI standards"
+    status: "pending"
+
+  - name: "Implement message parsing and validation using MCP protocol standards"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Create strongly-typed request/response structures in pkg/types/"
+      - "Implement parameter validation with enum/pattern support"
+      - "Add message schema validation using MCP protocol specifications"
+      - "Create error handling for invalid message formats"
+      - "Implement request ID tracking for correlation"
+    status: "pending"
+
+  - name: "Build response formatting system compliant with MCP standard"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Create MCP result type wrappers in pkg/types/results.go"
+      - "Implement success response formatting with proper structure"
+      - "Add error response formatting with MCP-compliant error codes"
+      - "Create response serialization utilities"
+      - "Implement tool discovery response formatting"
+    status: "pending"
+
+  - name: "Implement connection management and graceful disconnect handling"
+    acceptance_criteria:
+      - "AC-5"
+    subtasks:
+      - "Create connection registry to track active WebSocket connections"
+      - "Implement graceful shutdown handling for server termination"
+      - "Add connection cleanup on client disconnect"
+      - "Implement connection timeout handling"
+      - "Add connection state monitoring and logging"
+    status: "pending"
+
+  - name: "Add concurrent connection support with proper synchronization"
+    acceptance_criteria:
+      - "AC-6"
+    subtasks:
+      - "Implement thread-safe connection map using sync.Map"
+      - "Add proper mutex usage for shared resources"
+      - "Create connection pool management for resource optimization"
+      - "Implement per-connection goroutine handling"
+      - "Add rate limiting per connection to prevent abuse"
+    status: "pending"
+
+  - name: "Configure Docker container build for Railway deployment"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
-      - "AC-3"
-      - "AC-4"
-      - "AC-5"
-      - "AC-6"
     subtasks:
-      - "Write unit tests for MCP message parsing and validation"
-      - "Create integration tests for WebSocket connection handling"
-      - "Implement end-to-end tests for complete tool execution workflows"
-      - "Add performance tests for concurrent connection handling"
-      - "Create mock Google Docs API for isolated testing"
-      - "Setup test fixtures for various document operation scenarios"
+      - "Create multi-stage Dockerfile for Go application"
+      - "Configure Railway service definition in railway.toml"
+      - "Set up environment variable configuration for Railway"
+      - "Add health check endpoint for container orchestration"
+      - "Configure proper port exposure for WebSocket and HTTP endpoints"
     status: "pending"
 
-  - name: "Add Monitoring and Observability"
+  - name: "Create unit tests for MCP protocol handlers and message validation"
     acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Write unit tests for message parsing functions with scenario IDs"
+      - "Create test fixtures for valid/invalid MCP messages"
+      - "Implement mock testing for Mark3Labs MCP-Go components"
+      - "Add validation tests for all request/response types"
+      - "Achieve minimum 85% code coverage for business logic"
+    status: "pending"
+
+  - name: "Implement integration tests for WebSocket connection lifecycle"
+    acceptance_criteria:
+      - "AC-1"
       - "AC-5"
       - "AC-6"
     subtasks:
-      - "Implement structured logging for all MCP protocol interactions"
-      - "Add metrics collection for connection count and operation latency"
-      - "Create health check endpoints with dependency status verification"
-      - "Setup performance monitoring for tool execution times"
-      - "Implement error rate tracking and alerting thresholds"
-      - "Add distributed tracing for request flow across services"
+      - "Create WebSocket client test harness simulating Claude AI"
+      - "Test complete connection establishment and termination flows"
+      - "Verify concurrent connection handling under load"
+      - "Test graceful shutdown scenarios with active connections"
+      - "Validate connection cleanup and resource management"
     status: "pending"
 
 dev_notes:
@@ -201,7 +146,7 @@ dev_notes:
     config: "viper"
 
   architecture:
-    component: "MCP Server"
+    component: "MCP Server Implementation"
     responsibilities:
       - "Implement core functionality"
       - "Handle business logic"

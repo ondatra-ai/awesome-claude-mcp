@@ -42,11 +42,8 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 		return nil, fmt.Errorf("failed to load story from epic file: %w", err)
 	}
 
-	// Extract component from title
-	component := f.getComponentFromTitle(loadedStory.Title)
-
 	// Generate tasks using AI - fail on any error
-	tasks, err := f.generateTasks(ctx, loadedStory, component)
+	tasks, err := f.generateTasks(ctx, loadedStory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tasks: %w", err)
 	}
@@ -64,7 +61,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 				Config:         "viper",
 			},
 			Architecture: story.Architecture{
-				Component:        component,
+				Component:        loadedStory.Title,
 				Responsibilities: []string{"Implement core functionality", "Handle business logic"},
 				Dependencies:     []string{"context", "fmt", "log/slog"},
 				TechStack:        []string{"Go", "YAML", "HTTP", "JSON"},
@@ -117,39 +114,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 }
 
 
-func (f *StoryFactory) getComponentFromTitle(title string) string {
-	// Extract component name from title
-	switch title {
-	case "MCP Server Implementation":
-		return "MCP Server"
-	case "Tool Registration":
-		return "Tool Registry"
-	case "Message Protocol Handler":
-		return "Message Handler"
-	case "MCP Error Handling":
-		return "Error Handler"
-	case "Connection Management":
-		return "Connection Manager"
-	default:
-		// Default: use the title as component name
-		return title
-	}
-}
 
-func (f *StoryFactory) parseStoryNumber(storyNumber string) (int, int) {
-	re := regexp.MustCompile(`^(\d+)\.(\d+)$`)
-	matches := re.FindStringSubmatch(storyNumber)
-	if len(matches) != 3 {
-		return 1, 1
-	}
-
-	epic := 1
-	story := 1
-	fmt.Sscanf(matches[1], "%d", &epic)
-	fmt.Sscanf(matches[2], "%d", &story)
-
-	return epic, story
-}
 
 
 
@@ -167,7 +132,7 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 }
 
 // generateTasks generates tasks using AI - fails on any error
-func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Story, component string) ([]story.Task, error) {
+func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Story) ([]story.Task, error) {
 
 	// Load architecture documents - fail immediately if any are missing
 	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
