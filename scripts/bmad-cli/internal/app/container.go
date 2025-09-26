@@ -21,9 +21,6 @@ import (
 
 type Container struct {
 	Config      *config.ViperConfig
-	Shell       *shell.CommandRunner
-	GitHub      ports.GitHubService
-	AI          ports.AIService
 	PRTriageCmd *commands.PRTriageCommand
 	USCreateCmd *commands.USCreateCommand
 }
@@ -75,9 +72,6 @@ func NewContainer() (*Container, error) {
 
 	return &Container{
 		Config:      cfg,
-		Shell:       shellExec,
-		GitHub:      githubService,
-		AI:          aiService,
 		PRTriageCmd: prTriageCmd,
 		USCreateCmd: usCreateCmd,
 	}, nil
