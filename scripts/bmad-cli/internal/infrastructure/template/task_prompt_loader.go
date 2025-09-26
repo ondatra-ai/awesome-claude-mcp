@@ -57,12 +57,12 @@ func (l *TaskPromptLoader) convertStoryToYAML(story *story.Story) (string, error
 	// Create a simple story structure for the template
 	storyData := map[string]interface{}{
 		"story": map[string]interface{}{
-			"id":                 story.ID,
-			"title":              story.Title,
-			"status":             story.Status,
-			"as_a":               story.AsA,
-			"i_want":             story.IWant,
-			"so_that":            story.SoThat,
+			"id":                  story.ID,
+			"title":               story.Title,
+			"status":              story.Status,
+			"as_a":                story.AsA,
+			"i_want":              story.IWant,
+			"so_that":             story.SoThat,
 			"acceptance_criteria": story.AcceptanceCriteria,
 		},
 	}

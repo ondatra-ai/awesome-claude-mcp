@@ -28,8 +28,8 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]string, error
 		"Architecture":         "documents.architecture",
 		"FrontendArchitecture": "documents.frontend_architecture",
 		"CodingStandards":      "documents.coding_standards",
-		"SourceTree":          "documents.source_tree",
-		"TechStack":           "documents.tech_stack",
+		"SourceTree":           "documents.source_tree",
+		"TechStack":            "documents.tech_stack",
 	}
 
 	// Load each document - fail immediately if any are missing
@@ -72,8 +72,8 @@ func (l *ArchitectureLoader) LoadSpecificDoc(docType string) (string, error) {
 		"Architecture":         "documents.architecture",
 		"FrontendArchitecture": "documents.frontend_architecture",
 		"CodingStandards":      "documents.coding_standards",
-		"SourceTree":          "documents.source_tree",
-		"TechStack":           "documents.tech_stack",
+		"SourceTree":           "documents.source_tree",
+		"TechStack":            "documents.tech_stack",
 	}
 
 	configKey, exists := docConfigKeys[docType]

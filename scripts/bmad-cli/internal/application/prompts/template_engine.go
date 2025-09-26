@@ -62,7 +62,6 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 	return buf.String(), nil
 }
 
-
 func (e *TemplateEngine) joinAllComments(thread models.Thread) string {
 	var builder strings.Builder
 

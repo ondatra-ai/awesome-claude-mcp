@@ -22,9 +22,9 @@ type ArchitectureLoader interface {
 }
 
 type StoryFactory struct {
-	epicLoader          *epic.EpicLoader
-	taskGenerator       TaskGenerator
-	architectureLoader  ArchitectureLoader
+	epicLoader         *epic.EpicLoader
+	taskGenerator      TaskGenerator
+	architectureLoader ArchitectureLoader
 }
 
 func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
@@ -80,7 +80,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 				ConnectionEstablishment: "< 100ms",
 				MessageProcessing:       "< 50ms",
 				ConcurrentConnections:   "100",
-				MemoryUsage:            "< 100MB",
+				MemoryUsage:             "< 100MB",
 			},
 		},
 		Testing: story.Testing{
@@ -105,22 +105,13 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 			},
 		},
 		DevAgentRecord: story.DevAgentRecord{
-			AgentModelUsed:      nil,
-			DebugLogReferences:  []string{},
-			CompletionNotes:     []string{},
+			AgentModelUsed:     nil,
+			DebugLogReferences: []string{},
+			CompletionNotes:    []string{},
 			FileList:           []string{},
 		},
 	}, nil
 }
-
-
-
-
-
-
-
-
-
 
 func (f *StoryFactory) SlugifyTitle(title string) string {
 	// Convert to lowercase and replace spaces with hyphens
