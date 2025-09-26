@@ -12,7 +12,7 @@ import (
 
 // DevNotesTemplateLoader defines the interface for loading dev notes templates
 type DevNotesTemplateLoader interface {
-	LoadDevNotesPromptTemplate(story *story.Story, architectureDocs map[string]string) (string, error)
+	LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]string) (string, error)
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
@@ -29,10 +29,10 @@ func NewDevNotesGenerator(aiClient AIClient, templateLoader DevNotesTemplateLoad
 	}
 }
 
-// GenerateDevNotes generates story dev_notes using AI based on the story and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, architectureDocs map[string]string) (*story.DevNotes, error) {
+// GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]string) (*story.DevNotes, error) {
 	// Load and prepare the prompt template
-	prompt, err := g.templateLoader.LoadDevNotesPromptTemplate(story, architectureDocs)
+	prompt, err := g.templateLoader.LoadDevNotesPromptTemplate(story, tasks, architectureDocs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load dev notes prompt template: %w", err)
 	}

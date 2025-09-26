@@ -119,6 +119,11 @@ REMINDER: Output ONLY the YAML block with dev_notes. No explanatory text before 
 {{.StoryYAML}}
 ```
 
+## Generated Tasks
+```yaml
+{{.TasksYAML}}
+```
+
 {{.Architecture}}
 
 {{.FrontendArchitecture}}

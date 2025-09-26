@@ -18,7 +18,7 @@ type TaskGenerator interface {
 
 // DevNotesGenerator interface for generating dev notes
 type DevNotesGenerator interface {
-	GenerateDevNotes(ctx context.Context, story *story.Story, architectureDocs map[string]string) (*story.DevNotes, error)
+	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]string) (*story.DevNotes, error)
 }
 
 // ArchitectureLoader interface for loading architecture documents
@@ -56,7 +56,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	}
 
 	// Generate dev_notes using AI - fail on any error
-	devNotes, err := f.generateDevNotes(ctx, loadedStory)
+	devNotes, err := f.generateDevNotes(ctx, loadedStory, tasks)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
 	}
@@ -124,7 +124,7 @@ func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Sto
 }
 
 // generateDevNotes generates dev_notes using AI - fails on any error
-func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.Story) (*story.DevNotes, error) {
+func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.Story, tasks []story.Task) (*story.DevNotes, error) {
 
 	// Load architecture documents - fail immediately if any are missing
 	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
@@ -133,7 +133,7 @@ func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.
 	}
 
 	// Generate dev_notes using AI - fail if AI generation fails
-	devNotes, err := f.devNotesGenerator.GenerateDevNotes(ctx, loadedStory, architectureDocs)
+	devNotes, err := f.devNotesGenerator.GenerateDevNotes(ctx, loadedStory, tasks, architectureDocs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate dev_notes using AI: %w", err)
 	}
