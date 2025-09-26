@@ -8,22 +8,23 @@ import (
 	"time"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 )
 
 // TaskGenerator interface for generating tasks
 type TaskGenerator interface {
-	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]string) ([]story.Task, error)
+	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) ([]story.Task, error)
 }
 
 // DevNotesGenerator interface for generating dev notes
 type DevNotesGenerator interface {
-	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]string) (*story.DevNotes, error)
+	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (*story.DevNotes, error)
 }
 
 // ArchitectureLoader interface for loading architecture documents
 type ArchitectureLoader interface {
-	LoadAllArchitectureDocs() (map[string]string, error)
+	LoadAllArchitectureDocs() (map[string]docs.ArchitectureDoc, error)
 }
 
 type StoryFactory struct {

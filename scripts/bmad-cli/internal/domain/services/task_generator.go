@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/docs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,7 +18,7 @@ type AIClient interface {
 
 // TemplateLoader defines the interface for loading templates
 type TemplateLoader interface {
-	LoadTaskPromptTemplate(story *story.Story, architectureDocs map[string]string) (string, error)
+	LoadTaskPromptTemplate(story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error)
 }
 
 // AITaskGenerator generates story tasks using AI based on templates
@@ -35,7 +36,7 @@ func NewTaskGenerator(aiClient AIClient, templateLoader TemplateLoader) *AITaskG
 }
 
 // GenerateTasks generates story tasks using AI based on the story and architecture documents
-func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]string) ([]story.Task, error) {
+func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) ([]story.Task, error) {
 	// Load and prepare the prompt template
 	prompt, err := g.templateLoader.LoadTaskPromptTemplate(story, architectureDocs)
 	if err != nil {

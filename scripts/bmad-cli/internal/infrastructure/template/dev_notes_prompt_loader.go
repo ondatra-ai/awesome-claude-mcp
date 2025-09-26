@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/docs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,7 +24,7 @@ func NewDevNotesPromptLoader(templateFilePath string) *DevNotesPromptLoader {
 }
 
 // LoadDevNotesPromptTemplate loads the dev notes prompt template and injects story and architecture data
-func (l *DevNotesPromptLoader) LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]string) (string, error) {
+func (l *DevNotesPromptLoader) LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Load the template file
 	templateContent, err := l.loadTemplateFile()
 	if err != nil {
@@ -82,24 +83,34 @@ func (l *DevNotesPromptLoader) convertTasksToYAML(tasks []story.Task) (string, e
 }
 
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasksYAML string, architectureDocs map[string]string) (string, error) {
+func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasksYAML string, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Create template data structure
 	templateData := struct {
-		StoryYAML            string
-		TasksYAML            string
-		Architecture         string
-		FrontendArchitecture string
-		CodingStandards      string
-		SourceTree           string
-		TechStack            string
+		StoryYAML                    string
+		TasksYAML                    string
+		Architecture                 string
+		FrontendArchitecture         string
+		CodingStandards              string
+		SourceTree                   string
+		TechStack                    string
+		ArchitecturePath             string
+		FrontendArchitecturePath     string
+		CodingStandardsPath          string
+		SourceTreePath               string
+		TechStackPath                string
 	}{
-		StoryYAML:            storyYAML,
-		TasksYAML:            tasksYAML,
-		Architecture:         architectureDocs["Architecture"],
-		FrontendArchitecture: architectureDocs["FrontendArchitecture"],
-		CodingStandards:      architectureDocs["CodingStandards"],
-		SourceTree:           architectureDocs["SourceTree"],
-		TechStack:            architectureDocs["TechStack"],
+		StoryYAML:                    storyYAML,
+		TasksYAML:                    tasksYAML,
+		Architecture:                 architectureDocs["Architecture"].Content,
+		FrontendArchitecture:         architectureDocs["FrontendArchitecture"].Content,
+		CodingStandards:              architectureDocs["CodingStandards"].Content,
+		SourceTree:                   architectureDocs["SourceTree"].Content,
+		TechStack:                    architectureDocs["TechStack"].Content,
+		ArchitecturePath:             architectureDocs["Architecture"].FilePath,
+		FrontendArchitecturePath:     architectureDocs["FrontendArchitecture"].FilePath,
+		CodingStandardsPath:          architectureDocs["CodingStandards"].FilePath,
+		SourceTreePath:               architectureDocs["SourceTree"].FilePath,
+		TechStackPath:                architectureDocs["TechStack"].FilePath,
 	}
 
 	// Parse the template

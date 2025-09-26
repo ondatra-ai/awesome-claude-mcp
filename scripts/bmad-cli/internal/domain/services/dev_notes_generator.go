@@ -7,12 +7,13 @@ import (
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/docs"
 	"gopkg.in/yaml.v3"
 )
 
 // DevNotesTemplateLoader defines the interface for loading dev notes templates
 type DevNotesTemplateLoader interface {
-	LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]string) (string, error)
+	LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (string, error)
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
@@ -30,7 +31,7 @@ func NewDevNotesGenerator(aiClient AIClient, templateLoader DevNotesTemplateLoad
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]string) (*story.DevNotes, error) {
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (*story.DevNotes, error) {
 	// Load and prepare the prompt template
 	prompt, err := g.templateLoader.LoadDevNotesPromptTemplate(story, tasks, architectureDocs)
 	if err != nil {
@@ -99,6 +100,12 @@ func (g *AIDevNotesGenerator) parseDevNotesFromResponse(response string) (*story
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
+	// Validate mandatory fields for main entities
+	err = g.validateDevNotes(&devNotesData.DevNotes)
+	if err != nil {
+		return nil, fmt.Errorf("dev_notes validation failed: %w", err)
+	}
+
 	return &devNotesData.DevNotes, nil
 }
 
@@ -146,4 +153,33 @@ func (g *AIDevNotesGenerator) extractYAMLBlock(response string) string {
 	}
 
 	return strings.Join(yamlLines, "\n")
+}
+
+// validateDevNotes validates that mandatory entities have required source and description fields
+func (g *AIDevNotesGenerator) validateDevNotes(devNotes *story.DevNotes) error {
+	mandatoryEntities := []string{"technology_stack", "architecture", "file_structure"}
+
+	for _, entityName := range mandatoryEntities {
+		entity, exists := (*devNotes)[entityName]
+		if !exists {
+			return fmt.Errorf("mandatory entity '%s' is missing", entityName)
+		}
+
+		entityMap, ok := entity.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("entity '%s' must be a map", entityName)
+		}
+
+		// Check for mandatory source field
+		if _, hasSource := entityMap["source"]; !hasSource {
+			return fmt.Errorf("entity '%s' is missing mandatory 'source' field", entityName)
+		}
+
+		// Check for mandatory description field
+		if _, hasDescription := entityMap["description"]; !hasDescription {
+			return fmt.Errorf("entity '%s' is missing mandatory 'description' field", entityName)
+		}
+	}
+
+	return nil
 }

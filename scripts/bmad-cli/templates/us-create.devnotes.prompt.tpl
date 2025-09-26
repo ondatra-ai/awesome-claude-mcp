@@ -61,6 +61,11 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
    - Determine appropriate performance requirements
 
 3. **Generate Technical Context**:
+   CRITICAL: For each entity (technology_stack, architecture, file_structure, etc.), you MUST include:
+   - **source**: Exact file path and section reference (e.g., "docs/architecture.md#Backend Components")
+   - **description**: Brief explanation starting with "From the [document type]:" (e.g., "From the MCP protocol workflow diagram:")
+
+   Additional flexible fields per entity:
    - **previous_story_insights**: Analyze story context and provide insights about implementation approach
    - **technology_stack**: Specify exact languages, frameworks, libraries, and tools needed
    - **architecture**: Define component responsibilities, dependencies, and tech stack
@@ -77,6 +82,8 @@ dev_notes:
   previous_story_insights: "Detailed analysis of story context and implementation approach"
 
   technology_stack:
+    source: "{{.TechStackPath}}#Backend Stack"
+    description: "From the backend technology stack documentation:"
     language: "Primary programming language"
     framework: "Main framework or library"
     mcp_integration: "MCP integration approach"
@@ -84,6 +91,8 @@ dev_notes:
     config: "Configuration management"
 
   architecture:
+    source: "{{.ArchitecturePath}}#Backend Components"
+    description: "From the MCP protocol workflow diagram:"
     component: "Main component name"
     responsibilities:
       - "Primary responsibility"
@@ -96,16 +105,24 @@ dev_notes:
       - "Technology 2"
 
   file_structure:
+    source: "{{.SourceTreePath}}#Service Structure"
+    description: "Based on the project file structure:"
     files:
-      - "specific/path/to/implementation.go"
-      - "specific/path/to/tests.go"
+      - file: "specific/path/to/implementation.go"
+        description: "Main implementation file"
+      - file: "specific/path/to/tests.go"
+        description: "Test files"
 
   configuration:
+    source: "{{.CodingStandardsPath}}#Environment Variables"
+    description: "Required environment variables for the service:"
     environment_variables:
       VARIABLE_NAME: "default_value"
       ANOTHER_VAR: "value"
 
   performance_requirements:
+    source: "{{.CodingStandardsPath}}#Performance Standards"
+    description: "Performance requirements based on coding standards:"
     connection_establishment: "< Xms"
     message_processing: "< Xms"
     concurrent_connections: "X"
@@ -124,10 +141,24 @@ REMINDER: Output ONLY the YAML block with dev_notes. No explanatory text before 
 {{.TasksYAML}}
 ```
 
+## Architecture Documents
+
+### Architecture Documentation
+Source: {{.ArchitecturePath}}
 {{.Architecture}}
 
+### Frontend Architecture Documentation
+Source: {{.FrontendArchitecturePath}}
 {{.FrontendArchitecture}}
 
+### Coding Standards Documentation
+Source: {{.CodingStandardsPath}}
 {{.CodingStandards}}
 
+### Source Tree Documentation
+Source: {{.SourceTreePath}}
 {{.SourceTree}}
+
+### Technology Stack Documentation
+Source: {{.TechStackPath}}
+{{.TechStack}}

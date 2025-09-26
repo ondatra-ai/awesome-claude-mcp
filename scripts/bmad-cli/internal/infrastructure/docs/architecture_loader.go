@@ -7,6 +7,12 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 )
 
+// ArchitectureDoc represents an architecture document with content and file path
+type ArchitectureDoc struct {
+	Content  string
+	FilePath string
+}
+
 // ArchitectureLoader loads architecture documents using configured paths
 type ArchitectureLoader struct {
 	config *config.ViperConfig
@@ -20,8 +26,8 @@ func NewArchitectureLoader(config *config.ViperConfig) *ArchitectureLoader {
 }
 
 // LoadAllArchitectureDocs loads all architecture documents and returns them as a map
-func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]string, error) {
-	docs := make(map[string]string)
+func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureDoc, error) {
+	docs := make(map[string]ArchitectureDoc)
 
 	// Define the documents to load from config
 	docConfigKeys := map[string]string{
@@ -43,7 +49,10 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]string, error
 		if err != nil {
 			return nil, fmt.Errorf("failed to load required architecture document %s (from %s): %w", configKey, filepath, err)
 		}
-		docs[key] = content
+		docs[key] = ArchitectureDoc{
+			Content:  content,
+			FilePath: filepath,
+		}
 	}
 
 	return docs, nil

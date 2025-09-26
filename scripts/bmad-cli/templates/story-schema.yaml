@@ -15,11 +15,16 @@ tasks: list(include('task'), min=1)
 
 dev_notes:
   previous_story_insights: str(required=False)
-  technology_stack: include('tech_stack')
-  architecture: include('architecture')
-  file_structure: include('file_structure')
-  configuration: include('config', required=False)
-  performance_requirements: map(str(), str(), required=False)
+  technology_stack: include('dev_note_entity')
+  architecture: include('dev_note_entity')
+  file_structure: include('dev_note_entity')
+  configuration: include('dev_note_entity', required=False)
+  performance_requirements: include('dev_note_entity', required=False)
+  logging_standards: include('dev_note_entity', required=False)
+  error_handling_standards: include('dev_note_entity', required=False)
+  testing_requirements: include('dev_note_entity', required=False)
+  mcp_integration: include('dev_note_entity', required=False)
+  connection_management: include('dev_note_entity', required=False)
 
 configuration: include('config', required=False)
 performance_requirements: map(str(), str(), required=False)
@@ -47,21 +52,10 @@ task:
   subtasks: list(str(), min=1)
   status: enum('pending', 'in_progress', 'complete', 'blocked')
 
-tech_stack:
-  language: str()
-  framework: str(required=False)
-  mcp_integration: str(required=False)
-  logging: str(required=False)
-  config: str(required=False)
-
-architecture:
-  component: str()
-  responsibilities: list(str(), min=1)
-  dependencies: list(str(), required=False)
-  tech_stack: list(str(), required=False)
-
-file_structure:
-  files: list(regex(r'^services/.*'), min=1)
+dev_note_entity:
+  source: str(required=True)
+  description: str(required=True)
+  # All other fields are flexible - any content allowed
 
 config:
   environment_variables: map(str(), str(), required=False)
