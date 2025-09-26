@@ -1,0 +1,156 @@
+story:
+  id: "3.2"
+  title: "Tool Registration"
+  as_a: "Claude User"
+  i_want: "to discover available tools"
+  so_that: "I know what operations are available"
+  status: "PLANNED"
+  acceptance_criteria:
+    - id: AC-1
+      description: "Tool definition schema created"
+    - id: AC-2
+      description: "Tool registration endpoint working"
+    - id: AC-3
+      description: "Tool capabilities described clearly"
+    - id: AC-4
+      description: "Parameter schemas defined"
+    - id: AC-5
+      description: "Version information included"
+    - id: AC-6
+      description: "Dynamic or static registration (TBD after testing)"
+
+tasks:
+  - name: "Create MCP tool definition schema"
+    acceptance_criteria:
+      - "AC-1"
+    subtasks:
+      - "Define ToolDefinition struct in services/mcp-service/pkg/types/tools.go with name, description, inputSchema, outputSchema fields"
+      - "Create JSON Schema validation for tool parameters following MCP protocol specification"
+      - "Implement version field in tool schema as per AC-5 requirement"
+      - "Add capability descriptors for each tool operation type (replace_all, append, prepend, etc.)"
+      - "Create unit tests for tool definition validation in ToolDefinition_test.go"
+    status: "pending"
+
+  - name: "Implement tool registration endpoint"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Create tool registration handler in services/mcp-service/internal/server/tools.go"
+      - "Implement POST /mcp/tools/register endpoint using Mark3Labs MCP-Go library"
+      - "Add tool storage mechanism using Redis cache for dynamic registration"
+      - "Implement tool validation middleware in services/mcp-service/internal/server/middleware.go"
+      - "Add error handling for invalid tool registrations with structured error responses"
+      - "Create integration tests for tool registration endpoint"
+    status: "pending"
+
+  - name: "Define tool capabilities and descriptions"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Document each Google Docs operation tool with clear descriptions in services/mcp-service/internal/server/tools.go"
+      - "Create capability matrix showing supported operations per document type"
+      - "Add usage examples and constraints for each tool in tool metadata"
+      - "Implement tool help/info endpoint returning detailed capability information"
+      - "Add validation rules for tool parameter combinations"
+    status: "pending"
+
+  - name: "Create parameter schemas for all tools"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Define parameter schemas for replace_all operation (documentId, content fields)"
+      - "Define parameter schemas for append/prepend operations (documentId, content fields)"
+      - "Define parameter schemas for replace_match operation (documentId, searchText, replaceText, caseSensitive fields)"
+      - "Define parameter schemas for insert operations (documentId, anchorText, content, insertBefore fields)"
+      - "Implement schema validation using go-playground/validator in services/mcp-service/internal/operations/validator.go"
+      - "Create comprehensive parameter validation unit tests"
+    status: "pending"
+
+  - name: "Implement version information system"
+    acceptance_criteria:
+      - "AC-5"
+    subtasks:
+      - "Add version field to tool registration schema"
+      - "Implement semantic versioning for tool capabilities"
+      - "Create version compatibility checking for tool registration"
+      - "Add version endpoint returning current tool versions and API compatibility"
+      - "Update health check endpoint to include tool version information"
+    status: "pending"
+
+  - name: "Implement tool discovery mechanism"
+    acceptance_criteria:
+      - "AC-6"
+    subtasks:
+      - "Create GET /mcp/tools endpoint for tool discovery"
+      - "Implement both static (hardcoded) and dynamic (Redis-backed) tool registration support"
+      - "Add configuration option in services/mcp-service/internal/config/config.go for registration mode"
+      - "Create tool filtering and querying capabilities (by capability, version, etc.)"
+      - "Implement caching strategy for tool discovery responses using Redis"
+      - "Add end-to-end tests for complete tool discovery workflow"
+    status: "pending"
+
+dev_notes:
+  previous_story_insights: "This is a new story without previous implementation insights"
+
+  technology_stack:
+    language: "Go"
+    framework: "Standard library"
+    mcp_integration: "MCP integration as needed"
+    logging: "slog"
+    config: "viper"
+
+  architecture:
+    component: "Tool Registration"
+    responsibilities:
+      - "Implement core functionality"
+      - "Handle business logic"
+    dependencies:
+      - "context"
+      - "fmt"
+      - "log/slog"
+    tech_stack:
+      - "Go"
+      - "YAML"
+      - "HTTP"
+      - "JSON"
+
+  file_structure:
+    files:
+      - "services/backend/internal/story/implementation.go"
+
+  configuration:
+    environment_variables:
+      LOG_LEVEL: "info"
+      PORT: "8080"
+      TEMPLATE_PATH: "templates/"
+
+  performance_requirements:
+    connection_establishment: "< 100ms"
+    message_processing: "< 50ms"
+    concurrent_connections: "100"
+    memory_usage: "< 100MB"
+
+testing:
+  test_location: "services/backend/tests"
+  frameworks:
+    - "testing"
+    - "testify"
+  requirements:
+    - "Unit tests for all public methods"
+    - "Integration tests for external dependencies"
+    - "End-to-end tests for complete workflows"
+  coverage:
+    business_logic: "80%"
+    overall: "75%"
+
+change_log:
+  - date: "2025-09-26"
+    version: "1.0.0"
+    description: "Initial story creation"
+    author: "bmad-cli"
+
+dev_agent_record:
+  agent_model_used: null
+  debug_log_references: []
+  completion_notes: []
+  file_list: []

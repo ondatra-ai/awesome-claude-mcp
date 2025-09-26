@@ -54,7 +54,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	}
 
 	// Write full AI response to file for debugging
-	responseFile := "./tmp/3.1-full-response.txt"
+	responseFile := fmt.Sprintf("./tmp/%s-full-response.txt", story.ID)
 	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
 		return nil, fmt.Errorf("failed to write response file: %w", err)
 	}
@@ -65,7 +65,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	if err != nil {
 		// If parsing fails, let's save the extracted YAML block for debugging
 		yamlBlock := g.extractYAMLBlock(response)
-		yamlFile := "./tmp/3.1-extracted-yaml.yml"
+		yamlFile := fmt.Sprintf("./tmp/%s-extracted-yaml.yml", story.ID)
 		if yamlBlock != "" {
 			if err := os.WriteFile(yamlFile, []byte(yamlBlock), 0644); err == nil {
 				fmt.Printf("💾 Extracted YAML block saved to: %s\n", yamlFile)
@@ -77,7 +77,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	// Save successfully parsed tasks to YAML file
 	taskMap := map[string]interface{}{"tasks": tasks}
 	if tasksYAML, yamlErr := yaml.Marshal(taskMap); yamlErr == nil {
-		tasksFile := "./tmp/3.1-tasks.yml"
+		tasksFile := fmt.Sprintf("./tmp/%s-tasks.yml", story.ID)
 		if writeErr := os.WriteFile(tasksFile, tasksYAML, 0644); writeErr == nil {
 			fmt.Printf("✅ Parsed tasks saved to: %s\n", tasksFile)
 		}

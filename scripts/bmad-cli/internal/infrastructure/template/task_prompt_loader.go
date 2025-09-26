@@ -1,10 +1,10 @@
 package template
 
 import (
+	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
+	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
 	"gopkg.in/yaml.v3"
@@ -12,13 +12,13 @@ import (
 
 // TaskPromptLoader loads and processes the task generation prompt template
 type TaskPromptLoader struct {
-	templatePath string
+	templateFilePath string
 }
 
 // NewTaskPromptLoader creates a new TaskPromptLoader instance
-func NewTaskPromptLoader(templatePath string) *TaskPromptLoader {
+func NewTaskPromptLoader(templateFilePath string) *TaskPromptLoader {
 	return &TaskPromptLoader{
-		templatePath: templatePath,
+		templateFilePath: templateFilePath,
 	}
 }
 
@@ -36,38 +36,27 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 		return "", fmt.Errorf("failed to convert story to YAML: %w", err)
 	}
 
-	// Replace placeholders in the template
-	prompt := l.injectTemplateData(templateContent, storyYAML, architectureDocs)
+	// Use proper template system to inject data
+	prompt, err := l.executeTemplate(templateContent, storyYAML, architectureDocs)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
 
 	return prompt, nil
 }
 
 // loadTemplateFile loads the template file from disk
 func (l *TaskPromptLoader) loadTemplateFile() (string, error) {
-	templateFile := filepath.Join(l.templatePath, "us-create.tasks.prompt.tpl")
-	content, err := os.ReadFile(templateFile)
+	content, err := os.ReadFile(l.templateFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read template file %s: %w", templateFile, err)
+		return "", fmt.Errorf("failed to read template file %s: %w", l.templateFilePath, err)
 	}
 	return string(content), nil
 }
 
 // convertStoryToYAML converts the story struct to YAML format
-func (l *TaskPromptLoader) convertStoryToYAML(story *story.Story) (string, error) {
-	// Create a simple story structure for the template
-	storyData := map[string]interface{}{
-		"story": map[string]interface{}{
-			"id":                  story.ID,
-			"title":               story.Title,
-			"status":              story.Status,
-			"as_a":                story.AsA,
-			"i_want":              story.IWant,
-			"so_that":             story.SoThat,
-			"acceptance_criteria": story.AcceptanceCriteria,
-		},
-	}
-
-	yamlBytes, err := yaml.Marshal(storyData)
+func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, error) {
+	yamlBytes, err := yaml.Marshal(storyObj)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal story to YAML: %w", err)
 	}
@@ -75,77 +64,36 @@ func (l *TaskPromptLoader) convertStoryToYAML(story *story.Story) (string, error
 	return string(yamlBytes), nil
 }
 
-// injectTemplateData replaces placeholders in the template with actual data
-func (l *TaskPromptLoader) injectTemplateData(template, storyYAML string, architectureDocs map[string]string) string {
-	result := template
-
-	// Replace the story YAML block (find and replace the existing story block in template)
-	result = l.replaceStoryBlock(result, storyYAML)
-
-	// Replace architecture document placeholders
-	for key, content := range architectureDocs {
-		placeholder := fmt.Sprintf("{{.%s}}", key)
-		result = strings.ReplaceAll(result, placeholder, content)
+// executeTemplate uses Go's text/template system to properly inject data
+func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, architectureDocs map[string]string) (string, error) {
+	// Create template data structure
+	templateData := struct {
+		StoryYAML            string
+		Architecture         string
+		FrontendArchitecture string
+		CodingStandards      string
+		SourceTree           string
+		TechStack            string
+	}{
+		StoryYAML:            storyYAML,
+		Architecture:         architectureDocs["Architecture"],
+		FrontendArchitecture: architectureDocs["FrontendArchitecture"],
+		CodingStandards:      architectureDocs["CodingStandards"],
+		SourceTree:           architectureDocs["SourceTree"],
+		TechStack:            architectureDocs["TechStack"],
 	}
 
-	// Handle any remaining empty placeholders
-	placeholders := []string{
-		"{{.Architecture}}",
-		"{{.FrontendArchitecture}}",
-		"{{.CodingStandards}}",
-		"{{.SourceTree}}",
+	// Parse the template
+	tmpl, err := template.New("task-prompt").Parse(templateContent)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	for _, placeholder := range placeholders {
-		if strings.Contains(result, placeholder) {
-			result = strings.ReplaceAll(result, placeholder, fmt.Sprintf("# %s\n(Document not available)", strings.TrimSuffix(strings.TrimPrefix(placeholder, "{{."), "}}")))
-		}
+	// Execute the template with data
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, templateData); err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	return result
-}
-
-// replaceStoryBlock replaces the existing story block in the template with the new story YAML
-func (l *TaskPromptLoader) replaceStoryBlock(template, newStoryYAML string) string {
-	// Find the story block between ```yaml and ``` that contains the story
-	lines := strings.Split(template, "\n")
-	var result []string
-	inStoryBlock := false
-	storyBlockFound := false
-
-	for i, line := range lines {
-		if strings.Contains(line, "```yaml") && !storyBlockFound {
-			// Check if this yaml block contains a story by looking ahead
-			if l.isStoryBlock(lines, i) {
-				inStoryBlock = true
-				storyBlockFound = true
-				result = append(result, line)
-				result = append(result, strings.Split(newStoryYAML, "\n")...)
-				continue
-			}
-		}
-
-		if inStoryBlock && strings.TrimSpace(line) == "```" {
-			inStoryBlock = false
-			result = append(result, line)
-			continue
-		}
-
-		if !inStoryBlock {
-			result = append(result, line)
-		}
-	}
-
-	return strings.Join(result, "\n")
-}
-
-// isStoryBlock checks if a YAML block starting at the given index contains a story
-func (l *TaskPromptLoader) isStoryBlock(lines []string, startIndex int) bool {
-	// Look ahead in the YAML block for story-related content
-	for i := startIndex + 1; i < len(lines) && !strings.HasPrefix(strings.TrimSpace(lines[i]), "```"); i++ {
-		if strings.Contains(lines[i], "story:") || strings.Contains(lines[i], "id:") || strings.Contains(lines[i], "title:") {
-			return true
-		}
-	}
-	return false
+	return buf.String(), nil
 }

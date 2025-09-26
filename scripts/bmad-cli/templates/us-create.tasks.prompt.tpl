@@ -86,26 +86,7 @@ REMINDER: Output ONLY the YAML block with tasks. No explanatory text before or a
 
 ## User Story
 ```yaml
-story:
-  id: "3.1"
-  title: "MCP Server Implementation"
-  status: "Draft"
-  as_a: "Developer/Maintainer"
-  i_want: "to implement MCP protocol server"
-  so_that: "Claude can communicate with the service"
-  acceptance_criteria:
-    - id: AC-1
-      description: "WebSocket server implemented"
-    - id: AC-2
-      description: "HTTP endpoint for MCP available"
-    - id: AC-3
-      description: "Message parsing and validation"
-    - id: AC-4
-      description: "Response formatting to MCP standard"
-    - id: AC-5
-      description: "Connection management handled"
-    - id: AC-6
-      description: "Concurrent connection support"
+{{.StoryYAML}}
 ```
 
 {{.Architecture}}
