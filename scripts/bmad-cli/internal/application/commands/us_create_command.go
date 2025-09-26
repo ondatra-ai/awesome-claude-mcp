@@ -33,8 +33,11 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 
 	fmt.Printf("Creating user story %s...\n", storyNumber)
 
-	// 1. Create story document with defaults
-	storyDoc := c.factory.CreateStory(storyNumber)
+	// 1. Create story document - fail on any errors
+	storyDoc, err := c.factory.CreateStory(ctx, storyNumber)
+	if err != nil {
+		return fmt.Errorf("failed to create story: %w", err)
+	}
 
 	// 2. Process template to generate YAML
 	yamlContent, err := c.processor.ProcessTemplate(storyDoc)

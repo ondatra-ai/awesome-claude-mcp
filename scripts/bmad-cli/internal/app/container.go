@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/logging"
 	"bmad-cli/internal/infrastructure/shell"
@@ -29,7 +31,10 @@ type Container struct {
 }
 
 func NewContainer() (*Container, error) {
-	cfg := config.NewViperConfig()
+	cfg, err := config.NewViperConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize config: %w", err)
+	}
 
 	configureLogging()
 	logger := logging.NewSlogLogger()
@@ -38,9 +43,24 @@ func NewContainer() (*Container, error) {
 
 	githubService := github.NewGitHubService(shellExec)
 
-	// Setup user story creation dependencies (no AI required)
+	// Setup user story creation dependencies
 	epicLoader := epic.NewEpicLoader()
-	storyFactory := services.NewStoryFactory(epicLoader)
+
+	// Setup architecture document loader
+	architectureLoader := docs.NewArchitectureLoader(cfg)
+
+	// Setup task prompt loader
+	taskPromptLoader := template.NewTaskPromptLoader("templates")
+
+	// Setup AI task generation - required for operation
+	claudeClient, err := ai.NewClaudeClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI client: %w", err)
+	}
+	taskGenerator := services.NewTaskGenerator(claudeClient, taskPromptLoader)
+
+	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, architectureLoader)
+
 	templateProcessor := template.NewTemplateProcessor("templates/story.yaml.tpl")
 	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
 	usCreateCmd := commands.NewUSCreateCommand(storyFactory, templateProcessor, yamaleValidator)

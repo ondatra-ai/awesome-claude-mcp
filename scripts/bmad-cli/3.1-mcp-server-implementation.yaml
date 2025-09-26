@@ -20,7 +20,7 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Implement MCP Server"
+  - name: "Implement MCP Server Implementation"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
@@ -93,7 +93,7 @@ testing:
     overall: "75%"
 
 change_log:
-  - date: "2025-09-25"
+  - date: "2025-09-26"
     version: "1.0.0"
     description: "Initial story creation"
     author: "bmad-cli"

@@ -58,6 +58,21 @@ func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode Ex
 	}
 }
 
+// GenerateContent generates content using Claude for general purposes
+func (c *ClaudeClient) GenerateContent(ctx context.Context, prompt string) (string, error) {
+	opts := &claude.RunOptions{
+		Format:         claude.TextOutput,
+		PermissionTool: "plan", // Use plan mode for content generation
+	}
+
+	result, err := c.client.RunPrompt(prompt, opts)
+	if err != nil {
+		return "", fmt.Errorf("claude content generation failed: %w", err)
+	}
+
+	return result.Result, nil
+}
+
 // CreateAIClient creates an AI client based on the engine name.
 func CreateAIClient(engine string) (AIClient, error) {
 	if engine != "claude" {

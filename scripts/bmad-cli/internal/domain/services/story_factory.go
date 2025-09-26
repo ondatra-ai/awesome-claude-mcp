@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,44 +11,50 @@ import (
 	"bmad-cli/internal/infrastructure/epic"
 )
 
-type StoryFactory struct {
-	epicLoader *epic.EpicLoader
+// TaskGenerator interface for generating tasks
+type TaskGenerator interface {
+	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]string) ([]story.Task, error)
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader) *StoryFactory {
+// ArchitectureLoader interface for loading architecture documents
+type ArchitectureLoader interface {
+	LoadAllArchitectureDocs() (map[string]string, error)
+}
+
+type StoryFactory struct {
+	epicLoader          *epic.EpicLoader
+	taskGenerator       TaskGenerator
+	architectureLoader  ArchitectureLoader
+}
+
+func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
-		epicLoader: epicLoader,
+		epicLoader:         epicLoader,
+		taskGenerator:      taskGenerator,
+		architectureLoader: architectureLoader,
 	}
 }
 
-func (f *StoryFactory) CreateStory(storyNumber string) *story.StoryDocument {
-	// Try to load story from epic file first
+func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*story.StoryDocument, error) {
+	// Load story from epic file - fail if not found
 	loadedStory, err := f.epicLoader.LoadStoryFromEpic(storyNumber)
 	if err != nil {
-		// Fallback to generating story if loading fails
-		fmt.Printf("Warning: Could not load story from epic file: %v. Using default generation.\n", err)
-		return f.createDefaultStory(storyNumber)
+		return nil, fmt.Errorf("failed to load story from epic file: %w", err)
 	}
 
 	// Use loaded story data
 	epic, storyNum := f.parseStoryNumber(storyNumber)
 	component := f.getComponentFromTitle(loadedStory.Title)
 
+	// Generate tasks using AI - fail on any error
+	tasks, err := f.generateTasks(ctx, loadedStory, component)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate tasks: %w", err)
+	}
+
 	return &story.StoryDocument{
 		Story: *loadedStory,
-		Tasks: []story.Task{
-			{
-				Name:               fmt.Sprintf("Implement %s", component),
-				AcceptanceCriteria: []string{"AC-1", "AC-2"},
-				Subtasks: []string{
-					"Create domain models",
-					"Implement business logic",
-					"Add error handling",
-					"Write comprehensive tests",
-				},
-				Status: "pending",
-			},
-		},
+		Tasks: tasks,
 		DevNotes: story.DevNotes{
 			PreviousStoryInsights: "This is a new story without previous implementation insights",
 			TechnologyStack: story.TechnologyStack{
@@ -107,7 +114,7 @@ func (f *StoryFactory) CreateStory(storyNumber string) *story.StoryDocument {
 			CompletionNotes:     []string{},
 			FileList:           []string{},
 		},
-	}
+	}, nil
 }
 
 func (f *StoryFactory) createDefaultStory(storyNumber string) *story.StoryDocument {
@@ -376,4 +383,23 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	slug = regexp.MustCompile(`[\s_-]+`).ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
 	return slug
+}
+
+// generateTasks generates tasks using AI - fails on any error
+func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Story, component string) ([]story.Task, error) {
+
+	// Load architecture documents - fail immediately if any are missing
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
+	}
+
+	// Generate tasks using AI - fail if AI generation fails
+	tasks, err := f.taskGenerator.GenerateTasks(ctx, loadedStory, architectureDocs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate tasks using AI: %w", err)
+	}
+
+	fmt.Printf("✅ Generated %d tasks using AI\n", len(tasks))
+	return tasks, nil
 }
