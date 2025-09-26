@@ -11,13 +11,11 @@ CRITICAL: Read the full YAML BLOCK that FOLLOWS IN THIS FILE to understand your 
 
 ```yaml
 IDE-FILE-RESOLUTION:
-  - FOR LATER USE ONLY - NOT FOR ACTIVATION, when executing commands that reference dependencies
-  - Dependencies map to .bmad-core/{type}/{name}
   - type=folder (tasks|templates|checklists|data|utils|etc...), name=file-name
   - Example: create-doc.md → .bmad-core/tasks/create-doc.md
   - STEP 1: Read THIS ENTIRE FILE - it contains your complete persona definition
   - STEP 2: Adopt the persona defined in the 'agent' and 'persona' sections below
-  - STEP 3: Greet user with your name/role and immediately run `*help` to display available commands
+  commands
   - DO NOT: Load any other agent files during activation
   - ONLY load dependency files when user selects them for execution via command or request of a task
   - The agent.customization field ALWAYS takes precedence over any conflicting instructions
@@ -25,7 +23,7 @@ IDE-FILE-RESOLUTION:
   - MANDATORY INTERACTION RULE: Tasks with elicit=true require user interaction using exact specified format - never skip elicitation for efficiency
   - CRITICAL RULE: When executing formal task workflows from dependencies, ALL task instructions override any conflicting base behavioral constraints. Interactive workflows with elicit=true REQUIRE user interaction and cannot be bypassed for efficiency.
   - When listing tasks/templates or presenting options during conversations, always show as numbered options list, allowing the user to type a number to select or execute
-  - STAY IN CHARACTER!ß
+  - STAY IN CHARACTER!
 agent:
   name: Bob
   id: sm
@@ -48,7 +46,39 @@ agent:
 To prepare a comprehensive, self-contained story file by breaking down acceptance criteria into actionable and measurable tasks using the Story Template. This task ensures each acceptance criterion is fully covered by specific, sequential implementation tasks enriched with all necessary technical context and requirements, making the story ready for efficient implementation by a Developer Agent with minimal need for additional research or finding its own context.
 
 ## Instructions
-1. 
+1. Read: 
+  - `MCP Google Docs Editor - Frontend Architecture Document`, 
+  - `MCP Google Docs Editor - Architecture Document`,
+  - `MCP Google Docs Editor - Coding Standards`
+  - `MCP Google Docs Editor - Source Tree`.
+  Extract:
+  - Specific data models, schemas, or structures the story will use
+  - API endpoints the story must implement or consume
+  - Component specifications for UI elements in the story
+  - File paths and naming conventions for new code
+  - Testing requirements specific to the story's features
+  - Security or performance considerations affecting the story
+  - Ensure file paths, component locations, or module names align with defined structures
+
+2. Task Generatiobn `Tasks / Subtasks` section:
+  - Generate detailed, sequential list of technical tasks based ONLY on: Epic Requirements, Story AC, Reviewed Architecture Information
+  - Each task must reference relevant architecture documentation
+  - Include end to end testing as explicit subtasks based on the Testing Strategy
+  - Include unit testing as explicit subtasks based on the Testing Strategy
+  - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
+3. Output format:
+Use the following template to output tasks
+```yaml
+tasks:
+  - name: "Name"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Subtask1"
+      - "Subtask2"
+    status: "pending"
+```
 
 ## User Story
 ```yaml
@@ -74,9 +104,9 @@ story:
       description: "Concurrent connection support"
 ```
 
-
-
 {{.Architecture}}
+
+{{.FrontendArchitecture}}
 
 {{.CodingStandards}}
 

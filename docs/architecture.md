@@ -1,8 +1,8 @@
-# MCP Google Docs Editor Architecture Document - Epic 1: Foundation & Infrastructure
+# MCP Google Docs - MCP Editor Architecture Document
 
 ## Introduction
 
-This document outlines the full-stack architecture specifically for Epic 1: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke cloud infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
+This document outlines the full-stack architecture: Foundation & Infrastructure of the MCP Google Docs Editor. It establishes a modern web application with **Next.js frontend** and **Go backend services**, deployed to Railway-managed containers with automated GitHub Actions workflows. The architectural focus has shifted away from bespoke cloud infrastructure toward an opinionated Railway-based platform that delivers managed container hosting, TLS, and environment orchestration out of the box.
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS

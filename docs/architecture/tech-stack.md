@@ -1,4 +1,4 @@
-# MCP Google Docs Editor – Technology Stack (Railway Edition)
+# MCP Google Docs Editor – Technology Stack
 
 This document captures the current technology stack after migrating from the legacy cloud-based deployment to Railway. It focuses on the components that are actively maintained today.
 
