@@ -79,8 +79,8 @@ func (l *TaskPromptLoader) convertStoryToYAML(story *story.Story) (string, error
 func (l *TaskPromptLoader) injectTemplateData(template, storyYAML string, architectureDocs map[string]string) string {
 	result := template
 
-	// Replace the story YAML block (find and replace the existing story block in template)
-	result = l.replaceStoryBlock(result, storyYAML)
+	// Replace the story YAML placeholder
+	result = strings.ReplaceAll(result, "{{.StoryYAML}}", storyYAML)
 
 	// Replace architecture document placeholders
 	for key, content := range architectureDocs {
@@ -103,49 +103,4 @@ func (l *TaskPromptLoader) injectTemplateData(template, storyYAML string, archit
 	}
 
 	return result
-}
-
-// replaceStoryBlock replaces the existing story block in the template with the new story YAML
-func (l *TaskPromptLoader) replaceStoryBlock(template, newStoryYAML string) string {
-	// Find the story block between ```yaml and ``` that contains the story
-	lines := strings.Split(template, "\n")
-	var result []string
-	inStoryBlock := false
-	storyBlockFound := false
-
-	for i, line := range lines {
-		if strings.Contains(line, "```yaml") && !storyBlockFound {
-			// Check if this yaml block contains a story by looking ahead
-			if l.isStoryBlock(lines, i) {
-				inStoryBlock = true
-				storyBlockFound = true
-				result = append(result, line)
-				result = append(result, strings.Split(newStoryYAML, "\n")...)
-				continue
-			}
-		}
-
-		if inStoryBlock && strings.TrimSpace(line) == "```" {
-			inStoryBlock = false
-			result = append(result, line)
-			continue
-		}
-
-		if !inStoryBlock {
-			result = append(result, line)
-		}
-	}
-
-	return strings.Join(result, "\n")
-}
-
-// isStoryBlock checks if a YAML block starting at the given index contains a story
-func (l *TaskPromptLoader) isStoryBlock(lines []string, startIndex int) bool {
-	// Look ahead in the YAML block for story-related content
-	for i := startIndex + 1; i < len(lines) && !strings.HasPrefix(strings.TrimSpace(lines[i]), "```"); i++ {
-		if strings.Contains(lines[i], "story:") || strings.Contains(lines[i], "id:") || strings.Contains(lines[i], "title:") {
-			return true
-		}
-	}
-	return false
 }

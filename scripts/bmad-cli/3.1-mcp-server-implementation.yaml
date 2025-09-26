@@ -1,0 +1,215 @@
+story:
+  id: "3.1"
+  title: "MCP Server Implementation"
+  as_a: "Developer/Maintainer"
+  i_want: "to implement MCP protocol server"
+  so_that: "Claude can communicate with the service"
+  status: "PLANNED"
+  acceptance_criteria:
+    - id: AC-1
+      description: "WebSocket server implemented"
+    - id: AC-2
+      description: "HTTP endpoint for MCP available"
+    - id: AC-3
+      description: "Message parsing and validation"
+    - id: AC-4
+      description: "Response formatting to MCP standard"
+    - id: AC-5
+      description: "Connection management handled"
+    - id: AC-6
+      description: "Concurrent connection support"
+
+tasks:
+  - name: "Set up MCP-Go library integration and basic server structure"
+    acceptance_criteria:
+      - "AC-1"
+    subtasks:
+      - "Initialize Go module for mcp-service with Mark3Labs MCP-Go dependency"
+      - "Create cmd/main.go entry point with basic MCP server setup"
+      - "Configure MCP server with stdio transport for Claude communication"
+      - "Implement basic server initialization and graceful shutdown"
+      - "Add logging configuration using zerolog for structured JSON output"
+    status: "pending"
+
+  - name: "Implement WebSocket server for MCP protocol communication"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Set up WebSocket endpoint at /mcp for protocol communication"
+      - "Implement WebSocket upgrade handling with proper headers"
+      - "Add connection management with concurrent client support"
+      - "Implement heartbeat/ping-pong mechanism for connection health"
+      - "Add connection pooling and cleanup for disconnected clients"
+      - "Configure WebSocket timeouts and buffer sizes"
+    status: "pending"
+
+  - name: "Create HTTP health and version endpoints"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Implement /health endpoint returning service status"
+      - "Implement /version endpoint returning service version"
+      - "Add middleware for CORS, logging, and error handling"
+      - "Configure HTTP server on port 8082 (separate from WebSocket)"
+      - "Add graceful shutdown for HTTP server"
+    status: "pending"
+
+  - name: "Implement MCP message parsing and validation"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Create MCP message structs following protocol specification"
+      - "Implement JSON-RPC message parsing for MCP requests"
+      - "Add request validation using schema validation"
+      - "Create error response formatting for invalid messages"
+      - "Implement message ID tracking for request-response correlation"
+      - "Add input sanitization for all message fields"
+    status: "pending"
+
+  - name: "Build MCP response formatting to protocol standard"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Create response message structs following MCP protocol"
+      - "Implement JSON-RPC response formatting"
+      - "Add error response handling with proper error codes"
+      - "Create success response formatting with result data"
+      - "Implement tool registration response formatting"
+      - "Add capability announcement response handling"
+    status: "pending"
+
+  - name: "Implement tool registration and discovery system"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Register document editing tools (replace_all, append, prepend, etc.)"
+      - "Define tool schemas with parameter validation"
+      - "Implement tool discovery endpoint for Claude"
+      - "Add tool capability announcements"
+      - "Create tool execution routing and dispatch"
+      - "Add tool result formatting and error handling"
+    status: "pending"
+
+  - name: "Create configuration management and environment setup"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+    subtasks:
+      - "Set up Viper configuration management"
+      - "Define environment variables for MCP service"
+      - "Create configuration struct with server, auth, and logging settings"
+      - "Add configuration validation and defaults"
+      - "Implement environment-specific configuration loading"
+      - "Add Railway deployment environment configuration"
+    status: "pending"
+
+  - name: "Implement unit tests for MCP server components"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create unit tests for MCP message parsing using testify"
+      - "Add tests for WebSocket connection handling"
+      - "Test tool registration and discovery functionality"
+      - "Create mock Claude client for testing tool execution"
+      - "Add tests for configuration loading and validation"
+      - "Achieve 85% code coverage for business logic"
+    status: "pending"
+
+  - name: "Add integration tests for MCP protocol compliance"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
+    subtasks:
+      - "Create integration tests with real WebSocket connections"
+      - "Test complete MCP handshake and tool discovery flow"
+      - "Verify protocol compliance with MCP specification"
+      - "Test concurrent connection handling"
+      - "Add end-to-end tests simulating Claude client interactions"
+      - "Test error scenarios and recovery mechanisms"
+    status: "pending"
+
+  - name: "Set up Docker containerization and Railway deployment"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+    subtasks:
+      - "Create multi-stage Dockerfile for mcp-service"
+      - "Configure Railway service definition in railway.toml"
+      - "Set up environment variables in Railway dashboard"
+      - "Add health check endpoint for Railway monitoring"
+      - "Configure service port mapping for WebSocket and HTTP"
+      - "Test deployment to Railway development environment"
+    status: "pending"
+
+dev_notes:
+  previous_story_insights: "This is a new story without previous implementation insights"
+
+  technology_stack:
+    language: "Go"
+    framework: "Standard library"
+    mcp_integration: "MCP integration as needed"
+    logging: "slog"
+    config: "viper"
+
+  architecture:
+    component: "MCP Server Implementation"
+    responsibilities:
+      - "Implement core functionality"
+      - "Handle business logic"
+    dependencies:
+      - "context"
+      - "fmt"
+      - "log/slog"
+    tech_stack:
+      - "Go"
+      - "YAML"
+      - "HTTP"
+      - "JSON"
+
+  file_structure:
+    files:
+      - "services/backend/internal/story/implementation.go"
+
+  configuration:
+    environment_variables:
+      LOG_LEVEL: "info"
+      PORT: "8080"
+      TEMPLATE_PATH: "templates/"
+
+  performance_requirements:
+    connection_establishment: "< 100ms"
+    message_processing: "< 50ms"
+    concurrent_connections: "100"
+    memory_usage: "< 100MB"
+
+testing:
+  test_location: "services/backend/tests"
+  frameworks:
+    - "testing"
+    - "testify"
+  requirements:
+    - "Unit tests for all public methods"
+    - "Integration tests for external dependencies"
+    - "End-to-end tests for complete workflows"
+  coverage:
+    business_logic: "80%"
+    overall: "75%"
+
+change_log:
+  - date: "2025-09-26"
+    version: "1.0.0"
+    description: "Initial story creation"
+    author: "bmad-cli"
+
+dev_agent_record:
+  agent_model_used: null
+  debug_log_references: []
+  completion_notes: []
+  file_list: []

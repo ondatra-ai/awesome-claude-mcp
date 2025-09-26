@@ -1,0 +1,159 @@
+story:
+  id: "3.2"
+  title: "Tool Registration"
+  as_a: "Claude User"
+  i_want: "to discover available tools"
+  so_that: "I know what operations are available"
+  status: "PLANNED"
+  acceptance_criteria:
+    - id: AC-1
+      description: "Tool definition schema created"
+    - id: AC-2
+      description: "Tool registration endpoint working"
+    - id: AC-3
+      description: "Tool capabilities described clearly"
+    - id: AC-4
+      description: "Parameter schemas defined"
+    - id: AC-5
+      description: "Version information included"
+    - id: AC-6
+      description: "Dynamic or static registration (TBD after testing)"
+
+tasks:
+  - name: "Implement tool schema definition with parameter validation"
+    acceptance_criteria:
+      - "AC-1"
+    subtasks:
+      - "Create structured schema definitions for all six document operations in internal/mcp/tools/"
+      - "Define parameter schemas for replace_all, append, prepend, replace_match, insert_before, insert_after operations"
+      - "Implement validation for required fields (documentId, content, anchor for positioned operations)"
+      - "Add enum constraints for operation types and case sensitivity options"
+      - "Include format patterns for Google Docs document IDs"
+      - "Create JSON schemas following MCP protocol standards"
+    status: "pending"
+
+  - name: "Develop tool registration endpoint with MCP compliance"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Implement MCP protocol handshake and capability negotiation in internal/server/mcp.go"
+      - "Create tool discovery endpoint returning available operations"
+      - "Register all six document operations with their schemas"
+      - "Handle MCP client tool requests with proper JSON-RPC responses"
+      - "Implement error handling for unsupported tool requests"
+      - "Add logging for tool registration events"
+    status: "pending"
+
+  - name: "Create comprehensive tool capabilities documentation"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Generate clear descriptions for each document operation tool"
+      - "Document operation types: replace_all, append, prepend, replace_match, insert_before, insert_after"
+      - "Specify required vs optional parameters for each operation"
+      - "Include usage examples and expected outcomes"
+      - "Document error scenarios and recovery suggestions"
+      - "Create user-facing help text for Claude AI integration"
+    status: "pending"
+
+  - name: "Define comprehensive parameter schemas with validation"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Implement structured parameter definitions in pkg/types/tools.go"
+      - "Create validation rules for documentId format (Google Docs ID pattern)"
+      - "Define content validation (Markdown format, size limits)"
+      - "Add anchor text validation for positioned operations"
+      - "Implement case sensitivity parameter validation"
+      - "Create parameter type definitions with MCP-compatible JSON schemas"
+    status: "pending"
+
+  - name: "Include version information in tool registration"
+    acceptance_criteria:
+      - "AC-5"
+    subtasks:
+      - "Add version field to MCP server configuration"
+      - "Include version in tool registration responses"
+      - "Implement version compatibility checking"
+      - "Add version to health check and status endpoints"
+      - "Create version metadata for tool definitions"
+      - "Document version update procedures"
+    status: "pending"
+
+  - name: "Implement static tool registration for initial deployment"
+    acceptance_criteria:
+      - "AC-6"
+    subtasks:
+      - "Configure static tool registration in server startup"
+      - "Pre-register all six document operations on server initialization"
+      - "Implement static tool discovery responses"
+      - "Add configuration for enabling/disabling specific tools"
+      - "Create static tool metadata cache"
+      - "Prepare infrastructure for future dynamic registration upgrade"
+    status: "pending"
+
+dev_notes:
+  previous_story_insights: "This is a new story without previous implementation insights"
+
+  technology_stack:
+    language: "Go"
+    framework: "Standard library"
+    mcp_integration: "MCP integration as needed"
+    logging: "slog"
+    config: "viper"
+
+  architecture:
+    component: "Tool Registration"
+    responsibilities:
+      - "Implement core functionality"
+      - "Handle business logic"
+    dependencies:
+      - "context"
+      - "fmt"
+      - "log/slog"
+    tech_stack:
+      - "Go"
+      - "YAML"
+      - "HTTP"
+      - "JSON"
+
+  file_structure:
+    files:
+      - "services/backend/internal/story/implementation.go"
+
+  configuration:
+    environment_variables:
+      LOG_LEVEL: "info"
+      PORT: "8080"
+      TEMPLATE_PATH: "templates/"
+
+  performance_requirements:
+    connection_establishment: "< 100ms"
+    message_processing: "< 50ms"
+    concurrent_connections: "100"
+    memory_usage: "< 100MB"
+
+testing:
+  test_location: "services/backend/tests"
+  frameworks:
+    - "testing"
+    - "testify"
+  requirements:
+    - "Unit tests for all public methods"
+    - "Integration tests for external dependencies"
+    - "End-to-end tests for complete workflows"
+  coverage:
+    business_logic: "80%"
+    overall: "75%"
+
+change_log:
+  - date: "2025-09-26"
+    version: "1.0.0"
+    description: "Initial story creation"
+    author: "bmad-cli"
+
+dev_agent_record:
+  agent_model_used: null
+  debug_log_references: []
+  completion_notes: []
+  file_list: []
