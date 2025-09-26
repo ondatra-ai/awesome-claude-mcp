@@ -58,14 +58,7 @@ func (l *TaskPromptLoader) loadTemplateFile() (string, error) {
 
 // convertStoryToYAML converts the story struct to YAML format
 func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, error) {
-	// Create a wrapper struct with "story" key to match template expectation
-	storyWrapper := struct {
-		Story *story.Story `yaml:"story"`
-	}{
-		Story: storyObj,
-	}
-
-	yamlBytes, err := yaml.Marshal(storyWrapper)
+	yamlBytes, err := yaml.Marshal(storyObj)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal story to YAML: %w", err)
 	}
