@@ -20,118 +20,141 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Setup MCP service project structure and dependencies"
+  - name: "Set up Go module and project structure for MCP service"
     acceptance_criteria:
       - "AC-1"
-    subtasks:
-      - "Initialize Go module for MCP service with Mark3Labs MCP-Go dependency"
-      - "Create cmd/main.go entry point with structured logging setup"
-      - "Implement internal/server/mcp.go for Mark3Labs MCP server configuration"
-      - "Setup internal/config/config.go with environment variable loading using Viper"
-      - "Create Dockerfile multi-stage build for Railway deployment"
-      - "Add mcp-service to railway.toml service definitions"
-    status: "pending"
-
-  - name: "Implement WebSocket server with MCP protocol support"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-3"
-    subtasks:
-      - "Setup WebSocket server using Go stdlib net/http with upgrade handler"
-      - "Implement MCP message parsing and validation in internal/server/handlers.go"
-      - "Create structured error handling with MCP-compliant error responses"
-      - "Add connection lifecycle management (connect, disconnect, cleanup)"
-      - "Implement message routing for different MCP request types"
-      - "Add comprehensive logging for all WebSocket events and messages"
-    status: "pending"
-
-  - name: "Create HTTP endpoint for MCP protocol access"
-    acceptance_criteria:
       - "AC-2"
     subtasks:
-      - "Implement HTTP endpoint /mcp for WebSocket upgrade handshake"
-      - "Add CORS configuration for Claude AI domain access"
-      - "Create health check endpoint /health for Railway monitoring"
-      - "Implement version endpoint /version with build information"
-      - "Add middleware for request logging and error recovery"
-      - "Configure HTTP server with proper timeouts and graceful shutdown"
+      - "Initialize Go module in services/mcp-service/ with Mark3Labs MCP-Go dependency"
+      - "Create directory structure following Source Tree specification (cmd/, internal/, pkg/)"
+      - "Set up Dockerfile with multi-stage build for Railway deployment"
+      - "Configure go.mod with Mark3Labs MCP-Go library dependency"
+      - "Create .env file with MCP_PORT and configuration variables"
+    status: "pending"
+
+  - name: "Implement MCP Protocol WebSocket server infrastructure"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+      - "AC-5"
+    subtasks:
+      - "Create MCP server setup using Mark3Labs library in internal/server/mcp.go"
+      - "Implement WebSocket endpoint for bidirectional MCP communication"
+      - "Configure server to listen on MCP_PORT with proper error handling"
+      - "Set up connection lifecycle management (connect, disconnect, cleanup)"
+      - "Add structured logging for all connection events using zerolog"
+    status: "pending"
+
+  - name: "Implement tool registration and discovery system"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create tool definitions in internal/server/tools.go with schema validation"
+      - "Register all six document operations as MCP tools (replace_all, append, prepend, replace_match, insert_before, insert_after)"
+      - "Implement tool discovery endpoint returning available operations"
+      - "Define parameter schemas for each operation type with validation rules"
+      - "Add tool capability negotiation during MCP handshake"
     status: "pending"
 
   - name: "Implement MCP message parsing and validation"
     acceptance_criteria:
       - "AC-3"
+      - "AC-4"
     subtasks:
-      - "Create pkg/types/tools.go with MCP request/response type definitions"
-      - "Implement JSON schema validation for incoming MCP messages"
-      - "Add parameter validation with enum/pattern support in internal/operations/validator.go"
-      - "Create structured error responses following MCP protocol standards"
-      - "Implement message ID correlation for request/response tracking"
-      - "Add input sanitization and security validation for all parameters"
+      - "Create message handlers in internal/server/handlers.go with type safety"
+      - "Implement request parsing for MCP protocol format using Mark3Labs types"
+      - "Add parameter validation for all tool invocations with enum/pattern support"
+      - "Create error handling for malformed requests with descriptive messages"
+      - "Add request correlation ID tracking for debugging"
     status: "pending"
 
-  - name: "Implement MCP-compliant response formatting"
+  - name: "Implement document operation processing core"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create operation processor in internal/operations/processor.go"
+      - "Implement replace_all operation with content validation"
+      - "Implement append and prepend operations with position handling"
+      - "Implement replace_match operation with anchor text search"
+      - "Implement insert_before and insert_after operations with anchor positioning"
+      - "Add operation result tracking with success/failure metrics"
+    status: "pending"
+
+  - name: "Set up Google Docs API integration"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Create Google Docs client in internal/docs/client.go using google.golang.org/api/docs/v1"
+      - "Implement OAuth token validation with backend service integration"
+      - "Create document access permission validation"
+      - "Implement batch update request generation for Google Docs API"
+      - "Add circuit breaker pattern for external API resilience"
+    status: "pending"
+
+  - name: "Implement Markdown to Google Docs conversion"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create Markdown parser using goldmark in internal/docs/converter.go"
+      - "Implement conversion from Markdown AST to Google Docs API requests"
+      - "Handle text formatting (bold, italic, headers, lists) conversion"
+      - "Implement table conversion from Markdown to Google Docs format"
+      - "Add image handling and insertion for Markdown images"
+    status: "pending"
+
+  - name: "Implement MCP response formatting"
     acceptance_criteria:
       - "AC-4"
     subtasks:
-      - "Create pkg/types/results.go with MCP result type wrappers"
-      - "Implement success response formatting with proper MCP structure"
-      - "Add error response formatting with MCP error codes and messages"
-      - "Create operation result wrappers for document operation responses"
-      - "Implement progress update messages for long-running operations"
-      - "Add response validation to ensure MCP protocol compliance"
+      - "Create response formatters using Mark3Labs MCP result types"
+      - "Format successful operation responses with document preview URLs"
+      - "Format error responses with user-friendly messages and recovery hints"
+      - "Add operation timing and performance metrics to responses"
+      - "Implement result serialization to MCP protocol format"
     status: "pending"
 
-  - name: "Implement connection management and lifecycle handling"
-    acceptance_criteria:
-      - "AC-5"
-    subtasks:
-      - "Create connection registry in internal/server/middleware.go for active connections"
-      - "Implement connection authentication and authorization"
-      - "Add connection timeout and keep-alive management"
-      - "Create graceful connection cleanup on server shutdown"
-      - "Implement connection state tracking and monitoring"
-      - "Add connection pool management with configurable limits"
-    status: "pending"
-
-  - name: "Add concurrent connection support with proper resource management"
+  - name: "Implement concurrent connection support"
     acceptance_criteria:
       - "AC-6"
     subtasks:
-      - "Implement goroutine-safe connection handling with sync primitives"
-      - "Add connection limits and rate limiting per client"
-      - "Create resource pooling for Google API clients"
-      - "Implement proper context cancellation for concurrent operations"
-      - "Add connection metrics and monitoring for observability"
-      - "Create load balancing for multiple concurrent document operations"
+      - "Add connection pool management for multiple Claude instances"
+      - "Implement per-connection state isolation and cleanup"
+      - "Add rate limiting per connection to prevent abuse"
+      - "Create connection monitoring and health checks"
+      - "Implement graceful shutdown with connection draining"
     status: "pending"
 
-  - name: "Integrate Google Docs API client with OAuth token management"
+  - name: "Set up Redis caching integration"
+    acceptance_criteria:
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Create Redis client in internal/cache/redis.go using go-redis/redis v9"
+      - "Implement token caching for OAuth credentials"
+      - "Add operation status caching for real-time progress tracking"
+      - "Create document metadata caching to reduce Google API calls"
+      - "Add cache TTL management and cleanup"
+    status: "pending"
+
+  - name: "Implement structured logging and monitoring"
     acceptance_criteria:
       - "AC-1"
-      - "AC-4"
+      - "AC-2"
+      - "AC-5"
     subtasks:
-      - "Implement internal/docs/client.go with Google Docs API integration"
-      - "Create internal/auth/oauth.go for Google OAuth token validation"
-      - "Add token refresh mechanism with backend service integration"
-      - "Implement document permission validation before operations"
-      - "Create circuit breaker pattern for Google API resilience"
-      - "Add comprehensive error handling for Google API failures"
+      - "Configure zerolog for JSON structured logging"
+      - "Add operation tracing with correlation IDs"
+      - "Log all MCP protocol interactions with context"
+      - "Create performance metrics logging for operation timing"
+      - "Add error logging with full stack traces and recovery hints"
     status: "pending"
 
-  - name: "Implement document operation commands with MCP tool registration"
-    acceptance_criteria:
-      - "AC-4"
-      - "AC-3"
-    subtasks:
-      - "Create internal/operations/replace.go for replace_all operation"
-      - "Implement internal/operations/append.go for append operation"
-      - "Add internal/operations/insert.go for insert_before/insert_after operations"
-      - "Register MCP tools with schema validation in internal/server/tools.go"
-      - "Implement markdown to Google Docs conversion in internal/docs/converter.go"
-      - "Add operation status tracking and progress reporting"
-    status: "pending"
-
-  - name: "Add comprehensive testing suite with MCP protocol compliance"
+  - name: "Create comprehensive unit tests"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
@@ -140,25 +163,51 @@ tasks:
       - "AC-5"
       - "AC-6"
     subtasks:
-      - "Create unit tests for all MCP message handling with scenario IDs"
-      - "Implement integration tests for WebSocket connection lifecycle"
-      - "Add end-to-end tests simulating Claude AI client interactions"
-      - "Create performance tests for concurrent connection handling"
-      - "Implement mock Google API server for testing document operations"
-      - "Add MCP protocol compliance validation tests"
+      - "Create unit tests for MCP server setup and connection handling"
+      - "Test all document operation processors with mocked Google API"
+      - "Test message parsing and validation with various input scenarios"
+      - "Test error handling and recovery scenarios"
+      - "Test concurrent connection handling and isolation"
+      - "Achieve 85% code coverage for business logic components"
     status: "pending"
 
-  - name: "Configure Railway deployment and environment integration"
+  - name: "Create integration tests with Google APIs"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Set up test Google account and test documents"
+      - "Create integration tests for each document operation end-to-end"
+      - "Test OAuth token refresh and expiration handling"
+      - "Test Google API rate limiting and error scenarios"
+      - "Test document permission validation and access control"
+    status: "pending"
+
+  - name: "Set up Railway deployment configuration"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
     subtasks:
-      - "Update railway.toml with mcp-service definitions for all environments"
-      - "Configure environment variables in Railway dashboard for MCP service"
-      - "Setup custom domains mcp.dev.ondrata-ai.xyz for development environment"
-      - "Add MCP service to GitHub Actions deployment workflow"
-      - "Implement health checks and monitoring for Railway platform"
-      - "Create service-to-service communication configuration with backend"
+      - "Configure railway.toml for mcp-service deployment"
+      - "Set up environment variables in Railway dashboard"
+      - "Create health check endpoint for Railway monitoring"
+      - "Configure custom domain for MCP service (mcp.dev.ondatra-ai.xyz)"
+      - "Test deployment pipeline with GitHub Actions integration"
+    status: "pending"
+
+  - name: "Create MCP client testing and validation"
+    acceptance_criteria:
+      - "AC-2"
+      - "AC-3"
+      - "AC-4"
+      - "AC-6"
+    subtasks:
+      - "Create MCP client test harness simulating Claude requests"
+      - "Test all tool registrations and discovery functionality"
+      - "Validate MCP protocol compliance with message format requirements"
+      - "Test connection handling with multiple concurrent clients"
+      - "Create end-to-end workflow testing with real document operations"
     status: "pending"
 
 dev_notes:

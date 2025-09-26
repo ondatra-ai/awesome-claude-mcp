@@ -1,10 +1,11 @@
 package template
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
 	"gopkg.in/yaml.v3"
@@ -36,8 +37,11 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 		return "", fmt.Errorf("failed to convert story to YAML: %w", err)
 	}
 
-	// Replace placeholders in the template
-	prompt := l.injectTemplateData(templateContent, storyYAML, architectureDocs)
+	// Use proper template system to inject data
+	prompt, err := l.executeTemplate(templateContent, storyYAML, architectureDocs)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
 
 	return prompt, nil
 }
@@ -69,32 +73,36 @@ func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, er
 	return string(yamlBytes), nil
 }
 
-// injectTemplateData replaces placeholders in the template with actual data
-func (l *TaskPromptLoader) injectTemplateData(template, storyYAML string, architectureDocs map[string]string) string {
-	result := template
-
-	// Replace the story YAML placeholder
-	result = strings.ReplaceAll(result, "{{.StoryYAML}}", storyYAML)
-
-	// Replace architecture document placeholders
-	for key, content := range architectureDocs {
-		placeholder := fmt.Sprintf("{{.%s}}", key)
-		result = strings.ReplaceAll(result, placeholder, content)
+// executeTemplate uses Go's text/template system to properly inject data
+func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, architectureDocs map[string]string) (string, error) {
+	// Create template data structure
+	templateData := struct {
+		StoryYAML            string
+		Architecture         string
+		FrontendArchitecture string
+		CodingStandards      string
+		SourceTree           string
+		TechStack            string
+	}{
+		StoryYAML:            storyYAML,
+		Architecture:         architectureDocs["Architecture"],
+		FrontendArchitecture: architectureDocs["FrontendArchitecture"],
+		CodingStandards:      architectureDocs["CodingStandards"],
+		SourceTree:           architectureDocs["SourceTree"],
+		TechStack:            architectureDocs["TechStack"],
 	}
 
-	// Handle any remaining empty placeholders
-	placeholders := []string{
-		"{{.Architecture}}",
-		"{{.FrontendArchitecture}}",
-		"{{.CodingStandards}}",
-		"{{.SourceTree}}",
+	// Parse the template
+	tmpl, err := template.New("task-prompt").Parse(templateContent)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	for _, placeholder := range placeholders {
-		if strings.Contains(result, placeholder) {
-			result = strings.ReplaceAll(result, placeholder, fmt.Sprintf("# %s\n(Document not available)", strings.TrimSuffix(strings.TrimPrefix(placeholder, "{{."), "}}")))
-		}
+	// Execute the template with data
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, templateData); err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	return result
+	return buf.String(), nil
 }
