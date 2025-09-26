@@ -58,3 +58,4 @@ tmp/
 crash.log
 *.tfplan
 **/tfplan
+scripts/bmad-cli/bmad-cli

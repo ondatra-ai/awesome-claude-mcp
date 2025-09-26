@@ -15,10 +15,10 @@ import (
 const expectedParts = 2
 
 type GitHubCLIClient struct {
-	shell shell.Executor
+	shell *shell.CommandRunner
 }
 
-func NewGitHubCLIClient(shell shell.Executor) *GitHubCLIClient {
+func NewGitHubCLIClient(shell *shell.CommandRunner) *GitHubCLIClient {
 	return &GitHubCLIClient{shell: shell}
 }
 

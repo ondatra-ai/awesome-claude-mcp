@@ -1,0 +1,113 @@
+epic:
+  id: 4
+  name: "OAuth Authentication"
+  status: "PLANNED"
+  goal: "Implement complete Google OAuth 2.0 authentication flow with multi-account support"
+  context: ""
+
+stories:
+  - id: "4.1"
+    title: "OAuth Configuration"
+    as_a: "Developer/Maintainer"
+    i_want: "to configure Google OAuth application"
+    so_that: "users can authenticate with Google"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Google Cloud project created"
+      - id: AC-2
+        description: "OAuth 2.0 credentials generated"
+      - id: AC-3
+        description: "Redirect URIs configured"
+      - id: AC-4
+        description: "Scopes defined for Google Docs access"
+      - id: AC-5
+        description: "Credentials stored as Railway environment variables (or external secret manager if required)"
+      - id: AC-6
+        description: "Environment variables configured"
+
+  - id: "4.2"
+    title: "OAuth Flow Implementation"
+    as_a: "Claude User"
+    i_want: "to authenticate with my Google account"
+    so_that: "the service can access my documents"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "OAuth initiation endpoint created"
+      - id: AC-2
+        description: "Google consent screen displayed with permissions"
+      - id: AC-3
+        description: "Authorization code exchange implemented"
+      - id: AC-4
+        description: "Tokens received and validated"
+      - id: AC-5
+        description: "Error handling for auth failures"
+      - id: AC-6
+        description: "Success redirect to settings page"
+
+  - id: "4.3"
+    title: "Token Management"
+    as_a: "Developer/Maintainer"
+    i_want: "to securely manage OAuth tokens"
+    so_that: "user sessions remain valid"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Tokens encrypted before storage"
+      - id: AC-2
+        description: "Redis cache integration for tokens"
+      - id: AC-3
+        description: "Token refresh logic implemented"
+      - id: AC-4
+        description: "Expiry handling automated"
+      - id: AC-5
+        description: "Token retrieval by user ID"
+      - id: AC-6
+        description: "Secure token deletion capability"
+
+  - id: "4.4"
+    title: "Multi-Account Support"
+    as_a: "Claude User"
+    i_want: "to connect multiple Google accounts"
+    so_that: "I can edit documents from different accounts"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Support multiple tokens per user"
+      - id: AC-2
+        description: "Account selection mechanism"
+      - id: AC-3
+        description: "Account switching capability"
+      - id: AC-4
+        description: "Display connected accounts"
+      - id: AC-5
+        description: "Remove account functionality"
+      - id: AC-6
+        description: "Default account designation"
+
+  - id: "4.5"
+    title: "Authentication Error Handling"
+    as_a: "Claude User"
+    i_want: "clear authentication error messages"
+    so_that: "I can resolve authentication issues"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Structured error responses for auth failures"
+      - id: AC-2
+        description: "Token refresh failure handling"
+      - id: AC-3
+        description: "Clear error codes and messages"
+      - id: AC-4
+        description: "Guidance for resolution steps"
+      - id: AC-5
+        description: "Logging of auth errors"
+      - id: AC-6
+        description: "Immediate error return without retry"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

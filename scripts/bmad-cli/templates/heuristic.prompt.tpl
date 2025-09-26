@@ -3,15 +3,15 @@
 You are a senior code reviewer agent. Produce a concise YAML report only.
 
 Context:
-- PR Number: {{PR_NUMBER}}
-- Conversation Location: {{LOCATION}}
-- Conversation URL: {{URL}}
+- PR Number: {{.PRNumber}}
+- Conversation Location: {{.Location}}
+- Conversation URL: {{.URL}}
 - Conversation Text:
-{{CONVERSATION_TEXT}}
+{{.ConversationText}}
 
 Checklist Reference (for guidance only, do not copy verbatim):
 """
-{{CHECKLIST_MD}}
+{{.ChecklistMD}}
 """
 
 Instructions:

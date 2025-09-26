@@ -1,0 +1,93 @@
+epic:
+  id: 8
+  name: "Replace Match Operation"
+  status: "PLANNED"
+  goal: "Implement exact text matching and replacement functionality"
+  context: ""
+
+stories:
+  - id: "8.1"
+    title: "Replace Match Command Handler"
+    as_a: "Claude User"
+    i_want: "to replace specific text matches"
+    so_that: "I can update specific content sections"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Command handler for replace_match created"
+      - id: AC-2
+        description: "Exact text matching implemented"
+      - id: AC-3
+        description: "First match only replaced (MVP)"
+      - id: AC-4
+        description: "Case-sensitive matching option"
+      - id: AC-5
+        description: "Success response with match count"
+      - id: AC-6
+        description: "No regex support in MVP"
+
+  - id: "8.2"
+    title: "Text Search Implementation"
+    as_a: "Developer/Maintainer"
+    i_want: "to search for text in documents"
+    so_that: "I can find replacement targets"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Document text retrieval working"
+      - id: AC-2
+        description: "Exact match algorithm implemented"
+      - id: AC-3
+        description: "First occurrence identified"
+      - id: AC-4
+        description: "Position information captured"
+      - id: AC-5
+        description: "Search performance optimized"
+      - id: AC-6
+        description: "Special characters handled"
+
+  - id: "8.3"
+    title: "Match Replacement"
+    as_a: "Developer/Maintainer"
+    i_want: "to replace matched text"
+    so_that: "content is updated correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Matched text replaced accurately"
+      - id: AC-2
+        description: "Surrounding content preserved"
+      - id: AC-3
+        description: "Formatting maintained or updated"
+      - id: AC-4
+        description: "Replacement position correct"
+      - id: AC-5
+        description: "Document structure intact"
+      - id: AC-6
+        description: "Operation reversible (future)"
+
+  - id: "8.4"
+    title: "Match Error Handling"
+    as_a: "Claude User"
+    i_want: "clear feedback on match failures"
+    so_that: "I can adjust my search parameters"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "No match found error returned"
+      - id: AC-2
+        description: "Partial match suggestions (v2)"
+      - id: AC-3
+        description: "Multiple match warning (v2)"
+      - id: AC-4
+        description: "Case sensitivity reminder"
+      - id: AC-5
+        description: "Alternative search hints"
+      - id: AC-6
+        description: "Error logged properly"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

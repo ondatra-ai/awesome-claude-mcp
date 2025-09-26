@@ -97,9 +97,11 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	cd scripts/bmad-cli && golangci-lint run --fix .
 	@echo "✅ Scripts linting completed!"
 
-lint-docs: ## Validate requirements.yml against Yamale schema
+lint-docs: ## Validate requirements.yml and epic YAML files against Yamale schemas
 	@echo "🔍 Validating requirements.yml against schema (strict mode)..."
 	yamale -s docs/requirements-schema.yaml docs/requirements.yml
-	@echo "✅ Requirements validation completed!"
+	@echo "🔍 Validating epic YAML files against schema (strict mode)..."
+	yamale -s docs/epics/jsons/epics-schema.yaml docs/epics/jsons/epic-*.yaml
+	@echo "✅ Documentation validation completed!"
 
 lint: lint-backend lint-frontend lint-docs ## Run all linting checks

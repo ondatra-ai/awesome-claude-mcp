@@ -176,163 +176,80 @@ The development will proceed through 10 distinct epics, each delivering deployab
 
 ### User Stories
 
-#### Story 1.1: Project Repository Setup
+#### Story 2.1: Application Monitoring Setup
 **As a** Developer/Maintainer
-**I want** to initialize the multi-service project structure
-**So that** I have a maintainable codebase foundation
+**I want** comprehensive monitoring and alerting
+**So that** I can track system health, performance, and proactively address issues
 
 **Acceptance Criteria:**
-- Monorepo structure with services/ directory created
-- Go modules initialized for Backend and MCP services
-- Next.js project initialized for Frontend service
-- Dockerfiles created for each service
-- Project structure follows architecture document
-- Makefile created with build, test, deploy targets for all services
-- Git repository configured with .gitignore
-- README.md with setup instructions for all services
-- MIT license file added
+- Application logs accessible via Railway dashboard for each environment
+- Health checks exposed on backend services (`/health`) and validated by Railway
+- Third-party monitoring integration (Better Stack, Sentry, or equivalent)
+- Alerts established for service downtime using Railway notifications or external tooling
+- Basic dashboard/reporting for Railway metrics and custom metrics
+- Performance metrics collection (response times, throughput, error rates)
+- Uptime monitoring for all custom domains (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
 
-#### Story 1.2: Railway Infrastructure Setup
+#### Story 2.2: Test Coverage Reporting & Quality Gates
 **As a** Developer/Maintainer
-**I want** to configure Railway infrastructure
-**So that** I have a deployable environment for the application
+**I want** comprehensive test coverage reporting and quality gates
+**So that** I can ensure code quality and prevent regressions
 
 **Acceptance Criteria:**
-- Railway project linked to the repository and CLI
-- Development, Staging, and Production environments created
-- Railway services created for frontend/back (including dev/staging variants)
-- Environment variables configured per service
-- Custom domains mapped and verified (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.)
-- Deployment successful via Railway CLI/GitHub Actions
+- Test coverage reporting enabled for all services (Jest for frontend, Go coverage for backend)
+- Coverage thresholds enforced in CI/CD pipeline (minimum 80% line coverage)
+- Coverage reports published to GitHub PR comments
+- Quality gates prevent merging below coverage thresholds
+- Code coverage badges in README files
+- Integration with existing pre-commit hooks for coverage validation
+- Coverage trend tracking over time
 
-#### Story 1.3: Frontend Service Implementation
-**As a** Claude User
-**I want** to access a web interface for service management
-**So that** I can configure authentication and monitor service status
-
-**Acceptance Criteria:**
-- Next.js 14 frontend service deployed and accessible
-- Homepage displays "MCP Google Docs Editor" title
-- Service status dashboard (operational/degraded/down)
-- OAuth authentication management interface
-- Connected Google accounts display
-- Mobile responsive design with modern UI
-- Page loads in under 2 seconds
-- Health check endpoint returns proper status
-
-#### Story 1.4: CI/CD Pipeline
+#### Story 2.3: Logging & Alerting Infrastructure
 **As a** Developer/Maintainer
-**I want** automated build and deployment
-**So that** code changes are safely deployed
+**I want** centralized logging and intelligent alerting
+**So that** I can quickly diagnose issues and maintain system reliability
 
 **Acceptance Criteria:**
-- GitHub Actions workflow configured for all services
-- Docker images built and pushed to ECR
-- Automated tests run on pull requests for each service
-- Successful builds deploy targeted services to Railway environments
-- Blue-green deployment capability for zero downtime
-- Rollback capability implemented
-- Build status badges in README
-- Deployment notifications to Slack
+- Structured JSON logging implemented across all services
+- Log aggregation and searchability (Railway logs or external service)
+- Error tracking and grouping (Sentry or equivalent)
+- Alert channels configured (Slack, email, or preferred notification system)
+- Log retention policies defined and implemented
+- Application performance monitoring (APM) for request tracing
+- Security event logging and monitoring
 
-#### Story 1.5: Monitoring Setup
+#### Story 2.4: Performance Monitoring & Metrics
 **As a** Developer/Maintainer
-**I want** comprehensive monitoring
-**So that** I can track system health and performance
+**I want** detailed performance monitoring and custom metrics
+**So that** I can optimize system performance and track business metrics
 
 **Acceptance Criteria:**
-- New Relic account configured
-- CloudWatch metrics enabled
-- Slack integration for alerts
-- Alerts for service down and >5% error rate
-- Dashboard showing key metrics
-- Logging pipeline established
+- Application metrics dashboard (response times, throughput, error rates)
+- Database performance monitoring (if applicable)
+- Frontend performance monitoring (Core Web Vitals, load times)
+- Custom business metrics tracking (API usage, feature adoption)
+- Performance regression detection in CI/CD
+- Resource utilization monitoring (CPU, memory, disk usage)
+- Automated performance testing and benchmarking
 
-#### Story 1.6: Testing Framework
-**As a** Developer/Maintainer
-**I want** comprehensive testing infrastructure
-**So that** I can ensure code quality across all services
+## Dependencies
+- **Epic 1**: Foundation & Infrastructure (✅ COMPLETE) - Required for deployment targets
+- **Railway Infrastructure**: Existing Railway environments and services
+- **CI/CD Pipeline**: Existing GitHub Actions workflow
 
-**Acceptance Criteria:**
-- Unit test framework configured (testify for Go services, Jest for Next.js)
-- Integration test environment setup for service-to-service communication
-- E2E test framework ready (Playwright for frontend workflows)
-- Docker Compose for local testing environment
-- Test coverage reporting enabled for all services
-- Container-based testing for deployment validation
-- Pre-commit hooks for testing all services
-- Example tests for each service and test type
+## Success Criteria
+- Zero-downtime deployments with full observability
+- Sub-5-minute mean time to detection (MTTD) for critical issues
+- Comprehensive test coverage maintained above quality thresholds
+- Performance baseline established with regression detection
+- Operational runbooks documented with monitoring integration
 
-## Epic 4: OAuth Authentication
-
-**Goal:** Implement complete Google OAuth 2.0 authentication flow with multi-account support
-
-### User Stories
-
-#### Story 4.1: OAuth Configuration
-**As a** Developer/Maintainer
-**I want** to configure Google OAuth application
-**So that** users can authenticate with Google
-
-**Acceptance Criteria:**
-- Google Cloud project created
-- OAuth 2.0 credentials generated
-- Redirect URIs configured
-- Scopes defined for Google Docs access
-- Credentials stored as Railway environment variables (or external secret manager if required)
-- Environment variables configured
-
-#### Story 4.2: OAuth Flow Implementation
-**As a** Claude User
-**I want** to authenticate with my Google account
-**So that** the service can access my documents
-
-**Acceptance Criteria:**
-- OAuth initiation endpoint created
-- Google consent screen displayed with permissions
-- Authorization code exchange implemented
-- Tokens received and validated
-- Error handling for auth failures
-- Success redirect to settings page
-
-#### Story 4.3: Token Management
-**As a** Developer/Maintainer
-**I want** to securely manage OAuth tokens
-**So that** user sessions remain valid
-
-**Acceptance Criteria:**
-- Tokens encrypted before storage
-- Redis cache integration for tokens
-- Token refresh logic implemented
-- Expiry handling automated
-- Token retrieval by user ID
-- Secure token deletion capability
-
-#### Story 4.4: Multi-Account Support
-**As a** Claude User
-**I want** to connect multiple Google accounts
-**So that** I can edit documents from different accounts
-
-**Acceptance Criteria:**
-- Support multiple tokens per user
-- Account selection mechanism
-- Account switching capability
-- Display connected accounts
-- Remove account functionality
-- Default account designation
-
-#### Story 4.5: Authentication Error Handling
-**As a** Claude User
-**I want** clear authentication error messages
-**So that** I can resolve authentication issues
-
-**Acceptance Criteria:**
-- Structured error responses for auth failures
-- Token refresh failure handling
-- Clear error codes and messages
-- Guidance for resolution steps
-- Logging of auth errors
-- Immediate error return without retry
+## Technical Notes
+- Leverage Railway's built-in monitoring where possible
+- Consider cost implications of external monitoring services
+- Ensure monitoring doesn't impact application performance
+- Design for multi-environment monitoring (dev/staging/prod)
+- Plan for monitoring data retention and compliance requirements
 
 ## Epic 3: MCP Server Setup
 
@@ -404,6 +321,77 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Graceful shutdown handling
 - Connection pooling if needed
 - Connection state tracking
+
+## Epic 4: OAuth Authentication
+
+**Goal:** Implement complete Google OAuth 2.0 authentication flow with multi-account support
+
+### User Stories
+
+#### Story 4.1: OAuth Configuration
+**As a** Developer/Maintainer
+**I want** to configure Google OAuth application
+**So that** users can authenticate with Google
+
+**Acceptance Criteria:**
+- Google Cloud project created
+- OAuth 2.0 credentials generated
+- Redirect URIs configured
+- Scopes defined for Google Docs access
+- Credentials stored as Railway environment variables (or external secret manager if required)
+- Environment variables configured
+
+#### Story 4.2: OAuth Flow Implementation
+**As a** Claude User
+**I want** to authenticate with my Google account
+**So that** the service can access my documents
+
+**Acceptance Criteria:**
+- OAuth initiation endpoint created
+- Google consent screen displayed with permissions
+- Authorization code exchange implemented
+- Tokens received and validated
+- Error handling for auth failures
+- Success redirect to settings page
+
+#### Story 4.3: Token Management
+**As a** Developer/Maintainer
+**I want** to securely manage OAuth tokens
+**So that** user sessions remain valid
+
+**Acceptance Criteria:**
+- Tokens encrypted before storage
+- Redis cache integration for tokens
+- Token refresh logic implemented
+- Expiry handling automated
+- Token retrieval by user ID
+- Secure token deletion capability
+
+#### Story 4.4: Multi-Account Support
+**As a** Claude User
+**I want** to connect multiple Google accounts
+**So that** I can edit documents from different accounts
+
+**Acceptance Criteria:**
+- Support multiple tokens per user
+- Account selection mechanism
+- Account switching capability
+- Display connected accounts
+- Remove account functionality
+- Default account designation
+
+#### Story 4.5: Authentication Error Handling
+**As a** Claude User
+**I want** clear authentication error messages
+**So that** I can resolve authentication issues
+
+**Acceptance Criteria:**
+- Structured error responses for auth failures
+- Token refresh failure handling
+- Clear error codes and messages
+- Guidance for resolution steps
+- Logging of auth errors
+- Immediate error return without retry
 
 ## Epic 5: Replace All Operation
 
@@ -489,13 +477,13 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Document save confirmed
 - Preview URL returned
 
-## Epic 5: Append Operation
+## Epic 6: Append Operation
 
 **Goal:** Add content appending capability with formatting preservation
 
 ### User Stories
 
-#### Story 5.1: Append Command Handler
+#### Story 6.1: Append Command Handler
 **As a** Claude User
 **I want** to append content to documents
 **So that** I can add information without replacing existing content
@@ -508,7 +496,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Success response provided
 - Operation metrics tracked
 
-#### Story 5.2: Document Position Detection
+#### Story 6.2: Document Position Detection
 **As a** Developer/Maintainer
 **I want** to find the document end position
 **So that** I can append content correctly
@@ -521,7 +509,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Section breaks considered
 - Performance optimized
 
-#### Story 5.3: Content Insertion
+#### Story 6.3: Content Insertion
 **As a** Developer/Maintainer
 **I want** to insert content at specific position
 **So that** append operation works correctly
@@ -534,7 +522,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Document flow maintained
 - Undo information available
 
-#### Story 5.4: Format Preservation
+#### Story 6.4: Format Preservation
 **As a** Claude User
 **I want** existing formatting preserved
 **So that** document consistency is maintained
@@ -547,13 +535,13 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Page breaks respected
 - Headers/footers unaffected
 
-## Epic 6: Prepend Operation
+## Epic 7: Prepend Operation
 
 **Goal:** Add content prepending capability with document structure preservation
 
 ### User Stories
 
-#### Story 6.1: Prepend Command Handler
+#### Story 7.1: Prepend Command Handler
 **As a** Claude User
 **I want** to prepend content to documents
 **So that** I can add information at the beginning
@@ -566,7 +554,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Success response provided
 - Error handling complete
 
-#### Story 6.2: Beginning Position Handling
+#### Story 7.2: Beginning Position Handling
 **As a** Developer/Maintainer
 **I want** to identify document beginning
 **So that** I can prepend content correctly
@@ -579,7 +567,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Proper insertion point determined
 - Edge cases handled
 
-#### Story 6.3: Content Shifting
+#### Story 7.3: Content Shifting
 **As a** Developer/Maintainer
 **I want** to shift existing content properly
 **So that** nothing is lost during prepend
@@ -592,13 +580,13 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - References updated if needed
 - Performance acceptable
 
-## Epic 7: Replace Match Operation
+## Epic 8: Replace Match Operation
 
 **Goal:** Implement exact text matching and replacement functionality
 
 ### User Stories
 
-#### Story 7.1: Replace Match Command Handler
+#### Story 8.1: Replace Match Command Handler
 **As a** Claude User
 **I want** to replace specific text matches
 **So that** I can update specific content sections
@@ -611,7 +599,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Success response with match count
 - No regex support in MVP
 
-#### Story 7.2: Text Search Implementation
+#### Story 8.2: Text Search Implementation
 **As a** Developer/Maintainer
 **I want** to search for text in documents
 **So that** I can find replacement targets
@@ -624,7 +612,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Search performance optimized
 - Special characters handled
 
-#### Story 7.3: Match Replacement
+#### Story 8.3: Match Replacement
 **As a** Developer/Maintainer
 **I want** to replace matched text
 **So that** content is updated correctly
@@ -637,7 +625,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Document structure intact
 - Operation reversible (future)
 
-#### Story 7.4: Match Error Handling
+#### Story 8.4: Match Error Handling
 **As a** Claude User
 **I want** clear feedback on match failures
 **So that** I can adjust my search parameters
@@ -650,13 +638,13 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Alternative search hints
 - Error logged properly
 
-## Epic 8: Insert Before Operation
+## Epic 9: Insert Before Operation
 
 **Goal:** Enable content insertion before matched anchor text
 
 ### User Stories
 
-#### Story 8.1: Insert Before Command Handler
+#### Story 9.1: Insert Before Command Handler
 **As a** Claude User
 **I want** to insert content before specific text
 **So that** I can add context to existing content
@@ -669,7 +657,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Success response provided
 - Position tracking accurate
 
-#### Story 8.2: Anchor Position Detection
+#### Story 9.2: Anchor Position Detection
 **As a** Developer/Maintainer
 **I want** to find anchor text position
 **So that** I can insert content before it
@@ -682,7 +670,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Format boundaries considered
 - Performance acceptable
 
-#### Story 8.3: Before Insertion Logic
+#### Story 9.3: Before Insertion Logic
 **As a** Developer/Maintainer
 **I want** to insert content before anchor
 **So that** document flows naturally
@@ -695,13 +683,13 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Document structure maintained
 - No content overwritten
 
-## Epic 9: Insert After Operation
+## Epic 10: Insert After Operation
 
 **Goal:** Complete anchor-based insertion with after-match positioning
 
 ### User Stories
 
-#### Story 9.1: Insert After Command Handler
+#### Story 10.1: Insert After Command Handler
 **As a** Claude User
 **I want** to insert content after specific text
 **So that** I can append related information
@@ -714,7 +702,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Success response provided
 - Complete MVP functionality
 
-#### Story 9.2: After Position Calculation
+#### Story 10.2: After Position Calculation
 **As a** Developer/Maintainer
 **I want** to find position after anchor text
 **So that** I can insert content correctly
@@ -727,7 +715,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Special elements handled
 - Position validation complete
 
-#### Story 9.3: After Insertion Implementation
+#### Story 10.3: After Insertion Implementation
 **As a** Developer/Maintainer
 **I want** to insert content after anchor
 **So that** additions appear in correct location
@@ -740,7 +728,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Structure preserved
 - All operations complete
 
-#### Story 9.4: MVP Completion Validation
+#### Story 10.4: MVP Completion Validation
 **As a** Developer/Maintainer
 **I want** to validate MVP completeness
 **So that** we can prepare for launch
@@ -763,7 +751,7 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - **Engagement:** 30 daily active users
 
 ### Technical Milestones
-- All 9 epics deployed to production
+- All 10 epics deployed to production
 - Comprehensive test coverage achieved
 - Monitoring and alerting operational
 - Documentation complete

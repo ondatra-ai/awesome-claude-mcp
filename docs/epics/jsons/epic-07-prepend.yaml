@@ -1,0 +1,73 @@
+epic:
+  id: 7
+  name: "Prepend Operation"
+  status: "PLANNED"
+  goal: "Add content prepending capability with document structure preservation"
+  context: ""
+
+stories:
+  - id: "7.1"
+    title: "Prepend Command Handler"
+    as_a: "Claude User"
+    i_want: "to prepend content to documents"
+    so_that: "I can add information at the beginning"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Command handler for prepend created"
+      - id: AC-2
+        description: "Content inserted at document start"
+      - id: AC-3
+        description: "Existing content pushed down"
+      - id: AC-4
+        description: "Title/headers preserved if needed"
+      - id: AC-5
+        description: "Success response provided"
+      - id: AC-6
+        description: "Error handling complete"
+
+  - id: "7.2"
+    title: "Beginning Position Handling"
+    as_a: "Developer/Maintainer"
+    i_want: "to identify document beginning"
+    so_that: "I can prepend content correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "First position identified correctly"
+      - id: AC-2
+        description: "Title handling logic implemented"
+      - id: AC-3
+        description: "Table of contents considered"
+      - id: AC-4
+        description: "Cover page detection"
+      - id: AC-5
+        description: "Proper insertion point determined"
+      - id: AC-6
+        description: "Edge cases handled"
+
+  - id: "7.3"
+    title: "Content Shifting"
+    as_a: "Developer/Maintainer"
+    i_want: "to shift existing content properly"
+    so_that: "nothing is lost during prepend"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Existing content preserved completely"
+      - id: AC-2
+        description: "Content moved down correctly"
+      - id: AC-3
+        description: "Formatting maintained during shift"
+      - id: AC-4
+        description: "Page breaks adjusted"
+      - id: AC-5
+        description: "References updated if needed"
+      - id: AC-6
+        description: "Performance acceptable"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

@@ -1,0 +1,93 @@
+epic:
+  id: 10
+  name: "Insert After Operation"
+  status: "PLANNED"
+  goal: "Complete anchor-based insertion with after-match positioning"
+  context: ""
+
+stories:
+  - id: "10.1"
+    title: "Insert After Command Handler"
+    as_a: "Claude User"
+    i_want: "to insert content after specific text"
+    so_that: "I can append related information"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Command handler for insert_after created"
+      - id: AC-2
+        description: "Anchor text matching working"
+      - id: AC-3
+        description: "Content inserted after match"
+      - id: AC-4
+        description: "First match only (MVP)"
+      - id: AC-5
+        description: "Success response provided"
+      - id: AC-6
+        description: "Complete MVP functionality"
+
+  - id: "10.2"
+    title: "After Position Calculation"
+    as_a: "Developer/Maintainer"
+    i_want: "to find position after anchor text"
+    so_that: "I can insert content correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "After position calculated accurately"
+      - id: AC-2
+        description: "Paragraph endings considered"
+      - id: AC-3
+        description: "Section boundaries respected"
+      - id: AC-4
+        description: "Spacing requirements met"
+      - id: AC-5
+        description: "Special elements handled"
+      - id: AC-6
+        description: "Position validation complete"
+
+  - id: "10.3"
+    title: "After Insertion Implementation"
+    as_a: "Developer/Maintainer"
+    i_want: "to insert content after anchor"
+    so_that: "additions appear in correct location"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Content inserted after anchor"
+      - id: AC-2
+        description: "Natural flow maintained"
+      - id: AC-3
+        description: "Formatting consistent"
+      - id: AC-4
+        description: "No overlap with anchor"
+      - id: AC-5
+        description: "Structure preserved"
+      - id: AC-6
+        description: "All operations complete"
+
+  - id: "10.4"
+    title: "MVP Completion Validation"
+    as_a: "Developer/Maintainer"
+    i_want: "to validate MVP completeness"
+    so_that: "we can prepare for launch"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "All 6 operations functional"
+      - id: AC-2
+        description: "All Markdown elements supported"
+      - id: AC-3
+        description: "99% success rate achieved"
+      - id: AC-4
+        description: "10-minute setup confirmed"
+      - id: AC-5
+        description: "Monitoring operational"
+      - id: AC-6
+        description: "Ready for October 15, 2025 launch"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

@@ -13,9 +13,8 @@ type AIService struct {
 	implementer *ThreadImplementer
 }
 
-func NewAIService(config config.ConfigProvider) (*AIService, error) {
-	factory := NewClientFactory(config)
-	client, err := factory.Create()
+func NewAIService(config *config.ViperConfig) (*AIService, error) {
+	client, err := NewClaudeClient()
 	if err != nil {
 		return nil, err
 	}

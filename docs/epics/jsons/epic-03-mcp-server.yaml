@@ -1,0 +1,113 @@
+epic:
+  id: 3
+  name: "MCP Server Setup"
+  status: "PLANNED"
+  goal: "Create functional MCP protocol server with tool registration and bidirectional communication"
+  context: ""
+
+stories:
+  - id: "3.1"
+    title: "MCP Server Implementation"
+    as_a: "Developer/Maintainer"
+    i_want: "to implement MCP protocol server"
+    so_that: "Claude can communicate with the service"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "WebSocket server implemented"
+      - id: AC-2
+        description: "HTTP endpoint for MCP available"
+      - id: AC-3
+        description: "Message parsing and validation"
+      - id: AC-4
+        description: "Response formatting to MCP standard"
+      - id: AC-5
+        description: "Connection management handled"
+      - id: AC-6
+        description: "Concurrent connection support"
+
+  - id: "3.2"
+    title: "Tool Registration"
+    as_a: "Claude User"
+    i_want: "to discover available tools"
+    so_that: "I know what operations are available"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Tool definition schema created"
+      - id: AC-2
+        description: "Tool registration endpoint working"
+      - id: AC-3
+        description: "Tool capabilities described clearly"
+      - id: AC-4
+        description: "Parameter schemas defined"
+      - id: AC-5
+        description: "Version information included"
+      - id: AC-6
+        description: "Dynamic or static registration (TBD after testing)"
+
+  - id: "3.3"
+    title: "Message Protocol Handler"
+    as_a: "Developer/Maintainer"
+    i_want: "to process MCP messages correctly"
+    so_that: "operations are executed properly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Request message parsing implemented"
+      - id: AC-2
+        description: "Command routing to handlers"
+      - id: AC-3
+        description: "Response message formatting"
+      - id: AC-4
+        description: "Error message standards followed"
+      - id: AC-5
+        description: "Message validation complete"
+      - id: AC-6
+        description: "Correlation ID tracking"
+
+  - id: "3.4"
+    title: "MCP Error Handling"
+    as_a: "Claude User"
+    i_want: "standard MCP error responses"
+    so_that: "I can handle failures appropriately"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Standard MCP error format used"
+      - id: AC-2
+        description: "Error codes properly categorized"
+      - id: AC-3
+        description: "Descriptive error messages provided"
+      - id: AC-4
+        description: "Stack traces excluded from production"
+      - id: AC-5
+        description: "Error logging implemented"
+      - id: AC-6
+        description: "Rate limit errors handled"
+
+  - id: "3.5"
+    title: "Connection Management"
+    as_a: "Developer/Maintainer"
+    i_want: "robust connection handling"
+    so_that: "communication remains stable"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "WebSocket heartbeat implemented"
+      - id: AC-2
+        description: "Connection timeout handling"
+      - id: AC-3
+        description: "Reconnection logic for clients"
+      - id: AC-4
+        description: "Graceful shutdown handling"
+      - id: AC-5
+        description: "Connection pooling if needed"
+      - id: AC-6
+        description: "Connection state tracking"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

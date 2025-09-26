@@ -1,0 +1,29 @@
+epic:
+  id: int(min=1, max=100)
+  name: str()
+  status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
+  goal: str()
+  completion_summary: str(required=False)
+  context: str()
+
+stories: list(include('story'), min=1)
+
+dependencies: list(str())
+success_criteria: list(str())
+technical_notes: list(str())
+
+---
+story:
+  id: str()
+  title: str()
+  as_a: str()
+  i_want: str()
+  so_that: str()
+  status: enum('COMPLETE', 'PLANNED', 'IN_PROGRESS', 'BLOCKED', 'CANCELLED')
+  acceptance_criteria: list(include('acceptance_criteria'), min=1)
+  notes: str(required=False)
+
+---
+acceptance_criteria:
+  id: regex('^AC-[0-9]+$')
+  description: str()

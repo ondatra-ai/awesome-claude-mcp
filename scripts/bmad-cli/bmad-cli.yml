@@ -5,3 +5,11 @@ templates:
   prompts:
     heuristic: "./templates/heuristic.prompt.tpl"
     apply: "./templates/apply.prompt.tpl"
+    tasks: "./templates/us-create.tasks.prompt.tpl"
+
+documents:
+  architecture: "../../docs/architecture.md"
+  frontend_architecture: "../../docs/frontend-architecture.md"
+  coding_standards: "../../docs/architecture/coding-standards.md"
+  source_tree: "../../docs/architecture/source-tree.md"
+  tech_stack: "../../docs/architecture/tech-stack.md"

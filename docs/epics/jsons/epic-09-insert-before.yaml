@@ -1,0 +1,73 @@
+epic:
+  id: 9
+  name: "Insert Before Operation"
+  status: "PLANNED"
+  goal: "Enable content insertion before matched anchor text"
+  context: ""
+
+stories:
+  - id: "9.1"
+    title: "Insert Before Command Handler"
+    as_a: "Claude User"
+    i_want: "to insert content before specific text"
+    so_that: "I can add context to existing content"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Command handler for insert_before created"
+      - id: AC-2
+        description: "Anchor text matching working"
+      - id: AC-3
+        description: "Content inserted before match"
+      - id: AC-4
+        description: "First match only (MVP)"
+      - id: AC-5
+        description: "Success response provided"
+      - id: AC-6
+        description: "Position tracking accurate"
+
+  - id: "9.2"
+    title: "Anchor Position Detection"
+    as_a: "Developer/Maintainer"
+    i_want: "to find anchor text position"
+    so_that: "I can insert content before it"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Anchor search implemented"
+      - id: AC-2
+        description: "Exact position determined"
+      - id: AC-3
+        description: "Before position calculated"
+      - id: AC-4
+        description: "Paragraph boundaries respected"
+      - id: AC-5
+        description: "Format boundaries considered"
+      - id: AC-6
+        description: "Performance acceptable"
+
+  - id: "9.3"
+    title: "Before Insertion Logic"
+    as_a: "Developer/Maintainer"
+    i_want: "to insert content before anchor"
+    so_that: "document flows naturally"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Content inserted at correct position"
+      - id: AC-2
+        description: "Anchor text unchanged"
+      - id: AC-3
+        description: "Spacing handled properly"
+      - id: AC-4
+        description: "Formatting applied correctly"
+      - id: AC-5
+        description: "Document structure maintained"
+      - id: AC-6
+        description: "No content overwritten"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

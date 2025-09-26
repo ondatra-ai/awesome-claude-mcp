@@ -13,7 +13,7 @@ type GitHubService struct {
 	threadResolver *ThreadResolver
 }
 
-func NewGitHubService(shell shell.Executor) *GitHubService {
+func NewGitHubService(shell *shell.CommandRunner) *GitHubService {
 	client := NewGitHubCLIClient(shell)
 
 	return &GitHubService{

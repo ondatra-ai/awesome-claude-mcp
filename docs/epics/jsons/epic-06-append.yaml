@@ -1,0 +1,93 @@
+epic:
+  id: 6
+  name: "Append Operation"
+  status: "PLANNED"
+  goal: "Add content appending capability with formatting preservation"
+  context: ""
+
+stories:
+  - id: "6.1"
+    title: "Append Command Handler"
+    as_a: "Claude User"
+    i_want: "to append content to documents"
+    so_that: "I can add information without replacing existing content"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Command handler for append created"
+      - id: AC-2
+        description: "Existing content preserved"
+      - id: AC-3
+        description: "New content added at end"
+      - id: AC-4
+        description: "Formatting maintained"
+      - id: AC-5
+        description: "Success response provided"
+      - id: AC-6
+        description: "Operation metrics tracked"
+
+  - id: "6.2"
+    title: "Document Position Detection"
+    as_a: "Developer/Maintainer"
+    i_want: "to find the document end position"
+    so_that: "I can append content correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Document structure retrieved"
+      - id: AC-2
+        description: "End position calculated correctly"
+      - id: AC-3
+        description: "Empty document handling"
+      - id: AC-4
+        description: "Position after last paragraph"
+      - id: AC-5
+        description: "Section breaks considered"
+      - id: AC-6
+        description: "Performance optimized"
+
+  - id: "6.3"
+    title: "Content Insertion"
+    as_a: "Developer/Maintainer"
+    i_want: "to insert content at specific position"
+    so_that: "append operation works correctly"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Insert request created properly"
+      - id: AC-2
+        description: "Content inserted at correct position"
+      - id: AC-3
+        description: "No content overwritten"
+      - id: AC-4
+        description: "Formatting applied to new content"
+      - id: AC-5
+        description: "Document flow maintained"
+      - id: AC-6
+        description: "Undo information available"
+
+  - id: "6.4"
+    title: "Format Preservation"
+    as_a: "Claude User"
+    i_want: "existing formatting preserved"
+    so_that: "document consistency is maintained"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Existing styles unchanged"
+      - id: AC-2
+        description: "New content styled independently"
+      - id: AC-3
+        description: "No format bleeding between sections"
+      - id: AC-4
+        description: "Spacing handled correctly"
+      - id: AC-5
+        description: "Page breaks respected"
+      - id: AC-6
+        description: "Headers/footers unaffected"
+
+dependencies: []
+
+success_criteria: []
+
+technical_notes: []

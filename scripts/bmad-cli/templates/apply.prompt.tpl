@@ -3,11 +3,11 @@
 As @dev, implement the suggested changes directly in the repository.
 
 Context:
-- PR Number: {{PR_NUMBER}}
-- Conversation Location: {{LOCATION}}
-- Conversation URL: {{URL}}
+- PR Number: {{.PRNumber}}
+- Conversation Location: {{.Location}}
+- Conversation URL: {{.URL}}
 - Conversation Text:
-{{CONVERSATION_TEXT}}
+{{.ConversationText}}
 
 Instructions (Apply Mode):
 - Edit files in this workspace to implement the requested change.

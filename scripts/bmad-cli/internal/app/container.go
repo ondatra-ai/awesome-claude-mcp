@@ -12,44 +12,68 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
-	"bmad-cli/internal/infrastructure/logging"
+	"bmad-cli/internal/infrastructure/docs"
+	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/shell"
+	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/infrastructure/validation"
 )
 
 type Container struct {
-	Config      config.ConfigProvider
-	Logger      logging.Logger
-	Shell       shell.Executor
-	GitHub      ports.GitHubService
-	AI          ports.AIService
+	Config      *config.ViperConfig
 	PRTriageCmd *commands.PRTriageCommand
+	USCreateCmd *commands.USCreateCommand
 }
 
 func NewContainer() (*Container, error) {
-	cfg := config.NewViperConfig()
+	cfg, err := config.NewViperConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize config: %w", err)
+	}
 
 	configureLogging()
-	logger := logging.NewSlogLogger()
 
 	shellExec := shell.NewCommandRunner()
 
 	githubService := github.NewGitHubService(shellExec)
 
-	aiService, err := ai.NewAIService(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AI service: %w", err)
-	}
+	// Setup user story creation dependencies
+	epicLoader := epic.NewEpicLoader()
 
-	orchestrator := services.NewPRTriageOrchestrator(githubService, aiService, logger)
-	prTriageCmd := commands.NewPRTriageCommand(orchestrator)
+	// Setup architecture document loader
+	architectureLoader := docs.NewArchitectureLoader(cfg)
+
+	// Setup task prompt loader
+	taskPromptLoader := template.NewTaskPromptLoader("templates")
+
+	// Setup AI task generation - required for operation
+	claudeClient, err := ai.NewClaudeClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI client: %w", err)
+	}
+	taskGenerator := services.NewTaskGenerator(claudeClient, taskPromptLoader)
+
+	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, architectureLoader)
+
+	templateProcessor := template.NewTemplateProcessor("templates/story.yaml.tpl")
+	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
+	usCreateCmd := commands.NewUSCreateCommand(storyFactory, templateProcessor, yamaleValidator)
+
+	// AI service and PR triage are optional - only create if needed
+	var aiService ports.AIService
+	var prTriageCmd *commands.PRTriageCommand
+
+	// Try to create AI service, but don't fail if it's not available
+	if aiSvc, err := ai.NewAIService(cfg); err == nil {
+		aiService = aiSvc
+		orchestrator := services.NewPRTriageOrchestrator(githubService, aiService)
+		prTriageCmd = commands.NewPRTriageCommand(orchestrator)
+	}
 
 	return &Container{
 		Config:      cfg,
-		Logger:      logger,
-		Shell:       shellExec,
-		GitHub:      githubService,
-		AI:          aiService,
 		PRTriageCmd: prTriageCmd,
+		USCreateCmd: usCreateCmd,
 	}, nil
 }
 

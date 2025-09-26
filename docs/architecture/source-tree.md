@@ -1,4 +1,4 @@
-# MCP Google Docs Editor - Source Tree (Railway Deployment)
+# MCP Google Docs Editor - Source Tree
 
 This document summarizes the current monorepo layout after the migration to Railway. It replaces the prior cloud Infrastructure-as-Code structure.
 
