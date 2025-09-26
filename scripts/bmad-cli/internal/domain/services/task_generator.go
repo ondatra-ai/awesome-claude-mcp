@@ -75,15 +75,12 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	}
 
 	// Save successfully parsed tasks to YAML file
-	tasksYAML, err := yaml.Marshal(map[string][]story.Task{"tasks": tasks})
-	if err == nil {
+	taskMap := map[string]interface{}{"tasks": tasks}
+	if tasksYAML, yamlErr := yaml.Marshal(taskMap); yamlErr == nil {
 		tasksFile := "./tmp/3.1-tasks.yml"
-		if err := os.WriteFile(tasksFile, tasksYAML, 0644); err == nil {
+		if writeErr := os.WriteFile(tasksFile, tasksYAML, 0644); writeErr == nil {
 			fmt.Printf("✅ Parsed tasks saved to: %s\n", tasksFile)
 		}
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
 	}
 
 	// Validate that we have at least one task

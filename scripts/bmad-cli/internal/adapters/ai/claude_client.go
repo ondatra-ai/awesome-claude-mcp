@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/lancekrogers/claude-code-go/pkg/claude"
 	"github.com/lancekrogers/claude-code-go/pkg/claude/dangerous"
@@ -14,6 +15,9 @@ type ClaudeClient struct {
 }
 
 func NewClaudeClient() (*ClaudeClient, error) {
+	// Set required environment variable for dangerous client
+	os.Setenv("CLAUDE_ENABLE_DANGEROUS", "i-accept-all-risks")
+
 	// Try to create the main claude client
 	client := claude.NewClient("claude")
 
@@ -62,13 +66,22 @@ func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode Ex
 
 // GenerateContent generates content using Claude for general purposes
 func (c *ClaudeClient) GenerateContent(ctx context.Context, prompt string) (string, error) {
-	// Use dangerous client with bypass permissions for task generation
-	result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, &claude.RunOptions{
+	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
+
+	// Try standard client first
+	opts := &claude.RunOptions{
 		Format: claude.TextOutput,
-	})
+	}
+	result, err := c.client.RunPrompt(prompt, opts)
 	if err != nil {
-		return "", fmt.Errorf("claude content generation failed: %w", err)
+		fmt.Printf("❌ Standard client failed: %v\n", err)
+		// Fallback to dangerous client with bypass permissions
+		result, err = c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
+		if err != nil {
+			return "", fmt.Errorf("claude content generation failed: %w", err)
+		}
 	}
 
+	fmt.Printf("✅ Claude returned result length: %d\n", len(result.Result))
 	return result.Result, nil
 }

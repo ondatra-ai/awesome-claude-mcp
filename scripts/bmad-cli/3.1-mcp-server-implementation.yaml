@@ -20,83 +20,174 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Set up MCP protocol infrastructure with Mark3Labs"
+  - name: "Setup MCP Server Infrastructure with Mark3Labs Library"
     acceptance_criteria:
       - "AC-1"
-      - "AC-2"
-    subtasks:
-      - "Initialize Go module with Mark3Labs MCP-Go dependency"
-      - "Create MCP server entry point using Mark3Labs stdio transport"
-      - "Configure MCP server with proper capabilities and tool discovery"
-      - "Set up HTTP-to-WebSocket bridge for Claude communication"
-      - "Implement connection lifecycle management and error recovery"
-      - "Add structured logging for MCP protocol events"
-    status: "pending"
-
-  - name: "Implement document operation message parsing"
-    acceptance_criteria:
-      - "AC-3"
-      - "AC-4"
-    subtasks:
-      - "Define MCP tool schemas for all six document operations"
-      - "Implement parameter validation using Mark3Labs schema validation"
-      - "Create request parsing with enum validation for operation types"
-      - "Add anchor text validation for positioned operations"
-      - "Implement error response formatting to MCP standard"
-      - "Add input sanitization for document IDs and content"
-    status: "pending"
-
-  - name: "Build Google Docs integration layer"
-    acceptance_criteria:
-      - "AC-1"
-      - "AC-3"
-    subtasks:
-      - "Implement Google Docs API client with batch operations"
-      - "Create Markdown to Google Docs API request converter"
-      - "Add document access validation and permission checking"
-      - "Implement replace_all operation with content replacement"
-      - "Add append and prepend operations with positioning logic"
-      - "Create match-based operations (replace_match, insert_before, insert_after)"
-    status: "pending"
-
-  - name: "Set up OAuth authentication and token management"
-    acceptance_criteria:
-      - "AC-3"
       - "AC-5"
     subtasks:
-      - "Implement Google OAuth 2.0 flow for document access"
-      - "Create secure token storage with encryption at rest"
-      - "Add token refresh mechanism for expired credentials"
-      - "Implement user session management across connections"
-      - "Add permission validation for document operations"
-      - "Create auth middleware for MCP tool execution"
+      - "Initialize Go module for MCP service with Mark3Labs MCP-Go dependency"
+      - "Create main.go entry point with Mark3Labs MCP server setup"
+      - "Implement stdio transport configuration for Claude communication"
+      - "Configure structured logging with zerolog for MCP protocol events"
+      - "Setup graceful shutdown handling for MCP server connections"
+      - "Create Dockerfile with multi-stage build for Railway deployment"
     status: "pending"
 
-  - name: "Implement concurrent connection handling"
+  - name: "Implement WebSocket Server for MCP Protocol"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-6"
+    subtasks:
+      - "Configure WebSocket endpoint at /mcp for protocol communication"
+      - "Implement connection upgrade from HTTP to WebSocket"
+      - "Setup concurrent connection handling with goroutines"
+      - "Implement connection pooling and resource management"
+      - "Add WebSocket ping/pong heartbeat mechanism for connection health"
+      - "Configure connection timeouts and cleanup procedures"
+    status: "pending"
+
+  - name: "Create HTTP Endpoints for MCP Service"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Implement /health endpoint with service status checks"
+      - "Create /version endpoint returning MCP service version"
+      - "Setup CORS middleware for cross-origin requests"
+      - "Configure HTTP server with proper timeouts and limits"
+      - "Add request logging middleware with correlation IDs"
+      - "Implement graceful HTTP server shutdown"
+    status: "pending"
+
+  - name: "Implement MCP Message Parsing and Validation"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Define MCP message types with strongly-typed structs"
+      - "Implement JSON-RPC 2.0 message parsing with validation"
+      - "Create parameter validation for tool execution requests"
+      - "Setup enum validation for operation types (replace_all, append, etc.)"
+      - "Implement schema validation for document IDs and content"
+      - "Add error handling for malformed MCP messages"
+    status: "pending"
+
+  - name: "Build MCP Response Formatting System"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Implement MCP-compliant JSON-RPC response formatting"
+      - "Create success response structures with operation results"
+      - "Setup error response formatting with proper error codes"
+      - "Implement tool execution result serialization"
+      - "Add response validation to ensure MCP protocol compliance"
+      - "Create response logging for debugging and monitoring"
+    status: "pending"
+
+  - name: "Setup Connection Management and State Tracking"
     acceptance_criteria:
       - "AC-5"
       - "AC-6"
     subtasks:
-      - "Create goroutine-based connection pool management"
-      - "Implement per-user connection tracking and limits"
-      - "Add connection state management (active, idle, closed)"
-      - "Create connection cleanup on client disconnect"
-      - "Implement graceful shutdown with connection draining"
-      - "Add monitoring for connection metrics and health"
+      - "Implement connection registry for active MCP sessions"
+      - "Create connection state tracking (connected, authenticated, idle)"
+      - "Setup connection cleanup on disconnect or timeout"
+      - "Implement connection rate limiting per client"
+      - "Add connection metrics collection (active connections, throughput)"
+      - "Create connection health monitoring and alerting"
     status: "pending"
 
-  - name: "Add comprehensive error handling and monitoring"
+  - name: "Register Google Docs MCP Tools"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Register replace_all tool with parameter schema validation"
+      - "Register append tool with content and document ID validation"
+      - "Register prepend tool with structured parameter definitions"
+      - "Register replace_match tool with anchor text validation"
+      - "Register insert_before and insert_after tools with positioning parameters"
+      - "Implement tool discovery response for Claude client capability negotiation"
+    status: "pending"
+
+  - name: "Integrate Google OAuth Authentication"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-5"
+    subtasks:
+      - "Setup Google OAuth 2.0 client configuration"
+      - "Implement OAuth token validation for incoming MCP requests"
+      - "Create token refresh mechanism for expired credentials"
+      - "Setup secure token storage with Redis integration"
+      - "Implement user context extraction from OAuth tokens"
+      - "Add authentication middleware for tool execution endpoints"
+    status: "pending"
+
+  - name: "Build Document Service Integration Layer"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-4"
+    subtasks:
+      - "Create Google Docs API client with proper authentication"
+      - "Implement document access permission validation"
+      - "Setup document operation execution with batch update requests"
+      - "Create markdown to Google Docs format converter"
+      - "Implement operation result tracking and status reporting"
+      - "Add circuit breaker for Google API reliability"
+    status: "pending"
+
+  - name: "Implement Error Handling and Recovery"
     acceptance_criteria:
       - "AC-3"
       - "AC-4"
-      - "AC-5"
     subtasks:
-      - "Implement MCP-compliant error response formatting"
-      - "Add structured logging for all operations and errors"
-      - "Create error recovery mechanisms for transient failures"
-      - "Add operation timeout handling with proper cleanup"
-      - "Implement health check endpoints for service monitoring"
-      - "Add metrics collection for operation success rates"
+      - "Create MCP-specific error types with proper error codes"
+      - "Implement document not found error handling"
+      - "Setup permission denied error responses with user guidance"
+      - "Add network timeout and retry logic for Google API calls"
+      - "Create malformed request error handling with validation details"
+      - "Implement structured error logging for debugging support"
+    status: "pending"
+
+  - name: "Configure Railway Deployment Pipeline"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+    subtasks:
+      - "Update railway.toml with mcp-service configuration"
+      - "Configure environment variables for MCP service in Railway dashboard"
+      - "Setup health check endpoints for Railway service monitoring"
+      - "Configure custom domain mapping for MCP WebSocket endpoints"
+      - "Update GitHub Actions workflow for MCP service deployment"
+      - "Test deployment across development, staging, and production environments"
+    status: "pending"
+
+  - name: "Create Comprehensive Test Suite"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Write unit tests for MCP message parsing and validation"
+      - "Create integration tests for WebSocket connection handling"
+      - "Implement end-to-end tests for complete tool execution workflows"
+      - "Add performance tests for concurrent connection handling"
+      - "Create mock Google Docs API for isolated testing"
+      - "Setup test fixtures for various document operation scenarios"
+    status: "pending"
+
+  - name: "Add Monitoring and Observability"
+    acceptance_criteria:
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Implement structured logging for all MCP protocol interactions"
+      - "Add metrics collection for connection count and operation latency"
+      - "Create health check endpoints with dependency status verification"
+      - "Setup performance monitoring for tool execution times"
+      - "Implement error rate tracking and alerting thresholds"
+      - "Add distributed tracing for request flow across services"
     status: "pending"
 
 dev_notes:
