@@ -35,26 +35,31 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 		return "", fmt.Errorf("failed to read template file %s: %w", absTemplatePath, err)
 	}
 
-	// Parse template
-	tmpl, err := template.New("story").Parse(string(templateContent))
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
+	// Create custom template functions
+	funcMap := template.FuncMap{
+		"toYaml": func(v interface{}) string {
+			data, err := yaml.Marshal(v)
+			if err != nil {
+				return fmt.Sprintf("# Error marshaling to YAML: %v", err)
+			}
+			return string(data)
+		},
+		"nindent": func(spaces int, text string) string {
+			lines := strings.Split(text, "\n")
+			indent := strings.Repeat(" ", spaces)
+			for i, line := range lines {
+				if line != "" {
+					lines[i] = indent + line
+				}
+			}
+			return strings.Join(lines, "\n")
+		},
 	}
 
-	// Convert DevNotes map to YAML string for template rendering
-	devNotesYAML := ""
-	if len(doc.DevNotes) > 0 {
-		// Create a wrapper to get proper YAML structure
-		devNotesWrapper := map[string]interface{}{
-			"dev_notes": doc.DevNotes,
-		}
-		yamlBytes, err := yaml.Marshal(devNotesWrapper)
-		if err == nil {
-			// Remove the outer "dev_notes:" wrapper since template will add it
-			devNotesYAML = strings.TrimPrefix(string(yamlBytes), "dev_notes:\n")
-			// Remove trailing newline
-			devNotesYAML = strings.TrimSuffix(devNotesYAML, "\n")
-		}
+	// Parse template with custom functions
+	tmpl, err := template.New("story").Funcs(funcMap).Parse(string(templateContent))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
 	// Create template data that matches the expected template structure
@@ -71,7 +76,7 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 
 		// Other sections as nested structures
 		"Tasks":          doc.Tasks,
-		"DevNotes":       devNotesYAML,
+		"DevNotes":       doc.DevNotes,
 		"Testing":        doc.Testing,
 		"ChangeLog":      doc.ChangeLog,
 		"QAResults":      doc.QAResults,

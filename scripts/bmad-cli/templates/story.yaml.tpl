@@ -17,7 +17,8 @@ tasks:{{range .Tasks}}
       - "{{.}}"{{end}}
     status: "{{.Status}}"
 {{end}}
-dev_notes:{{.DevNotes}}
+dev_notes:
+{{.DevNotes | toYaml | nindent 2}}
 
 testing:
   test_location: "{{.Testing.TestLocation}}"
