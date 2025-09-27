@@ -86,10 +86,10 @@ tasks:
 {{.StoryYAML}}
 ```
 
-{{.Architecture}}
+{{.Docs.Architecture.Content}}
 
-{{.FrontendArchitecture}}
+{{.Docs.FrontendArchitecture.Content}}
 
-{{.CodingStandards}}
+{{.Docs.CodingStandards.Content}}
 
-{{.SourceTree}}
+{{.Docs.SourceTree.Content}}

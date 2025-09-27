@@ -12,14 +12,9 @@ import (
 
 // TaskPromptData represents data needed for task generation prompts
 type TaskPromptData struct {
-	Story                *story.Story
-	Docs                 map[string]docs.ArchitectureDoc
-	StoryYAML            string
-	Architecture         string
-	FrontendArchitecture string
-	CodingStandards      string
-	SourceTree           string
-	TechStack            string
+	Story     *story.Story
+	Docs      *docs.ArchitectureDocs
+	StoryYAML string
 }
 
 // AITaskGenerator generates story tasks using AI based on templates
@@ -35,7 +30,7 @@ func NewTaskGenerator(aiClient AIClient) *AITaskGenerator {
 }
 
 // GenerateTasks generates story tasks using AI based on the story and architecture documents
-func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Story, architectureDocs map[string]docs.ArchitectureDoc) ([]story.Task, error) {
+func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Story, architectureDocs *docs.ArchitectureDocs) ([]story.Task, error) {
 	return NewAIGenerator[TaskPromptData, []story.Task](ctx, g.aiClient, storyObj.ID, "tasks").
 		WithData(func() (TaskPromptData, error) {
 			// Marshal story to YAML
@@ -44,31 +39,11 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 				return TaskPromptData{}, fmt.Errorf("failed to marshal story to YAML: %w", err)
 			}
 
-			// Extract document content
-			promptData := TaskPromptData{
+			return TaskPromptData{
 				Story:     storyObj,
 				Docs:      architectureDocs,
 				StoryYAML: string(storyYAML),
-			}
-
-			// Populate architecture documents if available
-			if doc, exists := architectureDocs["Architecture"]; exists {
-				promptData.Architecture = doc.Content
-			}
-			if doc, exists := architectureDocs["FrontendArchitecture"]; exists {
-				promptData.FrontendArchitecture = doc.Content
-			}
-			if doc, exists := architectureDocs["CodingStandards"]; exists {
-				promptData.CodingStandards = doc.Content
-			}
-			if doc, exists := architectureDocs["SourceTree"]; exists {
-				promptData.SourceTree = doc.Content
-			}
-			if doc, exists := architectureDocs["TechStack"]; exists {
-				promptData.TechStack = doc.Content
-			}
-
-			return promptData, nil
+			}, nil
 		}).
 		WithPrompt(func(data TaskPromptData) (string, error) {
 			loader := template.NewTemplateLoader[TaskPromptData]("templates/us-create.tasks.prompt.tpl")

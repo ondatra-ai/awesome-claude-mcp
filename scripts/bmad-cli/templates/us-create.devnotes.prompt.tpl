@@ -141,21 +141,21 @@ dev_notes:
 ## Architecture Documents
 
 ### Architecture Documentation
-Source: {{.ArchitecturePath}}
-{{.Architecture}}
+Source: {{.Docs.Architecture.FilePath}}
+{{.Docs.Architecture.Content}}
 
 ### Frontend Architecture Documentation
-Source: {{.FrontendArchitecturePath}}
-{{.FrontendArchitecture}}
+Source: {{.Docs.FrontendArchitecture.FilePath}}
+{{.Docs.FrontendArchitecture.Content}}
 
 ### Coding Standards Documentation
-Source: {{.CodingStandardsPath}}
-{{.CodingStandards}}
+Source: {{.Docs.CodingStandards.FilePath}}
+{{.Docs.CodingStandards.Content}}
 
 ### Source Tree Documentation
-Source: {{.SourceTreePath}}
-{{.SourceTree}}
+Source: {{.Docs.SourceTree.FilePath}}
+{{.Docs.SourceTree.Content}}
 
 ### Technology Stack Documentation
-Source: {{.TechStackPath}}
-{{.TechStack}}
+Source: {{.Docs.TechStack.FilePath}}
+{{.Docs.TechStack.Content}}

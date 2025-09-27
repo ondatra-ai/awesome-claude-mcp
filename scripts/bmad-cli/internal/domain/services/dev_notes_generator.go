@@ -12,15 +12,10 @@ import (
 
 // DevNotesPromptData represents data needed for dev notes generation prompts
 type DevNotesPromptData struct {
-	Story                *story.Story
-	Tasks                []story.Task
-	Docs                 map[string]docs.ArchitectureDoc
-	StoryYAML            string
-	Architecture         string
-	FrontendArchitecture string
-	CodingStandards      string
-	SourceTree           string
-	TechStack            string
+	Story     *story.Story
+	Tasks     []story.Task
+	Docs      *docs.ArchitectureDocs
+	StoryYAML string
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
@@ -36,7 +31,7 @@ func NewDevNotesGenerator(aiClient AIClient) *AIDevNotesGenerator {
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (story.DevNotes, error) {
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error) {
 	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, storyObj.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
 			// Marshal story to YAML
@@ -45,32 +40,12 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 				return DevNotesPromptData{}, fmt.Errorf("failed to marshal story to YAML: %w", err)
 			}
 
-			// Extract document content
-			promptData := DevNotesPromptData{
+			return DevNotesPromptData{
 				Story:     storyObj,
 				Tasks:     tasks,
 				Docs:      architectureDocs,
 				StoryYAML: string(storyYAML),
-			}
-
-			// Populate architecture documents if available
-			if doc, exists := architectureDocs["Architecture"]; exists {
-				promptData.Architecture = doc.Content
-			}
-			if doc, exists := architectureDocs["FrontendArchitecture"]; exists {
-				promptData.FrontendArchitecture = doc.Content
-			}
-			if doc, exists := architectureDocs["CodingStandards"]; exists {
-				promptData.CodingStandards = doc.Content
-			}
-			if doc, exists := architectureDocs["SourceTree"]; exists {
-				promptData.SourceTree = doc.Content
-			}
-			if doc, exists := architectureDocs["TechStack"]; exists {
-				promptData.TechStack = doc.Content
-			}
-
-			return promptData, nil
+			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
 			loader := template.NewTemplateLoader[DevNotesPromptData]("templates/us-create.devnotes.prompt.tpl")
