@@ -5,10 +5,6 @@ import (
 	"fmt"
 	"os"
 	"text/template"
-
-	"bmad-cli/internal/common/utils"
-	"bmad-cli/internal/domain/models/story"
-	"bmad-cli/internal/infrastructure/docs"
 )
 
 // PromptLoader is a generic template loader for any prompt data type
@@ -72,56 +68,4 @@ func (l *PromptLoader[T]) executeTemplate(templateContent string, templateData m
 	}
 
 	return buf.String(), nil
-}
-
-// BuildTaskTemplateData builds template data for task generation
-func BuildTaskTemplateData(story *story.Story, docs map[string]docs.ArchitectureDoc) (map[string]interface{}, error) {
-	storyYAML, err := utils.MarshalToYAML(story)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
-	}
-
-	return map[string]interface{}{
-		"StoryYAML":                storyYAML,
-		"StoryID":                  story.ID,
-		"Architecture":             docs["Architecture"].Content,
-		"FrontendArchitecture":     docs["FrontendArchitecture"].Content,
-		"CodingStandards":          docs["CodingStandards"].Content,
-		"SourceTree":               docs["SourceTree"].Content,
-		"TechStack":                docs["TechStack"].Content,
-		"ArchitecturePath":         docs["Architecture"].FilePath,
-		"FrontendArchitecturePath": docs["FrontendArchitecture"].FilePath,
-		"CodingStandardsPath":      docs["CodingStandards"].FilePath,
-		"SourceTreePath":           docs["SourceTree"].FilePath,
-		"TechStackPath":            docs["TechStack"].FilePath,
-	}, nil
-}
-
-// BuildDevNotesTemplateData builds template data for dev notes generation
-func BuildDevNotesTemplateData(story *story.Story, tasks []story.Task, docs map[string]docs.ArchitectureDoc) (map[string]interface{}, error) {
-	storyYAML, err := utils.MarshalToYAML(story)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
-	}
-
-	tasksYAML, err := utils.MarshalWithWrapper(tasks, "tasks")
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert tasks to YAML: %w", err)
-	}
-
-	return map[string]interface{}{
-		"StoryYAML":                storyYAML,
-		"StoryID":                  story.ID,
-		"TasksYAML":                tasksYAML,
-		"Architecture":             docs["Architecture"].Content,
-		"FrontendArchitecture":     docs["FrontendArchitecture"].Content,
-		"CodingStandards":          docs["CodingStandards"].Content,
-		"SourceTree":               docs["SourceTree"].Content,
-		"TechStack":                docs["TechStack"].Content,
-		"ArchitecturePath":         docs["Architecture"].FilePath,
-		"FrontendArchitecturePath": docs["FrontendArchitecture"].FilePath,
-		"CodingStandardsPath":      docs["CodingStandards"].FilePath,
-		"SourceTreePath":           docs["SourceTree"].FilePath,
-		"TechStackPath":            docs["TechStack"].FilePath,
-	}, nil
 }
