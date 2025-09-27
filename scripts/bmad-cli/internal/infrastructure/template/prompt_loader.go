@@ -11,49 +11,36 @@ import (
 	"bmad-cli/internal/infrastructure/docs"
 )
 
-// PromptData represents the base data structure for template execution
-type PromptData struct {
-	Story *story.Story
-	Docs  map[string]docs.ArchitectureDoc
-	Extra map[string]interface{}
-}
-
 // PromptLoader is a generic template loader for any prompt data type
 type PromptLoader[T any] struct {
 	templateFilePath string
-	dataConverter    func(T) (*PromptData, error)
+	templateBuilder  func(T) (map[string]interface{}, error)
 }
 
 // NewPromptLoader creates a new generic PromptLoader instance
-func NewPromptLoader[T any](templateFilePath string, dataConverter func(T) (*PromptData, error)) *PromptLoader[T] {
+func NewPromptLoader[T any](templateFilePath string, templateBuilder func(T) (map[string]interface{}, error)) *PromptLoader[T] {
 	return &PromptLoader[T]{
 		templateFilePath: templateFilePath,
-		dataConverter:    dataConverter,
+		templateBuilder:  templateBuilder,
 	}
 }
 
 // LoadPromptTemplate loads and processes the prompt template with the provided data
 func (l *PromptLoader[T]) LoadPromptTemplate(inputData T) (string, error) {
-	// Convert input data to standard prompt data structure
-	promptData, err := l.dataConverter(inputData)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert input data: %w", err)
-	}
-
 	// Load the template file
 	templateContent, err := l.loadTemplateFile()
 	if err != nil {
 		return "", fmt.Errorf("failed to load template file: %w", err)
 	}
 
-	// Convert story to YAML for injection
-	storyYAML, err := utils.MarshalToYAML(promptData.Story)
+	// Build template data directly from input
+	templateData, err := l.templateBuilder(inputData)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert story to YAML: %w", err)
+		return "", fmt.Errorf("failed to build template data: %w", err)
 	}
 
-	// Execute template with unified data structure
-	prompt, err := l.executeTemplate(templateContent, storyYAML, promptData)
+	// Execute template
+	prompt, err := l.executeTemplate(templateContent, templateData)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -71,28 +58,7 @@ func (l *PromptLoader[T]) loadTemplateFile() (string, error) {
 }
 
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *PromptLoader[T]) executeTemplate(templateContent, storyYAML string, promptData *PromptData) (string, error) {
-	// Create base template data structure
-	templateData := map[string]interface{}{
-		"StoryYAML":                storyYAML,
-		"StoryID":                  promptData.Story.ID,
-		"Architecture":             promptData.Docs["Architecture"].Content,
-		"FrontendArchitecture":     promptData.Docs["FrontendArchitecture"].Content,
-		"CodingStandards":          promptData.Docs["CodingStandards"].Content,
-		"SourceTree":               promptData.Docs["SourceTree"].Content,
-		"TechStack":                promptData.Docs["TechStack"].Content,
-		"ArchitecturePath":         promptData.Docs["Architecture"].FilePath,
-		"FrontendArchitecturePath": promptData.Docs["FrontendArchitecture"].FilePath,
-		"CodingStandardsPath":      promptData.Docs["CodingStandards"].FilePath,
-		"SourceTreePath":           promptData.Docs["SourceTree"].FilePath,
-		"TechStackPath":            promptData.Docs["TechStack"].FilePath,
-	}
-
-	// Add any extra data from the converter
-	for key, value := range promptData.Extra {
-		templateData[key] = value
-	}
-
+func (l *PromptLoader[T]) executeTemplate(templateContent string, templateData map[string]interface{}) (string, error) {
 	// Parse the template
 	tmpl, err := template.New("prompt").Parse(templateContent)
 	if err != nil {
@@ -108,27 +74,54 @@ func (l *PromptLoader[T]) executeTemplate(templateContent, storyYAML string, pro
 	return buf.String(), nil
 }
 
-// TaskPromptDataConverter converts task-specific data to PromptData
-func TaskPromptDataConverter(story *story.Story, docs map[string]docs.ArchitectureDoc) (*PromptData, error) {
-	return &PromptData{
-		Story: story,
-		Docs:  docs,
-		Extra: map[string]interface{}{},
+// BuildTaskTemplateData builds template data for task generation
+func BuildTaskTemplateData(story *story.Story, docs map[string]docs.ArchitectureDoc) (map[string]interface{}, error) {
+	storyYAML, err := utils.MarshalToYAML(story)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
+	}
+
+	return map[string]interface{}{
+		"StoryYAML":                storyYAML,
+		"StoryID":                  story.ID,
+		"Architecture":             docs["Architecture"].Content,
+		"FrontendArchitecture":     docs["FrontendArchitecture"].Content,
+		"CodingStandards":          docs["CodingStandards"].Content,
+		"SourceTree":               docs["SourceTree"].Content,
+		"TechStack":                docs["TechStack"].Content,
+		"ArchitecturePath":         docs["Architecture"].FilePath,
+		"FrontendArchitecturePath": docs["FrontendArchitecture"].FilePath,
+		"CodingStandardsPath":      docs["CodingStandards"].FilePath,
+		"SourceTreePath":           docs["SourceTree"].FilePath,
+		"TechStackPath":            docs["TechStack"].FilePath,
 	}, nil
 }
 
-// DevNotesPromptDataConverter converts dev notes-specific data to PromptData
-func DevNotesPromptDataConverter(story *story.Story, tasks []story.Task, docs map[string]docs.ArchitectureDoc) (*PromptData, error) {
+// BuildDevNotesTemplateData builds template data for dev notes generation
+func BuildDevNotesTemplateData(story *story.Story, tasks []story.Task, docs map[string]docs.ArchitectureDoc) (map[string]interface{}, error) {
+	storyYAML, err := utils.MarshalToYAML(story)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
+	}
+
 	tasksYAML, err := utils.MarshalWithWrapper(tasks, "tasks")
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert tasks to YAML: %w", err)
 	}
 
-	return &PromptData{
-		Story: story,
-		Docs:  docs,
-		Extra: map[string]interface{}{
-			"TasksYAML": tasksYAML,
-		},
+	return map[string]interface{}{
+		"StoryYAML":                storyYAML,
+		"StoryID":                  story.ID,
+		"TasksYAML":                tasksYAML,
+		"Architecture":             docs["Architecture"].Content,
+		"FrontendArchitecture":     docs["FrontendArchitecture"].Content,
+		"CodingStandards":          docs["CodingStandards"].Content,
+		"SourceTree":               docs["SourceTree"].Content,
+		"TechStack":                docs["TechStack"].Content,
+		"ArchitecturePath":         docs["Architecture"].FilePath,
+		"FrontendArchitecturePath": docs["FrontendArchitecture"].FilePath,
+		"CodingStandardsPath":      docs["CodingStandards"].FilePath,
+		"SourceTreePath":           docs["SourceTree"].FilePath,
+		"TechStackPath":            docs["TechStack"].FilePath,
 	}, nil
 }

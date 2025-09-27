@@ -49,10 +49,10 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 		Generate()
 }
 
-// NewDevNotesPromptLoader creates a new dev notes prompt loader with the correct data converter
+// NewDevNotesPromptLoader creates a new dev notes prompt loader with the correct template builder
 func NewDevNotesPromptLoader(templateFilePath string) DevNotesTemplateLoader {
-	return template.NewPromptLoader(templateFilePath, func(data DevNotesPromptData) (*template.PromptData, error) {
-		return template.DevNotesPromptDataConverter(data.Story, data.Tasks, data.Docs)
+	return template.NewPromptLoader(templateFilePath, func(data DevNotesPromptData) (map[string]interface{}, error) {
+		return template.BuildDevNotesTemplateData(data.Story, data.Tasks, data.Docs)
 	})
 }
 

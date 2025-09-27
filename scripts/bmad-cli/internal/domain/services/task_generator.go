@@ -53,9 +53,9 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 		Generate()
 }
 
-// NewTaskPromptLoader creates a new task prompt loader with the correct data converter
+// NewTaskPromptLoader creates a new task prompt loader with the correct template builder
 func NewTaskPromptLoader(templateFilePath string) TemplateLoader {
-	return template.NewPromptLoader(templateFilePath, func(data TaskPromptData) (*template.PromptData, error) {
-		return template.TaskPromptDataConverter(data.Story, data.Docs)
+	return template.NewPromptLoader(templateFilePath, func(data TaskPromptData) (map[string]interface{}, error) {
+		return template.BuildTaskTemplateData(data.Story, data.Docs)
 	})
 }
