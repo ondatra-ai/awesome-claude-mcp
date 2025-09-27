@@ -22,23 +22,37 @@ type DevNotesGenerator interface {
 	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error)
 }
 
+// QAResultsGenerator interface for generating QA results
+type QAResultsGenerator interface {
+	GenerateQAResults(ctx context.Context, story *story.Story, tasks []story.Task, devNotes story.DevNotes, architectureDocs *docs.ArchitectureDocs) (story.QAResults, error)
+}
+
+// TestingRequirementsGenerator interface for generating testing requirements
+type TestingRequirementsGenerator interface {
+	GenerateTesting(ctx context.Context, story *story.Story, tasks []story.Task, devNotes story.DevNotes, architectureDocs *docs.ArchitectureDocs) (story.Testing, error)
+}
+
 // ArchitectureLoader interface for loading architecture documents
 type ArchitectureLoader interface {
 	LoadAllArchitectureDocsStruct() (*docs.ArchitectureDocs, error)
 }
 
 type StoryFactory struct {
-	epicLoader         *epic.EpicLoader
-	taskGenerator      TaskGenerator
-	devNotesGenerator  DevNotesGenerator
-	architectureLoader ArchitectureLoader
+	epicLoader            *epic.EpicLoader
+	taskGenerator         TaskGenerator
+	devNotesGenerator     DevNotesGenerator
+	qaResultsGenerator    QAResultsGenerator
+	testingGenerator      TestingRequirementsGenerator
+	architectureLoader    ArchitectureLoader
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, devNotesGenerator DevNotesGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, devNotesGenerator DevNotesGenerator, qaResultsGenerator QAResultsGenerator, testingGenerator TestingRequirementsGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		taskGenerator:      taskGenerator,
 		devNotesGenerator:  devNotesGenerator,
+		qaResultsGenerator: qaResultsGenerator,
+		testingGenerator:   testingGenerator,
 		architectureLoader: architectureLoader,
 	}
 }
@@ -62,23 +76,24 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
 	}
 
+	// Generate testing requirements using AI - fail on any error
+	testing, err := f.generateTesting(ctx, loadedStory, tasks, devNotes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
+	}
+
+	// Generate QA results using AI - fail on any error
+	qaResults, err := f.generateQAResults(ctx, loadedStory, tasks, devNotes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate QA results: %w", err)
+	}
+
 	return &story.StoryDocument{
-		Story:    *loadedStory,
-		Tasks:    tasks,
-		DevNotes: devNotes,
-		Testing: story.Testing{
-			TestLocation: "services/backend/tests",
-			Frameworks:   []string{"testing", "testify"},
-			Requirements: []string{
-				"Unit tests for all public methods",
-				"Integration tests for external dependencies",
-				"End-to-end tests for complete workflows",
-			},
-			Coverage: map[string]string{
-				"business_logic": "80%",
-				"overall":        "75%",
-			},
-		},
+		Story:     *loadedStory,
+		Tasks:     tasks,
+		DevNotes:  devNotes,
+		Testing:   testing,
+		QAResults: &qaResults,
 		ChangeLog: []story.ChangeLogEntry{
 			{
 				Date:        time.Now().Format("2006-01-02"),
@@ -141,4 +156,42 @@ func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.
 
 	fmt.Printf("✅ Generated dev_notes using AI\n")
 	return devNotes, nil
+}
+
+// generateTesting generates testing requirements using AI - fails on any error
+func (f *StoryFactory) generateTesting(ctx context.Context, loadedStory *story.Story, tasks []story.Task, devNotes story.DevNotes) (story.Testing, error) {
+
+	// Load architecture documents - fail immediately if any are missing
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
+	if err != nil {
+		return story.Testing{}, fmt.Errorf("failed to load architecture documents: %w", err)
+	}
+
+	// Generate testing requirements using AI - fail if AI generation fails
+	testing, err := f.testingGenerator.GenerateTesting(ctx, loadedStory, tasks, devNotes, architectureDocs)
+	if err != nil {
+		return story.Testing{}, fmt.Errorf("failed to generate testing requirements using AI: %w", err)
+	}
+
+	fmt.Printf("✅ Generated testing requirements using AI\n")
+	return testing, nil
+}
+
+// generateQAResults generates QA results using AI - fails on any error
+func (f *StoryFactory) generateQAResults(ctx context.Context, loadedStory *story.Story, tasks []story.Task, devNotes story.DevNotes) (story.QAResults, error) {
+
+	// Load architecture documents - fail immediately if any are missing
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
+	if err != nil {
+		return story.QAResults{}, fmt.Errorf("failed to load architecture documents: %w", err)
+	}
+
+	// Generate QA results using AI - fail if AI generation fails
+	qaResults, err := f.qaResultsGenerator.GenerateQAResults(ctx, loadedStory, tasks, devNotes, architectureDocs)
+	if err != nil {
+		return story.QAResults{}, fmt.Errorf("failed to generate QA results using AI: %w", err)
+	}
+
+	fmt.Printf("✅ Generated QA results using AI\n")
+	return qaResults, nil
 }
