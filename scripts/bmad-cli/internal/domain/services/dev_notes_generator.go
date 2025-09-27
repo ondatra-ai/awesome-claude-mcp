@@ -5,55 +5,56 @@ import (
 	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
+	"bmad-cli/internal/infrastructure/template"
 )
-
-// Type aliases to work around Go generics type resolution issues
-type DevNotesType = story.DevNotes
 
 // DevNotesPromptData represents data needed for dev notes generation prompts
 type DevNotesPromptData struct {
 	Story *story.Story
 	Tasks []story.Task
-	Docs  map[string]docs.ArchitectureDoc
-}
-
-// DevNotesTemplateLoader defines the interface for loading dev notes templates
-type DevNotesTemplateLoader interface {
-	LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (string, error)
+	Docs  *docs.ArchitectureDocs
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
 type AIDevNotesGenerator struct {
-	aiClient       AIClient
-	templateLoader DevNotesTemplateLoader
+	aiClient AIClient
+	config   *config.ViperConfig
 }
 
 // NewDevNotesGenerator creates a new AIDevNotesGenerator instance
-func NewDevNotesGenerator(aiClient AIClient, templateLoader DevNotesTemplateLoader) *AIDevNotesGenerator {
+func NewDevNotesGenerator(aiClient AIClient, config *config.ViperConfig) *AIDevNotesGenerator {
 	return &AIDevNotesGenerator{
-		aiClient:       aiClient,
-		templateLoader: templateLoader,
+		aiClient: aiClient,
+		config:   config,
 	}
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (DevNotesType, error) {
-	return NewAIGenerator[DevNotesPromptData, DevNotesType](ctx, g.aiClient, story.ID, "devnotes").
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error) {
+	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, storyObj.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
-			return DevNotesPromptData{Story: story, Tasks: tasks, Docs: architectureDocs}, nil
+			return DevNotesPromptData{
+				Story: storyObj,
+				Tasks: tasks,
+				Docs:  architectureDocs,
+			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
-			return g.templateLoader.LoadDevNotesPromptTemplate(data.Story, data.Tasks, data.Docs)
+			templatePath := g.config.GetString("templates.prompts.devnotes")
+			loader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
+			return loader.LoadTemplate(data)
 		}).
-		WithResponseParser(CreateYAMLFileParser[DevNotesType](story.ID, "devnotes", "dev_notes")).
+		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyObj.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }
 
 
+
 // validateDevNotes validates that mandatory entities have required source and description fields
-func (g *AIDevNotesGenerator) validateDevNotes(devNotes DevNotesType) error {
+func (g *AIDevNotesGenerator) validateDevNotes(devNotes story.DevNotes) error {
 	mandatoryEntities := []string{"technology_stack", "architecture", "file_structure"}
 
 	for _, entityName := range mandatoryEntities {

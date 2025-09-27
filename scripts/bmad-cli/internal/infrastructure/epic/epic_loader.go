@@ -84,11 +84,3 @@ func (el *EpicLoader) loadEpicFile(epicNum int) (*epic.EpicDocument, error) {
 
 	return &epicDoc, nil
 }
-
-func (el *EpicLoader) SetBasePath(path string) {
-	el.basePath = path
-}
-
-func (el *EpicLoader) GetBasePath() string {
-	return el.basePath
-}

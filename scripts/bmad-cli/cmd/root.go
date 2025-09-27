@@ -21,7 +21,6 @@ func Execute() {
 
 	rootCmd.AddCommand(NewDevCommand(container))
 	rootCmd.AddCommand(NewSMCommand(container))
-	rootCmd.AddCommand(NewMCPCommand(container))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

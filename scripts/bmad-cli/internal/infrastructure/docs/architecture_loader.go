@@ -13,6 +13,15 @@ type ArchitectureDoc struct {
 	FilePath string
 }
 
+// ArchitectureDocs represents all loaded architecture documents
+type ArchitectureDocs struct {
+	Architecture         ArchitectureDoc
+	FrontendArchitecture ArchitectureDoc
+	CodingStandards      ArchitectureDoc
+	SourceTree           ArchitectureDoc
+	TechStack            ArchitectureDoc
+}
+
 // ArchitectureLoader loads architecture documents using configured paths
 type ArchitectureLoader struct {
 	config *config.ViperConfig
@@ -58,6 +67,65 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 	return docs, nil
 }
 
+// LoadAllArchitectureDocsStruct loads all architecture documents and returns them as a struct
+func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs, error) {
+	// Load architecture document
+	archContent, err := l.loadDocumentWithPath("documents.architecture")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load architecture document: %w", err)
+	}
+
+	// Load frontend architecture document
+	frontendContent, err := l.loadDocumentWithPath("documents.frontend_architecture")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load frontend architecture document: %w", err)
+	}
+
+	// Load coding standards document
+	codingContent, err := l.loadDocumentWithPath("documents.coding_standards")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load coding standards document: %w", err)
+	}
+
+	// Load source tree document
+	sourceContent, err := l.loadDocumentWithPath("documents.source_tree")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load source tree document: %w", err)
+	}
+
+	// Load tech stack document
+	techContent, err := l.loadDocumentWithPath("documents.tech_stack")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load tech stack document: %w", err)
+	}
+
+	return &ArchitectureDocs{
+		Architecture:         archContent,
+		FrontendArchitecture: frontendContent,
+		CodingStandards:      codingContent,
+		SourceTree:           sourceContent,
+		TechStack:            techContent,
+	}, nil
+}
+
+// loadDocumentWithPath loads a document given its config key path
+func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (ArchitectureDoc, error) {
+	filepath := l.config.GetString(configKey)
+	if filepath == "" {
+		return ArchitectureDoc{}, fmt.Errorf("document path not configured for key: %s", configKey)
+	}
+
+	content, err := l.loadDocument(filepath)
+	if err != nil {
+		return ArchitectureDoc{}, fmt.Errorf("failed to load document %s (from %s): %w", configKey, filepath, err)
+	}
+
+	return ArchitectureDoc{
+		Content:  content,
+		FilePath: filepath,
+	}, nil
+}
+
 // loadDocument loads a single document from the specified path
 func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
 
@@ -73,38 +141,4 @@ func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
 	}
 
 	return string(content), nil
-}
-
-// LoadSpecificDoc loads a specific architecture document
-func (l *ArchitectureLoader) LoadSpecificDoc(docType string) (string, error) {
-	docConfigKeys := map[string]string{
-		"Architecture":         "documents.architecture",
-		"FrontendArchitecture": "documents.frontend_architecture",
-		"CodingStandards":      "documents.coding_standards",
-		"SourceTree":           "documents.source_tree",
-		"TechStack":            "documents.tech_stack",
-	}
-
-	configKey, exists := docConfigKeys[docType]
-	if !exists {
-		return "", fmt.Errorf("unknown document type: %s", docType)
-	}
-
-	filepath := l.config.GetString(configKey)
-	if filepath == "" {
-		return "", fmt.Errorf("document path not configured for key: %s", configKey)
-	}
-
-	return l.loadDocument(filepath)
-}
-
-// GetAvailableDocTypes returns the list of available document types
-func (l *ArchitectureLoader) GetAvailableDocTypes() []string {
-	return []string{
-		"Architecture",
-		"FrontendArchitecture",
-		"CodingStandards",
-		"SourceTree",
-		"TechStack",
-	}
 }

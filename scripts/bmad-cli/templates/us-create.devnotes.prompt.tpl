@@ -74,14 +74,14 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
    - **performance_requirements**: Set realistic performance targets based on story scope
 
 4. **Output Format**:
-CRITICAL: Save text content to file: ./tmp/{{.StoryID}}-devnotes.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: ./tmp/{{.Story.ID}}-devnotes.yaml. Follow EXACTLY the format below:
 
-=== FILE_START: ./tmp/{{.StoryID}}-devnotes.yaml ===
+=== FILE_START: ./tmp/{{.Story.ID}}-devnotes.yaml ===
 dev_notes:
   previous_story_insights: "Detailed analysis of story context and implementation approach"
 
   technology_stack:
-    source: "{{.TechStackPath}}#Backend Stack"
+    source: "{{.Docs.TechStack.FilePath}}#Backend Stack"
     description: "From the backend technology stack documentation:"
     language: "Primary programming language"
     framework: "Main framework or library"
@@ -90,7 +90,7 @@ dev_notes:
     config: "Configuration management"
 
   architecture:
-    source: "{{.ArchitecturePath}}#Backend Components"
+    source: "{{.Docs.Architecture.FilePath}}#Backend Components"
     description: "From the MCP protocol workflow diagram:"
     component: "Main component name"
     responsibilities:
@@ -104,7 +104,7 @@ dev_notes:
       - "Technology 2"
 
   file_structure:
-    source: "{{.SourceTreePath}}#Service Structure"
+    source: "{{.Docs.SourceTree.FilePath}}#Service Structure"
     description: "Based on the project file structure:"
     files:
       - file: "specific/path/to/implementation.go"
@@ -113,49 +113,49 @@ dev_notes:
         description: "Test files"
 
   configuration:
-    source: "{{.CodingStandardsPath}}#Environment Variables"
+    source: "{{.Docs.CodingStandards.FilePath}}#Environment Variables"
     description: "Required environment variables for the service:"
     environment_variables:
       VARIABLE_NAME: "default_value"
       ANOTHER_VAR: "value"
 
   performance_requirements:
-    source: "{{.CodingStandardsPath}}#Performance Standards"
+    source: "{{.Docs.CodingStandards.FilePath}}#Performance Standards"
     description: "Performance requirements based on coding standards:"
     connection_establishment: "< Xms"
     message_processing: "< Xms"
     concurrent_connections: "X"
     memory_usage: "< XMB"
-=== FILE_END: ./tmp/{{.StoryID}}-devnotes.yaml ===
+=== FILE_END: ./tmp/{{.Story.ID}}-devnotes.yaml ===
 
 ## User Story
 ```yaml
-{{.StoryYAML}}
+{{.Story | toYaml}}
 ```
 
 ## Generated Tasks
 ```yaml
-{{.TasksYAML}}
+{{.Tasks | toYaml}}
 ```
 
 ## Architecture Documents
 
 ### Architecture Documentation
-Source: {{.ArchitecturePath}}
-{{.Architecture}}
+Source: {{.Docs.Architecture.FilePath}}
+{{.Docs.Architecture.Content}}
 
 ### Frontend Architecture Documentation
-Source: {{.FrontendArchitecturePath}}
-{{.FrontendArchitecture}}
+Source: {{.Docs.FrontendArchitecture.FilePath}}
+{{.Docs.FrontendArchitecture.Content}}
 
 ### Coding Standards Documentation
-Source: {{.CodingStandardsPath}}
-{{.CodingStandards}}
+Source: {{.Docs.CodingStandards.FilePath}}
+{{.Docs.CodingStandards.Content}}
 
 ### Source Tree Documentation
-Source: {{.SourceTreePath}}
-{{.SourceTree}}
+Source: {{.Docs.SourceTree.FilePath}}
+{{.Docs.SourceTree.Content}}
 
 ### Technology Stack Documentation
-Source: {{.TechStackPath}}
-{{.TechStack}}
+Source: {{.Docs.TechStack.FilePath}}
+{{.Docs.TechStack.Content}}

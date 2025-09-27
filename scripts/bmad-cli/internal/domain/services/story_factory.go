@@ -14,17 +14,17 @@ import (
 
 // TaskGenerator interface for generating tasks
 type TaskGenerator interface {
-	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) ([]story.Task, error)
+	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs *docs.ArchitectureDocs) ([]story.Task, error)
 }
 
 // DevNotesGenerator interface for generating dev notes
 type DevNotesGenerator interface {
-	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (story.DevNotes, error)
+	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error)
 }
 
 // ArchitectureLoader interface for loading architecture documents
 type ArchitectureLoader interface {
-	LoadAllArchitectureDocs() (map[string]docs.ArchitectureDoc, error)
+	LoadAllArchitectureDocsStruct() (*docs.ArchitectureDocs, error)
 }
 
 type StoryFactory struct {
@@ -109,7 +109,7 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Story) ([]story.Task, error) {
 
 	// Load architecture documents - fail immediately if any are missing
-	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
 	}
@@ -128,7 +128,7 @@ func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Sto
 func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.Story, tasks []story.Task) (story.DevNotes, error) {
 
 	// Load architecture documents - fail immediately if any are missing
-	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocs()
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
 	}

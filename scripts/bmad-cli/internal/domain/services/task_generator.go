@@ -5,49 +5,47 @@ import (
 	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
+	"bmad-cli/internal/infrastructure/template"
 )
-
-// Type aliases to work around Go generics type resolution issues
-type StoryType = story.Story
-type TaskType = story.Task
 
 // TaskPromptData represents data needed for task generation prompts
 type TaskPromptData struct {
-	Story *StoryType
-	Docs  map[string]docs.ArchitectureDoc
-}
-
-// TemplateLoader defines the interface for loading templates
-type TemplateLoader interface {
-	LoadTaskPromptTemplate(story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error)
+	Story *story.Story
+	Docs  *docs.ArchitectureDocs
 }
 
 // AITaskGenerator generates story tasks using AI based on templates
 type AITaskGenerator struct {
-	aiClient       AIClient
-	templateLoader TemplateLoader
+	aiClient AIClient
+	config   *config.ViperConfig
 }
 
 // NewTaskGenerator creates a new AITaskGenerator instance
-func NewTaskGenerator(aiClient AIClient, templateLoader TemplateLoader) *AITaskGenerator {
+func NewTaskGenerator(aiClient AIClient, config *config.ViperConfig) *AITaskGenerator {
 	return &AITaskGenerator{
-		aiClient:       aiClient,
-		templateLoader: templateLoader,
+		aiClient: aiClient,
+		config:   config,
 	}
 }
 
 // GenerateTasks generates story tasks using AI based on the story and architecture documents
-func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) ([]TaskType, error) {
-	return NewAIGenerator[TaskPromptData, []TaskType](ctx, g.aiClient, story.ID, "tasks").
+func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Story, architectureDocs *docs.ArchitectureDocs) ([]story.Task, error) {
+	return NewAIGenerator[TaskPromptData, []story.Task](ctx, g.aiClient, storyObj.ID, "tasks").
 		WithData(func() (TaskPromptData, error) {
-			return TaskPromptData{Story: story, Docs: architectureDocs}, nil
+			return TaskPromptData{
+				Story: storyObj,
+				Docs:  architectureDocs,
+			}, nil
 		}).
 		WithPrompt(func(data TaskPromptData) (string, error) {
-			return g.templateLoader.LoadTaskPromptTemplate(data.Story, data.Docs)
+			templatePath := g.config.GetString("templates.prompts.tasks")
+			loader := template.NewTemplateLoader[TaskPromptData](templatePath)
+			return loader.LoadTemplate(data)
 		}).
-		WithResponseParser(CreateYAMLFileParser[[]TaskType](story.ID, "tasks", "tasks")).
-		WithValidator(func(tasks []TaskType) error {
+		WithResponseParser(CreateYAMLFileParser[[]story.Task](storyObj.ID, "tasks", "tasks")).
+		WithValidator(func(tasks []story.Task) error {
 			if len(tasks) == 0 {
 				return fmt.Errorf("AI generated no tasks")
 			}
