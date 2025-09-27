@@ -38,43 +38,26 @@ func (c *ClaudeClient) Name() string {
 }
 
 func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode ExecutionMode) (string, error) {
+	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
+
+	var opts *claude.RunOptions
 	switch mode {
 	case PlanMode:
-		opts := &claude.RunOptions{
+		opts = &claude.RunOptions{
 			Format:         claude.TextOutput,
 			PermissionTool: "plan",
 		}
-		result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
-		if err != nil {
-			return "", fmt.Errorf("claude execution failed: %w", err)
-		}
-		return result.Result, nil
-
 	case ApplyMode:
-		result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, &claude.RunOptions{
+		opts = &claude.RunOptions{
 			Format: claude.TextOutput,
-		})
-		if err != nil {
-			return "", fmt.Errorf("claude apply execution failed: %w", err)
 		}
-		return result.Result, nil
-
 	default:
 		return "", fmt.Errorf("unsupported execution mode: %v", mode)
 	}
-}
 
-// GenerateContent generates content using Claude for general purposes
-func (c *ClaudeClient) GenerateContent(ctx context.Context, prompt string) (string, error) {
-	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
-
-	// Always use dangerous client with bypass permissions
-	opts := &claude.RunOptions{
-		Format: claude.TextOutput,
-	}
 	result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
 	if err != nil {
-		return "", fmt.Errorf("claude content generation failed: %w", err)
+		return "", fmt.Errorf("claude execution failed: %w", err)
 	}
 
 	fmt.Printf("✅ Claude returned result length: %d\n", len(result.Result))

@@ -6,11 +6,12 @@ import (
 	"os"
 
 	"gopkg.in/yaml.v3"
+	"bmad-cli/internal/adapters/ai"
 )
 
 // AIClient defines the interface for AI communication
 type AIClient interface {
-	GenerateContent(ctx context.Context, prompt string) (string, error)
+	ExecutePrompt(ctx context.Context, prompt string, mode ai.ExecutionMode) (string, error)
 }
 
 // AIGenerator is a generic AI content generator with builder pattern
@@ -76,7 +77,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	}
 
 	// 3. Call AI
-	response, err := g.aiClient.GenerateContent(g.ctx, prompt)
+	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, ai.ApplyMode)
 	if err != nil {
 		return zero, fmt.Errorf("failed to generate content: %w", err)
 	}
