@@ -56,18 +56,25 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story
 	}
 	fmt.Printf("💾 Full AI dev_notes response saved to: %s\n", responseFile)
 
-	// Parse the AI response
-	devNotes, err := g.parseDevNotesFromResponse(response)
+	// Try to read from file first (new approach)
+	devNotes, err := g.readDevNotesFromFile(story.ID)
 	if err != nil {
-		// If parsing fails, let's save the extracted YAML block for debugging
-		yamlBlock := g.extractYAMLBlock(response)
-		yamlFile := fmt.Sprintf("./tmp/%s-devnotes-extracted-yaml.yml", story.ID)
-		if yamlBlock != "" {
-			if err := os.WriteFile(yamlFile, []byte(yamlBlock), 0644); err == nil {
-				fmt.Printf("💾 Extracted dev_notes YAML block saved to: %s\n", yamlFile)
+		// Fall back to parsing the AI response using marker-based extraction
+		fmt.Printf("🔄 File not found, falling back to marker-based extraction...\n")
+		devNotes, err = g.parseDevNotesFromResponse(response)
+		if err != nil {
+			// If parsing fails, let's save the extracted content for debugging
+			markerContent := g.extractMarkerBasedContent(response)
+			contentFile := fmt.Sprintf("./tmp/%s-devnotes-extracted-content.yml", story.ID)
+			if markerContent != "" {
+				if err := os.WriteFile(contentFile, []byte(markerContent), 0644); err == nil {
+					fmt.Printf("💾 Extracted marker content saved to: %s\n", contentFile)
+				}
 			}
+			return nil, fmt.Errorf("failed to parse AI response: %w", err)
 		}
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+	} else {
+		fmt.Printf("✅ Dev notes read from file: ./tmp/%s-devnotes.yaml\n", story.ID)
 	}
 
 	// Save successfully parsed dev_notes to YAML file
@@ -82,12 +89,12 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story
 	return devNotes, nil
 }
 
-// parseDevNotesFromResponse parses the AI response and extracts dev_notes
+// parseDevNotesFromResponse parses the AI response and extracts dev_notes using marker-based extraction
 func (g *AIDevNotesGenerator) parseDevNotesFromResponse(response string) (*story.DevNotes, error) {
-	// Find the YAML block in the response
-	yamlBlock := g.extractYAMLBlock(response)
-	if yamlBlock == "" {
-		return nil, fmt.Errorf("no YAML block found in AI response")
+	// Find the content between FILE_START and FILE_END markers
+	markerContent := g.extractMarkerBasedContent(response)
+	if markerContent == "" {
+		return nil, fmt.Errorf("no marker-based content found in AI response")
 	}
 
 	// Parse the YAML
@@ -95,7 +102,7 @@ func (g *AIDevNotesGenerator) parseDevNotesFromResponse(response string) (*story
 		DevNotes story.DevNotes `yaml:"dev_notes"`
 	}
 
-	err := yaml.Unmarshal([]byte(yamlBlock), &devNotesData)
+	err := yaml.Unmarshal([]byte(markerContent), &devNotesData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
@@ -109,50 +116,33 @@ func (g *AIDevNotesGenerator) parseDevNotesFromResponse(response string) (*story
 	return &devNotesData.DevNotes, nil
 }
 
-// extractYAMLBlock extracts the YAML block from the AI response
-func (g *AIDevNotesGenerator) extractYAMLBlock(response string) string {
-	// Look for YAML code blocks (```yaml or ```yml)
+// extractMarkerBasedContent extracts content between FILE_START and FILE_END markers
+func (g *AIDevNotesGenerator) extractMarkerBasedContent(response string) string {
 	lines := strings.Split(response, "\n")
-	var yamlLines []string
-	inYamlBlock := false
+	var contentLines []string
+	inFileContent := false
 
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 
-		// Start of YAML block
-		if strings.HasPrefix(trimmed, "```yaml") || strings.HasPrefix(trimmed, "```yml") {
-			inYamlBlock = true
+		// Start of file content
+		if strings.HasPrefix(trimmed, "=== FILE_START:") {
+			inFileContent = true
 			continue
 		}
 
-		// End of code block
-		if inYamlBlock && strings.HasPrefix(trimmed, "```") {
+		// End of file content
+		if inFileContent && strings.HasPrefix(trimmed, "=== FILE_END:") {
 			break
 		}
 
-		// Collect YAML content
-		if inYamlBlock {
-			yamlLines = append(yamlLines, line)
+		// Collect file content
+		if inFileContent {
+			contentLines = append(contentLines, line)
 		}
 	}
 
-	if len(yamlLines) == 0 {
-		// Fallback: try to find dev_notes: section directly
-		for i, line := range lines {
-			if strings.TrimSpace(line) == "dev_notes:" {
-				// Found dev_notes section, collect until empty line or end
-				for j := i; j < len(lines); j++ {
-					yamlLines = append(yamlLines, lines[j])
-					if j+1 < len(lines) && strings.TrimSpace(lines[j+1]) == "" {
-						break
-					}
-				}
-				break
-			}
-		}
-	}
-
-	return strings.Join(yamlLines, "\n")
+	return strings.Join(contentLines, "\n")
 }
 
 // validateDevNotes validates that mandatory entities have required source and description fields
@@ -165,9 +155,14 @@ func (g *AIDevNotesGenerator) validateDevNotes(devNotes *story.DevNotes) error {
 			return fmt.Errorf("mandatory entity '%s' is missing", entityName)
 		}
 
-		entityMap, ok := entity.(map[string]interface{})
-		if !ok {
-			return fmt.Errorf("entity '%s' must be a map", entityName)
+		// Handle both map[string]interface{} and story.DevNotes (which is also map[string]interface{})
+		var entityMap map[string]interface{}
+		if em, ok := entity.(map[string]interface{}); ok {
+			entityMap = em
+		} else if dn, ok := entity.(story.DevNotes); ok {
+			entityMap = dn
+		} else {
+			return fmt.Errorf("entity '%s' must be a map, got %T", entityName, entity)
 		}
 
 		// Check for mandatory source field
@@ -182,4 +177,38 @@ func (g *AIDevNotesGenerator) validateDevNotes(devNotes *story.DevNotes) error {
 	}
 
 	return nil
+}
+
+// readDevNotesFromFile reads dev_notes from file created by Claude
+func (g *AIDevNotesGenerator) readDevNotesFromFile(storyID string) (*story.DevNotes, error) {
+	filePath := fmt.Sprintf("./tmp/%s-devnotes.yaml", storyID)
+
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("dev_notes file not found: %s", filePath)
+	}
+
+	// Read file content
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dev_notes file: %w", err)
+	}
+
+	// Parse the YAML
+	var devNotesData struct {
+		DevNotes story.DevNotes `yaml:"dev_notes"`
+	}
+
+	err = yaml.Unmarshal(content, &devNotesData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse dev_notes YAML: %w", err)
+	}
+
+	// Validate mandatory fields for main entities
+	err = g.validateDevNotes(&devNotesData.DevNotes)
+	if err != nil {
+		return nil, fmt.Errorf("dev_notes validation failed: %w", err)
+	}
+
+	return &devNotesData.DevNotes, nil
 }

@@ -38,7 +38,7 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 	}
 
 	// Use proper template system to inject data
-	prompt, err := l.executeTemplate(templateContent, storyYAML, architectureDocs)
+	prompt, err := l.executeTemplate(templateContent, storyYAML, story, architectureDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -66,10 +66,11 @@ func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, er
 }
 
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
+func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Create template data structure
 	templateData := struct {
 		StoryYAML                    string
+		StoryID                      string
 		Architecture                 string
 		FrontendArchitecture         string
 		CodingStandards              string
@@ -82,6 +83,7 @@ func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, ar
 		TechStackPath                string
 	}{
 		StoryYAML:                    storyYAML,
+		StoryID:                      story.ID,
 		Architecture:                 architectureDocs["Architecture"].Content,
 		FrontendArchitecture:         architectureDocs["FrontendArchitecture"].Content,
 		CodingStandards:              architectureDocs["CodingStandards"].Content,

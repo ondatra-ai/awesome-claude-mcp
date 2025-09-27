@@ -44,7 +44,7 @@ func (l *DevNotesPromptLoader) LoadDevNotesPromptTemplate(story *story.Story, ta
 	}
 
 	// Use proper template system to inject data
-	prompt, err := l.executeTemplate(templateContent, storyYAML, tasksYAML, architectureDocs)
+	prompt, err := l.executeTemplate(templateContent, storyYAML, tasksYAML, story, architectureDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -83,10 +83,11 @@ func (l *DevNotesPromptLoader) convertTasksToYAML(tasks []story.Task) (string, e
 }
 
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasksYAML string, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
+func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasksYAML string, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Create template data structure
 	templateData := struct {
 		StoryYAML                    string
+		StoryID                      string
 		TasksYAML                    string
 		Architecture                 string
 		FrontendArchitecture         string
@@ -100,6 +101,7 @@ func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasks
 		TechStackPath                string
 	}{
 		StoryYAML:                    storyYAML,
+		StoryID:                      story.ID,
 		TasksYAML:                    tasksYAML,
 		Architecture:                 architectureDocs["Architecture"].Content,
 		FrontendArchitecture:         architectureDocs["FrontendArchitecture"].Content,

@@ -74,10 +74,9 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
    - **performance_requirements**: Set realistic performance targets based on story scope
 
 4. **Output Format**:
-CRITICAL: Your response must contain ONLY the YAML output below, with NO additional text, explanations, or commentary.
-Start your response with ```yaml and end with ```.
+CRITICAL: Respond with EXACTLY the following format. Start with the file marker, then provide the YAML content, then end with the file marker:
 
-```yaml
+=== FILE_START: ./tmp/{{.StoryID}}-devnotes.yaml ===
 dev_notes:
   previous_story_insights: "Detailed analysis of story context and implementation approach"
 
@@ -127,9 +126,9 @@ dev_notes:
     message_processing: "< Xms"
     concurrent_connections: "X"
     memory_usage: "< XMB"
-```
+=== FILE_END: ./tmp/{{.StoryID}}-devnotes.yaml ===
 
-REMINDER: Output ONLY the YAML block with dev_notes. No explanatory text before or after.
+REMINDER: Include ONLY the file markers and YAML content. No explanatory text before or after.
 
 ## User Story
 ```yaml
