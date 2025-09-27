@@ -20,7 +20,7 @@ type TemplateLoader[T any] struct {
 func NewTemplateLoader[T any](templateFilePath string) *TemplateLoader[T] {
 	return &TemplateLoader[T]{
 		templateFilePath: templateFilePath,
-		funcMap:          GetCommonTemplateFunctions(),
+		funcMap:          getCommonTemplateFunctions(),
 	}
 }
 
@@ -32,8 +32,8 @@ func (l *TemplateLoader[T]) WithFunctions(funcMap template.FuncMap) *TemplateLoa
 	return l
 }
 
-// GetCommonTemplateFunctions returns commonly used template functions
-func GetCommonTemplateFunctions() template.FuncMap {
+// getCommonTemplateFunctions returns commonly used template functions
+func getCommonTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"toYaml": func(v interface{}) string {
 			data, err := yaml.Marshal(v)
