@@ -54,9 +54,10 @@ func NewContainer() (*Container, error) {
 
 	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, devNotesGenerator, architectureLoader)
 
-	templateProcessor := template.NewTemplateProcessor("templates/story.yaml.tpl")
+	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData]("templates/story.yaml.tpl").
+		WithFunctions(template.GetCommonTemplateFunctions())
 	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
-	usCreateCmd := commands.NewUSCreateCommand(storyFactory, templateProcessor, yamaleValidator)
+	usCreateCmd := commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 
 	// AI service and PR triage are optional - only create if needed
 	var aiService ports.AIService

@@ -13,14 +13,14 @@ import (
 
 type USCreateCommand struct {
 	factory   *services.StoryFactory
-	processor *template.TemplateProcessor
+	loader    *template.TemplateLoader[*template.FlattenedStoryData]
 	validator *validation.YamaleValidator
 }
 
-func NewUSCreateCommand(factory *services.StoryFactory, processor *template.TemplateProcessor, validator *validation.YamaleValidator) *USCreateCommand {
+func NewUSCreateCommand(factory *services.StoryFactory, loader *template.TemplateLoader[*template.FlattenedStoryData], validator *validation.YamaleValidator) *USCreateCommand {
 	return &USCreateCommand{
 		factory:   factory,
-		processor: processor,
+		loader:    loader,
 		validator: validator,
 	}
 }
@@ -39,8 +39,9 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 		return fmt.Errorf("failed to create story: %w", err)
 	}
 
-	// 2. Process template to generate YAML
-	yamlContent, err := c.processor.ProcessTemplate(storyDoc)
+	// 2. Flatten story document and process template to generate YAML
+	flattenedData := template.FlattenStoryDocument(storyDoc)
+	yamlContent, err := c.loader.LoadTemplate(flattenedData)
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)
 	}

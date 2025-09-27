@@ -34,8 +34,8 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 			return TaskPromptData{Story: storyObj, Docs: architectureDocs}, nil
 		}).
 		WithPrompt(func(data TaskPromptData) (string, error) {
-			loader := template.NewPromptLoader[TaskPromptData]("templates/us-create.tasks.prompt.tpl")
-			return loader.LoadPromptTemplate(data)
+			loader := template.NewTemplateLoader[TaskPromptData]("templates/us-create.tasks.prompt.tpl")
+			return loader.LoadTemplate(data)
 		}).
 		WithResponseParser(CreateYAMLFileParser[[]story.Task](storyObj.ID, "tasks", "tasks")).
 		WithValidator(func(tasks []story.Task) error {

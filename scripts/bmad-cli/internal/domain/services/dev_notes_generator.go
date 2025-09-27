@@ -35,8 +35,8 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 			return DevNotesPromptData{Story: storyObj, Tasks: tasks, Docs: architectureDocs}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
-			loader := template.NewPromptLoader[DevNotesPromptData]("templates/us-create.devnotes.prompt.tpl")
-			return loader.LoadPromptTemplate(data)
+			loader := template.NewTemplateLoader[DevNotesPromptData]("templates/us-create.devnotes.prompt.tpl")
+			return loader.LoadTemplate(data)
 		}).
 		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyObj.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
