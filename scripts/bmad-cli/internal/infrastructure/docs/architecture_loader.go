@@ -74,37 +74,3 @@ func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
 
 	return string(content), nil
 }
-
-// LoadSpecificDoc loads a specific architecture document
-func (l *ArchitectureLoader) LoadSpecificDoc(docType string) (string, error) {
-	docConfigKeys := map[string]string{
-		"Architecture":         "documents.architecture",
-		"FrontendArchitecture": "documents.frontend_architecture",
-		"CodingStandards":      "documents.coding_standards",
-		"SourceTree":           "documents.source_tree",
-		"TechStack":            "documents.tech_stack",
-	}
-
-	configKey, exists := docConfigKeys[docType]
-	if !exists {
-		return "", fmt.Errorf("unknown document type: %s", docType)
-	}
-
-	filepath := l.config.GetString(configKey)
-	if filepath == "" {
-		return "", fmt.Errorf("document path not configured for key: %s", configKey)
-	}
-
-	return l.loadDocument(filepath)
-}
-
-// GetAvailableDocTypes returns the list of available document types
-func (l *ArchitectureLoader) GetAvailableDocTypes() []string {
-	return []string{
-		"Architecture",
-		"FrontendArchitecture",
-		"CodingStandards",
-		"SourceTree",
-		"TechStack",
-	}
-}

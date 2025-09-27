@@ -91,35 +91,3 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 
 	return buf.String(), nil
 }
-
-func (p *TemplateProcessor) GetTemplatePath() string {
-	return p.templatePath
-}
-
-func (p *TemplateProcessor) SetTemplatePath(path string) {
-	p.templatePath = path
-}
-
-func (p *TemplateProcessor) ValidateTemplate() error {
-	absPath, err := filepath.Abs(p.templatePath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve template path: %w", err)
-	}
-
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		return fmt.Errorf("template file does not exist: %s", absPath)
-	}
-
-	// Try to parse the template to ensure it's valid
-	content, err := os.ReadFile(absPath)
-	if err != nil {
-		return fmt.Errorf("failed to read template: %w", err)
-	}
-
-	_, err = template.New("validation").Parse(string(content))
-	if err != nil {
-		return fmt.Errorf("template syntax error: %w", err)
-	}
-
-	return nil
-}
