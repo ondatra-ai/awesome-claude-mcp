@@ -67,10 +67,9 @@ To prepare a comprehensive, self-contained story file by breaking down acceptanc
   - Include unit testing as explicit subtasks based on the Testing Strategy
   - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
 3. Output format:
-CRITICAL: Your response must contain ONLY the YAML output below, with NO additional text, explanations, or commentary.
-Start your response with ```yaml and end with ```.
+CRITICAL: Save text content to file: ./tmp/{{.StoryID}}-tasks.yaml. Follow EXACTLY the format below:
 
-```yaml
+=== FILE_START: ./tmp/{{.StoryID}}-tasks.yaml ===
 tasks:
   - name: "Name"
     acceptance_criteria:
@@ -80,9 +79,7 @@ tasks:
       - "Subtask1"
       - "Subtask2"
     status: "pending"
-```
-
-REMINDER: Output ONLY the YAML block with tasks. No explanatory text before or after.
+=== FILE_END: ./tmp/{{.StoryID}}-tasks.yaml ===
 
 ## User Story
 ```yaml

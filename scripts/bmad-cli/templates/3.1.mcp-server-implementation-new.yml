@@ -54,7 +54,7 @@ tasks:
 dev_notes:
   previous_story_insights: "No previous stories exist - this is the first story in the project."
 
-  technology_stack_and_framework_context:
+  technology_stack:
     source: "architecture/tech-stack.md#Backend Stack"
     language: "Go 1.21 for backend services"
     framework: "Fiber 2.x for HTTP routing (`services/backend/cmd/main.go`)"
@@ -62,7 +62,7 @@ dev_notes:
     logging: "zerolog 1.x for structured JSON logs (output to stdout for Railway)"
     config: "viper 1.x for environment/config management (reads Railway env vars)"
 
-  architecture_and_component_integration:
+  architecture:
     source: "architecture.md#Backend Components"
     description: "The MCP Protocol Handler is a key backend component with these responsibilities:"
     responsibilities:
@@ -75,7 +75,7 @@ dev_notes:
       - "Command Processor"
     technology_stack: "Go stdlib net/http, gorilla/websocket for WebSocket support"
 
-  file_structure_and_organization:
+  file_structure:
     source: "architecture.md#Source Tree"
     description: "MCP service as separate service alongside frontend and backend:"
     files:
@@ -110,13 +110,13 @@ dev_notes:
       - file: "services/mcp-service/internal/auth/tokens.go"
         description: "Token validation with backend"
 
-  mcp_integration_requirements:
+  mcp_integration:
     source: "architecture.md#Tech Stack"
     mcp_protocol_library: "Mark3Labs MCP-Go (latest) for streamlined Model Context Protocol implementation"
     features: "Type-safe, stdio transport, LLM-optimized design"
     integration_point: "Embedded in backend service"
 
-  configuration_management:
+  configuration:
     source: "architecture/coding-standards.md#Environment Variables"
     description: "Required environment variables for MCP server:"
     environment_variables:
@@ -125,7 +125,7 @@ dev_notes:
       LOG_LEVEL: "info                   # Logging level"
       LOG_FORMAT: "json                  # Structured logging format"
 
-  connection_management_requirements:
+  connection_management:
     source: "architecture.md#Core Workflows"
     description: "From the MCP protocol workflow diagram:"
     requirements:

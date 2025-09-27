@@ -3,6 +3,7 @@ module bmad-cli
 go 1.25.1
 
 require (
+	github.com/gorilla/websocket v1.5.0
 	github.com/lancekrogers/claude-code-go v0.1.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1

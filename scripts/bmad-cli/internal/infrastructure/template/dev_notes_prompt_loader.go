@@ -11,20 +11,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TaskPromptLoader loads and processes the task generation prompt template
-type TaskPromptLoader struct {
+// DevNotesPromptLoader loads and processes the dev notes generation prompt template
+type DevNotesPromptLoader struct {
 	templateFilePath string
 }
 
-// NewTaskPromptLoader creates a new TaskPromptLoader instance
-func NewTaskPromptLoader(templateFilePath string) *TaskPromptLoader {
-	return &TaskPromptLoader{
+// NewDevNotesPromptLoader creates a new DevNotesPromptLoader instance
+func NewDevNotesPromptLoader(templateFilePath string) *DevNotesPromptLoader {
+	return &DevNotesPromptLoader{
 		templateFilePath: templateFilePath,
 	}
 }
 
-// LoadTaskPromptTemplate loads the task prompt template and injects story and architecture data
-func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
+// LoadDevNotesPromptTemplate loads the dev notes prompt template and injects story and architecture data
+func (l *DevNotesPromptLoader) LoadDevNotesPromptTemplate(story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Load the template file
 	templateContent, err := l.loadTemplateFile()
 	if err != nil {
@@ -37,8 +37,14 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 		return "", fmt.Errorf("failed to convert story to YAML: %w", err)
 	}
 
+	// Convert tasks to YAML for injection
+	tasksYAML, err := l.convertTasksToYAML(tasks)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert tasks to YAML: %w", err)
+	}
+
 	// Use proper template system to inject data
-	prompt, err := l.executeTemplate(templateContent, storyYAML, story, architectureDocs)
+	prompt, err := l.executeTemplate(templateContent, storyYAML, tasksYAML, story, architectureDocs)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -47,7 +53,7 @@ func (l *TaskPromptLoader) LoadTaskPromptTemplate(story *story.Story, architectu
 }
 
 // loadTemplateFile loads the template file from disk
-func (l *TaskPromptLoader) loadTemplateFile() (string, error) {
+func (l *DevNotesPromptLoader) loadTemplateFile() (string, error) {
 	content, err := os.ReadFile(l.templateFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read template file %s: %w", l.templateFilePath, err)
@@ -56,7 +62,7 @@ func (l *TaskPromptLoader) loadTemplateFile() (string, error) {
 }
 
 // convertStoryToYAML converts the story struct to YAML format
-func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, error) {
+func (l *DevNotesPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, error) {
 	yamlBytes, err := yaml.Marshal(storyObj)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal story to YAML: %w", err)
@@ -65,12 +71,24 @@ func (l *TaskPromptLoader) convertStoryToYAML(storyObj *story.Story) (string, er
 	return string(yamlBytes), nil
 }
 
+// convertTasksToYAML converts the tasks slice to YAML format
+func (l *DevNotesPromptLoader) convertTasksToYAML(tasks []story.Task) (string, error) {
+	taskMap := map[string]interface{}{"tasks": tasks}
+	yamlBytes, err := yaml.Marshal(taskMap)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal tasks to YAML: %w", err)
+	}
+
+	return string(yamlBytes), nil
+}
+
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
+func (l *DevNotesPromptLoader) executeTemplate(templateContent, storyYAML, tasksYAML string, story *story.Story, architectureDocs map[string]docs.ArchitectureDoc) (string, error) {
 	// Create template data structure
 	templateData := struct {
 		StoryYAML                    string
 		StoryID                      string
+		TasksYAML                    string
 		Architecture                 string
 		FrontendArchitecture         string
 		CodingStandards              string
@@ -84,6 +102,7 @@ func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, st
 	}{
 		StoryYAML:                    storyYAML,
 		StoryID:                      story.ID,
+		TasksYAML:                    tasksYAML,
 		Architecture:                 architectureDocs["Architecture"].Content,
 		FrontendArchitecture:         architectureDocs["FrontendArchitecture"].Content,
 		CodingStandards:              architectureDocs["CodingStandards"].Content,
@@ -97,7 +116,7 @@ func (l *TaskPromptLoader) executeTemplate(templateContent, storyYAML string, st
 	}
 
 	// Parse the template
-	tmpl, err := template.New("task-prompt").Parse(templateContent)
+	tmpl, err := template.New("dev-notes-prompt").Parse(templateContent)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
