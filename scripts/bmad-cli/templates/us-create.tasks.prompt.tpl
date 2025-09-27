@@ -67,7 +67,7 @@ To prepare a comprehensive, self-contained story file by breaking down acceptanc
   - Include unit testing as explicit subtasks based on the Testing Strategy
   - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
 3. Output format:
-CRITICAL: Respond with EXACTLY the following format. Start with the file marker, then provide the YAML content, then end with the file marker:
+CRITICAL: Save text context to file: ./tmp/{{.StoryID}}-tasks.yaml. Follow EXACTLY the format below:
 
 === FILE_START: ./tmp/{{.StoryID}}-tasks.yaml ===
 tasks:
@@ -80,8 +80,6 @@ tasks:
       - "Subtask2"
     status: "pending"
 === FILE_END: ./tmp/{{.StoryID}}-tasks.yaml ===
-
-REMINDER: Include ONLY the file markers and YAML content. No explanatory text before or after.
 
 ## User Story
 ```yaml

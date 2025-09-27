@@ -44,7 +44,7 @@ func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode Ex
 			Format:         claude.TextOutput,
 			PermissionTool: "plan",
 		}
-		result, err := c.client.RunPrompt(prompt, opts)
+		result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
 		if err != nil {
 			return "", fmt.Errorf("claude execution failed: %w", err)
 		}
@@ -68,18 +68,13 @@ func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode Ex
 func (c *ClaudeClient) GenerateContent(ctx context.Context, prompt string) (string, error) {
 	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
 
-	// Try standard client first
+	// Always use dangerous client with bypass permissions
 	opts := &claude.RunOptions{
 		Format: claude.TextOutput,
 	}
-	result, err := c.client.RunPrompt(prompt, opts)
+	result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
 	if err != nil {
-		fmt.Printf("❌ Standard client failed: %v\n", err)
-		// Fallback to dangerous client with bypass permissions
-		result, err = c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
-		if err != nil {
-			return "", fmt.Errorf("claude content generation failed: %w", err)
-		}
+		return "", fmt.Errorf("claude content generation failed: %w", err)
 	}
 
 	fmt.Printf("✅ Claude returned result length: %d\n", len(result.Result))

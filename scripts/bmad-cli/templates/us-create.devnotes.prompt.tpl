@@ -74,7 +74,7 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
    - **performance_requirements**: Set realistic performance targets based on story scope
 
 4. **Output Format**:
-CRITICAL: Respond with EXACTLY the following format. Start with the file marker, then provide the YAML content, then end with the file marker:
+CRITICAL: Save text context to file: ./tmp/{{.StoryID}}-devnotes.yaml. Follow EXACTLY the format below:
 
 === FILE_START: ./tmp/{{.StoryID}}-devnotes.yaml ===
 dev_notes:
@@ -127,8 +127,6 @@ dev_notes:
     concurrent_connections: "X"
     memory_usage: "< XMB"
 === FILE_END: ./tmp/{{.StoryID}}-devnotes.yaml ===
-
-REMINDER: Include ONLY the file markers and YAML content. No explanatory text before or after.
 
 ## User Story
 ```yaml
