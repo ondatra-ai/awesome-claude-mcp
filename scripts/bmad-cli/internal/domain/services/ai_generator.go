@@ -8,6 +8,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// AIClient defines the interface for AI communication
+type AIClient interface {
+	GenerateContent(ctx context.Context, prompt string) (string, error)
+}
+
 // AIGenerator is a generic AI content generator with builder pattern
 type AIGenerator[T1 any, T2 any] struct {
 	ctx            context.Context
