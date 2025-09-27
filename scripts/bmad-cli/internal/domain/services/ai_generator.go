@@ -64,6 +64,11 @@ func (g *AIGenerator[T1, T2]) WithValidator(validator func(T2) error) *AIGenerat
 func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	var zero T2
 
+	// 0. Create tmp directory for debugging early
+	if err := os.MkdirAll("./tmp", 0755); err != nil {
+		return zero, fmt.Errorf("failed to create tmp directory: %w", err)
+	}
+
 	// 1. Load input data
 	data, err := g.dataLoader()
 	if err != nil {
@@ -76,17 +81,29 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		return zero, fmt.Errorf("failed to load prompt: %w", err)
 	}
 
-	// 3. Call AI
+	// 3. Call AI - Let's try ApplyMode first and add debug logging
+	fmt.Printf("🔍 About to call AI with prompt for %s generation\n", g.filePrefix)
+	previewLen := 500
+	if len(prompt) < 500 {
+		previewLen = len(prompt)
+	}
+	fmt.Printf("📝 Prompt preview (first %d chars): %s...\n", previewLen, prompt[:previewLen])
+
+	// Save prompt for debugging
+	promptFile := fmt.Sprintf("./tmp/%s-%s-prompt.txt", g.storyID, g.filePrefix)
+	if err := os.WriteFile(promptFile, []byte(prompt), 0644); err != nil {
+		fmt.Printf("⚠️ Failed to save prompt file: %v\n", err)
+	} else {
+		fmt.Printf("💾 Prompt saved to: %s\n", promptFile)
+	}
+
+	// Use ApplyMode for actual generation (PlanMode doesn't work with MCP)
 	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, ai.ApplyMode)
 	if err != nil {
 		return zero, fmt.Errorf("failed to generate content: %w", err)
 	}
 
 	// 4. Save AI response for debugging
-	if err := os.MkdirAll("./tmp", 0755); err != nil {
-		return zero, fmt.Errorf("failed to create tmp directory: %w", err)
-	}
-
 	responseFile := fmt.Sprintf("./tmp/%s-%s-full-response.txt", g.storyID, g.filePrefix)
 	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
 		return zero, fmt.Errorf("failed to write response file: %w", err)
