@@ -49,8 +49,8 @@ func NewContainer() (*Container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI client: %w", err)
 	}
-	taskGenerator := services.NewTaskGenerator(claudeClient)
-	devNotesGenerator := services.NewDevNotesGenerator(claudeClient)
+	taskGenerator := services.NewTaskGenerator(claudeClient, cfg)
+	devNotesGenerator := services.NewDevNotesGenerator(claudeClient, cfg)
 
 	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, devNotesGenerator, architectureLoader)
 

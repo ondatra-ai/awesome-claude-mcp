@@ -83,7 +83,7 @@ tasks:
 
 ## User Story
 ```yaml
-{{.StoryYAML}}
+{{.Story | toYaml}}
 ```
 
 {{.Docs.Architecture.Content}}

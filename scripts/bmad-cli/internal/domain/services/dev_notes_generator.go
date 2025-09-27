@@ -5,28 +5,29 @@ import (
 	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
-	"gopkg.in/yaml.v3"
 )
 
 // DevNotesPromptData represents data needed for dev notes generation prompts
 type DevNotesPromptData struct {
-	Story     *story.Story
-	Tasks     []story.Task
-	Docs      *docs.ArchitectureDocs
-	StoryYAML string
+	Story *story.Story
+	Tasks []story.Task
+	Docs  *docs.ArchitectureDocs
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
 type AIDevNotesGenerator struct {
 	aiClient AIClient
+	config   *config.ViperConfig
 }
 
 // NewDevNotesGenerator creates a new AIDevNotesGenerator instance
-func NewDevNotesGenerator(aiClient AIClient) *AIDevNotesGenerator {
+func NewDevNotesGenerator(aiClient AIClient, config *config.ViperConfig) *AIDevNotesGenerator {
 	return &AIDevNotesGenerator{
 		aiClient: aiClient,
+		config:   config,
 	}
 }
 
@@ -34,21 +35,15 @@ func NewDevNotesGenerator(aiClient AIClient) *AIDevNotesGenerator {
 func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error) {
 	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, storyObj.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
-			// Marshal story to YAML
-			storyYAML, err := yaml.Marshal(storyObj)
-			if err != nil {
-				return DevNotesPromptData{}, fmt.Errorf("failed to marshal story to YAML: %w", err)
-			}
-
 			return DevNotesPromptData{
-				Story:     storyObj,
-				Tasks:     tasks,
-				Docs:      architectureDocs,
-				StoryYAML: string(storyYAML),
+				Story: storyObj,
+				Tasks: tasks,
+				Docs:  architectureDocs,
 			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
-			loader := template.NewTemplateLoader[DevNotesPromptData]("templates/us-create.devnotes.prompt.tpl")
+			templatePath := g.config.GetString("templates.prompts.devnotes")
+			loader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
 			return loader.LoadTemplate(data)
 		}).
 		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyObj.ID, "devnotes", "dev_notes")).

@@ -20,7 +20,7 @@ type TemplateLoader[T any] struct {
 func NewTemplateLoader[T any](templateFilePath string) *TemplateLoader[T] {
 	return &TemplateLoader[T]{
 		templateFilePath: templateFilePath,
-		funcMap:          make(template.FuncMap),
+		funcMap:          GetCommonTemplateFunctions(),
 	}
 }
 
