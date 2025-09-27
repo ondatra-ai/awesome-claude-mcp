@@ -43,19 +43,14 @@ func NewContainer() (*Container, error) {
 	// Setup architecture document loader
 	architectureLoader := docs.NewArchitectureLoader(cfg)
 
-	// Setup task prompt loader
-	taskPromptLoader := services.NewTaskPromptLoader("templates/us-create.tasks.prompt.tpl")
-
-	// Setup dev notes prompt loader
-	devNotesPromptLoader := services.NewDevNotesPromptLoader("templates/us-create.devnotes.prompt.tpl")
 
 	// Setup AI task generation - required for operation
 	claudeClient, err := ai.NewClaudeClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI client: %w", err)
 	}
-	taskGenerator := services.NewTaskGenerator(claudeClient, taskPromptLoader)
-	devNotesGenerator := services.NewDevNotesGenerator(claudeClient, devNotesPromptLoader)
+	taskGenerator := services.NewTaskGenerator(claudeClient)
+	devNotesGenerator := services.NewDevNotesGenerator(claudeClient)
 
 	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, devNotesGenerator, architectureLoader)
 

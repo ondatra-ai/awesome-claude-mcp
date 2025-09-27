@@ -17,15 +17,13 @@ type TaskPromptData struct {
 
 // AITaskGenerator generates story tasks using AI based on templates
 type AITaskGenerator struct {
-	aiClient       AIClient
-	templateLoader *template.PromptLoader[TaskPromptData]
+	aiClient AIClient
 }
 
 // NewTaskGenerator creates a new AITaskGenerator instance
-func NewTaskGenerator(aiClient AIClient, templateLoader *template.PromptLoader[TaskPromptData]) *AITaskGenerator {
+func NewTaskGenerator(aiClient AIClient) *AITaskGenerator {
 	return &AITaskGenerator{
-		aiClient:       aiClient,
-		templateLoader: templateLoader,
+		aiClient: aiClient,
 	}
 }
 
@@ -36,7 +34,8 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 			return TaskPromptData{Story: storyObj, Docs: architectureDocs}, nil
 		}).
 		WithPrompt(func(data TaskPromptData) (string, error) {
-			return g.templateLoader.LoadPromptTemplate(data)
+			loader := template.NewPromptLoader[TaskPromptData]("templates/us-create.tasks.prompt.tpl")
+			return loader.LoadPromptTemplate(data)
 		}).
 		WithResponseParser(CreateYAMLFileParser[[]story.Task](storyObj.ID, "tasks", "tasks")).
 		WithValidator(func(tasks []story.Task) error {
@@ -46,9 +45,4 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 			return nil
 		}).
 		Generate()
-}
-
-// NewTaskPromptLoader creates a new task prompt loader
-func NewTaskPromptLoader(templateFilePath string) *template.PromptLoader[TaskPromptData] {
-	return template.NewPromptLoader[TaskPromptData](templateFilePath)
 }

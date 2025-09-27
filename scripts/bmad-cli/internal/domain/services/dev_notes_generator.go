@@ -18,15 +18,13 @@ type DevNotesPromptData struct {
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
 type AIDevNotesGenerator struct {
-	aiClient       AIClient
-	templateLoader *template.PromptLoader[DevNotesPromptData]
+	aiClient AIClient
 }
 
 // NewDevNotesGenerator creates a new AIDevNotesGenerator instance
-func NewDevNotesGenerator(aiClient AIClient, templateLoader *template.PromptLoader[DevNotesPromptData]) *AIDevNotesGenerator {
+func NewDevNotesGenerator(aiClient AIClient) *AIDevNotesGenerator {
 	return &AIDevNotesGenerator{
-		aiClient:       aiClient,
-		templateLoader: templateLoader,
+		aiClient: aiClient,
 	}
 }
 
@@ -37,17 +35,14 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 			return DevNotesPromptData{Story: storyObj, Tasks: tasks, Docs: architectureDocs}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
-			return g.templateLoader.LoadPromptTemplate(data)
+			loader := template.NewPromptLoader[DevNotesPromptData]("templates/us-create.devnotes.prompt.tpl")
+			return loader.LoadPromptTemplate(data)
 		}).
 		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyObj.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }
 
-// NewDevNotesPromptLoader creates a new dev notes prompt loader
-func NewDevNotesPromptLoader(templateFilePath string) *template.PromptLoader[DevNotesPromptData] {
-	return template.NewPromptLoader[DevNotesPromptData](templateFilePath)
-}
 
 
 // validateDevNotes validates that mandatory entities have required source and description fields
