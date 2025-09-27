@@ -16,19 +16,14 @@ type DevNotesPromptData struct {
 	Docs  map[string]docs.ArchitectureDoc
 }
 
-// DevNotesTemplateLoader defines the interface for loading dev notes templates
-type DevNotesTemplateLoader interface {
-	LoadPromptTemplate(data DevNotesPromptData) (string, error)
-}
-
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
 type AIDevNotesGenerator struct {
 	aiClient       AIClient
-	templateLoader DevNotesTemplateLoader
+	templateLoader *template.PromptLoader[DevNotesPromptData]
 }
 
 // NewDevNotesGenerator creates a new AIDevNotesGenerator instance
-func NewDevNotesGenerator(aiClient AIClient, templateLoader DevNotesTemplateLoader) *AIDevNotesGenerator {
+func NewDevNotesGenerator(aiClient AIClient, templateLoader *template.PromptLoader[DevNotesPromptData]) *AIDevNotesGenerator {
 	return &AIDevNotesGenerator{
 		aiClient:       aiClient,
 		templateLoader: templateLoader,
@@ -50,7 +45,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 }
 
 // NewDevNotesPromptLoader creates a new dev notes prompt loader
-func NewDevNotesPromptLoader(templateFilePath string) DevNotesTemplateLoader {
+func NewDevNotesPromptLoader(templateFilePath string) *template.PromptLoader[DevNotesPromptData] {
 	return template.NewPromptLoader[DevNotesPromptData](templateFilePath)
 }
 
