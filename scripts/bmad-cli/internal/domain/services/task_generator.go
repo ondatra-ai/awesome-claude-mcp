@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/docs"
@@ -61,26 +60,12 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	}
 	fmt.Printf("💾 Full AI response saved to: %s\n", responseFile)
 
-	// Try to read from file first (new approach)
+	// Read tasks from file (file must exist)
 	tasks, err := g.readTasksFromFile(story.ID)
 	if err != nil {
-		// Fall back to parsing the AI response using marker-based extraction
-		fmt.Printf("🔄 File not found, falling back to marker-based extraction...\n")
-		tasks, err = g.parseTasksFromResponse(response)
-		if err != nil {
-			// If parsing fails, let's save the extracted content for debugging
-			markerContent := g.extractMarkerBasedContent(response)
-			contentFile := fmt.Sprintf("./tmp/%s-extracted-content.yml", story.ID)
-			if markerContent != "" {
-				if err := os.WriteFile(contentFile, []byte(markerContent), 0644); err == nil {
-					fmt.Printf("💾 Extracted marker content saved to: %s\n", contentFile)
-				}
-			}
-			return nil, fmt.Errorf("failed to parse AI response: %w", err)
-		}
-	} else {
-		fmt.Printf("✅ Tasks read from file: ./tmp/%s-tasks.yaml\n", story.ID)
+		return nil, fmt.Errorf("failed to read tasks from file: %w", err)
 	}
+	fmt.Printf("✅ Tasks read from file: ./tmp/%s-tasks.yaml\n", story.ID)
 
 	// Save successfully parsed tasks to YAML file
 	taskMap := map[string]interface{}{"tasks": tasks}
@@ -99,55 +84,6 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, story *story.Story,
 	return tasks, nil
 }
 
-// parseTasksFromResponse parses the AI response and extracts tasks using marker-based extraction
-func (g *AITaskGenerator) parseTasksFromResponse(response string) ([]story.Task, error) {
-	// Find the content between FILE_START and FILE_END markers
-	markerContent := g.extractMarkerBasedContent(response)
-	if markerContent == "" {
-		return nil, fmt.Errorf("no marker-based content found in AI response")
-	}
-
-	// Parse the YAML
-	var taskData struct {
-		Tasks []story.Task `yaml:"tasks"`
-	}
-
-	err := yaml.Unmarshal([]byte(markerContent), &taskData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	return taskData.Tasks, nil
-}
-
-// extractMarkerBasedContent extracts content between FILE_START and FILE_END markers
-func (g *AITaskGenerator) extractMarkerBasedContent(response string) string {
-	lines := strings.Split(response, "\n")
-	var contentLines []string
-	inFileContent := false
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-
-		// Start of file content
-		if strings.HasPrefix(trimmed, "=== FILE_START:") {
-			inFileContent = true
-			continue
-		}
-
-		// End of file content
-		if inFileContent && strings.HasPrefix(trimmed, "=== FILE_END:") {
-			break
-		}
-
-		// Collect file content
-		if inFileContent {
-			contentLines = append(contentLines, line)
-		}
-	}
-
-	return strings.Join(contentLines, "\n")
-}
 
 // readTasksFromFile reads tasks from file created by Claude
 func (g *AITaskGenerator) readTasksFromFile(storyID string) ([]story.Task, error) {

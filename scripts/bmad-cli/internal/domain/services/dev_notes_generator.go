@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/docs"
@@ -56,26 +55,12 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story
 	}
 	fmt.Printf("💾 Full AI dev_notes response saved to: %s\n", responseFile)
 
-	// Try to read from file first (new approach)
+	// Read dev_notes from file (file must exist)
 	devNotes, err := g.readDevNotesFromFile(story.ID)
 	if err != nil {
-		// Fall back to parsing the AI response using marker-based extraction
-		fmt.Printf("🔄 File not found, falling back to marker-based extraction...\n")
-		devNotes, err = g.parseDevNotesFromResponse(response)
-		if err != nil {
-			// If parsing fails, let's save the extracted content for debugging
-			markerContent := g.extractMarkerBasedContent(response)
-			contentFile := fmt.Sprintf("./tmp/%s-devnotes-extracted-content.yml", story.ID)
-			if markerContent != "" {
-				if err := os.WriteFile(contentFile, []byte(markerContent), 0644); err == nil {
-					fmt.Printf("💾 Extracted marker content saved to: %s\n", contentFile)
-				}
-			}
-			return nil, fmt.Errorf("failed to parse AI response: %w", err)
-		}
-	} else {
-		fmt.Printf("✅ Dev notes read from file: ./tmp/%s-devnotes.yaml\n", story.ID)
+		return nil, fmt.Errorf("failed to read dev_notes from file: %w", err)
 	}
+	fmt.Printf("✅ Dev notes read from file: ./tmp/%s-devnotes.yaml\n", story.ID)
 
 	// Save successfully parsed dev_notes to YAML file
 	devNotesMap := map[string]interface{}{"dev_notes": devNotes}
@@ -89,61 +74,6 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story
 	return devNotes, nil
 }
 
-// parseDevNotesFromResponse parses the AI response and extracts dev_notes using marker-based extraction
-func (g *AIDevNotesGenerator) parseDevNotesFromResponse(response string) (*story.DevNotes, error) {
-	// Find the content between FILE_START and FILE_END markers
-	markerContent := g.extractMarkerBasedContent(response)
-	if markerContent == "" {
-		return nil, fmt.Errorf("no marker-based content found in AI response")
-	}
-
-	// Parse the YAML
-	var devNotesData struct {
-		DevNotes story.DevNotes `yaml:"dev_notes"`
-	}
-
-	err := yaml.Unmarshal([]byte(markerContent), &devNotesData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	// Validate mandatory fields for main entities
-	err = g.validateDevNotes(&devNotesData.DevNotes)
-	if err != nil {
-		return nil, fmt.Errorf("dev_notes validation failed: %w", err)
-	}
-
-	return &devNotesData.DevNotes, nil
-}
-
-// extractMarkerBasedContent extracts content between FILE_START and FILE_END markers
-func (g *AIDevNotesGenerator) extractMarkerBasedContent(response string) string {
-	lines := strings.Split(response, "\n")
-	var contentLines []string
-	inFileContent := false
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-
-		// Start of file content
-		if strings.HasPrefix(trimmed, "=== FILE_START:") {
-			inFileContent = true
-			continue
-		}
-
-		// End of file content
-		if inFileContent && strings.HasPrefix(trimmed, "=== FILE_END:") {
-			break
-		}
-
-		// Collect file content
-		if inFileContent {
-			contentLines = append(contentLines, line)
-		}
-	}
-
-	return strings.Join(contentLines, "\n")
-}
 
 // validateDevNotes validates that mandatory entities have required source and description fields
 func (g *AIDevNotesGenerator) validateDevNotes(devNotes *story.DevNotes) error {
