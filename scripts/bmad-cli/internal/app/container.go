@@ -44,10 +44,10 @@ func NewContainer() (*Container, error) {
 	architectureLoader := docs.NewArchitectureLoader(cfg)
 
 	// Setup task prompt loader
-	taskPromptLoader := template.NewTaskPromptLoader("templates/us-create.tasks.prompt.tpl")
+	taskPromptLoader := services.NewTaskPromptLoader("templates/us-create.tasks.prompt.tpl")
 
 	// Setup dev notes prompt loader
-	devNotesPromptLoader := template.NewDevNotesPromptLoader("templates/us-create.devnotes.prompt.tpl")
+	devNotesPromptLoader := services.NewDevNotesPromptLoader("templates/us-create.devnotes.prompt.tpl")
 
 	// Setup AI task generation - required for operation
 	claudeClient, err := ai.NewClaudeClient()
