@@ -38,26 +38,26 @@ func NewDevNotesGenerator(aiClient AIClient, templateLoader DevNotesTemplateLoad
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (*DevNotesType, error) {
-	return NewAIGenerator[DevNotesPromptData, *DevNotesType](ctx, g.aiClient, story.ID, "devnotes").
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs map[string]docs.ArchitectureDoc) (DevNotesType, error) {
+	return NewAIGenerator[DevNotesPromptData, DevNotesType](ctx, g.aiClient, story.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{Story: story, Tasks: tasks, Docs: architectureDocs}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
 			return g.templateLoader.LoadDevNotesPromptTemplate(data.Story, data.Tasks, data.Docs)
 		}).
-		WithResponseParser(CreateYAMLFileParser[*DevNotesType](story.ID, "devnotes", "dev_notes")).
+		WithResponseParser(CreateYAMLFileParser[DevNotesType](story.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }
 
 
 // validateDevNotes validates that mandatory entities have required source and description fields
-func (g *AIDevNotesGenerator) validateDevNotes(devNotes *DevNotesType) error {
+func (g *AIDevNotesGenerator) validateDevNotes(devNotes DevNotesType) error {
 	mandatoryEntities := []string{"technology_stack", "architecture", "file_structure"}
 
 	for _, entityName := range mandatoryEntities {
-		entity, exists := (*devNotes)[entityName]
+		entity, exists := devNotes[entityName]
 		if !exists {
 			return fmt.Errorf("mandatory entity '%s' is missing", entityName)
 		}

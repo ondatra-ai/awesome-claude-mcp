@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
+	"gopkg.in/yaml.v3"
 )
 
 type TemplateProcessor struct {
@@ -33,8 +35,29 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 		return "", fmt.Errorf("failed to read template file %s: %w", absTemplatePath, err)
 	}
 
-	// Parse template
-	tmpl, err := template.New("story").Parse(string(templateContent))
+	// Create custom template functions
+	funcMap := template.FuncMap{
+		"toYaml": func(v interface{}) string {
+			data, err := yaml.Marshal(v)
+			if err != nil {
+				return fmt.Sprintf("# Error marshaling to YAML: %v", err)
+			}
+			return string(data)
+		},
+		"nindent": func(spaces int, text string) string {
+			lines := strings.Split(text, "\n")
+			indent := strings.Repeat(" ", spaces)
+			for i, line := range lines {
+				if line != "" {
+					lines[i] = indent + line
+				}
+			}
+			return strings.Join(lines, "\n")
+		},
+	}
+
+	// Parse template with custom functions
+	tmpl, err := template.New("story").Funcs(funcMap).Parse(string(templateContent))
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
