@@ -67,7 +67,7 @@ To prepare a comprehensive, self-contained story file by breaking down acceptanc
   - Include unit testing as explicit subtasks based on the Testing Strategy
   - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
 3. Output format:
-CRITICAL: Save text context to file: ./tmp/{{.StoryID}}-tasks.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: ./tmp/{{.StoryID}}-tasks.yaml. Follow EXACTLY the format below:
 
 === FILE_START: ./tmp/{{.StoryID}}-tasks.yaml ===
 tasks:

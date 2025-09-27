@@ -74,7 +74,7 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
    - **performance_requirements**: Set realistic performance targets based on story scope
 
 4. **Output Format**:
-CRITICAL: Save text context to file: ./tmp/{{.StoryID}}-devnotes.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: ./tmp/{{.StoryID}}-devnotes.yaml. Follow EXACTLY the format below:
 
 === FILE_START: ./tmp/{{.StoryID}}-devnotes.yaml ===
 dev_notes:
