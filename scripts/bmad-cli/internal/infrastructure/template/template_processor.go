@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"bmad-cli/internal/domain/models/story"
+	"gopkg.in/yaml.v3"
 )
 
 type TemplateProcessor struct {
@@ -39,6 +41,22 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
+	// Convert DevNotes map to YAML string for template rendering
+	devNotesYAML := ""
+	if len(doc.DevNotes) > 0 {
+		// Create a wrapper to get proper YAML structure
+		devNotesWrapper := map[string]interface{}{
+			"dev_notes": doc.DevNotes,
+		}
+		yamlBytes, err := yaml.Marshal(devNotesWrapper)
+		if err == nil {
+			// Remove the outer "dev_notes:" wrapper since template will add it
+			devNotesYAML = strings.TrimPrefix(string(yamlBytes), "dev_notes:\n")
+			// Remove trailing newline
+			devNotesYAML = strings.TrimSuffix(devNotesYAML, "\n")
+		}
+	}
+
 	// Create template data that matches the expected template structure
 	// Template expects story fields at root level and other nested structures
 	templateData := map[string]interface{}{
@@ -53,7 +71,7 @@ func (p *TemplateProcessor) ProcessTemplate(doc *story.StoryDocument) (string, e
 
 		// Other sections as nested structures
 		"Tasks":          doc.Tasks,
-		"DevNotes":       doc.DevNotes,
+		"DevNotes":       devNotesYAML,
 		"Testing":        doc.Testing,
 		"ChangeLog":      doc.ChangeLog,
 		"QAResults":      doc.QAResults,

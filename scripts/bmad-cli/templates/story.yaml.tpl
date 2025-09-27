@@ -17,38 +17,7 @@ tasks:{{range .Tasks}}
       - "{{.}}"{{end}}
     status: "{{.Status}}"
 {{end}}
-dev_notes:
-  previous_story_insights: "{{.DevNotes.PreviousStoryInsights}}"
-
-  technology_stack:
-    language: "{{.DevNotes.TechnologyStack.Language}}"
-    framework: "{{.DevNotes.TechnologyStack.Framework}}"
-    mcp_integration: "{{.DevNotes.TechnologyStack.MCPIntegration}}"
-    logging: "{{.DevNotes.TechnologyStack.Logging}}"
-    config: "{{.DevNotes.TechnologyStack.Config}}"
-
-  architecture:
-    component: "{{.DevNotes.Architecture.Component}}"
-    responsibilities:{{range .DevNotes.Architecture.Responsibilities}}
-      - "{{.}}"{{end}}
-    dependencies:{{range .DevNotes.Architecture.Dependencies}}
-      - "{{.}}"{{end}}
-    tech_stack:{{range .DevNotes.Architecture.TechStack}}
-      - "{{.}}"{{end}}
-
-  file_structure:
-    files:{{range .DevNotes.FileStructure.Files}}
-      - "{{.}}"{{end}}
-
-  configuration:
-    environment_variables:{{range $key, $value := .DevNotes.Configuration.EnvironmentVariables}}
-      {{$key}}: "{{$value}}"{{end}}
-
-  performance_requirements:
-    connection_establishment: "{{.DevNotes.PerformanceRequirements.ConnectionEstablishment}}"
-    message_processing: "{{.DevNotes.PerformanceRequirements.MessageProcessing}}"
-    concurrent_connections: "{{.DevNotes.PerformanceRequirements.ConcurrentConnections}}"
-    memory_usage: "{{.DevNotes.PerformanceRequirements.MemoryUsage}}"
+dev_notes:{{.DevNotes}}
 
 testing:
   test_location: "{{.Testing.TestLocation}}"
