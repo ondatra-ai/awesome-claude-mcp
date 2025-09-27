@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"bmad-cli/internal/common/utils"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
@@ -54,27 +53,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyObj *story.Sto
 		Generate()
 }
 
-// NewTaskPromptLoader creates a new task prompt loader with inline template builder
+// NewTaskPromptLoader creates a new task prompt loader
 func NewTaskPromptLoader(templateFilePath string) TemplateLoader {
-	return template.NewPromptLoader(templateFilePath, func(data TaskPromptData) (map[string]interface{}, error) {
-		storyYAML, err := utils.MarshalToYAML(data.Story)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
-		}
-
-		return map[string]interface{}{
-			"StoryYAML":                storyYAML,
-			"StoryID":                  data.Story.ID,
-			"Architecture":             data.Docs["Architecture"].Content,
-			"FrontendArchitecture":     data.Docs["FrontendArchitecture"].Content,
-			"CodingStandards":          data.Docs["CodingStandards"].Content,
-			"SourceTree":               data.Docs["SourceTree"].Content,
-			"TechStack":                data.Docs["TechStack"].Content,
-			"ArchitecturePath":         data.Docs["Architecture"].FilePath,
-			"FrontendArchitecturePath": data.Docs["FrontendArchitecture"].FilePath,
-			"CodingStandardsPath":      data.Docs["CodingStandards"].FilePath,
-			"SourceTreePath":           data.Docs["SourceTree"].FilePath,
-			"TechStackPath":            data.Docs["TechStack"].FilePath,
-		}, nil
-	})
+	return template.NewPromptLoader[TaskPromptData](templateFilePath)
 }

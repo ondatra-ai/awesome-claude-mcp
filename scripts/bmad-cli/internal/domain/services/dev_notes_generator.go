@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"bmad-cli/internal/common/utils"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
@@ -50,35 +49,9 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 		Generate()
 }
 
-// NewDevNotesPromptLoader creates a new dev notes prompt loader with inline template builder
+// NewDevNotesPromptLoader creates a new dev notes prompt loader
 func NewDevNotesPromptLoader(templateFilePath string) DevNotesTemplateLoader {
-	return template.NewPromptLoader(templateFilePath, func(data DevNotesPromptData) (map[string]interface{}, error) {
-		storyYAML, err := utils.MarshalToYAML(data.Story)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert story to YAML: %w", err)
-		}
-
-		tasksYAML, err := utils.MarshalWithWrapper(data.Tasks, "tasks")
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert tasks to YAML: %w", err)
-		}
-
-		return map[string]interface{}{
-			"StoryYAML":                storyYAML,
-			"StoryID":                  data.Story.ID,
-			"TasksYAML":                tasksYAML,
-			"Architecture":             data.Docs["Architecture"].Content,
-			"FrontendArchitecture":     data.Docs["FrontendArchitecture"].Content,
-			"CodingStandards":          data.Docs["CodingStandards"].Content,
-			"SourceTree":               data.Docs["SourceTree"].Content,
-			"TechStack":                data.Docs["TechStack"].Content,
-			"ArchitecturePath":         data.Docs["Architecture"].FilePath,
-			"FrontendArchitecturePath": data.Docs["FrontendArchitecture"].FilePath,
-			"CodingStandardsPath":      data.Docs["CodingStandards"].FilePath,
-			"SourceTreePath":           data.Docs["SourceTree"].FilePath,
-			"TechStackPath":            data.Docs["TechStack"].FilePath,
-		}, nil
-	})
+	return template.NewPromptLoader[DevNotesPromptData](templateFilePath)
 }
 
 

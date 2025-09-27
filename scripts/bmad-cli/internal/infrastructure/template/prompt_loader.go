@@ -10,14 +10,12 @@ import (
 // PromptLoader is a generic template loader for any prompt data type
 type PromptLoader[T any] struct {
 	templateFilePath string
-	templateBuilder  func(T) (map[string]interface{}, error)
 }
 
 // NewPromptLoader creates a new generic PromptLoader instance
-func NewPromptLoader[T any](templateFilePath string, templateBuilder func(T) (map[string]interface{}, error)) *PromptLoader[T] {
+func NewPromptLoader[T any](templateFilePath string) *PromptLoader[T] {
 	return &PromptLoader[T]{
 		templateFilePath: templateFilePath,
-		templateBuilder:  templateBuilder,
 	}
 }
 
@@ -29,14 +27,8 @@ func (l *PromptLoader[T]) LoadPromptTemplate(inputData T) (string, error) {
 		return "", fmt.Errorf("failed to load template file: %w", err)
 	}
 
-	// Build template data directly from input
-	templateData, err := l.templateBuilder(inputData)
-	if err != nil {
-		return "", fmt.Errorf("failed to build template data: %w", err)
-	}
-
-	// Execute template
-	prompt, err := l.executeTemplate(templateContent, templateData)
+	// Execute template directly with input data
+	prompt, err := l.executeTemplate(templateContent, inputData)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -54,7 +46,7 @@ func (l *PromptLoader[T]) loadTemplateFile() (string, error) {
 }
 
 // executeTemplate uses Go's text/template system to properly inject data
-func (l *PromptLoader[T]) executeTemplate(templateContent string, templateData map[string]interface{}) (string, error) {
+func (l *PromptLoader[T]) executeTemplate(templateContent string, data T) (string, error) {
 	// Parse the template
 	tmpl, err := template.New("prompt").Parse(templateContent)
 	if err != nil {
@@ -63,7 +55,7 @@ func (l *PromptLoader[T]) executeTemplate(templateContent string, templateData m
 
 	// Execute the template with data
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, templateData); err != nil {
+	if err := tmpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
