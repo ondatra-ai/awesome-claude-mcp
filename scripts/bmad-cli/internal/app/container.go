@@ -54,8 +54,7 @@ func NewContainer() (*Container, error) {
 
 	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, devNotesGenerator, architectureLoader)
 
-	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData]("templates/story.yaml.tpl").
-		WithFunctions(template.GetCommonTemplateFunctions())
+	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData]("templates/story.yaml.tpl")
 	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
 	usCreateCmd := commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 
