@@ -83,11 +83,8 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 
 	// 3. Call AI - Let's try ApplyMode first and add debug logging
 	fmt.Printf("🔍 About to call AI with prompt for %s generation\n", g.filePrefix)
-	previewLen := 500
-	if len(prompt) < 500 {
-		previewLen = len(prompt)
-	}
-	fmt.Printf("📝 Prompt preview (first %d chars): %s...\n", previewLen, prompt[:previewLen])
+	fmt.Printf("📝 Full prompt content:\n%s\n", prompt)
+	fmt.Printf("📏 Prompt length: %d characters\n", len(prompt))
 
 	// Save prompt for debugging
 	promptFile := fmt.Sprintf("./tmp/%s-%s-prompt.txt", g.storyID, g.filePrefix)
