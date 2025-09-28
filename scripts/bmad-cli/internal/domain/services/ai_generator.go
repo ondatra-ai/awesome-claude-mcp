@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
+
+	"bmad-cli/internal/adapters/ai"
 
 	"gopkg.in/yaml.v3"
-	"bmad-cli/internal/adapters/ai"
 )
 
 // AIClient defines the interface for AI communication
@@ -90,8 +92,8 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		fmt.Printf("💾 Prompt saved to: %s\n", promptFile)
 	}
 
-	// Use ApplyMode for actual generation (PlanMode doesn't work with MCP)
-	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, ai.ApplyMode)
+	// Use PlanMode as required
+	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, ai.PlanMode)
 	if err != nil {
 		return zero, fmt.Errorf("failed to generate content: %w", err)
 	}
@@ -131,6 +133,12 @@ func CreateYAMLFileParser[T any](storyID, filePrefix, yamlKey string) func(strin
 		// Construct file path
 		filePath := fmt.Sprintf("./tmp/%s-%s.yaml", storyID, filePrefix)
 
+		// First, try to extract and save file from AI response if it contains file markers
+		if err := extractAndSaveFileFromResponse(aiResponse, filePath, storyID, filePrefix); err != nil {
+			// If extraction fails, continue with existing file reading logic
+			fmt.Printf("⚠️ Failed to extract file from response: %v\n", err)
+		}
+
 		// Read file
 		content, err := os.ReadFile(filePath)
 		if err != nil {
@@ -150,4 +158,36 @@ func CreateYAMLFileParser[T any](storyID, filePrefix, yamlKey string) func(strin
 
 		return result, nil
 	}
+}
+
+// extractAndSaveFileFromResponse extracts file content from AI response using file markers
+func extractAndSaveFileFromResponse(aiResponse, filePath, storyID, filePrefix string) error {
+	startMarker := fmt.Sprintf("=== FILE_START: ./tmp/%s-%s.yaml ===", storyID, filePrefix)
+	endMarker := fmt.Sprintf("=== FILE_END: ./tmp/%s-%s.yaml ===", storyID, filePrefix)
+
+	startIdx := strings.Index(aiResponse, startMarker)
+	if startIdx == -1 {
+		return fmt.Errorf("start marker not found")
+	}
+
+	endIdx := strings.Index(aiResponse, endMarker)
+	if endIdx == -1 {
+		return fmt.Errorf("end marker not found")
+	}
+
+	if endIdx <= startIdx {
+		return fmt.Errorf("invalid marker positions")
+	}
+
+	// Extract content between markers
+	startIdx += len(startMarker)
+	fileContent := strings.TrimSpace(aiResponse[startIdx:endIdx])
+
+	// Save to file
+	if err := os.WriteFile(filePath, []byte(fileContent), 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Printf("✅ Extracted and saved file: %s\n", filePath)
+	return nil
 }
