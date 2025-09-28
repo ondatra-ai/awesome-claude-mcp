@@ -1,8 +1,40 @@
 package ai
 
-type ExecutionMode string
+// ExecutionMode defines tool permissions for AI execution
+type ExecutionMode struct {
+	AllowedTools    []string
+	DisallowedTools []string
+}
 
-const (
-	PlanMode  ExecutionMode = "plan"
-	ApplyMode ExecutionMode = "apply"
+// Predefined execution modes (similar to const block syntax)
+var (
+	ThinkMode = ExecutionMode{
+		[]string{
+			"Read(**)",
+			"Write(./tmp/**)",
+			"Glob(**)",
+			"Grep(**)",
+		},
+		[]string{
+			"Bash",
+			"Edit(**.go)",
+			"MultiEdit(**.go)",
+		},
+	}
+
+	FullAccessMode = ExecutionMode{
+		[]string{
+			"Read(**)",
+			"Write(**)",
+			"Edit(**)",
+			"MultiEdit(**)",
+			"Glob(**)",
+			"Grep(**)",
+			"Bash",
+			"WebFetch",
+			"WebSearch",
+			"Task",
+		},
+		[]string{}, // No disallowed tools
+	}
 )

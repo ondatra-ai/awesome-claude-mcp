@@ -7,6 +7,7 @@ import (
 	claudecode "github.com/severity1/claude-code-sdk-go"
 )
 
+
 type ClaudeClient struct {
 	// No persistent client needed with severity1 SDK
 }
@@ -20,53 +21,29 @@ func (c *ClaudeClient) Name() string {
 	return "Claude"
 }
 
-func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode ExecutionMode) (string, error) {
+
+func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, model string, mode ExecutionMode) (string, error) {
 	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
 
 	// Build options based on execution mode with strict file system restrictions
 	var opts []claudecode.Option
-	switch mode {
-	case PlanMode:
-		opts = []claudecode.Option{
-			claudecode.WithPermissionMode(claudecode.PermissionModePlan),
-			// Only allow reading from specific patterns and writing to tmp directory
-			claudecode.WithAllowedTools(
-				"Read(**.yaml)",           // Allow reading YAML files
-				"Read(**.yml)",            // Allow reading YML files
-				"Read(**.md)",             // Allow reading markdown files
-				"Write(./tmp/**)",         // Only allow writing to tmp directory
-				"Glob(**)",                // Allow file discovery
-				"Grep(**)",                // Allow searching content
-			),
-			// Explicitly disallow potentially dangerous tools
-			claudecode.WithDisallowedTools(
-				"Bash",                    // No shell commands
-				"Edit",                    // No file editing outside tmp
-				"MultiEdit",               // No multi-file editing
-				"Write(**.go)",            // No Go file modifications
-				"Write(**.yaml)",          // No YAML file modifications outside tmp
-				"Write(**.yml)",           // No YML file modifications outside tmp
-				"Write(**.json)",          // No JSON file modifications outside tmp
-			),
-		}
-	case ApplyMode:
-		opts = []claudecode.Option{
-			claudecode.WithPermissionMode(claudecode.PermissionModeAcceptEdits),
-			// Even in apply mode, restrict to tmp directory for file creation
-			claudecode.WithAllowedTools(
-				"Read(**)",                // Allow reading all files
-				"Write(./tmp/**)",         // Only allow writing to tmp directory
-				"Glob(**)",                // Allow file discovery
-				"Grep(**)",                // Allow searching content
-			),
-			claudecode.WithDisallowedTools(
-				"Bash",                    // No shell commands
-				"Edit(**.go)",             // No Go file editing
-				"MultiEdit(**.go)",        // No Go multi-file editing
-			),
-		}
-	default:
-		return "", fmt.Errorf("unsupported execution mode: %v", mode)
+
+	// Set model based on parameter
+	if model == "opus" {
+		opts = append(opts, claudecode.WithModel("claude-3-opus-20240229")) // Use Opus 4.1 when available
+	} else {
+		opts = append(opts, claudecode.WithModel("claude-3-5-sonnet-20241022"))
+	}
+
+	// Apply mode permissions directly from struct fields
+	opts = append(opts, claudecode.WithPermissionMode(claudecode.PermissionModeAcceptEdits))
+
+	if len(mode.AllowedTools) > 0 {
+		opts = append(opts, claudecode.WithAllowedTools(mode.AllowedTools...))
+	}
+
+	if len(mode.DisallowedTools) > 0 {
+		opts = append(opts, claudecode.WithDisallowedTools(mode.DisallowedTools...))
 	}
 
 	// Use Query for one-shot execution
