@@ -1,10 +1,10 @@
 story:
   id: "{{.ID}}"
-  title: "{{.Title}}"
-  as_a: "{{.AsA}}"
-  i_want: "{{.IWant}}"
-  so_that: "{{.SoThat}}"
-  status: "{{.Status}}"
+  title: "{{.Title | trim}}"
+  as_a: "{{.AsA | trim}}"
+  i_want: "{{.IWant | trim}}"
+  so_that: "{{.SoThat | trim}}"
+  status: "{{.Status | default "draft"}}"
   acceptance_criteria:{{range .AcceptanceCriteria}}
     - id: {{.ID}}
       description: "{{.Description}}"{{end}}
@@ -32,8 +32,8 @@ testing:
 change_log:{{range .ChangeLog}}
   - date: "{{.Date}}"
     version: "{{.Version}}"
-    description: "{{.Description}}"
-    author: "{{.Author}}"{{end}}
+    description: "{{.Description | trim}}"
+    author: "{{.Author | trim}}"{{end}}
 {{if .QAResults}}
 qa_results:
   review_date: "{{.QAResults.ReviewDate}}"
@@ -60,10 +60,10 @@ qa_results:
   gate_reference: "{{.QAResults.GateReference}}"
 {{end}}
 dev_agent_record:
-  agent_model_used: {{if .DevAgentRecord.AgentModelUsed}}{{.DevAgentRecord.AgentModelUsed}}{{else}}null{{end}}
-  debug_log_references: {{if .DevAgentRecord.DebugLogReferences}}{{range .DevAgentRecord.DebugLogReferences}}
+  agent_model_used: {{.DevAgentRecord.AgentModelUsed | default "null"}}
+  debug_log_references: {{with .DevAgentRecord.DebugLogReferences}}{{range .}}
     - "{{.}}"{{end}}{{else}}[]{{end}}
-  completion_notes: {{if .DevAgentRecord.CompletionNotes}}{{range .DevAgentRecord.CompletionNotes}}
+  completion_notes: {{with .DevAgentRecord.CompletionNotes}}{{range .}}
     - "{{.}}"{{end}}{{else}}[]{{end}}
-  file_list: {{if .DevAgentRecord.FileList}}{{range .DevAgentRecord.FileList}}
+  file_list: {{with .DevAgentRecord.FileList}}{{range .}}
     - "{{.}}"{{end}}{{else}}[]{{end}}

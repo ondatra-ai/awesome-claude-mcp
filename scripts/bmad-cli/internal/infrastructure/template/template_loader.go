@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,7 +35,11 @@ func (l *TemplateLoader[T]) WithFunctions(funcMap template.FuncMap) *TemplateLoa
 
 // getCommonTemplateFunctions returns commonly used template functions
 func getCommonTemplateFunctions() template.FuncMap {
-	return template.FuncMap{
+	// Start with Sprig's comprehensive function map
+	funcMap := sprig.FuncMap()
+
+	// Override or add custom functions specific to BMAD
+	customFuncs := template.FuncMap{
 		"toYaml": func(v interface{}) string {
 			data, err := yaml.Marshal(v)
 			if err != nil {
@@ -53,6 +58,12 @@ func getCommonTemplateFunctions() template.FuncMap {
 			return strings.Join(lines, "\n")
 		},
 	}
+
+	// Merge custom functions, overriding Sprig's if there are conflicts
+	for name, fn := range customFuncs {
+		funcMap[name] = fn
+	}
+	return funcMap
 }
 
 // LoadTemplate loads and processes the template with the provided data
