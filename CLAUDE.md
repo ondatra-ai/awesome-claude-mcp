@@ -53,6 +53,53 @@ Currently empty - update this section as the codebase develops.
   - Switch environment: `railway environment <development|staging|production>`
   - Deploy service: `railway up --service <name> --path-as-root services/<frontend|backend>`
 
+## BMAD CLI Architecture Principles
+
+### Core Data Flow Principle
+**NO CACHING, NO LOADERS, NO UNNECESSARY INTERFACES - JUST DIRECT DATA FLOW!** 🎉
+
+#### The Principle
+- ✅ **Direct data flow**: `Epic File → StoryFactory → StoryDocument → Generators`
+- ✅ **Single source of truth**: StoryDocument contains all needed data
+- ✅ **No abstraction layers**: Components work directly with concrete data
+- ✅ **No caching complexity**: Load once, use directly
+- ✅ **Simple interfaces**: Functions take concrete types, not abstractions
+
+#### Implementation Guidelines
+- **Extend domain models** (like StoryDocument) with required data instead of creating loaders
+- **Pass complete data structures** to functions instead of IDs that require loading
+- **Load data once** at the factory level and populate the complete structure
+- **Avoid interfaces** unless there's a genuine need for multiple implementations
+- **Question every layer** - if it doesn't add real value, remove it
+
+#### Example: BMAD CLI Story Generation
+```go
+// ✅ GOOD: Direct data flow
+type StoryDocument struct {
+    Story            Story
+    Tasks            []Task
+    DevNotes         DevNotes
+    Testing          Testing
+    QAResults        *QAResults
+    ArchitectureDocs *docs.ArchitectureDocs  // All data included
+}
+
+func (g *Generator) Generate(ctx context.Context, storyDoc *StoryDocument) (Result, error) {
+    // Direct access to all needed data
+    return processData(storyDoc.Story, storyDoc.ArchitectureDocs)
+}
+
+// ❌ BAD: Unnecessary abstractions
+type StoryLoader interface { LoadStory(id string) (*Story, error) }
+type DataCache struct { /* caching complexity */ }
+```
+
+#### When This Principle Was Established
+- **Date**: 2025-09-28
+- **Context**: BMAD CLI refactoring session
+- **Result**: Eliminated 200+ lines of unnecessary abstraction code
+- **Verification**: Story generation still works perfectly with much simpler code
+
 ## Notes
 
 - The .gitignore is configured for Go projects
