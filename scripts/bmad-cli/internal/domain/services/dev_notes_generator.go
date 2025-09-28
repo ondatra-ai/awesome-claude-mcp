@@ -32,13 +32,13 @@ func NewDevNotesGenerator(aiClient AIClient, config *config.ViperConfig) *AIDevN
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error) {
-	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, storyObj.ID, "devnotes").
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error) {
+	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, storyDoc.Story.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
-				Story: storyObj,
-				Tasks: tasks,
-				Docs:  architectureDocs,
+				Story: &storyDoc.Story,
+				Tasks: storyDoc.Tasks,
+				Docs:  storyDoc.ArchitectureDocs,
 			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (string, error) {
@@ -46,7 +46,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyObj *st
 			loader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
 			return loader.LoadTemplate(data)
 		}).
-		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyObj.ID, "devnotes", "dev_notes")).
+		WithResponseParser(CreateYAMLFileParser[story.DevNotes](storyDoc.Story.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }

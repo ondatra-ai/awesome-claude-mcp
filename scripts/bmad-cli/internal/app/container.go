@@ -49,12 +49,8 @@ func NewContainer() (*Container, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI client: %w", err)
 	}
-	taskGenerator := services.NewTaskGenerator(claudeClient, cfg)
-	devNotesGenerator := services.NewDevNotesGenerator(claudeClient, cfg)
-	qaAssessmentGenerator := services.NewQAAssessmentGenerator(claudeClient)
-	testingGenerator := services.NewTestingGenerator(claudeClient)
 
-	storyFactory := services.NewStoryFactory(epicLoader, taskGenerator, devNotesGenerator, qaAssessmentGenerator, testingGenerator, architectureLoader)
+	storyFactory := services.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
 
 	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData]("templates/story.yaml.tpl")
 	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")

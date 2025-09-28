@@ -34,21 +34,19 @@ func NewQAAssessmentGenerator(aiClient AIClient) *QAAssessmentGenerator {
 }
 
 // GenerateQAResults generates comprehensive QA results following Quinn persona
-func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyObj *story.Story, tasks []story.Task, devNotes story.DevNotes, architectureDocs *docs.ArchitectureDocs) (story.QAResults, error) {
-	storyID := storyObj.ID
-
+func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error) {
 	// Create AI generator for QA assessment
-	generator := NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, storyID, "qa-assessment").
+	generator := NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, storyDoc.Story.ID, "qa-assessment").
 		WithData(func() (QAAssessmentData, error) {
 			return QAAssessmentData{
-				Story:            storyObj,
-				Tasks:            tasks,
-				DevNotes:         devNotes,
-				ArchitectureDocs: architectureDocs,
+				Story:            &storyDoc.Story,
+				Tasks:            storyDoc.Tasks,
+				DevNotes:         storyDoc.DevNotes,
+				ArchitectureDocs: storyDoc.ArchitectureDocs,
 			}, nil
 		}).
 		WithPrompt(g.loadQAPrompt).
-		WithResponseParser(CreateYAMLFileParser[story.QAResults](storyID, "qa-assessment", "qa_results")).
+		WithResponseParser(CreateYAMLFileParser[story.QAResults](storyDoc.Story.ID, "qa-assessment", "qa_results")).
 		WithValidator(g.validateQAResults)
 
 	// Generate QA results
@@ -62,8 +60,8 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyObj 
 	qaResults.ReviewedBy = "Quinn (Test Architect)"
 
 	// Generate gate reference path
-	slug := slugifyTitle(storyObj.Title)
-	qaResults.GateReference = fmt.Sprintf("docs/qa/gates/%s-%s.yml", storyID, slug)
+	slug := slugifyTitle(storyDoc.Story.Title)
+	qaResults.GateReference = fmt.Sprintf("docs/qa/gates/%s-%s.yml", storyDoc.Story.ID, slug)
 
 	return qaResults, nil
 }

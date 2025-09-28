@@ -32,21 +32,19 @@ func NewTestingGenerator(aiClient AIClient) *TestingGenerator {
 }
 
 // GenerateTesting generates comprehensive testing requirements based on story analysis
-func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyObj *story.Story, tasks []story.Task, devNotes story.DevNotes, architectureDocs *docs.ArchitectureDocs) (story.Testing, error) {
-	storyID := storyObj.ID
-
+func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error) {
 	// Create AI generator for testing requirements
-	generator := NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, storyID, "testing").
+	generator := NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, storyDoc.Story.ID, "testing").
 		WithData(func() (TestingData, error) {
 			return TestingData{
-				Story:            storyObj,
-				Tasks:            tasks,
-				DevNotes:         devNotes,
-				ArchitectureDocs: architectureDocs,
+				Story:            &storyDoc.Story,
+				Tasks:            storyDoc.Tasks,
+				DevNotes:         storyDoc.DevNotes,
+				ArchitectureDocs: storyDoc.ArchitectureDocs,
 			}, nil
 		}).
 		WithPrompt(g.loadTestingPrompt).
-		WithResponseParser(CreateYAMLFileParser[story.Testing](storyID, "testing", "testing")).
+		WithResponseParser(CreateYAMLFileParser[story.Testing](storyDoc.Story.ID, "testing", "testing")).
 		WithValidator(g.validateTesting)
 
 	// Generate testing requirements
