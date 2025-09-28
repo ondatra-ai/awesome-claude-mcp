@@ -81,11 +81,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		return zero, fmt.Errorf("failed to load prompt: %w", err)
 	}
 
-	// 3. Call AI - Let's try ApplyMode first and add debug logging
-	fmt.Printf("🔍 About to call AI with prompt for %s generation\n", g.filePrefix)
-	fmt.Printf("📝 Full prompt content:\n%s\n", prompt)
-	fmt.Printf("📏 Prompt length: %d characters\n", len(prompt))
-
+	// 3. Call AI
 	// Save prompt for debugging
 	promptFile := fmt.Sprintf("./tmp/%s-%s-prompt.txt", g.storyID, g.filePrefix)
 	if err := os.WriteFile(promptFile, []byte(prompt), 0644); err != nil {
