@@ -33,7 +33,7 @@ func (ti *ThreadImplementer) Implement(ctx context.Context, threadContext models
 
 	slog.Debug("Implementation prompt", "client", ti.client.Name(), "prompt", prompt)
 
-	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, ApplyMode)
+	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, "sonnet", ThinkMode)
 	if err != nil {
 		return "", fmt.Errorf("AI client implementation failed: %w", err)
 	}

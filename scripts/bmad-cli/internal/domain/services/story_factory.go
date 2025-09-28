@@ -38,12 +38,12 @@ type ArchitectureLoader interface {
 }
 
 type StoryFactory struct {
-	epicLoader            *epic.EpicLoader
-	taskGenerator         TaskGenerator
-	devNotesGenerator     DevNotesGenerator
-	qaResultsGenerator    QAResultsGenerator
-	testingGenerator      TestingRequirementsGenerator
-	architectureLoader    ArchitectureLoader
+	epicLoader         *epic.EpicLoader
+	taskGenerator      TaskGenerator
+	devNotesGenerator  DevNotesGenerator
+	qaResultsGenerator QAResultsGenerator
+	testingGenerator   TestingRequirementsGenerator
+	architectureLoader ArchitectureLoader
 }
 
 func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, devNotesGenerator DevNotesGenerator, qaResultsGenerator QAResultsGenerator, testingGenerator TestingRequirementsGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
@@ -87,6 +87,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate QA results: %w", err)
 	}
+
 
 	return &story.StoryDocument{
 		Story:     *loadedStory,

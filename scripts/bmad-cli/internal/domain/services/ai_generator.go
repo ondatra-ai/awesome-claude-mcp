@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"bmad-cli/internal/adapters/ai"
 
@@ -13,7 +12,7 @@ import (
 
 // AIClient defines the interface for AI communication
 type AIClient interface {
-	ExecutePrompt(ctx context.Context, prompt string, mode ai.ExecutionMode) (string, error)
+	ExecutePrompt(ctx context.Context, prompt string, model string, mode ai.ExecutionMode) (string, error)
 }
 
 // AIGenerator is a generic AI content generator with builder pattern
@@ -26,6 +25,8 @@ type AIGenerator[T1 any, T2 any] struct {
 	promptLoader   func(T1) (string, error)
 	responseParser func(aiResponse string) (T2, error)
 	validator      func(T2) error
+	model          string
+	mode           ai.ExecutionMode
 }
 
 // NewAIGenerator creates a new generator instance
@@ -35,6 +36,8 @@ func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, stor
 		aiClient:   aiClient,
 		storyID:    storyID,
 		filePrefix: filePrefix,
+		model:      "sonnet",      // default model
+		mode:       ai.ThinkMode,  // default mode
 	}
 }
 
@@ -59,6 +62,18 @@ func (g *AIGenerator[T1, T2]) WithResponseParser(parser func(string) (T2, error)
 // WithValidator sets the validation functor
 func (g *AIGenerator[T1, T2]) WithValidator(validator func(T2) error) *AIGenerator[T1, T2] {
 	g.validator = validator
+	return g
+}
+
+// WithModel sets the AI model to use ("sonnet" or "opus")
+func (g *AIGenerator[T1, T2]) WithModel(model string) *AIGenerator[T1, T2] {
+	g.model = model
+	return g
+}
+
+// WithMode sets the execution mode (ThinkMode or FullAccessMode)
+func (g *AIGenerator[T1, T2]) WithMode(mode ai.ExecutionMode) *AIGenerator[T1, T2] {
+	g.mode = mode
 	return g
 }
 
@@ -92,8 +107,8 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		fmt.Printf("💾 Prompt saved to: %s\n", promptFile)
 	}
 
-	// Use PlanMode as required
-	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, ai.PlanMode)
+	// Use configured model and mode
+	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, g.model, g.mode)
 	if err != nil {
 		return zero, fmt.Errorf("failed to generate content: %w", err)
 	}
@@ -133,11 +148,6 @@ func CreateYAMLFileParser[T any](storyID, filePrefix, yamlKey string) func(strin
 		// Construct file path
 		filePath := fmt.Sprintf("./tmp/%s-%s.yaml", storyID, filePrefix)
 
-		// First, try to extract and save file from AI response if it contains file markers
-		if err := extractAndSaveFileFromResponse(aiResponse, filePath, storyID, filePrefix); err != nil {
-			// If extraction fails, continue with existing file reading logic
-			fmt.Printf("⚠️ Failed to extract file from response: %v\n", err)
-		}
 
 		// Read file
 		content, err := os.ReadFile(filePath)
@@ -158,36 +168,4 @@ func CreateYAMLFileParser[T any](storyID, filePrefix, yamlKey string) func(strin
 
 		return result, nil
 	}
-}
-
-// extractAndSaveFileFromResponse extracts file content from AI response using file markers
-func extractAndSaveFileFromResponse(aiResponse, filePath, storyID, filePrefix string) error {
-	startMarker := fmt.Sprintf("=== FILE_START: ./tmp/%s-%s.yaml ===", storyID, filePrefix)
-	endMarker := fmt.Sprintf("=== FILE_END: ./tmp/%s-%s.yaml ===", storyID, filePrefix)
-
-	startIdx := strings.Index(aiResponse, startMarker)
-	if startIdx == -1 {
-		return fmt.Errorf("start marker not found")
-	}
-
-	endIdx := strings.Index(aiResponse, endMarker)
-	if endIdx == -1 {
-		return fmt.Errorf("end marker not found")
-	}
-
-	if endIdx <= startIdx {
-		return fmt.Errorf("invalid marker positions")
-	}
-
-	// Extract content between markers
-	startIdx += len(startMarker)
-	fileContent := strings.TrimSpace(aiResponse[startIdx:endIdx])
-
-	// Save to file
-	if err := os.WriteFile(filePath, []byte(fileContent), 0644); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
-	}
-
-	fmt.Printf("✅ Extracted and saved file: %s\n", filePath)
-	return nil
 }
