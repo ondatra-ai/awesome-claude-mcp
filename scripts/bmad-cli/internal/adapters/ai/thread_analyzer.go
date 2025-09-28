@@ -34,7 +34,7 @@ func (ta *ThreadAnalyzer) Analyze(ctx context.Context, threadContext models.Thre
 		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to build heuristic prompt: %w", err)
 	}
 
-	rawOutput, err := ta.client.ExecutePrompt(ctx, prompt, PlanMode)
+	rawOutput, err := ta.client.ExecutePrompt(ctx, prompt, "sonnet", ThinkMode)
 	if err != nil {
 		return models.HeuristicAnalysisResult{}, fmt.Errorf("AI client execution failed: %w", err)
 	}

@@ -20,148 +20,155 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Setup MCP WebSocket Server Infrastructure"
+  - name: "Initialize MCP Service Go Module and Project Structure"
     acceptance_criteria:
       - "AC-1"
       - "AC-5"
     subtasks:
-      - "Configure WebSocket server using standard Go net/http package with gorilla/websocket upgrade"
-      - "Implement server startup on configurable MCP_PORT environment variable (default: 8081)"
-      - "Add graceful server shutdown with context cancellation for Railway deployment compatibility"
-      - "Implement connection lifecycle management (connect, disconnect, automatic cleanup)"
-      - "Add connection state tracking with metrics collection for observability"
-      - "Configure /health endpoint for Railway deployment monitoring and load balancer checks"
-      - "Add structured JSON logging using zerolog for all connection events and lifecycle"
-      - "Implement connection timeout handling with configurable timeouts (default: 30s)"
-      - "Add connection pool management supporting up to 10 concurrent Claude AI connections"
+      - "Create services/mcp-service directory following Source Tree specification"
+      - "Initialize Go module with Mark3Labs MCP-Go dependency as specified in Tech Stack"
+      - "Set up single-entity-per-file structure: cmd/main.go, internal/server/, internal/operations/, internal/docs/, internal/auth/, internal/cache/"
+      - "Create Dockerfile multi-stage build for Railway deployment compatibility"
+      - "Add service definition to railway.toml for mcp-service, mcp-service-staging, mcp-service-dev"
     status: "pending"
 
-  - name: "Implement MCP Protocol Message Handling"
-    acceptance_criteria:
-      - "AC-2"
-      - "AC-3"
-      - "AC-4"
-    subtasks:
-      - "Implement JSON-RPC 2.0 compliant message parser supporting MCP protocol specification"
-      - "Add comprehensive JSON schema validation for MCP request/response message structures"
-      - "Implement MCP response formatter ensuring protocol compliance with latest specifications"
-      - "Add error response formatting with standard MCP error codes (-32600 to -32603)"
-      - "Implement intelligent message routing to appropriate Google Docs tool handlers"
-      - "Add MCP capability negotiation during connection handshake with Claude AI"
-      - "Implement tools/list method exposing all Google Docs operations (replace_all, append, prepend, replace_match, insert_before, insert_after)"
-      - "Implement tools/call method with comprehensive parameter validation for all operations"
-      - "Add request correlation ID tracking for proper response mapping"
-    status: "pending"
-
-  - name: "Create HTTP Endpoint for MCP Access"
-    acceptance_criteria:
-      - "AC-2"
-    subtasks:
-      - "Setup high-performance HTTP server using Go Fiber framework for Claude AI connections"
-      - "Implement /mcp endpoint that properly upgrades HTTP to WebSocket for MCP protocol"
-      - "Add CORS middleware configured specifically for Claude AI client domain access"
-      - "Implement OAuth 2.0 token validation for secure MCP connections using Google tokens"
-      - "Add rate limiting middleware (60 requests/minute per user) for endpoint protection"
-      - "Create /mcp/status endpoint providing comprehensive service health monitoring"
-      - "Configure Railway-compatible port binding with environment variable support"
-      - "Add /mcp/info endpoint exposing server capabilities and available Google Docs tools"
-      - "Implement proper HTTP status codes and error responses for non-WebSocket requests"
-    status: "pending"
-
-  - name: "Implement Concurrent Connection Support"
-    acceptance_criteria:
-      - "AC-6"
-    subtasks:
-      - "Implement goroutine-per-connection pattern with automatic cleanup and panic recovery"
-      - "Add connection pool manager supporting multiple simultaneous Claude AI clients (max: 10)"
-      - "Implement thread-safe connection state tracking across all goroutines"
-      - "Add connection metrics collection (active connections, message throughput, error rates)"
-      - "Implement graceful degradation when connection limits reached (queue vs reject)"
-      - "Add MAX_CONNECTIONS environment variable configuration (default: 10)"
-      - "Implement connection timeout handling with automatic cleanup of stale connections"
-      - "Add memory usage monitoring and garbage collection optimization for connection management"
-      - "Implement connection heartbeat/ping mechanism for connection health validation"
-    status: "pending"
-
-  - name: "Setup Google Docs Integration Foundation"
-    acceptance_criteria:
-      - "AC-3"
-      - "AC-4"
-    subtasks:
-      - "Configure Google OAuth2 client using golang.org/x/oauth2 with proper scopes (docs.googleapis.com/auth/documents)"
-      - "Implement secure token validation and automatic refresh mechanisms with retry logic"
-      - "Setup Google Docs API client using google.golang.org/api/docs/v1 with proper error handling"
-      - "Create document access validation service with permission checks for read/write access"
-      - "Implement comprehensive error mapping from Google API responses to MCP protocol errors"
-      - "Add structured logging for all Google API interactions including request/response tracing"
-      - "Implement circuit breaker pattern for Google API reliability with exponential backoff"
-      - "Add encrypted token storage using Redis with TTL management and automatic cleanup"
-      - "Implement token refresh workflow triggered by API 401 responses"
-    status: "pending"
-
-  - name: "Implement Core Document Tools for MCP"
-    acceptance_criteria:
-      - "AC-3"
-      - "AC-4"
-    subtasks:
-      - "Register replace_all tool with MCP protocol including JSON schema for parameters (document_id, content)"
-      - "Register append tool with content parameter validation and markdown processing support"
-      - "Register prepend tool with content parameter validation and proper document positioning"
-      - "Register replace_match tool with parameters (document_id, search_text, replace_text, case_sensitive)"
-      - "Register insert_before and insert_after tools with anchor-based positioning parameters"
-      - "Implement comprehensive JSON schema validation for all tool parameters with descriptive error messages"
-      - "Create MCP-compliant tool response formatting with content arrays containing markdown/text"
-      - "Add robust error handling for each tool operation (document not found, permission denied, API limits)"
-      - "Implement Google Docs API integration for each tool using batch update requests"
-      - "Add operation result tracking with metadata (execution time, characters modified, success/failure)"
-    status: "pending"
-
-  - name: "Enhance Message Parsing and Validation"
-    acceptance_criteria:
-      - "AC-3"
-    subtasks:
-      - "Implement comprehensive JSON message parsing with detailed error reporting"
-      - "Add input validation for all MCP message types (initialize, tools/list, tools/call) with schema enforcement"
-      - "Implement JSON schema validation for tool parameters using encoding/json schema validation"
-      - "Add Google Docs document ID validation (format: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms)"
-      - "Implement content validation (markdown format support, size limits: 10MB maximum)"
-      - "Add comprehensive error handling for malformed messages with specific error codes"
-      - "Implement OAuth token validation in message authentication headers"
-      - "Add per-connection rate limiting (10 messages per minute) with queue management"
-      - "Implement message size limits (1MB maximum) with graceful rejection handling"
-    status: "pending"
-
-  - name: "Implement MCP Standard Response Formatting"
-    acceptance_criteria:
-      - "AC-4"
-    subtasks:
-      - "Ensure all responses strictly follow JSON-RPC 2.0 specification with proper id correlation"
-      - "Implement tool result formatting with content arrays containing text/markdown mime types"
-      - "Add standard MCP error response formatting with error codes and descriptive messages"
-      - "Implement success response formatting for all document operations with result metadata"
-      - "Add progress reporting for long-running Google Docs operations (optional for future)"
-      - "Ensure all responses include proper correlation IDs matching original requests"
-      - "Add comprehensive metadata in responses (execution_time_ms, characters_modified, matches_found)"
-      - "Implement response compression for large document content (optional optimization)"
-    status: "pending"
-
-  - name: "Setup Configuration and Environment Management"
+  - name: "Implement WebSocket Server Foundation with Mark3Labs MCP-Go"
     acceptance_criteria:
       - "AC-1"
-      - "AC-2"
+      - "AC-5"
+      - "AC-6"
     subtasks:
-      - "Add MCP_PORT environment variable configuration with validation (default: 8081)"
-      - "Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET with validation on startup"
-      - "Add MAX_CONNECTIONS configuration for connection limits (default: 10)"
-      - "Setup LOG_LEVEL configuration supporting debug, info, warn, error levels"
-      - "Add RATE_LIMIT_PER_MINUTE configuration (default: 60) with per-user tracking"
-      - "Configure HEALTH_CHECK_INTERVAL for monitoring endpoints (default: 30s)"
-      - "Implement comprehensive configuration validation on server startup with detailed error reporting"
-      - "Add REDIS_URL configuration for secure token caching with connection validation"
-      - "Create configuration struct with proper defaults and environment variable binding"
+      - "Set up Mark3Labs MCP server in internal/server/mcp.go following Tech Stack specifications"
+      - "Configure WebSocket endpoint at MCP_PORT (8081) for bidirectional communication"
+      - "Implement connection management with concurrent connection support using goroutines"
+      - "Add structured logging using zerolog as specified in Coding Standards"
+      - "Implement graceful shutdown handling for WebSocket connections"
     status: "pending"
 
-  - name: "Implement Testing and Quality Assurance"
+  - name: "Create HTTP endpoint for MCP access"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Implement HTTP server with WebSocket upgrade endpoint at /mcp"
+      - "Add HTTP health check endpoint for monitoring"
+      - "Configure CORS headers for web client access"
+      - "Set up proper HTTP status codes and error responses"
+      - "Implement graceful server shutdown handling"
+    status: "pending"
+
+  - name: "Implement message parsing and validation"
+    acceptance_criteria:
+      - "AC-3"
+    subtasks:
+      - "Set up Mark3Labs MCP-Go server configuration with stdio transport"
+      - "Implement JSON message parsing for incoming MCP requests"
+      - "Add message structure validation according to MCP protocol"
+      - "Create parameter validation for tool requests"
+      - "Implement error handling for malformed messages"
+      - "Add request correlation ID tracking"
+    status: "pending"
+
+  - name: "Implement response formatting to MCP standard"
+    acceptance_criteria:
+      - "AC-4"
+    subtasks:
+      - "Create MCP-compliant response formatting functions"
+      - "Implement success response structure with proper fields"
+      - "Add error response formatting with MCP error codes"
+      - "Create result serialization for different operation outcomes"
+      - "Implement response correlation with request IDs"
+      - "Add response timing and metadata fields"
+    status: "pending"
+
+  - name: "Implement Document Operation Processors"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create operation processor base in internal/operations/processor.go using command pattern"
+      - "Implement replace operations in internal/operations/replace.go with MCP result types"
+      - "Implement append operations in internal/operations/append.go"
+      - "Implement insert operations (before/after) in internal/operations/insert.go"
+      - "Add Markdown to Google Docs conversion in internal/docs/converter.go using goldmark"
+      - "Implement Google Docs formatter in internal/docs/formatter.go"
+      - "Add operation result formatting according to MCP standards"
+      - "Implement error sanitization to prevent sensitive data exposure"
+    status: "pending"
+
+  - name: "Implement Google Docs API Integration"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Set up Google Docs client in internal/docs/client.go using google.golang.org/api/docs/v1"
+      - "Implement document service in internal/docs/service.go"
+      - "Add GET /documents/{id} integration for document retrieval"
+      - "Add POST /documents/{id}:batchUpdate integration for document updates"
+      - "Implement circuit breaker pattern for Google API calls (5 consecutive failures trigger open state)"
+      - "Add exponential backoff retry mechanism for rate limiting"
+      - "Implement error translation from Google API errors to MCP error codes"
+      - "Add document access validation and permission checking"
+    status: "pending"
+
+  - name: "Implement Authentication Integration with Backend Service"
+    acceptance_criteria:
+      - "AC-5"
+    subtasks:
+      - "Set up OAuth integration in internal/auth/oauth.go for Google service accounts"
+      - "Implement token validation with backend service in internal/auth/tokens.go"
+      - "Add POST /api/auth/validate integration with backend service"
+      - "Add GET /api/users/me integration for user context"
+      - "Implement user authentication context propagation to MCP tools"
+      - "Set up token refresh mechanism with backend coordination"
+      - "Add authentication middleware for MCP message processing"
+      - "Implement token validation performance monitoring (< 500ms target)"
+    status: "pending"
+
+  - name: "Implement Redis Caching Layer"
+    acceptance_criteria:
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Set up Redis client configuration in internal/cache/redis.go using go-redis/redis"
+      - "Implement token caching with 24-hour TTL"
+      - "Add session data caching for connection management"
+      - "Implement document metadata caching to reduce Google API calls"
+      - "Add cache invalidation strategies for expired tokens"
+      - "Set up connection pooling for Redis client"
+      - "Implement cache fallback mechanisms for Redis unavailability"
+      - "Add cache performance monitoring and metrics"
+    status: "pending"
+
+  - name: "Implement HTTP Endpoints for Health and Management"
+    acceptance_criteria:
+      - "AC-2"
+    subtasks:
+      - "Create /health endpoint for service health monitoring"
+      - "Create /version endpoint returning MCP service version information"
+      - "Implement comprehensive health checks (Redis, Google API access, token validation)"
+      - "Add HTTP endpoints with proper CORS configuration"
+      - "Implement health check performance requirements (< 100ms response time)"
+      - "Add service discovery metadata in health endpoint"
+      - "Create monitoring endpoints for operational insights"
+      - "Add graceful shutdown handling for HTTP server"
+    status: "pending"
+
+  - name: "Implement Comprehensive Error Handling and Response Formatting"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create strongly-typed tool handlers in internal/server/handlers.go"
+      - "Implement MCP-compliant error response formatting"
+      - "Add request/response correlation tracking"
+      - "Implement error code mapping from internal errors to MCP error codes"
+      - "Add structured error logging with operation context"
+      - "Create error sanitization to prevent information leakage"
+      - "Implement error response time monitoring (< 50ms target)"
+      - "Add comprehensive error recovery mechanisms"
+    status: "pending"
+
+  - name: "Implement Unit Testing with Scenario ID Traceability"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
@@ -170,122 +177,404 @@ tasks:
       - "AC-5"
       - "AC-6"
     subtasks:
-      - "Create comprehensive unit tests for MCP protocol message handling achieving 85% coverage"
-      - "Add integration tests for WebSocket upgrade and complete connection lifecycle"
-      - "Create tests for all Google Docs tool operations with comprehensive mock API responses"
-      - "Add load tests for concurrent connection handling (up to 10 simultaneous connections)"
-      - "Implement comprehensive tests for error scenarios (malformed messages, API failures, timeouts)"
-      - "Add performance tests validating connection limits and message throughput requirements"
-      - "Create tests for OAuth token validation, refresh workflows, and security scenarios"
-      - "Add tests for graceful shutdown, resource cleanup, and memory leak prevention"
-      - "Implement end-to-end tests simulating complete Claude AI interaction workflows"
+      - "Create UT_00011_01: MCP protocol handler tests with gomock for interfaces"
+      - "Create UT_00011_02: Tool registration and validation tests with testify assertions"
+      - "Create UT_00011_03: Document operation processor tests with mocked Google Docs API"
+      - "Create UT_00011_04: Connection management and concurrent session tests"
+      - "Create UT_00011_05: Error handling and recovery mechanism tests"
+      - "Create UT_00011_06: Redis caching integration tests with httptest"
+      - "Achieve 85% test coverage target for business logic"
+      - "Follow AAA pattern (Arrange, Act, Assert) in all test implementations"
     status: "pending"
 
-  - name: "Documentation and Deployment Preparation"
+  - name: "Implement Integration Testing for Complete Workflows"
     acceptance_criteria:
       - "AC-1"
       - "AC-2"
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
       - "AC-6"
     subtasks:
-      - "Update comprehensive API documentation for MCP WebSocket and HTTP endpoints"
-      - "Create detailed documentation for all Google Docs tools with parameter schemas and examples"
-      - "Add Railway deployment configuration updates (railway.toml service definitions)"
-      - "Create complete environment variable configuration examples and validation guides"
-      - "Document OAuth setup process and security requirements for Google integration"
-      - "Add monitoring, logging, and troubleshooting guides for production deployment"
-      - "Create performance tuning documentation (connection limits, timeouts, memory optimization)"
-      - "Document Claude AI integration setup with step-by-step configuration examples"
-      - "Add operational runbooks for common maintenance and troubleshooting scenarios"
+      - "Create IT_00011_01: Complete document operation workflow tests"
+      - "Create IT_00011_02: MCP client-server communication tests with mock Claude client"
+      - "Create IT_00011_03: OAuth token flow integration tests with backend service"
+      - "Create IT_00011_04: Concurrent connection handling and performance tests"
+      - "Create IT_00011_05: Railway deployment environment integration tests"
+      - "Create IT_00011_06: Error handling tests across service boundaries"
+      - "Set up test fixtures and helper functions for integration scenarios"
+      - "Implement test data management for repeatable integration tests"
+    status: "pending"
+
+  - name: "Configure Railway Deployment and Environment Setup"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+      - "AC-5"
+    subtasks:
+      - "Update railway.toml with mcp-service configurations for dev/staging/prod"
+      - "Configure environment variables for MCP service in Railway dashboard"
+      - "Set up custom domains: mcp.dev.ondrata-ai.xyz, mcp.staging.ondrata-ai.xyz, mcp.ondrata-ai.xyz"
+      - "Update GitHub Actions workflow for MCP service deployment"
+      - "Configure Railway service networking for backend service communication"
+      - "Set up environment-specific Redis configuration"
+      - "Add deployment health checks and monitoring"
+      - "Configure SSL/TLS termination for WSS protocol support"
+    status: "pending"
+
+  - name: "Implement End-to-End Testing for MCP Protocol Compliance"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
+      - "AC-6"
+    subtasks:
+      - "Create EE_00011_01: Complete MCP client connection and tool discovery tests"
+      - "Create EE_00011_02: Document operation execution through Claude client simulation"
+      - "Create EE_00011_03: Authentication flow end-to-end with real OAuth tokens"
+      - "Create EE_00011_04: Performance testing for all requirements (< 1s connection, < 100ms messages)"
+      - "Create EE_00011_05: Concurrent user scenario testing with multiple Claude clients"
+      - "Create EE_00011_06: Error handling and recovery in complete user workflows"
+      - "Set up Playwright or similar framework for automated E2E testing"
+      - "Implement test scenarios that validate MCP 2024-11-05 protocol compliance"
     status: "pending"
 
 dev_notes:
   architecture:
-      component: MCP Protocol Handler
+      component: MCP Service
       dependencies:
-          - OAuth Manager for Google authentication
-          - Command Processor for document operations
-          - Document Service for Google Docs API integration
-          - Cache Manager for Redis token storage
+          - OAuth Manager service for user authentication and token validation
+          - Document Service for Google Docs API operations and caching
+          - Redis Cache Manager for token storage and session management
+          - Circuit Breaker pattern for Google API resilience
+          - Backend API service for user context and authorization
       description: 'From the MCP protocol workflow diagram:'
       responsibilities:
-          - Handle MCP protocol communication with Claude AI via WebSocket
-          - Tool registration and discovery for Google Docs operations
-          - Request/response message handling with JSON-RPC 2.0 compliance
-          - Connection lifecycle management and concurrent connection support
-      source: ../../docs/architecture.md#Backend Components
+          - Implement MCP protocol server for Claude AI communication
+          - Provide WebSocket endpoint at /mcp for bidirectional communication
+          - Handle tool registration and discovery according to MCP standards
+          - Process request/response messages with JSON-RPC 2.0 format
+          - Manage concurrent connections with proper session handling
+          - Integrate with OAuth Manager for token validation
+          - Coordinate with Document Service for Google Docs operations
+          - Implement connection management with heartbeats and timeouts
+      source: docs/architecture.md#Backend Components
       tech_stack:
-          - Go stdlib net/http with gorilla/websocket for WebSocket support
-          - Mark3Labs MCP-Go for protocol implementation
-          - Fiber framework for HTTP endpoints
-          - Redis for connection state and token caching
+          - Mark3Labs MCP-Go library (github.com/mark3labs/mcp-go)
+          - WebSocket server with gorilla/websocket
+          - Structured JSON logging with zerolog
+          - Environment-based configuration with viper
+          - Redis integration for caching and sessions
   configuration:
-      description: 'Required environment variables for the service:'
+      description: 'Required environment variables for the MCP service:'
       environment_variables:
-          GOOGLE_CLIENT_ID: google-oauth-client-id
-          GOOGLE_CLIENT_SECRET: google-oauth-client-secret
-          HEALTH_CHECK_INTERVAL: 30s
+          BACKEND_API_URL: http://localhost:8080
+          CIRCUIT_BREAKER_FAILURE_THRESHOLD: "5"
+          CIRCUIT_BREAKER_RECOVERY_TIMEOUT: "30"
+          CONNECTION_HEARTBEAT_INTERVAL: "10"
+          ENVIRONMENT: development
+          GOOGLE_CLIENT_ID: OAuth client ID for Google services authentication
+          GOOGLE_CLIENT_SECRET: OAuth client secret for Google services
+          LOG_FORMAT: json
           LOG_LEVEL: info
-          MAX_CONNECTIONS: "10"
+          MAX_CONCURRENT_CONNECTIONS: "50"
+          MCP_HOST: 0.0.0.0
           MCP_PORT: "8081"
-          RATE_LIMIT_PER_MINUTE: "60"
+          MCP_SERVER_NAME: mcp-google-docs-editor
+          MCP_SERVER_VERSION: 1.0.0
+          REDIS_TTL_HOURS: "24"
           REDIS_URL: redis://localhost:6379
-      source: ../../docs/architecture/coding-standards.md#Environment Variables
+          REQUEST_TIMEOUT_SECONDS: "30"
+          WEBSOCKET_TIMEOUT_SECONDS: "30"
+      source: docs/architecture/coding-standards.md#Environment Variables
+  deployment_considerations:
+      custom_domains:
+          development: mcp.dev.ondatra-ai.xyz
+          production: mcp.ondatra-ai.xyz
+          staging: mcp.staging.ondatra-ai.xyz
+      description: 'Railway deployment requirements for MCP service:'
+      dockerfile_requirements:
+          - Multi-stage build for optimized container size (< 50MB)
+          - Go 1.21-alpine base image for security and performance
+          - Non-root user (appuser) for container security
+          - Health check endpoint (/health) for Railway monitoring
+          - Graceful shutdown handling with SIGTERM signal
+      environment_management:
+          - Railway environment variables per service environment
+          - Secret management for OAuth credentials and Redis connections
+          - Service networking configuration for backend communication
+          - Load balancer configuration for WebSocket connection persistence
+      monitoring:
+          - Structured JSON logs to stdout for Railway log aggregation
+          - Health check endpoints for Railway service monitoring
+          - Correlation IDs for distributed request tracing
+          - Metrics exposure for connection count, request rate, and error rate
+          - Alerting configuration for service health and performance degradation
+      railway_services:
+          development: mcp-service-dev
+          production: mcp-service
+          staging: mcp-service-staging
+      source: docs/architecture/source-tree.md#Deployment Configuration
+  documentation_requirements:
+      api_documentation:
+          - MCP tool schemas with parameter descriptions and examples
+          - WebSocket endpoint documentation with connection procedures
+          - Error code reference with troubleshooting guidance
+      deployment_guide:
+          - Railway deployment instructions with environment setup
+          - Local development setup with Docker Compose
+          - Configuration reference with all environment variables
+      description: 'Documentation requirements for MCP service:'
+      integration_guide:
+          - Claude AI client integration examples
+          - Backend service integration patterns
+          - Google Docs API usage and authentication flow
+      source: docs/architecture/coding-standards.md#Documentation Standards
+      troubleshooting:
+          - Common error scenarios and resolution steps
+          - Performance tuning recommendations
+          - Monitoring and alerting setup guide
   file_structure:
       description: 'Based on the project file structure:'
       files:
-          - description: Main entry point with MCP WebSocket server and HTTP endpoints
-            file: services/backend/cmd/main.go
-          - description: MCP protocol handler implementation
-            file: services/backend/internal/mcp/server.go
-          - description: Tool registration for Google Docs operations
-            file: services/backend/internal/mcp/tools.go
-          - description: Message handling and request processing
-            file: services/backend/internal/mcp/handlers.go
-          - description: OAuth manager for Google authentication
-            file: services/backend/internal/auth/oauth.go
-          - description: Google Docs API client and operations
-            file: services/backend/internal/docs/service.go
-          - description: Redis client for token and connection caching
-            file: services/backend/internal/cache/redis.go
-          - description: Configuration management with Railway environment variables
-            file: services/backend/internal/config/config.go
-      source: ../../docs/architecture/source-tree.md#Service Structure
+          - description: MCP server entry point with Mark3Labs library initialization
+            file: services/mcp-service/cmd/main.go
+          - description: Mark3Labs MCP server setup, configuration, and lifecycle management
+            file: services/mcp-service/internal/server/mcp.go
+          - description: Tool registration with comprehensive schema validation for six document operations
+            file: services/mcp-service/internal/server/tools.go
+          - description: Strongly-typed tool handlers for document operations with error handling
+            file: services/mcp-service/internal/server/handlers.go
+          - description: Recovery middleware, capability middleware, and request logging
+            file: services/mcp-service/internal/server/middleware.go
+          - description: WebSocket connection management, heartbeats, and session handling
+            file: services/mcp-service/internal/server/websocket.go
+          - description: Operation processor with parameter validation and Google Docs API integration
+            file: services/mcp-service/internal/operations/processor.go
+          - description: Replace operations (replace_all, replace_match) with MCP result types
+            file: services/mcp-service/internal/operations/replace.go
+          - description: Append and prepend operations with content validation and MCP results
+            file: services/mcp-service/internal/operations/append.go
+          - description: Insert operations (insert_before, insert_after) with anchor text matching
+            file: services/mcp-service/internal/operations/insert.go
+          - description: Parameter validation with enum support, pattern matching, and schema compliance
+            file: services/mcp-service/internal/operations/validator.go
+          - description: OAuth client integration with backend service for token validation
+            file: services/mcp-service/internal/auth/client.go
+          - description: Tool parameter structures with JSON schema validation tags
+            file: services/mcp-service/pkg/types/tools.go
+          - description: MCP result type wrappers for consistent response formatting
+            file: services/mcp-service/pkg/types/results.go
+          - description: Configuration structure and environment variable binding
+            file: services/mcp-service/pkg/config/config.go
+          - description: Go module with Mark3Labs MCP-Go dependency and required libraries
+            file: services/mcp-service/go.mod
+          - description: Multi-stage Docker build for optimized MCP service container
+            file: services/mcp-service/Dockerfile
+          - description: Local development environment with Redis and service dependencies
+            file: services/mcp-service/docker-compose.yml
+      source: docs/architecture/source-tree.md#Service Structure
+  integration_points:
+      backend_service:
+          endpoint: http://localhost:8080
+          methods:
+              - POST /api/auth/validate - Validate OAuth tokens
+              - GET /api/users/me - Get user context and permissions
+              - POST /api/audit/log - Log operation audit trails
+          purpose: User authentication, token validation, and authorization
+      circuit_breaker:
+          fallback_strategy: Return cached document state or operation failure
+          google_api_failures: 5 consecutive failures trigger open state
+          recovery_time: 30 seconds half-open state for health checks
+          timeout: 10 seconds per Google API request
+      description: 'Integration requirements with other services:'
+      google_docs_api:
+          endpoint: https://docs.googleapis.com/v1
+          methods:
+              - GET /documents/{id} - Retrieve document content and metadata
+              - POST /documents/{id}:batchUpdate - Apply document modifications
+              - GET /documents/{id}/revisions - Check document revision history
+          purpose: Document operations and content manipulation
+      redis_cache:
+          endpoint: redis://localhost:6379
+          operations:
+              - Token storage with 24-hour TTL
+              - Session tracking for concurrent connections
+              - Rate limiting counters per user
+          purpose: Token caching, session management, and operation tracking
+      source: docs/architecture.md#Components
+  mcp_protocol_compliance:
+      capabilities:
+          - tools (six document operation tools)
+          - logging (structured output with correlation IDs)
+          - prompts (operation templates and help text)
+          - resources (document metadata and status)
+      description: 'MCP protocol requirements and standards:'
+      error_handling: Fail-fast with immediate structured error responses
+      logging_requirements: All operations logged with user context and correlation IDs
+      message_format: JSON-RPC 2.0 with id, method, params structure
+      protocol_version: "2024-11-05"
+      session_management: Stateless tool execution with token-based authentication
+      source: docs/architecture.md#External APIs
+      tool_schemas:
+          - 'replace_all: Replace entire document content with new text'
+          - 'append: Add content to the end of document'
+          - 'prepend: Add content to the beginning of document'
+          - 'replace_match: Replace specific text matches with new content'
+          - 'insert_before: Insert content before specified anchor text'
+          - 'insert_after: Insert content after specified anchor text'
+      transport: WebSocket with JSON-RPC 2.0 message format
   performance_requirements:
-      concurrent_connections: "10"
+      concurrent_connections: 10+ minimum, 50 maximum
       connection_establishment: < 1s
+      connection_recovery: < 5s for automatic reconnection
       description: 'Performance requirements based on coding standards:'
-      memory_usage: < 128MB
-      message_processing: < 2s
-      source: ../../docs/architecture/coding-standards.md#Performance Standards
-  previous_story_insights: This story implements the core MCP (Model Context Protocol) server infrastructure that enables Claude AI to communicate with the Google Docs editing service. Based on the architecture documentation, this is a critical foundation piece that establishes WebSocket/HTTP endpoints, message parsing, and connection management. The implementation should follow the Mark3Labs MCP-Go library approach for type-safe protocol compliance, with proper error handling and structured logging throughout. Key technical challenges include JSON-RPC 2.0 protocol compliance, concurrent connection management (supporting up to 10 Claude clients), robust error handling with MCP-standard error codes, and integration with the existing Google OAuth authentication flow.
+      document_operations: < 2s
+      error_response_time: < 50ms for immediate failures
+      health_check_response: < 100ms for service monitoring
+      memory_usage: < 128MB per instance
+      message_processing: < 100ms
+      source: docs/architecture/coding-standards.md#Performance Standards
+      throughput: 100+ requests per second under normal load
+      token_validation: < 500ms with Redis caching
+      websocket_timeout: 30s with configurable heartbeat
+  previous_story_insights: 'Story 3.1 represents the foundational implementation of the MCP (Model Context Protocol) server that enables Claude AI to communicate with Google Docs through a standardized WebSocket-based protocol. This implementation is critical as it establishes the communication bridge between Claude and the Google Docs editing service. Key implementation insights: 1) The MCP server must implement the Mark3Labs MCP-Go library for protocol compliance and tool registration, 2) WebSocket server architecture with concurrent connection support (10+ simultaneous connections) and proper session management, 3) JSON-RPC 2.0 message format with correlation IDs for request tracking and response correlation, 4) Six distinct document operation tools must be registered (replace_all, append, prepend, replace_match, insert_before, insert_after) with comprehensive schema validation, 5) Integration with existing OAuth authentication and Google Docs API infrastructure from the backend service, 6) Performance requirements include <1s connection establishment, <100ms message processing, and proper timeout handling (30s WebSocket timeouts), 7) All operations must maintain MCP 2024-11-05 protocol standards with proper error handling and structured logging.'
+  security_considerations:
+      audit_logging: All operations logged with user context, IP, and operation details
+      authentication: OAuth 2.0 token validation through backend service integration
+      connection_security: Client certificate validation and secure WebSocket handshake
+      cors_policy: Restricted to Claude AI domains and authorized origins only
+      data_protection: No document content stored in logs or cache beyond operation scope
+      description: 'Security requirements for MCP service:'
+      error_sanitization: No sensitive data exposed in error messages or logs
+      input_validation: All MCP requests validated against JSON schemas with strict type checking
+      rate_limiting: Connection limits per user enforced via backend service
+      source: docs/architecture/coding-standards.md#Security Standards
+      tls_enforcement: WSS (WebSocket Secure) required in staging and production environments
+      token_storage: Encrypted tokens stored in Redis with TTL expiration
   technology_stack:
-      config: viper 1.x for environment variable and configuration management
+      additional_libraries:
+          - gorilla/websocket for WebSocket server implementation
+          - goldmark for Markdown content parsing and processing
+          - go-redis/redis/v9 for token caching and session management
+          - github.com/rs/zerolog for structured logging
+          - github.com/spf13/viper for configuration management
+      config: viper for environment variable management and configuration
       description: 'From the backend technology stack documentation:'
-      framework: Fiber 2.x for HTTP server with WebSocket upgrade support
+      framework: Mark3Labs MCP-Go library for full protocol compliance
+      google_apis: google.golang.org/api/docs/v1 for Google Documents API operations
       language: Go 1.21
-      logging: zerolog 1.x for structured JSON logging to stdout
-      mcp_integration: Mark3Labs MCP-Go library for streamlined Model Context Protocol implementation
-      source: ../../docs/architecture/tech-stack.md#Backend Stack
+      logging: zerolog for structured JSON logging with correlation IDs
+      mcp_integration: WebSocket transport with stdio protocol fallback support
+      oauth_integration: golang.org/x/oauth2 for Google OAuth 2.0 flows
+      source: docs/architecture/tech-stack.md#Backend Stack
+  testing_strategy:
+      coverage_target: 85% for business logic components, 95% for critical paths
+      description: 'Testing approach for MCP service implementation:'
+      integration_tests:
+          - description: Complete document operation workflows with real Google Docs API
+            scenario_id: IT_00031_01
+          - description: MCP client-server communication with Claude AI client simulation
+            scenario_id: IT_00031_02
+          - description: OAuth token flow integration with backend service and Redis cache
+            scenario_id: IT_00031_03
+          - description: Concurrent connection handling and performance under load
+            scenario_id: IT_00031_04
+          - description: Railway deployment environment testing with service discovery
+            scenario_id: IT_00031_05
+          - description: Error handling across service boundaries and graceful degradation
+            scenario_id: IT_00031_06
+          - description: WebSocket connection lifecycle with heartbeats and reconnection
+            scenario_id: IT_00031_07
+          - description: Security validation with unauthorized access attempts
+            scenario_id: IT_00031_08
+      performance_tests:
+          - description: Load testing with 50 concurrent WebSocket connections
+            scenario_id: PT_00031_01
+          - description: Throughput testing with 100+ requests per second
+            scenario_id: PT_00031_02
+          - description: Memory usage profiling under sustained load
+            scenario_id: PT_00031_03
+      source: docs/architecture/coding-standards.md#Test Strategy and Standards
+      unit_tests:
+          - description: MCP protocol handler with mock Claude client communication
+            scenario_id: UT_00031_01
+          - description: Tool registration and JSON schema validation for all six operations
+            scenario_id: UT_00031_02
+          - description: Document operation processors with mocked Google Docs API responses
+            scenario_id: UT_00031_03
+          - description: WebSocket connection management and concurrent session handling
+            scenario_id: UT_00031_04
+          - description: Error handling, recovery mechanisms, and circuit breaker patterns
+            scenario_id: UT_00031_05
+          - description: Redis caching integration with token validation and expiration
+            scenario_id: UT_00031_06
+          - description: OAuth token validation and backend service integration
+            scenario_id: UT_00031_07
+          - description: Parameter validation and input sanitization for security
+            scenario_id: UT_00031_08
 
 
 testing:
-  test_location: "services/backend/tests"
+  test_location: "services/mcp-service"
   frameworks:
-    - "testing"
+    - "Go testing package"
     - "testify"
+    - "gomock"
+    - "httptest"
   requirements:
-    - "Unit tests for all public methods"
-    - "Integration tests for external dependencies"
-    - "End-to-end tests for complete workflows"
+    - "Unit tests for MCP protocol handlers"
+    - "Unit tests for WebSocket connection management"
+    - "Unit tests for message parsing and validation"
+    - "Unit tests for response formatting"
+    - "Integration tests for WebSocket server startup"
+    - "Integration tests for MCP protocol compliance"
+    - "Integration tests for concurrent connections"
+    - "End-to-end tests for complete MCP workflow"
   coverage:
-    business_logic: "80%"
-    overall: "75%"
+    business_logic: "85%"
+    critical_paths: "100%"
+    overall: "80%"
 
 change_log:
-  - date: "2025-09-27"
+  - date: "2025-09-28"
     version: "1.0.0"
     description: "Initial story creation"
     author: "bmad-cli"
+
+qa_results:
+  review_date: "2025-09-28"
+  reviewed_by: "Quinn (Test Architect)"
+
+  assessment:
+    summary: "Comprehensive MCP server implementation with strong technical foundation and detailed acceptance criteria. Story demonstrates excellent planning depth with clear WebSocket, HTTP, and protocol compliance requirements."
+
+    strengths:
+      - "Well-defined acceptance criteria covering all core MCP protocol aspects"
+      - "Comprehensive task breakdown with 15 detailed implementation tasks"
+      - "Strong technical specifications including concurrent connection support"
+      - "Clear integration points with existing backend services and authentication"
+      - "Detailed testing strategy with unit, integration, and end-to-end test planning"
+      - "Performance requirements clearly specified (<1s connection, <100ms messages)"
+
+    improvements:
+      - "Add explicit error handling acceptance criteria for edge cases"
+      - "Include specific security validation requirements in acceptance criteria"
+      - "Define data validation boundaries for document operation parameters"
+      - "Add monitoring and observability requirements to acceptance criteria"
+
+    risk_level: "Medium"
+    risk_reason: "Complex integration with multiple external services (Google Docs API, Redis, OAuth) and real-time WebSocket protocol implementation requires careful coordination and error handling"
+    testability_score: 9
+    testability_max: 10
+    testability_notes: "Excellent testability with detailed unit test scenarios (UT_00031_01-08), integration tests (IT_00031_01-08), and performance tests. Mock-friendly architecture with clear interfaces."
+    implementation_readiness: 8
+    implementation_readiness_max: 10
+
+  gate_status: "PASS"
+  gate_reference: "docs/qa/gates/3.1-mcp-server-implementation.yml"
 
 dev_agent_record:
   agent_model_used: null

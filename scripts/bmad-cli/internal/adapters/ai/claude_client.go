@@ -3,63 +3,86 @@ package ai
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"github.com/lancekrogers/claude-code-go/pkg/claude"
-	"github.com/lancekrogers/claude-code-go/pkg/claude/dangerous"
+	claudecode "github.com/severity1/claude-code-sdk-go"
 )
 
+
 type ClaudeClient struct {
-	client          *claude.ClaudeClient
-	dangerousClient *dangerous.DangerousClient
+	// No persistent client needed with severity1 SDK
 }
 
 func NewClaudeClient() (*ClaudeClient, error) {
-	// Set required environment variable for dangerous client
-	os.Setenv("CLAUDE_ENABLE_DANGEROUS", "i-accept-all-risks")
-
-	// Try to create the main claude client
-	client := claude.NewClient("claude")
-
-	// Try to create dangerous client with error handling
-	dangerousClient, err := dangerous.NewDangerousClient("claude")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create dangerous client: %w", err)
-	}
-
-	return &ClaudeClient{
-		client:          client,
-		dangerousClient: dangerousClient,
-	}, nil
+	// No initialization needed with severity1 SDK - clients are created per-request
+	return &ClaudeClient{}, nil
 }
 
 func (c *ClaudeClient) Name() string {
 	return "Claude"
 }
 
-func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, mode ExecutionMode) (string, error) {
+
+func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, model string, mode ExecutionMode) (string, error) {
 	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
 
-	var opts *claude.RunOptions
-	switch mode {
-	case PlanMode:
-		opts = &claude.RunOptions{
-			Format:         claude.TextOutput,
-			PermissionTool: "plan",
-		}
-	case ApplyMode:
-		opts = &claude.RunOptions{
-			Format: claude.TextOutput,
-		}
-	default:
-		return "", fmt.Errorf("unsupported execution mode: %v", mode)
+	// Build options based on execution mode with strict file system restrictions
+	var opts []claudecode.Option
+
+	// Set model based on parameter
+	if model == "opus" {
+		opts = append(opts, claudecode.WithModel("claude-3-opus-20240229")) // Use Opus 4.1 when available
+	} else {
+		opts = append(opts, claudecode.WithModel("claude-3-5-sonnet-20241022"))
 	}
 
-	result, err := c.dangerousClient.BYPASS_ALL_PERMISSIONS(prompt, opts)
+	// Apply mode permissions directly from struct fields
+	opts = append(opts, claudecode.WithPermissionMode(claudecode.PermissionModeAcceptEdits))
+
+	if len(mode.AllowedTools) > 0 {
+		opts = append(opts, claudecode.WithAllowedTools(mode.AllowedTools...))
+	}
+
+	if len(mode.DisallowedTools) > 0 {
+		opts = append(opts, claudecode.WithDisallowedTools(mode.DisallowedTools...))
+	}
+
+	// Use Query for one-shot execution
+	iterator, err := claudecode.Query(ctx, prompt, opts...)
 	if err != nil {
 		return "", fmt.Errorf("claude execution failed: %w", err)
 	}
+	defer iterator.Close()
 
-	fmt.Printf("✅ Claude returned result length: %d\n", len(result.Result))
-	return result.Result, nil
+	// Collect all response text
+	var result string
+	for {
+		msg, err := iterator.Next(ctx)
+		if err != nil {
+			if err == claudecode.ErrNoMoreMessages {
+				break
+			}
+			return "", fmt.Errorf("failed to read response: %w", err)
+		}
+
+		if msg == nil {
+			break
+		}
+
+		// Handle different message types
+		switch message := msg.(type) {
+		case *claudecode.AssistantMessage:
+			for _, block := range message.Content {
+				if textBlock, ok := block.(*claudecode.TextBlock); ok {
+					result += textBlock.Text
+				}
+			}
+		case *claudecode.ResultMessage:
+			if message.IsError {
+				return "", fmt.Errorf("Claude returned error: %v", message.Result)
+			}
+		}
+	}
+
+	fmt.Printf("✅ Claude returned result length: %d\n", len(result))
+	return result, nil
 }

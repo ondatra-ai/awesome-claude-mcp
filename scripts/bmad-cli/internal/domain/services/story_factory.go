@@ -8,37 +8,43 @@ import (
 	"time"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 )
 
 // TaskGenerator interface for generating tasks
 type TaskGenerator interface {
-	GenerateTasks(ctx context.Context, story *story.Story, architectureDocs *docs.ArchitectureDocs) ([]story.Task, error)
+	GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument) ([]story.Task, error)
 }
 
 // DevNotesGenerator interface for generating dev notes
 type DevNotesGenerator interface {
-	GenerateDevNotes(ctx context.Context, story *story.Story, tasks []story.Task, architectureDocs *docs.ArchitectureDocs) (story.DevNotes, error)
+	GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error)
 }
 
-// ArchitectureLoader interface for loading architecture documents
-type ArchitectureLoader interface {
-	LoadAllArchitectureDocsStruct() (*docs.ArchitectureDocs, error)
+// QAResultsGenerator interface for generating QA results
+type QAResultsGenerator interface {
+	GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error)
+}
+
+// TestingRequirementsGenerator interface for generating testing requirements
+type TestingRequirementsGenerator interface {
+	GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error)
 }
 
 type StoryFactory struct {
 	epicLoader         *epic.EpicLoader
-	taskGenerator      TaskGenerator
-	devNotesGenerator  DevNotesGenerator
-	architectureLoader ArchitectureLoader
+	aiClient           AIClient
+	config             *config.ViperConfig
+	architectureLoader *docs.ArchitectureLoader
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, taskGenerator TaskGenerator, devNotesGenerator DevNotesGenerator, architectureLoader ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient AIClient, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
-		taskGenerator:      taskGenerator,
-		devNotesGenerator:  devNotesGenerator,
+		aiClient:           aiClient,
+		config:             config,
 		architectureLoader: architectureLoader,
 	}
 }
@@ -50,35 +56,16 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 		return nil, fmt.Errorf("failed to load story from epic file: %w", err)
 	}
 
-	// Generate tasks using AI - fail on any error
-	tasks, err := f.generateTasks(ctx, loadedStory)
+	// Load architecture documents once for all generators
+	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate tasks: %w", err)
+		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
 	}
 
-	// Generate dev_notes using AI - fail on any error
-	devNotes, err := f.generateDevNotes(ctx, loadedStory, tasks)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
-	}
-
-	return &story.StoryDocument{
-		Story:    *loadedStory,
-		Tasks:    tasks,
-		DevNotes: devNotes,
-		Testing: story.Testing{
-			TestLocation: "services/backend/tests",
-			Frameworks:   []string{"testing", "testify"},
-			Requirements: []string{
-				"Unit tests for all public methods",
-				"Integration tests for external dependencies",
-				"End-to-end tests for complete workflows",
-			},
-			Coverage: map[string]string{
-				"business_logic": "80%",
-				"overall":        "75%",
-			},
-		},
+	// Create initial story document with all required data
+	storyDoc := &story.StoryDocument{
+		Story: *loadedStory,
+		ArchitectureDocs: architectureDocs,
 		ChangeLog: []story.ChangeLogEntry{
 			{
 				Date:        time.Now().Format("2006-01-02"),
@@ -93,7 +80,43 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 			CompletionNotes:    []string{},
 			FileList:           []string{},
 		},
-	}, nil
+	}
+
+	// Create generators
+	taskGenerator := NewTaskGenerator(f.aiClient, f.config)
+	devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
+	testingGenerator := NewTestingGenerator(f.aiClient)
+	qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient)
+
+	// Generate tasks using AI - fail on any error
+	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate tasks: %w", err)
+	}
+	storyDoc.Tasks = tasks
+
+	// Generate dev_notes using AI - fail on any error
+	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
+	}
+	storyDoc.DevNotes = devNotes
+
+	// Generate testing requirements using AI - fail on any error
+	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
+	}
+	storyDoc.Testing = testing
+
+	// Generate QA results using AI - fail on any error
+	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate QA results: %w", err)
+	}
+	storyDoc.QAResults = &qaResults
+
+	return storyDoc, nil
 }
 
 func (f *StoryFactory) SlugifyTitle(title string) string {
@@ -103,42 +126,4 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	slug = regexp.MustCompile(`[\s_-]+`).ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
 	return slug
-}
-
-// generateTasks generates tasks using AI - fails on any error
-func (f *StoryFactory) generateTasks(ctx context.Context, loadedStory *story.Story) ([]story.Task, error) {
-
-	// Load architecture documents - fail immediately if any are missing
-	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
-	}
-
-	// Generate tasks using AI - fail if AI generation fails
-	tasks, err := f.taskGenerator.GenerateTasks(ctx, loadedStory, architectureDocs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate tasks using AI: %w", err)
-	}
-
-	fmt.Printf("✅ Generated %d tasks using AI\n", len(tasks))
-	return tasks, nil
-}
-
-// generateDevNotes generates dev_notes using AI - fails on any error
-func (f *StoryFactory) generateDevNotes(ctx context.Context, loadedStory *story.Story, tasks []story.Task) (story.DevNotes, error) {
-
-	// Load architecture documents - fail immediately if any are missing
-	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
-	}
-
-	// Generate dev_notes using AI - fail if AI generation fails
-	devNotes, err := f.devNotesGenerator.GenerateDevNotes(ctx, loadedStory, tasks, architectureDocs)
-	if err != nil {
-		return story.DevNotes{}, fmt.Errorf("failed to generate dev_notes using AI: %w", err)
-	}
-
-	fmt.Printf("✅ Generated dev_notes using AI\n")
-	return devNotes, nil
 }
