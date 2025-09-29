@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"bmad-cli/internal/adapters/ai"
+	"bmad-cli/internal/infrastructure/config"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,6 +20,7 @@ type AIClient interface {
 type AIGenerator[T1 any, T2 any] struct {
 	ctx            context.Context
 	aiClient       AIClient
+	config         *config.ViperConfig
 	storyID        string
 	filePrefix     string
 	dataLoader     func() (T1, error)
@@ -30,10 +32,11 @@ type AIGenerator[T1 any, T2 any] struct {
 }
 
 // NewAIGenerator creates a new generator instance
-func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, storyID string, filePrefix string) *AIGenerator[T1, T2] {
+func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, config *config.ViperConfig, storyID string, filePrefix string) *AIGenerator[T1, T2] {
 	return &AIGenerator[T1, T2]{
 		ctx:        ctx,
 		aiClient:   aiClient,
+		config:     config,
 		storyID:    storyID,
 		filePrefix: filePrefix,
 		model:      "sonnet",      // default model
@@ -82,7 +85,8 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	var zero T2
 
 	// 0. Create tmp directory for debugging early
-	if err := os.MkdirAll("./tmp", 0755); err != nil {
+	tmpDir := g.config.GetString("paths.tmp_dir")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return zero, fmt.Errorf("failed to create tmp directory: %w", err)
 	}
 
@@ -100,7 +104,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 
 	// 3. Call AI
 	// Save prompt for debugging
-	promptFile := fmt.Sprintf("./tmp/%s-%s-prompt.txt", g.storyID, g.filePrefix)
+	promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
 	if err := os.WriteFile(promptFile, []byte(prompt), 0644); err != nil {
 		fmt.Printf("⚠️ Failed to save prompt file: %v\n", err)
 	} else {
@@ -114,7 +118,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	}
 
 	// 4. Save AI response for debugging
-	responseFile := fmt.Sprintf("./tmp/%s-%s-full-response.txt", g.storyID, g.filePrefix)
+	responseFile := fmt.Sprintf("%s/%s-%s-full-response.txt", tmpDir, g.storyID, g.filePrefix)
 	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
 		return zero, fmt.Errorf("failed to write response file: %w", err)
 	}
@@ -141,12 +145,13 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 
 // CreateYAMLFileParser creates a parser function for reading YAML files
 // This is a higher-order function that returns a closure configured with the given parameters
-func CreateYAMLFileParser[T any](storyID, filePrefix, yamlKey string) func(string) (T, error) {
+func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix, yamlKey string) func(string) (T, error) {
 	return func(aiResponse string) (T, error) {
 		var zero T
 
 		// Construct file path
-		filePath := fmt.Sprintf("./tmp/%s-%s.yaml", storyID, filePrefix)
+		tmpDir := config.GetString("paths.tmp_dir")
+		filePath := fmt.Sprintf("%s/%s-%s.yaml", tmpDir, storyID, filePrefix)
 
 
 		// Read file

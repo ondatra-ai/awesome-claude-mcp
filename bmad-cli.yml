@@ -1,0 +1,19 @@
+engine:
+  type: "claude"
+
+epics:
+  path: "./docs/epics/jsons"
+
+templates:
+  prompts:
+    heuristic: "./scripts/bmad-cli/templates/heuristic.prompt.tpl"
+    apply: "./scripts/bmad-cli/templates/apply.prompt.tpl"
+    tasks: "./scripts/bmad-cli/templates/us-create.tasks.prompt.tpl"
+    devnotes: "./scripts/bmad-cli/templates/us-create.devnotes.prompt.tpl"
+
+documents:
+  architecture: "./docs/architecture.md"
+  frontend_architecture: "./docs/frontend-architecture.md"
+  coding_standards: "./docs/architecture/coding-standards.md"
+  source_tree: "./docs/architecture/source-tree.md"
+  tech_stack: "./docs/architecture/tech-stack.md"

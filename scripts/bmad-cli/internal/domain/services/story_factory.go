@@ -85,8 +85,8 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Create generators
 	taskGenerator := NewTaskGenerator(f.aiClient, f.config)
 	devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
-	testingGenerator := NewTestingGenerator(f.aiClient)
-	qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient)
+	testingGenerator := NewTestingGenerator(f.aiClient, f.config)
+	qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc)
