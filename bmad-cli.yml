@@ -22,6 +22,7 @@ paths:
   tmp_dir: "./tmp"
   tmp_glob: "./tmp/**"
   qa_gates: "docs/qa/gates"
+  stories_dir: "docs/stories"
 
 documents:
   architecture: "./docs/architecture.md"

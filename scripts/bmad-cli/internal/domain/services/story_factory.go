@@ -132,3 +132,8 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 func (f *StoryFactory) GetTmpDir() string {
 	return f.config.GetString("paths.tmp_dir")
 }
+
+// GetStoriesDir returns the configured stories output directory path
+func (f *StoryFactory) GetStoriesDir() string {
+	return f.config.GetString("paths.stories_dir")
+}

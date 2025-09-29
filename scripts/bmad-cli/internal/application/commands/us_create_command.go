@@ -73,6 +73,6 @@ func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
 
 func (c *USCreateCommand) generateFilename(storyNumber, title string) string {
 	slug := c.factory.SlugifyTitle(title)
-	tmpDir := c.factory.GetTmpDir()
-	return fmt.Sprintf("%s/%s-%s.yaml", tmpDir, storyNumber, slug)
+	storiesDir := c.factory.GetStoriesDir()
+	return fmt.Sprintf("%s/%s-%s.yaml", storiesDir, storyNumber, slug)
 }
