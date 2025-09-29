@@ -38,7 +38,7 @@ func NewContainer() (*Container, error) {
 	githubService := github.NewGitHubService(shellExec)
 
 	// Setup user story creation dependencies
-	epicLoader := epic.NewEpicLoader()
+	epicLoader := epic.NewEpicLoader(cfg)
 
 	// Setup architecture document loader
 	architectureLoader := docs.NewArchitectureLoader(cfg)

@@ -9,15 +9,20 @@ import (
 
 	"bmad-cli/internal/domain/models/epic"
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 )
 
 type EpicLoader struct {
 	basePath string
 }
 
-func NewEpicLoader() *EpicLoader {
-	// Get the base path relative to the current working directory
-	basePath := filepath.Join("..", "..", "docs", "epics", "jsons")
+func NewEpicLoader(cfg *config.ViperConfig) *EpicLoader {
+	// Get the epic path from configuration
+	basePath := cfg.GetString("epics.path")
+	if basePath == "" {
+		// Fallback to default path if not configured
+		basePath = filepath.Join("docs", "epics", "jsons")
+	}
 	return &EpicLoader{
 		basePath: basePath,
 	}
