@@ -15,8 +15,8 @@ templates:
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
-    template: "templates/story.yaml.tpl"
-    schema: "templates/story-schema.yaml"
+    template: "scripts/bmad-cli/templates/story.yaml.tpl"
+    schema: "scripts/bmad-cli/templates/story-schema.yaml"
 
 paths:
   tmp_dir: "./tmp"
