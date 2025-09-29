@@ -5,7 +5,6 @@ epics:
   path: "./docs/epics/jsons"
 
 templates:
-  base_path: "./scripts/bmad-cli/templates"
   prompts:
     heuristic: "./scripts/bmad-cli/templates/heuristic.prompt.tpl"
     apply: "./scripts/bmad-cli/templates/apply.prompt.tpl"
@@ -13,10 +12,11 @@ templates:
     devnotes: "./scripts/bmad-cli/templates/us-create.devnotes.prompt.tpl"
     testing: "./scripts/bmad-cli/templates/us-create.testing.prompt.tpl"
     qa: "./scripts/bmad-cli/templates/us-create.qa.prompt.tpl"
+  checklists:
+    triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
 
 paths:
   tmp_dir: "./tmp"
-  bmad_core: "./.bmad-core"
 
 documents:
   architecture: "./docs/architecture.md"
