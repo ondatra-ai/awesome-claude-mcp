@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 )
@@ -14,6 +14,7 @@ import (
 // TestingGenerator generates testing requirements for stories using AI
 type TestingGenerator struct {
 	aiClient AIClient
+	config   *config.ViperConfig
 }
 
 // TestingData contains all data needed for testing requirements generation
@@ -25,16 +26,17 @@ type TestingData struct {
 }
 
 // NewTestingGenerator creates a new testing requirements generator
-func NewTestingGenerator(aiClient AIClient) *TestingGenerator {
+func NewTestingGenerator(aiClient AIClient, config *config.ViperConfig) *TestingGenerator {
 	return &TestingGenerator{
 		aiClient: aiClient,
+		config:   config,
 	}
 }
 
 // GenerateTesting generates comprehensive testing requirements based on story analysis
 func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error) {
 	// Create AI generator for testing requirements
-	generator := NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, storyDoc.Story.ID, "testing").
+	generator := NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
 		WithData(func() (TestingData, error) {
 			return TestingData{
 				Story:            &storyDoc.Story,
@@ -44,7 +46,7 @@ func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.
 			}, nil
 		}).
 		WithPrompt(g.loadTestingPrompt).
-		WithResponseParser(CreateYAMLFileParser[story.Testing](storyDoc.Story.ID, "testing", "testing")).
+		WithResponseParser(CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing")).
 		WithValidator(g.validateTesting)
 
 	// Generate testing requirements
@@ -58,7 +60,7 @@ func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.
 
 // loadTestingPrompt loads the testing requirements prompt template
 func (g *TestingGenerator) loadTestingPrompt(data TestingData) (string, error) {
-	templatePath := filepath.Join("templates", "us-create.testing.prompt.tpl")
+	templatePath := g.config.GetString("templates.prompts.testing")
 
 	promptLoader := template.NewTemplateLoader[TestingData](templatePath)
 	prompt, err := promptLoader.LoadTemplate(data)

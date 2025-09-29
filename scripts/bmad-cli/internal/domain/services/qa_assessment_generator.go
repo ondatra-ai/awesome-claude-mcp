@@ -3,12 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 )
@@ -16,6 +16,7 @@ import (
 // QAAssessmentGenerator generates QA results for stories using AI
 type QAAssessmentGenerator struct {
 	aiClient AIClient
+	config   *config.ViperConfig
 }
 
 // QAAssessmentData contains all data needed for QA assessment generation
@@ -27,16 +28,17 @@ type QAAssessmentData struct {
 }
 
 // NewQAAssessmentGenerator creates a new QA assessment generator
-func NewQAAssessmentGenerator(aiClient AIClient) *QAAssessmentGenerator {
+func NewQAAssessmentGenerator(aiClient AIClient, config *config.ViperConfig) *QAAssessmentGenerator {
 	return &QAAssessmentGenerator{
 		aiClient: aiClient,
+		config:   config,
 	}
 }
 
 // GenerateQAResults generates comprehensive QA results following Quinn persona
 func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error) {
 	// Create AI generator for QA assessment
-	generator := NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, storyDoc.Story.ID, "qa-assessment").
+	generator := NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
 		WithData(func() (QAAssessmentData, error) {
 			return QAAssessmentData{
 				Story:            &storyDoc.Story,
@@ -46,7 +48,7 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 			}, nil
 		}).
 		WithPrompt(g.loadQAPrompt).
-		WithResponseParser(CreateYAMLFileParser[story.QAResults](storyDoc.Story.ID, "qa-assessment", "qa_results")).
+		WithResponseParser(CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results")).
 		WithValidator(g.validateQAResults)
 
 	// Generate QA results
@@ -68,7 +70,7 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 
 // loadQAPrompt loads the QA assessment prompt template
 func (g *QAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, error) {
-	templatePath := filepath.Join("templates", "us-create.qa.prompt.tpl")
+	templatePath := g.config.GetString("templates.prompts.qa")
 
 	promptLoader := template.NewTemplateLoader[QAAssessmentData](templatePath)
 	prompt, err := promptLoader.LoadTemplate(data)

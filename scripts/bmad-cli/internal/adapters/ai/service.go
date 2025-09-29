@@ -22,8 +22,8 @@ func NewAIService(config *config.ViperConfig) (*AIService, error) {
 	templateEngine := prompts.NewTemplateEngine()
 	yamlParser := prompts.NewYAMLParser()
 
-	heuristicBuilder := prompts.NewHeuristicPromptBuilder(templateEngine)
-	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine)
+	heuristicBuilder := prompts.NewHeuristicPromptBuilder(templateEngine, config)
+	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine, config)
 
 	analyzer := NewThreadAnalyzer(client, heuristicBuilder, yamlParser)
 	implementer := NewThreadImplementer(client, implementationBuilder)

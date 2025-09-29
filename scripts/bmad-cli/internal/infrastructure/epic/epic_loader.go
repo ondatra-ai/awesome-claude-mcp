@@ -19,10 +19,6 @@ type EpicLoader struct {
 func NewEpicLoader(cfg *config.ViperConfig) *EpicLoader {
 	// Get the epic path from configuration
 	basePath := cfg.GetString("epics.path")
-	if basePath == "" {
-		// Fallback to default path if not configured
-		basePath = filepath.Join("docs", "epics", "jsons")
-	}
 	return &EpicLoader{
 		basePath: basePath,
 	}
