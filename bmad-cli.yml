@@ -10,6 +10,18 @@ templates:
     apply: "./scripts/bmad-cli/templates/apply.prompt.tpl"
     tasks: "./scripts/bmad-cli/templates/us-create.tasks.prompt.tpl"
     devnotes: "./scripts/bmad-cli/templates/us-create.devnotes.prompt.tpl"
+    testing: "./scripts/bmad-cli/templates/us-create.testing.prompt.tpl"
+    qa: "./scripts/bmad-cli/templates/us-create.qa.prompt.tpl"
+  checklists:
+    triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
+  story:
+    template: "templates/story.yaml.tpl"
+    schema: "templates/story-schema.yaml"
+
+paths:
+  tmp_dir: "./tmp"
+  tmp_glob: "./tmp/**"
+  qa_gates: "docs/qa/gates"
 
 documents:
   architecture: "./docs/architecture.md"

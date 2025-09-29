@@ -1,0 +1,70 @@
+dev_notes:
+  previous_story_insights: "This is the foundational story for implementing MCP protocol server functionality. The story requires establishing WebSocket server infrastructure, implementing HTTP endpoints, and providing robust message handling for Claude AI communication. Based on the existing architecture, this will be implemented as a standalone Go service (mcp-service) that integrates with the existing backend authentication and caching infrastructure. The implementation must strictly follow MCP protocol specifications and support concurrent connections for multiple Claude AI sessions."
+
+  technology_stack:
+    source: "./docs/architecture/tech-stack.md#Backend Stack"
+    description: "From the backend technology stack documentation:"
+    language: "Go 1.21"
+    framework: "Go stdlib net/http with gorilla/websocket for WebSocket support"
+    mcp_integration: "Mark3Labs MCP-Go library for protocol compliance"
+    logging: "zerolog for structured JSON logging"
+    config: "viper for environment variable management"
+
+  architecture:
+    source: "./docs/architecture.md#Components"
+    description: "From the MCP protocol workflow diagram:"
+    component: "MCP Protocol Handler"
+    responsibilities:
+      - "Handle MCP protocol communication with Claude AI"
+      - "WebSocket endpoint for bidirectional communication"
+      - "Tool registration and discovery"
+      - "Request/response message handling"
+    dependencies:
+      - "Network layer"
+      - "Command Processor"
+      - "OAuth Manager"
+      - "Redis Cache"
+    tech_stack:
+      - "Go stdlib net/http"
+      - "gorilla/websocket"
+      - "Mark3Labs MCP-Go"
+
+  file_structure:
+    source: "./docs/architecture/source-tree.md#Services Directory"
+    description: "Based on the project file structure:"
+    files:
+      - file: "services/mcp-service/cmd/main.go"
+        description: "MCP server entry point with Mark3Labs library"
+      - file: "services/mcp-service/internal/server/mcp.go"
+        description: "Mark3Labs MCP server setup and configuration"
+      - file: "services/mcp-service/internal/server/tools.go"
+        description: "Tool registration with schema validation"
+      - file: "services/mcp-service/internal/server/handlers.go"
+        description: "Strongly-typed tool handlers"
+      - file: "services/mcp-service/internal/server/middleware.go"
+        description: "Recovery and capability middleware"
+      - file: "services/mcp-service/pkg/types/tools.go"
+        description: "Tool parameter structures"
+      - file: "services/mcp-service/pkg/types/results.go"
+        description: "MCP result type wrappers"
+      - file: "services/mcp-service/Dockerfile"
+        description: "MCP service container definition"
+
+  configuration:
+    source: "./docs/architecture/coding-standards.md#Environment Variables"
+    description: "Required environment variables for the MCP service:"
+    environment_variables:
+      MCP_PORT: "8081"
+      REDIS_URL: "redis://localhost:6379"
+      GOOGLE_CLIENT_ID: "oauth_client_id"
+      GOOGLE_CLIENT_SECRET: "oauth_client_secret"
+      LOG_LEVEL: "info"
+      LOG_FORMAT: "json"
+
+  performance_requirements:
+    source: "./docs/architecture/coding-standards.md#Performance Standards"
+    description: "Performance requirements based on coding standards:"
+    connection_establishment: "< 1000ms"
+    message_processing: "< 100ms"
+    concurrent_connections: "10+"
+    memory_usage: "< 128MB"

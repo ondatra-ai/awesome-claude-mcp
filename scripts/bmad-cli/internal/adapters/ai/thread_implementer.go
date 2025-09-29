@@ -13,15 +13,18 @@ import (
 type ThreadImplementer struct {
 	client        *ClaudeClient
 	promptBuilder *prompts.ImplementationPromptBuilder
+	modeFactory   *ModeFactory
 }
 
 func NewThreadImplementer(
 	client *ClaudeClient,
 	promptBuilder *prompts.ImplementationPromptBuilder,
+	modeFactory *ModeFactory,
 ) *ThreadImplementer {
 	return &ThreadImplementer{
 		client:        client,
 		promptBuilder: promptBuilder,
+		modeFactory:   modeFactory,
 	}
 }
 
@@ -33,7 +36,7 @@ func (ti *ThreadImplementer) Implement(ctx context.Context, threadContext models
 
 	slog.Debug("Implementation prompt", "client", ti.client.Name(), "prompt", prompt)
 
-	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, "sonnet", ThinkMode)
+	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, "sonnet", ti.modeFactory.GetThinkMode())
 	if err != nil {
 		return "", fmt.Errorf("AI client implementation failed: %w", err)
 	}
