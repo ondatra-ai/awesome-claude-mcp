@@ -17,6 +17,8 @@ templates:
 
 paths:
   tmp_dir: "./tmp"
+  tmp_glob: "./tmp/**"
+  qa_gates: "docs/qa/gates"
 
 documents:
   architecture: "./docs/architecture.md"

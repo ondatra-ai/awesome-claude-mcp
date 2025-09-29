@@ -63,7 +63,8 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 
 	// Generate gate reference path
 	slug := slugifyTitle(storyDoc.Story.Title)
-	qaResults.GateReference = fmt.Sprintf("docs/qa/gates/%s-%s.yml", storyDoc.Story.ID, slug)
+	qaGatesPath := g.config.GetString("paths.qa_gates")
+	qaResults.GateReference = fmt.Sprintf("%s/%s-%s.yml", qaGatesPath, storyDoc.Story.ID, slug)
 
 	return qaResults, nil
 }

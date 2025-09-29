@@ -31,6 +31,7 @@ func NewContainer() (*Container, error) {
 		return nil, fmt.Errorf("failed to initialize config: %w", err)
 	}
 
+
 	configureLogging()
 
 	shellExec := shell.NewCommandRunner()

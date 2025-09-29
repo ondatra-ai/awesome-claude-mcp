@@ -14,17 +14,20 @@ type ThreadAnalyzer struct {
 	client        *ClaudeClient
 	promptBuilder *prompts.HeuristicPromptBuilder
 	parser        *prompts.YAMLParser
+	modeFactory   *ModeFactory
 }
 
 func NewThreadAnalyzer(
 	client *ClaudeClient,
 	promptBuilder *prompts.HeuristicPromptBuilder,
 	parser *prompts.YAMLParser,
+	modeFactory *ModeFactory,
 ) *ThreadAnalyzer {
 	return &ThreadAnalyzer{
 		client:        client,
 		promptBuilder: promptBuilder,
 		parser:        parser,
+		modeFactory:   modeFactory,
 	}
 }
 
@@ -34,7 +37,7 @@ func (ta *ThreadAnalyzer) Analyze(ctx context.Context, threadContext models.Thre
 		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to build heuristic prompt: %w", err)
 	}
 
-	rawOutput, err := ta.client.ExecutePrompt(ctx, prompt, "sonnet", ThinkMode)
+	rawOutput, err := ta.client.ExecutePrompt(ctx, prompt, "sonnet", ta.modeFactory.GetThinkMode())
 	if err != nil {
 		return models.HeuristicAnalysisResult{}, fmt.Errorf("AI client execution failed: %w", err)
 	}

@@ -24,9 +24,10 @@ func NewAIService(config *config.ViperConfig) (*AIService, error) {
 
 	heuristicBuilder := prompts.NewHeuristicPromptBuilder(templateEngine, config)
 	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine, config)
+	modeFactory := NewModeFactory(config)
 
-	analyzer := NewThreadAnalyzer(client, heuristicBuilder, yamlParser)
-	implementer := NewThreadImplementer(client, implementationBuilder)
+	analyzer := NewThreadAnalyzer(client, heuristicBuilder, yamlParser, modeFactory)
+	implementer := NewThreadImplementer(client, implementationBuilder, modeFactory)
 
 	return &AIService{
 		analyzer:    analyzer,

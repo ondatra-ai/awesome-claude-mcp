@@ -33,14 +33,15 @@ type AIGenerator[T1 any, T2 any] struct {
 
 // NewAIGenerator creates a new generator instance
 func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, config *config.ViperConfig, storyID string, filePrefix string) *AIGenerator[T1, T2] {
+	modeFactory := ai.NewModeFactory(config)
 	return &AIGenerator[T1, T2]{
 		ctx:        ctx,
 		aiClient:   aiClient,
 		config:     config,
 		storyID:    storyID,
 		filePrefix: filePrefix,
-		model:      "sonnet",      // default model
-		mode:       ai.ThinkMode,  // default mode
+		model:      "sonnet",                    // default model
+		mode:       modeFactory.GetThinkMode(),  // default mode
 	}
 }
 
