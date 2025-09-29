@@ -127,3 +127,8 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	slug = strings.Trim(slug, "-")
 	return slug
 }
+
+// GetTmpDir returns the configured temporary directory path
+func (f *StoryFactory) GetTmpDir() string {
+	return f.config.GetString("paths.tmp_dir")
+}

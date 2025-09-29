@@ -53,8 +53,8 @@ func NewContainer() (*Container, error) {
 
 	storyFactory := services.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
 
-	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData]("templates/story.yaml.tpl")
-	yamaleValidator := validation.NewYamaleValidator("templates/story-schema.yaml")
+	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
+	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
 	usCreateCmd := commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 
 	// AI service and PR triage are optional - only create if needed
