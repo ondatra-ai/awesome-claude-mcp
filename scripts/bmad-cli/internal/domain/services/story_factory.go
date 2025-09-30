@@ -64,7 +64,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 
 	// Create initial story document with all required data
 	storyDoc := &story.StoryDocument{
-		Story: *loadedStory,
+		Story:            *loadedStory,
 		ArchitectureDocs: architectureDocs,
 		ChangeLog: []story.ChangeLogEntry{
 			{
@@ -131,4 +131,9 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 // GetTmpDir returns the configured temporary directory path
 func (f *StoryFactory) GetTmpDir() string {
 	return f.config.GetString("paths.tmp_dir")
+}
+
+// GetStoriesDir returns the configured stories output directory path
+func (f *StoryFactory) GetStoriesDir() string {
+	return f.config.GetString("paths.stories_dir")
 }

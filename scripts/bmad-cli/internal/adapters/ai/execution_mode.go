@@ -30,8 +30,8 @@ func (f *ModeFactory) GetThinkMode() ExecutionMode {
 		},
 		[]string{
 			"Bash",
-			"Edit(**.go)",
-			"MultiEdit(**.go)",
+			"Edit(**)",
+			"MultiEdit(**)",
 		},
 	}
 }

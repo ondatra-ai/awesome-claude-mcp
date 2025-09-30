@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 
@@ -31,7 +32,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 		return fmt.Errorf("invalid story number format: %w", err)
 	}
 
-	fmt.Printf("Creating user story %s...\n", storyNumber)
+	slog.Info("Creating user story", "story", storyNumber)
 
 	// 1. Create story document - fail on any errors
 	storyDoc, err := c.factory.CreateStory(ctx, storyNumber)
@@ -55,7 +56,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 		return fmt.Errorf("failed to save story file: %w", err)
 	}
 
-	fmt.Printf("✅ User story created successfully: %s\n", filename)
+	slog.Info("User story created successfully", "file", filename)
 	return nil
 }
 
@@ -73,6 +74,6 @@ func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
 
 func (c *USCreateCommand) generateFilename(storyNumber, title string) string {
 	slug := c.factory.SlugifyTitle(title)
-	tmpDir := c.factory.GetTmpDir()
-	return fmt.Sprintf("%s/%s-%s.yaml", tmpDir, storyNumber, slug)
+	storiesDir := c.factory.GetStoriesDir()
+	return fmt.Sprintf("%s/%s-%s.yaml", storiesDir, storyNumber, slug)
 }

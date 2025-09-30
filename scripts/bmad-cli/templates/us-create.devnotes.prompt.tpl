@@ -140,22 +140,9 @@ dev_notes:
 
 ## Architecture Documents
 
-### Architecture Documentation
-Source: {{.Docs.Architecture.FilePath}}
-{{.Docs.Architecture.Content}}
-
-### Frontend Architecture Documentation
-Source: {{.Docs.FrontendArchitecture.FilePath}}
-{{.Docs.FrontendArchitecture.Content}}
-
-### Coding Standards Documentation
-Source: {{.Docs.CodingStandards.FilePath}}
-{{.Docs.CodingStandards.Content}}
-
-### Source Tree Documentation
-Source: {{.Docs.SourceTree.FilePath}}
-{{.Docs.SourceTree.Content}}
-
-### Technology Stack Documentation
-Source: {{.Docs.TechStack.FilePath}}
-{{.Docs.TechStack.Content}}
+Read the following documents for context:
+- Read(`{{.Docs.Architecture.FilePath}}`) - Architecture Documentation
+- Read(`{{.Docs.FrontendArchitecture.FilePath}}`) - Frontend Architecture Documentation
+- Read(`{{.Docs.CodingStandards.FilePath}}`) - Coding Standards Documentation
+- Read(`{{.Docs.SourceTree.FilePath}}`) - Source Tree Documentation
+- Read(`{{.Docs.TechStack.FilePath}}`) - Technology Stack Documentation
