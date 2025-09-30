@@ -24,6 +24,12 @@ Since this is a new repository without code, common setup tasks will depend on t
 - Format code: `go fmt ./...`
 - Lint: `golangci-lint run` (if installed)
 
+### BMAD CLI Usage
+**CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
+- Build: `go build -C scripts/bmad-cli -o ./bmad-cli`
+- Run: `scripts/bmad-cli/bmad-cli sm us-create 3.1` (from root directory)
+- This ensures proper path resolution for config files and tmp directories
+
 ### For Other Project Types
 Update this file once the project structure is established with:
 - Build commands
