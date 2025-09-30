@@ -27,9 +27,9 @@ func (c *ClaudeClient) Name() string {
 
 func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ExecutionMode) (string, error) {
 	if systemPrompt != "" {
-		slog.Info("Calling Claude with system prompt", "system_length", len(systemPrompt), "user_length", len(userPrompt))
+		slog.Debug("Calling Claude with system prompt", "system_length", len(systemPrompt), "user_length", len(userPrompt))
 	} else {
-		slog.Info("Calling Claude", "prompt_length", len(userPrompt))
+		slog.Debug("Calling Claude", "prompt_length", len(userPrompt))
 	}
 
 	// Set timeout for large prompts - 10 minutes for complex multi-file operations
@@ -67,7 +67,7 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 	// Use WithClient pattern with streaming to prevent buffer overflow
 	var resultStr string
 	err := claudecode.WithClient(timeoutCtx, func(client claudecode.Client) error {
-		slog.Info("Connected to Claude client")
+		slog.Debug("Connected to Claude client")
 
 		// Send user prompt only - system prompt is handled by the SDK via options
 		slog.Debug("Sending user prompt to Claude", "length", len(userPrompt))
