@@ -9,9 +9,13 @@ templates:
     heuristic: "./scripts/bmad-cli/templates/heuristic.prompt.tpl"
     apply: "./scripts/bmad-cli/templates/apply.prompt.tpl"
     tasks: "./scripts/bmad-cli/templates/us-create.tasks.prompt.tpl"
+    tasks_system: "./scripts/bmad-cli/templates/us-create.tasks.system.prompt.tpl"
     devnotes: "./scripts/bmad-cli/templates/us-create.devnotes.prompt.tpl"
+    devnotes_system: "./scripts/bmad-cli/templates/us-create.devnotes.system.prompt.tpl"
     testing: "./scripts/bmad-cli/templates/us-create.testing.prompt.tpl"
+    testing_system: "./scripts/bmad-cli/templates/us-create.testing.system.prompt.tpl"
     qa: "./scripts/bmad-cli/templates/us-create.qa.prompt.tpl"
+    qa_system: "./scripts/bmad-cli/templates/us-create.qa.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
