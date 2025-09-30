@@ -15,17 +15,18 @@ import (
 // AIClient defines the interface for AI communication
 type AIClient interface {
 	ExecutePrompt(ctx context.Context, prompt string, model string, mode ai.ExecutionMode) (string, error)
+	ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ai.ExecutionMode) (string, error)
 }
 
 // AIGenerator is a generic AI content generator with builder pattern
 type AIGenerator[T1 any, T2 any] struct {
-	ctx            context.Context
-	aiClient       AIClient
-	config         *config.ViperConfig
-	storyID        string
-	filePrefix     string
+	ctx                context.Context
+	aiClient           AIClient
+	config             *config.ViperConfig
+	storyID            string
+	filePrefix         string
 	dataLoader     func() (T1, error)
-	promptLoader   func(T1) (string, error)
+	promptLoader   func(T1) (systemPrompt string, userPrompt string, err error)
 	responseParser func(aiResponse string) (T2, error)
 	validator      func(T2) error
 	model          string
@@ -52,9 +53,19 @@ func (g *AIGenerator[T1, T2]) WithData(loader func() (T1, error)) *AIGenerator[T
 	return g
 }
 
-// WithPrompt sets the prompt loader functor
-func (g *AIGenerator[T1, T2]) WithPrompt(loader func(T1) (string, error)) *AIGenerator[T1, T2] {
-	g.promptLoader = loader
+// WithPrompt sets the prompt loader functor - can return either single prompt or dual prompts (system, user)
+func (g *AIGenerator[T1, T2]) WithPrompt(loader interface{}) *AIGenerator[T1, T2] {
+	switch l := loader.(type) {
+	case func(T1) (string, error):
+		// Convert single prompt to dual prompt format with empty system prompt
+		g.promptLoader = func(data T1) (string, string, error) {
+			userPrompt, err := l(data)
+			return "", userPrompt, err
+		}
+	case func(T1) (string, string, error):
+		// Use dual prompt directly
+		g.promptLoader = l
+	}
 	return g
 }
 
@@ -98,25 +109,49 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		return zero, fmt.Errorf("failed to load data: %w", err)
 	}
 
-	// 2. Generate prompt
-	prompt, err := g.promptLoader(data)
+	// 2. Generate prompts and call AI
+	systemPrompt, userPrompt, err := g.promptLoader(data)
 	if err != nil {
-		return zero, fmt.Errorf("failed to load prompt: %w", err)
+		return zero, fmt.Errorf("failed to load prompts: %w", err)
 	}
 
-	// 3. Call AI
-	// Save prompt for debugging
-	promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
-	if err := os.WriteFile(promptFile, []byte(prompt), 0644); err != nil {
-		slog.Warn("Failed to save prompt file", "error", err)
+	var response string
+
+	if systemPrompt != "" {
+		// Dual prompt mode - save both prompts for debugging
+		systemPromptFile := fmt.Sprintf("%s/%s-%s-system-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+		if err := os.WriteFile(systemPromptFile, []byte(systemPrompt), 0644); err != nil {
+			slog.Warn("Failed to save system prompt file", "error", err)
+		} else {
+			slog.Info("💾 System prompt saved", "file", systemPromptFile)
+		}
+
+		userPromptFile := fmt.Sprintf("%s/%s-%s-user-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+		if err := os.WriteFile(userPromptFile, []byte(userPrompt), 0644); err != nil {
+			slog.Warn("Failed to save user prompt file", "error", err)
+		} else {
+			slog.Info("💾 User prompt saved", "file", userPromptFile)
+		}
+
+		// Use system + user prompt
+		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, systemPrompt, userPrompt, g.model, g.mode)
+		if err != nil {
+			return zero, fmt.Errorf("failed to generate content with system prompt: %w", err)
+		}
 	} else {
-		slog.Info("💾 Prompt saved", "file", promptFile)
-	}
+		// Single prompt mode - save single prompt for debugging
+		promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+		if err := os.WriteFile(promptFile, []byte(userPrompt), 0644); err != nil {
+			slog.Warn("Failed to save prompt file", "error", err)
+		} else {
+			slog.Info("💾 Prompt saved", "file", promptFile)
+		}
 
-	// Use configured model and mode
-	response, err := g.aiClient.ExecutePrompt(g.ctx, prompt, g.model, g.mode)
-	if err != nil {
-		return zero, fmt.Errorf("failed to generate content: %w", err)
+		// Use single prompt
+		response, err = g.aiClient.ExecutePrompt(g.ctx, userPrompt, g.model, g.mode)
+		if err != nil {
+			return zero, fmt.Errorf("failed to generate content: %w", err)
+		}
 	}
 
 	// 4. Save AI response for debugging

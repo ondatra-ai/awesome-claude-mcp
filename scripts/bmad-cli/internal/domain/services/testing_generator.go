@@ -45,7 +45,23 @@ func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
 			}, nil
 		}).
-		WithPrompt(g.loadTestingPrompt).
+		WithPrompt(func(data TestingData) (systemPrompt string, userPrompt string, err error) {
+			// Load system prompt (doesn't need data)
+			systemTemplatePath := g.config.GetString("templates.prompts.testing_system")
+			systemLoader := template.NewTemplateLoader[TestingData](systemTemplatePath)
+			systemPrompt, err = systemLoader.LoadTemplate(TestingData{})
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load testing system prompt: %w", err)
+			}
+
+			// Load user prompt
+			userPrompt, err = g.loadTestingPrompt(data)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load testing user prompt: %w", err)
+			}
+
+			return systemPrompt, userPrompt, nil
+		}).
 		WithResponseParser(CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing")).
 		WithValidator(g.validateTesting)
 

@@ -39,10 +39,24 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 				Docs:  storyDoc.ArchitectureDocs,
 			}, nil
 		}).
-		WithPrompt(func(data TaskPromptData) (string, error) {
+		WithPrompt(func(data TaskPromptData) (systemPrompt string, userPrompt string, err error) {
+			// Load system prompt (doesn't need data)
+			systemTemplatePath := g.config.GetString("templates.prompts.tasks_system")
+			systemLoader := template.NewTemplateLoader[TaskPromptData](systemTemplatePath)
+			systemPrompt, err = systemLoader.LoadTemplate(TaskPromptData{})
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load tasks system prompt: %w", err)
+			}
+
+			// Load user prompt
 			templatePath := g.config.GetString("templates.prompts.tasks")
-			loader := template.NewTemplateLoader[TaskPromptData](templatePath)
-			return loader.LoadTemplate(data)
+			userLoader := template.NewTemplateLoader[TaskPromptData](templatePath)
+			userPrompt, err = userLoader.LoadTemplate(data)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load tasks user prompt: %w", err)
+			}
+
+			return systemPrompt, userPrompt, nil
 		}).
 		WithResponseParser(CreateYAMLFileParser[[]story.Task](g.config, storyDoc.Story.ID, "tasks", "tasks")).
 		WithValidator(func(tasks []story.Task) error {

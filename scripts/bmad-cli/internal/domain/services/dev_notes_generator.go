@@ -41,10 +41,24 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 				Docs:  storyDoc.ArchitectureDocs,
 			}, nil
 		}).
-		WithPrompt(func(data DevNotesPromptData) (string, error) {
+		WithPrompt(func(data DevNotesPromptData) (systemPrompt string, userPrompt string, err error) {
+			// Load system prompt (doesn't need data)
+			systemTemplatePath := g.config.GetString("templates.prompts.devnotes_system")
+			systemLoader := template.NewTemplateLoader[DevNotesPromptData](systemTemplatePath)
+			systemPrompt, err = systemLoader.LoadTemplate(DevNotesPromptData{})
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load devnotes system prompt: %w", err)
+			}
+
+			// Load user prompt
 			templatePath := g.config.GetString("templates.prompts.devnotes")
-			loader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
-			return loader.LoadTemplate(data)
+			userLoader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
+			userPrompt, err = userLoader.LoadTemplate(data)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load devnotes user prompt: %w", err)
+			}
+
+			return systemPrompt, userPrompt, nil
 		}).
 		WithResponseParser(CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
