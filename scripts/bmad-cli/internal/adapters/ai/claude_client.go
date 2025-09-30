@@ -70,7 +70,7 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 		slog.Info("Connected to Claude client")
 
 		// Send user prompt only - system prompt is handled by the SDK via options
-		slog.Info("Sending user prompt to Claude", "length", len(userPrompt))
+		slog.Debug("Sending user prompt to Claude", "length", len(userPrompt))
 		if err := client.Query(timeoutCtx, userPrompt); err != nil {
 			slog.Error("Query failed", "error", err)
 			return fmt.Errorf("failed to send query: %w", err)
