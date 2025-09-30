@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"bmad-cli/internal/adapters/ai"
@@ -41,7 +42,7 @@ func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, conf
 		storyID:    storyID,
 		filePrefix: filePrefix,
 		model:      "sonnet",                    // default model
-		mode:       modeFactory.GetThinkMode(),  // default mode
+		mode:       modeFactory.GetFullAccessMode(),  // TEMP: test with full write access
 	}
 }
 
@@ -107,9 +108,9 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	// Save prompt for debugging
 	promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
 	if err := os.WriteFile(promptFile, []byte(prompt), 0644); err != nil {
-		fmt.Printf("⚠️ Failed to save prompt file: %v\n", err)
+		slog.Warn("Failed to save prompt file", "error", err)
 	} else {
-		fmt.Printf("💾 Prompt saved to: %s\n", promptFile)
+		slog.Info("💾 Prompt saved", "file", promptFile)
 	}
 
 	// Use configured model and mode
@@ -123,7 +124,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
 		return zero, fmt.Errorf("failed to write response file: %w", err)
 	}
-	fmt.Printf("💾 Full AI response saved to: %s\n", responseFile)
+	slog.Info("💾 AI response saved", "file", responseFile)
 
 	// 5. Parse response
 	result, err := g.responseParser(response)
@@ -132,7 +133,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	}
 
 	// 6. Log success
-	fmt.Printf("✅ %s generated successfully\n", g.filePrefix)
+	slog.Info("Content generated successfully", "type", g.filePrefix)
 
 	// 7. Validate if validator is set
 	if g.validator != nil {
