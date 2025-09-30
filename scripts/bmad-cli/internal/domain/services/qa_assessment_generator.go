@@ -47,7 +47,23 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
 			}, nil
 		}).
-		WithPrompt(g.loadQAPrompt).
+		WithPrompt(func(data QAAssessmentData) (systemPrompt string, userPrompt string, err error) {
+			// Load system prompt (doesn't need data)
+			systemTemplatePath := g.config.GetString("templates.prompts.qa_system")
+			systemLoader := template.NewTemplateLoader[QAAssessmentData](systemTemplatePath)
+			systemPrompt, err = systemLoader.LoadTemplate(QAAssessmentData{})
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load QA system prompt: %w", err)
+			}
+
+			// Load user prompt
+			userPrompt, err = g.loadQAPrompt(data)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to load QA user prompt: %w", err)
+			}
+
+			return systemPrompt, userPrompt, nil
+		}).
 		WithResponseParser(CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results")).
 		WithValidator(g.validateQAResults)
 
