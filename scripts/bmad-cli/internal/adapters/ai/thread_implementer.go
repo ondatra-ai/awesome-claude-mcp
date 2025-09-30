@@ -36,7 +36,7 @@ func (ti *ThreadImplementer) Implement(ctx context.Context, threadContext models
 
 	slog.Debug("Implementation prompt", "client", ti.client.Name(), "prompt", prompt)
 
-	rawOutput, err := ti.client.ExecutePrompt(ctx, prompt, "sonnet", ti.modeFactory.GetThinkMode())
+	rawOutput, err := ti.client.ExecutePromptWithSystem(ctx, "", prompt, "sonnet", ti.modeFactory.GetThinkMode())
 	if err != nil {
 		return "", fmt.Errorf("AI client implementation failed: %w", err)
 	}

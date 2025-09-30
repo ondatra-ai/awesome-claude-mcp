@@ -14,7 +14,6 @@ import (
 
 // AIClient defines the interface for AI communication
 type AIClient interface {
-	ExecutePrompt(ctx context.Context, prompt string, model string, mode ai.ExecutionMode) (string, error)
 	ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ai.ExecutionMode) (string, error)
 }
 
@@ -147,8 +146,8 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 			slog.Info("💾 Prompt saved", "file", promptFile)
 		}
 
-		// Use single prompt
-		response, err = g.aiClient.ExecutePrompt(g.ctx, userPrompt, g.model, g.mode)
+		// Use single prompt (empty system prompt)
+		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, "", userPrompt, g.model, g.mode)
 		if err != nil {
 			return zero, fmt.Errorf("failed to generate content: %w", err)
 		}
