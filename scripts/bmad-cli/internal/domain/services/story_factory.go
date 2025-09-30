@@ -64,7 +64,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 
 	// Create initial story document with all required data
 	storyDoc := &story.StoryDocument{
-		Story: *loadedStory,
+		Story:            *loadedStory,
 		ArchitectureDocs: architectureDocs,
 		ChangeLog: []story.ChangeLogEntry{
 			{
@@ -84,9 +84,9 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 
 	// Create generators
 	taskGenerator := NewTaskGenerator(f.aiClient, f.config)
-	devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
-	testingGenerator := NewTestingGenerator(f.aiClient, f.config)
-	qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient, f.config)
+	// devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
+	// testingGenerator := NewTestingGenerator(f.aiClient, f.config)
+	// qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc)
@@ -96,25 +96,25 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	storyDoc.Tasks = tasks
 
 	// Generate dev_notes using AI - fail on any error
-	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
-	}
-	storyDoc.DevNotes = devNotes
+	// devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
+	// }
+	// storyDoc.DevNotes = devNotes
 
-	// Generate testing requirements using AI - fail on any error
-	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
-	}
-	storyDoc.Testing = testing
+	// // Generate testing requirements using AI - fail on any error
+	// testing, err := testingGenerator.GenerateTesting(ctx, storyDoc)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
+	// }
+	// storyDoc.Testing = testing
 
-	// Generate QA results using AI - fail on any error
-	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate QA results: %w", err)
-	}
-	storyDoc.QAResults = &qaResults
+	// // Generate QA results using AI - fail on any error
+	// qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to generate QA results: %w", err)
+	// }
+	// storyDoc.QAResults = &qaResults
 
 	return storyDoc, nil
 }

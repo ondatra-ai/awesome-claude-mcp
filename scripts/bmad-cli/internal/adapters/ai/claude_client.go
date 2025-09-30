@@ -7,7 +7,6 @@ import (
 	claudecode "github.com/severity1/claude-code-sdk-go"
 )
 
-
 type ClaudeClient struct {
 	// No persistent client needed with severity1 SDK
 }
@@ -20,7 +19,6 @@ func NewClaudeClient() (*ClaudeClient, error) {
 func (c *ClaudeClient) Name() string {
 	return "Claude"
 }
-
 
 func (c *ClaudeClient) ExecutePrompt(ctx context.Context, prompt string, model string, mode ExecutionMode) (string, error) {
 	fmt.Printf("🔄 Calling claude with prompt length: %d\n", len(prompt))
