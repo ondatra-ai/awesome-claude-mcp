@@ -78,13 +78,18 @@ func createPRTriageCommand(githubService *github.GitHubService, claudeClient *ai
 	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine, cfg)
 	modeFactory := ai.NewModeFactory(cfg)
 
-	return commands.NewPRTriageCommand(
-		githubService,
+	// Create thread processor with all AI-related dependencies
+	threadProcessor := ai.NewThreadProcessor(
 		claudeClient,
 		heuristicBuilder,
 		implementationBuilder,
 		yamlParser,
 		modeFactory,
+	)
+
+	return commands.NewPRTriageCommand(
+		githubService,
+		threadProcessor,
 		cfg,
 	)
 }

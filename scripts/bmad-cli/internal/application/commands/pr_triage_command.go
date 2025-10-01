@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"bmad-cli/internal/adapters/ai"
-	"bmad-cli/internal/application/prompts"
-	"bmad-cli/internal/common/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
@@ -17,32 +15,20 @@ import (
 const lowRiskThreshold = 5
 
 type PRTriageCommand struct {
-	github              ports.GitHubService
-	claudeClient        *ai.ClaudeClient
-	heuristicBuilder    *prompts.HeuristicPromptBuilder
-	implementationBuilder *prompts.ImplementationPromptBuilder
-	yamlParser          *prompts.YAMLParser
-	modeFactory         *ai.ModeFactory
-	config              *config.ViperConfig
+	github          ports.GitHubService
+	threadProcessor *ai.ThreadProcessor
+	config          *config.ViperConfig
 }
 
 func NewPRTriageCommand(
 	github ports.GitHubService,
-	claudeClient *ai.ClaudeClient,
-	heuristicBuilder *prompts.HeuristicPromptBuilder,
-	implementationBuilder *prompts.ImplementationPromptBuilder,
-	yamlParser *prompts.YAMLParser,
-	modeFactory *ai.ModeFactory,
+	threadProcessor *ai.ThreadProcessor,
 	config *config.ViperConfig,
 ) *PRTriageCommand {
 	return &PRTriageCommand{
-		github:                github,
-		claudeClient:          claudeClient,
-		heuristicBuilder:      heuristicBuilder,
-		implementationBuilder: implementationBuilder,
-		yamlParser:            yamlParser,
-		modeFactory:           modeFactory,
-		config:                config,
+		github:          github,
+		threadProcessor: threadProcessor,
+		config:          config,
 	}
 }
 
@@ -97,54 +83,11 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PRTriageCommand) analyzeThread(ctx context.Context, threadContext models.ThreadContext) (models.HeuristicAnalysisResult, error) {
-	prompt, err := c.heuristicBuilder.Build(threadContext)
-	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to build heuristic prompt: %w", err)
-	}
-
-	rawOutput, err := c.claudeClient.ExecutePromptWithSystem(ctx, "", prompt, "sonnet", c.modeFactory.GetThinkMode())
-	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("AI client execution failed: %w", err)
-	}
-
-	if strings.TrimSpace(rawOutput) == "" {
-		return models.HeuristicAnalysisResult{}, errors.ErrEmptyClientOutput(c.claudeClient.Name())
-	}
-
-	result, err := c.yamlParser.ParseHeuristicResult(rawOutput)
-	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to parse %s output: %w", c.claudeClient.Name(), err)
-	}
-
-	return result, nil
+	return c.threadProcessor.AnalyzeThread(ctx, threadContext)
 }
 
 func (c *PRTriageCommand) implementChanges(ctx context.Context, threadContext models.ThreadContext) (string, error) {
-	prompt, err := c.implementationBuilder.Build(threadContext)
-	if err != nil {
-		return "", fmt.Errorf("failed to build implementation prompt: %w", err)
-	}
-
-	slog.Debug("Implementation prompt", "client", c.claudeClient.Name(), "prompt", prompt)
-
-	rawOutput, err := c.claudeClient.ExecutePromptWithSystem(ctx, "", prompt, "sonnet", c.modeFactory.GetThinkMode())
-	if err != nil {
-		return "", fmt.Errorf("AI client implementation failed: %w", err)
-	}
-
-	slog.Debug("Implementation output", "client", c.claudeClient.Name(), "output", rawOutput)
-
-	// Extract first line as summary
-	lines := strings.Split(rawOutput, "\n")
-	summary := ""
-	if len(lines) > 0 {
-		summary = strings.TrimSpace(lines[0])
-	}
-	if summary == "" {
-		summary = "Applied changes as requested"
-	}
-
-	return summary, nil
+	return c.threadProcessor.ImplementChanges(ctx, threadContext)
 }
 
 func (c *PRTriageCommand) firstRelevantComment(comments []models.Comment) models.Comment {
