@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bmad-cli/internal/adapters/ai"
+	"bmad-cli/internal/common/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
@@ -44,7 +45,13 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 	}
 
 	for _, thread := range threads {
-		comment := c.firstRelevantComment(thread.Comments)
+		comment, err := c.firstRelevantComment(thread.Comments)
+		if err != nil {
+			if err == errors.ErrNoComments {
+				continue // Skip threads with no comments
+			}
+			return err // Return other errors
+		}
 
 		if comment.Outdated {
 			_ = c.github.ResolveThread(ctx, thread.ID, "This thread resolved as outdated.")
@@ -57,7 +64,7 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 			Comment:  comment,
 		}
 
-		result, err := c.analyzeThread(ctx, threadCtx)
+		result, err := c.threadProcessor.AnalyzeThread(ctx, threadCtx)
 		if err != nil {
 			return err
 		}
@@ -67,7 +74,7 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 		if result.Score < lowRiskThreshold {
 			slog.Info("Applying code changes")
 
-			summary, err := c.implementChanges(ctx, threadCtx)
+			summary, err := c.threadProcessor.ImplementChanges(ctx, threadCtx)
 			if err != nil {
 				return fmt.Errorf("apply failed for thread %s: %w", thread.ID, err)
 			}
@@ -82,19 +89,12 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (c *PRTriageCommand) analyzeThread(ctx context.Context, threadContext models.ThreadContext) (models.HeuristicAnalysisResult, error) {
-	return c.threadProcessor.AnalyzeThread(ctx, threadContext)
-}
 
-func (c *PRTriageCommand) implementChanges(ctx context.Context, threadContext models.ThreadContext) (string, error) {
-	return c.threadProcessor.ImplementChanges(ctx, threadContext)
-}
-
-func (c *PRTriageCommand) firstRelevantComment(comments []models.Comment) models.Comment {
+func (c *PRTriageCommand) firstRelevantComment(comments []models.Comment) (models.Comment, error) {
 	if len(comments) > 0 {
-		return comments[0]
+		return comments[0], nil
 	}
-	return models.Comment{}
+	return models.Comment{}, errors.ErrNoComments
 }
 
 func (c *PRTriageCommand) printHeuristic(result models.HeuristicAnalysisResult) {
