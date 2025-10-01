@@ -65,8 +65,6 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 		Generate()
 }
 
-
-
 // validateDevNotes validates that mandatory entities have required source and description fields
 func (g *AIDevNotesGenerator) validateDevNotes(devNotes story.DevNotes) error {
 	mandatoryEntities := []string{"technology_stack", "architecture", "file_structure"}

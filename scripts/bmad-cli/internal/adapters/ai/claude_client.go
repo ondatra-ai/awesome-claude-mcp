@@ -24,7 +24,6 @@ func (c *ClaudeClient) Name() string {
 	return "Claude"
 }
 
-
 func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ExecutionMode) (string, error) {
 	if systemPrompt != "" {
 		slog.Debug("Calling Claude with system prompt", "system_length", len(systemPrompt), "user_length", len(userPrompt))

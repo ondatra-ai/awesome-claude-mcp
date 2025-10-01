@@ -53,6 +53,7 @@ var (
 	ErrUnexpectedRepoOutput    = errors.New("unexpected repo output")
 	ErrNoEligibleReviewThreads = errors.New("no eligible review threads found")
 	ErrUnexpectedOutput        = errors.New("unexpected output format")
+	ErrNoComments              = errors.New("no comments found in thread")
 )
 
 func ErrNoPRFoundForBranch(branch string) error {
@@ -79,6 +80,15 @@ func ErrNoEligibleThreads(prNumber int) error {
 		Code:     "NO_ELIGIBLE_THREADS",
 		Message:  fmt.Sprintf("no eligible review threads found for PR %d", prNumber),
 		Cause:    ErrNoEligibleReviewThreads,
+	}
+}
+
+func ErrNoCommentsInThread(threadID string) error {
+	return &AppError{
+		Category: CategoryGitHub,
+		Code:     "NO_COMMENTS",
+		Message:  fmt.Sprintf("no comments found in thread %s", threadID),
+		Cause:    ErrNoComments,
 	}
 }
 
