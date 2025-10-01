@@ -8,13 +8,13 @@ import (
 // This matches the structure expected by the story.yaml.tpl template
 type FlattenedStoryData struct {
 	// Story fields at root level
-	ID                 string                       `json:"id"`
-	Title              string                       `json:"title"`
-	AsA                string                       `json:"as_a"`
-	IWant              string                       `json:"i_want"`
-	SoThat             string                       `json:"so_that"`
-	Status             string                       `json:"status"`
-	AcceptanceCriteria []story.AcceptanceCriterion  `json:"acceptance_criteria"`
+	ID                 string                      `json:"id"`
+	Title              string                      `json:"title"`
+	AsA                string                      `json:"as_a"`
+	IWant              string                      `json:"i_want"`
+	SoThat             string                      `json:"so_that"`
+	Status             string                      `json:"status"`
+	AcceptanceCriteria []story.AcceptanceCriterion `json:"acceptance_criteria"`
 
 	// Other sections as nested structures
 	Tasks          []story.Task           `json:"tasks"`

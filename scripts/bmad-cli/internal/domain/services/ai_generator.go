@@ -19,11 +19,11 @@ type AIClient interface {
 
 // AIGenerator is a generic AI content generator with builder pattern
 type AIGenerator[T1 any, T2 any] struct {
-	ctx                context.Context
-	aiClient           AIClient
-	config             *config.ViperConfig
-	storyID            string
-	filePrefix         string
+	ctx            context.Context
+	aiClient       AIClient
+	config         *config.ViperConfig
+	storyID        string
+	filePrefix     string
 	dataLoader     func() (T1, error)
 	promptLoader   func(T1) (systemPrompt string, userPrompt string, err error)
 	responseParser func(aiResponse string) (T2, error)
@@ -41,8 +41,8 @@ func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, conf
 		config:     config,
 		storyID:    storyID,
 		filePrefix: filePrefix,
-		model:      "sonnet",                    // default model
-		mode:       modeFactory.GetFullAccessMode(),  // TEMP: test with full write access
+		model:      "sonnet",                        // default model
+		mode:       modeFactory.GetFullAccessMode(), // TEMP: test with full write access
 	}
 }
 
@@ -188,7 +188,6 @@ func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix
 		// Construct file path
 		tmpDir := config.GetString("paths.tmp_dir")
 		filePath := fmt.Sprintf("%s/%s-%s.yaml", tmpDir, storyID, filePrefix)
-
 
 		// Read file
 		content, err := os.ReadFile(filePath)

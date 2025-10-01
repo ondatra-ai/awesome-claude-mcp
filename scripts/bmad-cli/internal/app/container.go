@@ -10,7 +10,7 @@ import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/application/commands"
-	"bmad-cli/internal/domain/ports"
+	"bmad-cli/internal/application/prompts"
 	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
@@ -50,28 +50,48 @@ func NewContainer() (*Container, error) {
 		return nil, fmt.Errorf("failed to create AI client: %w", err)
 	}
 
-	storyFactory := services.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
+	// Setup user story creation command - required for operation
+	usCreateCmd := createUSCreateCommand(epicLoader, claudeClient, cfg, architectureLoader)
 
-	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
-	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
-	usCreateCmd := commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
-
-	// AI service and PR triage are optional - only create if needed
-	var aiService ports.AIService
-	var prTriageCmd *commands.PRTriageCommand
-
-	// Try to create AI service, but don't fail if it's not available
-	if aiSvc, err := ai.NewAIService(cfg); err == nil {
-		aiService = aiSvc
-		orchestrator := services.NewPRTriageOrchestrator(githubService, aiService)
-		prTriageCmd = commands.NewPRTriageCommand(orchestrator)
-	}
+	// Setup PR triage command - required for operation
+	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
 
 	return &Container{
 		Config:      cfg,
 		PRTriageCmd: prTriageCmd,
 		USCreateCmd: usCreateCmd,
 	}, nil
+}
+
+func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *commands.USCreateCommand {
+	storyFactory := services.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
+	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
+	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
+	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
+}
+
+func createPRTriageCommand(githubService *github.GitHubService, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig) *commands.PRTriageCommand {
+	// Create prompt dependencies
+	templateEngine := prompts.NewTemplateEngine()
+	yamlParser := prompts.NewYAMLParser()
+	heuristicBuilder := prompts.NewHeuristicPromptBuilder(templateEngine, cfg)
+	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine, cfg)
+	modeFactory := ai.NewModeFactory(cfg)
+
+	// Create thread processor with all AI-related dependencies
+	threadProcessor := ai.NewThreadProcessor(
+		claudeClient,
+		heuristicBuilder,
+		implementationBuilder,
+		yamlParser,
+		modeFactory,
+	)
+
+	return commands.NewPRTriageCommand(
+		githubService,
+		threadProcessor,
+		cfg,
+	)
 }
 
 func configureLogging() {
