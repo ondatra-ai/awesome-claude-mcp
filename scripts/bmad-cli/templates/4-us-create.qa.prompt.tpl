@@ -10,7 +10,7 @@ Generate comprehensive QA assessment for user story {{.Story.ID}}.
 Analyze the story and provide:
 - Assessment summary with strengths and improvements
 - Risk level and testability scores
-- Gate status (PASS/CONCERNS/FAIL)
+- Gate status (PASS/CONCERNS/FAIL/WAIVED)
 
 ## Output format:
 CRITICAL: Save text content to file: ./tmp/{{.Story.ID}}-qa-assessment.yaml. Follow EXACTLY the format below:
@@ -34,7 +34,7 @@ qa_results:
     testability_notes: "Testability assessment"
     implementation_readiness: 9
     implementation_readiness_max: 10
-  gate_status: "PASS"
+  gate_status: "PASS"  # Valid: PASS, CONCERNS, FAIL, WAIVED
   gate_reference: "docs/qa/gates/{{.Story.ID}}.yml"
 === FILE_END: ./tmp/{{.Story.ID}}-qa-assessment.yaml ===
 

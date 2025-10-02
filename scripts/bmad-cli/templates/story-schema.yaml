@@ -76,7 +76,7 @@ qa_review:
   review_date: regex(r'^\d{4}-\d{2}-\d{2}$')
   reviewed_by: str()
   assessment: include('assessment')
-  gate_status: enum('APPROVED', 'CONCERNS', 'BLOCKED', 'PENDING')
+  gate_status: enum('PASS', 'CONCERNS', 'FAIL', 'WAIVED')
   gate_reference: regex(r'^docs/qa/gates/.*\.yml$')
 
 assessment:
