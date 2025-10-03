@@ -1078,6 +1078,19 @@ Production ECS Deploy
 - **Performance Tests:** Benchmark critical paths
 - **Security Tests:** Dependency scanning with Snyk
 
+### Testing Guidelines
+
+For comprehensive testing documentation, see:
+
+- **[BDD Guidelines](./architecture/bdd-guidelines.md)** - Scenario writing best practices, Given-When-Then format, quality checklist
+- **[Coding Standards - Testing](./architecture/coding-standards.md#testing-standards)** - Test implementation standards, Playwright usage, coverage requirements
+- **[Tech Stack - Testing](./architecture/tech-stack.md#testing-strategy)** - INT vs E2E definitions, framework details, execution strategy
+
+**Quick Reference:**
+- **Integration (INT)**: Direct API/protocol testing with Playwright Request API
+- **End-to-End (E2E)**: Complete user journeys with Playwright Browser API
+- **Unit Tests**: Code-level testing without BDD scenarios
+
 ## Security
 
 ### Input Validation

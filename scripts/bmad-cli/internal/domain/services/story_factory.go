@@ -86,6 +86,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	taskGenerator := NewTaskGenerator(f.aiClient, f.config)
 	devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
 	testingGenerator := NewTestingGenerator(f.aiClient, f.config)
+	scenariosGenerator := NewScenariosGenerator(f.aiClient, f.config)
 	qaResultsGenerator := NewQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Generate tasks using AI - fail on any error
@@ -108,6 +109,13 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
 	}
 	storyDoc.Testing = testing
+
+	// Generate test scenarios using AI - fail on any error
+	scenarios, err := scenariosGenerator.GenerateScenarios(ctx, storyDoc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate test scenarios: %w", err)
+	}
+	storyDoc.Scenarios = scenarios
 
 	// Generate QA results using AI - fail on any error
 	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc)

@@ -669,25 +669,40 @@ func LoadConfig() (*Config, error) {
 
 ### Test Categories
 
-**Unit Tests (60% of test pyramid):**
-- Individual functions and methods
-- Business logic validation
-- Error condition handling
-- Mock external dependencies
+**Integration Tests (INT) - 70% of test pyramid:**
+- Direct API/protocol testing using Playwright Request API
+- No UI interaction required
+- Tests: HTTP endpoints, WebSocket connections, MCP protocol, message validation
+- Execution: Fast (seconds to minutes), runs in CI on every commit
+- Mock downstream services as needed
+- Framework: Playwright with Request fixture
+- Example: `test('INT-001: should establish WebSocket connection', async ({ request }) => {...})`
 
-**Integration Tests (30% of test pyramid):**
-- Service-to-service communication
-- Database interactions (Redis)
-- Authentication flows
-- MCP protocol compliance
+**End-to-End Tests (E2E) - 30% of test pyramid:**
+- Complete user workflows using Playwright Browser API
+- Tests through UI or Claude.ai chat
+- Tests: Authentication flows, user journeys, cross-service integration
+- Execution: Slower (minutes), runs before deployment
+- All services must be real (no mocks)
+- Framework: Playwright with Page fixture
+- Example: `test('E2E-001: should complete auth flow in UI', async ({ page }) => {...})`
 
-**End-to-End Tests (10% of test pyramid):**
-- Complete user workflows across all three services
-- Service-to-service integration testing
-- Document operation workflows (frontend → backend → MCP service)
-- Authentication workflows (OAuth flows through all services)
-- **Framework**: Playwright for cross-browser testing
-- **Organization**: Service-specific test directories (frontend/, backend/, mcp-service/)
+**Unit Tests:**
+Unit tests are essential for code quality but are NOT part of BDD scenarios:
+- Written directly in code files (e.g., `document_test.go`, `api.test.ts`)
+- Test individual functions, classes, business logic
+- Do NOT generate Given-When-Then scenarios for unit tests
+- Mentioned in testing requirements but without scenario IDs
+
+**Test Level Selection Guide:**
+Question: "Does this test involve UI or Claude.ai chat interaction?"
+- **NO** → Integration (INT) - use Playwright Request API
+- **YES** → End-to-End (E2E) - use Playwright Browser API
+
+**BDD Scenario Coverage:**
+- Integration scenarios: Cover API contracts, protocol compliance, system behavior
+- E2E scenarios: Cover user journeys, complete workflows
+- Unit tests: No scenarios (tested directly in code)
 
 ### E2E Testing Standards
 

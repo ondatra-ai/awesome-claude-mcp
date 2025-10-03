@@ -35,6 +35,9 @@ testing:
   requirements: list(str(), min=1)
   coverage: include('coverage')
 
+scenarios:
+  test_scenarios: list(include('test_scenario'), min=1)
+
 change_log: list(include('change_entry'), required=False)
 qa_results: include('qa_review', required=False)
 dev_agent_record: include('agent_record', required=False)
@@ -65,6 +68,16 @@ config:
 coverage:
   business_logic: regex(r'^\d+%$')
   overall: regex(r'^\d+%$')
+
+test_scenario:
+  id: regex(r'^\d+\.\d+-(INT|E2E)-\d+$')
+  acceptance_criteria: list(regex('^AC-[0-9]+$'), min=1)
+  given: str()
+  when: str()
+  then: str()
+  level: enum('integration', 'e2e')
+  priority: enum('P0', 'P1', 'P2', 'P3')
+  mitigates_risks: list(str(), required=False)
 
 change_entry:
   date: regex(r'^\d{4}-\d{2}-\d{2}$')

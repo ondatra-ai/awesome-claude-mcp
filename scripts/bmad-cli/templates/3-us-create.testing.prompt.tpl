@@ -9,11 +9,11 @@ Generate comprehensive testing requirements for user story {{.Story.ID}} that en
 ## Instructions
 
 1. Read for references the following documents:
-  - Read(`{{.Docs.Architecture.FilePath}}`) - Architecture Document
-  - Read(`{{.Docs.FrontendArchitecture.FilePath}}`) - Frontend Architecture Document
-  - Read(`{{.Docs.CodingStandards.FilePath}}`) - Coding Standards
-  - Read(`{{.Docs.SourceTree.FilePath}}`) - Source Tree
-  - Read(`{{.Docs.TechStack.FilePath}}`) - Tech Stack
+  - Read(`{{.ArchitectureDocs.Architecture.FilePath}}`) - Architecture Document
+  - Read(`{{.ArchitectureDocs.FrontendArchitecture.FilePath}}`) - Frontend Architecture Document
+  - Read(`{{.ArchitectureDocs.CodingStandards.FilePath}}`) - Coding Standards
+  - Read(`{{.ArchitectureDocs.SourceTree.FilePath}}`) - Source Tree
+  - Read(`{{.ArchitectureDocs.TechStack.FilePath}}`) - Tech Stack
   - User Story (see below)
   - Generated Tasks (see below)
   - Generated DevNotes (see below)
