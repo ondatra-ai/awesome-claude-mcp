@@ -10,6 +10,54 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 )
 
+// ValidationRule represents a validation check
+type ValidationRule struct {
+	Name      string
+	Validator func(nameWithoutExt, slug string) error
+}
+
+// filenameValidations defines all validation rules
+var filenameValidations = []ValidationRule{
+	{
+		Name: "DashSeparator",
+		Validator: func(nameWithoutExt, slug string) error {
+			if !strings.Contains(nameWithoutExt, "-") {
+				return fmt.Errorf("invalid story filename: must have format '<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')")
+			}
+			return nil
+		},
+	},
+	{
+		Name: "EmptySlug",
+		Validator: func(nameWithoutExt, slug string) error {
+			if slug == "" {
+				return fmt.Errorf("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
+			}
+			return nil
+		},
+	},
+	{
+		Name: "NoSpaces",
+		Validator: func(nameWithoutExt, slug string) error {
+			if strings.Contains(slug, " ") {
+				return fmt.Errorf("invalid story slug '%s': cannot contain spaces (use dashes instead)", slug)
+			}
+			return nil
+		},
+	},
+}
+
+// validateFilename executes all validation rules
+func validateFilename(filename, nameWithoutExt, slug string) error {
+	for _, rule := range filenameValidations {
+		if err := rule.Validator(nameWithoutExt, slug); err != nil {
+			slog.Error("Validation failed", "rule", rule.Name, "filename", filename, "error", err)
+			return err
+		}
+	}
+	return nil
+}
+
 // StoryLoader provides utilities for loading story information
 type StoryLoader struct {
 	storiesDir string
@@ -55,24 +103,16 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	filename := filepath.Base(storyFile)
 	nameWithoutExt := strings.TrimSuffix(filename, ".yaml")
 
-	// Validate filename has dash separator
-	if !strings.Contains(nameWithoutExt, "-") {
-		slog.Error("Story filename missing dash separator", "filename", filename)
-		return "", fmt.Errorf("invalid story filename '%s': must have format '<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')", filename)
-	}
-
+	// Parse slug from filename
 	parts := strings.SplitN(nameWithoutExt, "-", 2)
-	if len(parts) != 2 || parts[1] == "" {
-		slog.Error("Invalid story filename format", "filename", filename)
-		return "", fmt.Errorf("invalid story filename '%s': must have format '<story-number>-<slug>.yaml' where slug is not empty", filename)
+	slug := ""
+	if len(parts) == 2 {
+		slug = parts[1]
 	}
 
-	slug := parts[1]
-
-	// Validate slug doesn't contain invalid characters
-	if strings.Contains(slug, " ") {
-		slog.Error("Story slug contains spaces", "filename", filename, "slug", slug)
-		return "", fmt.Errorf("invalid story slug '%s': slug cannot contain spaces (use dashes instead)", slug)
+	// Execute all validation rules
+	if err := validateFilename(filename, nameWithoutExt, slug); err != nil {
+		return "", err
 	}
 
 	slog.Debug("Story slug extracted", "story_number", storyNumber, "slug", slug, "file", storyFile)

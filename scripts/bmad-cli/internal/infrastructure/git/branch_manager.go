@@ -11,34 +11,38 @@ type BranchManager struct {
 	chain BranchHandler
 }
 
+// HandlerFactory creates a handler instance
+type HandlerFactory func(*GitService) BranchHandler
+
+// handlerFactories defines the handler chain order
+var handlerFactories = []HandlerFactory{
+	func(gs *GitService) BranchHandler { return NewGitRepoCheckHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewDirtyWorkingTreeHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewDetachedHeadHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewForceRecreateHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewAlreadyOnStoryBranchHandler() },
+	func(gs *GitService) BranchHandler { return NewUnrelatedBranchHandler() },
+	func(gs *GitService) BranchHandler { return NewMainBehindOriginHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewLocalBranchExistsHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewRemoteBranchExistsHandler(gs) },
+	func(gs *GitService) BranchHandler { return NewCreateBranchHandler(gs) },
+}
+
 // NewBranchManager creates a new branch manager with the complete handler chain
 func NewBranchManager(gitService *GitService) *BranchManager {
-	// Create all handlers
-	gitRepoCheck := NewGitRepoCheckHandler(gitService)
-	dirtyTreeCheck := NewDirtyWorkingTreeHandler(gitService)
-	detachedHeadCheck := NewDetachedHeadHandler(gitService)
-	forceRecreate := NewForceRecreateHandler(gitService)
-	alreadyOnBranch := NewAlreadyOnStoryBranchHandler()
-	unrelatedBranch := NewUnrelatedBranchHandler()
-	mainBehindOrigin := NewMainBehindOriginHandler(gitService)
-	localBranchExists := NewLocalBranchExistsHandler(gitService)
-	remoteBranchExists := NewRemoteBranchExistsHandler(gitService)
-	createBranch := NewCreateBranchHandler(gitService)
+	// Create handlers from factories
+	var handlers []BranchHandler
+	for _, factory := range handlerFactories {
+		handlers = append(handlers, factory(gitService))
+	}
 
-	// Build the chain
-	gitRepoCheck.
-		SetNext(dirtyTreeCheck).
-		SetNext(detachedHeadCheck).
-		SetNext(forceRecreate).
-		SetNext(alreadyOnBranch).
-		SetNext(unrelatedBranch).
-		SetNext(mainBehindOrigin).
-		SetNext(localBranchExists).
-		SetNext(remoteBranchExists).
-		SetNext(createBranch)
+	// Chain handlers automatically
+	for i := 0; i < len(handlers)-1; i++ {
+		handlers[i].SetNext(handlers[i+1])
+	}
 
 	return &BranchManager{
-		chain: gitRepoCheck,
+		chain: handlers[0],
 	}
 }
 
