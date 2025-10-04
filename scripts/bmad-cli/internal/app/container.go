@@ -21,9 +21,10 @@ import (
 )
 
 type Container struct {
-	Config      *config.ViperConfig
-	PRTriageCmd *commands.PRTriageCommand
-	USCreateCmd *commands.USCreateCommand
+	Config         *config.ViperConfig
+	PRTriageCmd    *commands.PRTriageCommand
+	USCreateCmd    *commands.USCreateCommand
+	USImplementCmd *commands.USImplementCommand
 }
 
 func NewContainer() (*Container, error) {
@@ -56,10 +57,14 @@ func NewContainer() (*Container, error) {
 	// Setup PR triage command - required for operation
 	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
 
+	// Setup user story implement command - placeholder for future implementation
+	usImplementCmd := commands.NewUSImplementCommand()
+
 	return &Container{
-		Config:      cfg,
-		PRTriageCmd: prTriageCmd,
-		USCreateCmd: usCreateCmd,
+		Config:         cfg,
+		PRTriageCmd:    prTriageCmd,
+		USCreateCmd:    usCreateCmd,
+		USImplementCmd: usImplementCmd,
 	}, nil
 }
 
