@@ -14,6 +14,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repository contains documentation and specifications for an MCP (Model Context Protocol) Google Docs Editor integration.
 
+## Testing Approach
+
+This project uses Playwright for both Integration (INT) and End-to-End (E2E) testing:
+
+- **Integration (INT)**: Direct API/protocol testing using Playwright Request API
+  - No UI required
+  - Fast execution (seconds)
+  - Tests: HTTP endpoints, WebSocket connections, MCP protocol
+
+- **End-to-End (E2E)**: Complete user journeys using Playwright Browser API
+  - Requires browser
+  - Slower execution (minutes)
+  - Tests: UI workflows, Claude.ai interactions, full-stack operations
+
+- **Unit Tests**: Traditional code-level testing without BDD scenarios
+  - Tested directly in code files
+  - No Given-When-Then scenarios
+
+**BDD Scenarios**: Only generated for Integration and E2E tests (not unit tests)
+
+See `docs/architecture/bdd-guidelines.md` for scenario writing standards.
+
 ## Development Setup
 
 Since this is a new repository without code, common setup tasks will depend on the project type:
@@ -60,6 +82,23 @@ Currently empty - update this section as the codebase develops.
   - Deploy service: `railway up --service <name> --path-as-root services/<frontend|backend>`
 
 ## BMAD CLI Architecture Principles
+
+### Quality Over Cost Principle
+**QUALITY IS PARAMOUNT - TIME, PRICE, AND TOKEN USAGE ARE LOWEST PRIORITY** 🎯
+
+When making decisions about BMAD CLI implementation:
+- ✅ **Prioritize output quality**: Always choose the approach that produces the best results
+- ✅ **Multi-stage generation is acceptable**: If it takes 3x tokens to get perfect output, do it
+- ✅ **Take time for quality**: Generation time is not a concern if results are better
+- ✅ **Token usage is not a constraint**: Use as many tokens as needed for comprehensive prompts
+- ❌ **Never compromise quality for speed**: Fast but mediocre output is unacceptable
+- ❌ **Never optimize for token cost**: Cutting corners on prompts to save tokens is wrong
+
+**Examples:**
+- Two-stage generation with critique? ✅ Do it
+- Embed full articles in prompts? ✅ Do it
+- Multiple validation passes? ✅ Do it
+- Self-critique and revision loops? ✅ Do it
 
 ### Core Data Flow Principle
 **NO CACHING, NO LOADERS, NO UNNECESSARY INTERFACES - JUST DIRECT DATA FLOW!** 🎉

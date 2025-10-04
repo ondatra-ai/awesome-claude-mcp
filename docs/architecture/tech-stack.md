@@ -18,8 +18,31 @@ This document captures the current technology stack after migrating from the leg
 | Forms | React Hook Form | 7.x | Form handling + validation | Integrated with Zod |
 | Validation | Zod | 3.x | Schema validation | Shared between client/server |
 | HTTP Client | Fetch API / Axios | 1.x | REST calls to backend | `lib/api.ts` |
-| Testing | Jest + Playwright | latest | Unit + E2E | Playwright config under `tests/` |
+| Testing | Jest + Playwright | latest | Unit + INT + E2E | Playwright config under `tests/` |
 | Linting | ESLint + Prettier | latest | Code quality | `npm run lint`, `npm run format` |
+
+## Testing Strategy
+
+### Integration Testing (INT)
+- **Scope**: Direct API/protocol testing without UI
+- **Framework**: Playwright Request API
+- **Purpose**: Test MCP server endpoints, backend APIs, request/response validation
+- **Tools**: `@playwright/test` with Request fixture
+- **Examples**: WebSocket connections, MCP protocol compliance, error handling
+- **Execution**: Fast (seconds), runs on every commit
+
+### End-to-End Testing (E2E)
+- **Scope**: Complete user journey through UI or Claude.ai interaction
+- **Framework**: Playwright Browser API
+- **Purpose**: Test complete workflows, user experience, system integration
+- **Tools**: `@playwright/test` with Page fixture
+- **Examples**: Claude.ai chat interactions, frontend workflows, full-stack operations
+- **Execution**: Slower (minutes), runs before deployment
+
+### Test Level Selection
+**Question**: "Does this test require UI or Claude.ai interaction?"
+- **NO** → Integration (INT) - use Playwright Request API
+- **YES** → End-to-End (E2E) - use Playwright Browser API
 
 ## Backend Stack (Go)
 

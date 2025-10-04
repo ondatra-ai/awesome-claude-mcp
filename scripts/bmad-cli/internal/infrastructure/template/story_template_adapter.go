@@ -20,6 +20,7 @@ type FlattenedStoryData struct {
 	Tasks          []story.Task           `json:"tasks"`
 	DevNotes       story.DevNotes         `json:"dev_notes"`
 	Testing        story.Testing          `json:"testing"`
+	Scenarios      story.Scenarios        `json:"scenarios"`
 	ChangeLog      []story.ChangeLogEntry `json:"change_log"`
 	QAResults      *story.QAResults       `json:"qa_results,omitempty"`
 	DevAgentRecord story.DevAgentRecord   `json:"dev_agent_record"`
@@ -41,6 +42,7 @@ func FlattenStoryDocument(doc *story.StoryDocument) *FlattenedStoryData {
 		Tasks:          doc.Tasks,
 		DevNotes:       doc.DevNotes,
 		Testing:        doc.Testing,
+		Scenarios:      doc.Scenarios,
 		ChangeLog:      doc.ChangeLog,
 		QAResults:      doc.QAResults,
 		DevAgentRecord: doc.DevAgentRecord,

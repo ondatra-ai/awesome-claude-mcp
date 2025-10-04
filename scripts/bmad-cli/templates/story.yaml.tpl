@@ -29,6 +29,17 @@ testing:
   coverage:{{range $key, $value := .Testing.Coverage}}
     {{$key}}: "{{$value}}"{{end}}
 
+scenarios:
+  test_scenarios:{{range .Scenarios.TestScenarios}}
+    - id: "{{.ID}}"
+      acceptance_criteria: [{{range $i, $ac := .AcceptanceCriteria}}{{if $i}}, {{end}}"{{$ac}}"{{end}}]
+      given: "{{.Given}}"
+      when: "{{.When}}"
+      then: "{{.Then}}"
+      level: "{{.Level}}"
+      priority: "{{.Priority}}"{{if .MitigatesRisks}}
+      mitigates_risks: [{{range $i, $risk := .MitigatesRisks}}{{if $i}}, {{end}}"{{$risk}}"{{end}}]{{end}}{{end}}
+
 change_log:{{range .ChangeLog}}
   - date: "{{.Date}}"
     version: "{{.Version}}"

@@ -14,8 +14,10 @@ templates:
     devnotes_system: "./scripts/bmad-cli/templates/2-us-create.devnotes.system.prompt.tpl"
     testing: "./scripts/bmad-cli/templates/3-us-create.testing.prompt.tpl"
     testing_system: "./scripts/bmad-cli/templates/3-us-create.testing.system.prompt.tpl"
-    qa: "./scripts/bmad-cli/templates/4-us-create.qa.prompt.tpl"
-    qa_system: "./scripts/bmad-cli/templates/4-us-create.qa.system.prompt.tpl"
+    scenarios: "./scripts/bmad-cli/templates/4-us-create.scenarios.prompt.tpl"
+    scenarios_system: "./scripts/bmad-cli/templates/4-us-create.scenarios.system.prompt.tpl"
+    qa: "./scripts/bmad-cli/templates/5-us-create.qa-assessment.prompt.tpl"
+    qa_system: "./scripts/bmad-cli/templates/5-us-create.qa-assessment.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
