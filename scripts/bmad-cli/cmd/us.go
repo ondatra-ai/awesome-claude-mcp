@@ -10,14 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewSMCommand(container *app.Container) *cobra.Command {
-	smCmd := &cobra.Command{
-		Use:   "sm",
-		Short: "Story management",
+func NewUSCommand(container *app.Container) *cobra.Command {
+	usCmd := &cobra.Command{
+		Use:   "us",
+		Short: "User story commands",
 	}
 
-	usCreateCmd := &cobra.Command{
-		Use:   "us-create [story-number]",
+	createCmd := &cobra.Command{
+		Use:   "create [story-number]",
 		Short: "Create user story",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,6 +33,6 @@ func NewSMCommand(container *app.Container) *cobra.Command {
 		},
 	}
 
-	smCmd.AddCommand(usCreateCmd)
-	return smCmd
+	usCmd.AddCommand(createCmd)
+	return usCmd
 }

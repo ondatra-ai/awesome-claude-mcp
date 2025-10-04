@@ -19,8 +19,8 @@ func Execute() {
 		Short: "BMAD CLI tool",
 	}
 
-	rootCmd.AddCommand(NewDevCommand(container))
-	rootCmd.AddCommand(NewSMCommand(container))
+	rootCmd.AddCommand(NewPRCommand(container))
+	rootCmd.AddCommand(NewUSCommand(container))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

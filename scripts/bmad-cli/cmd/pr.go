@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewDevCommand(container *app.Container) *cobra.Command {
-	devCmd := &cobra.Command{
-		Use:   "dev",
-		Short: "Developer persona",
+func NewPRCommand(container *app.Container) *cobra.Command {
+	prCmd := &cobra.Command{
+		Use:   "pr",
+		Short: "Pull request commands",
 	}
 
-	prTriageCmd := &cobra.Command{
-		Use:   "pr-triage",
+	triageCmd := &cobra.Command{
+		Use:   "triage",
 		Short: "Run PR triage",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, stop := signal.NotifyContext(context.Background(),
@@ -26,7 +26,7 @@ func NewDevCommand(container *app.Container) *cobra.Command {
 			defer stop()
 
 			engineType := container.Config.GetString("engine.type")
-			fmt.Fprintf(os.Stderr, "bmad-cli dev pr-triage engine: %s\n", engineType)
+			fmt.Fprintf(os.Stderr, "bmad-cli pr triage engine: %s\n", engineType)
 
 			err := container.PRTriageCmd.Execute(ctx)
 
@@ -40,6 +40,6 @@ func NewDevCommand(container *app.Container) *cobra.Command {
 		},
 	}
 
-	devCmd.AddCommand(prTriageCmd)
-	return devCmd
+	prCmd.AddCommand(triageCmd)
+	return prCmd
 }

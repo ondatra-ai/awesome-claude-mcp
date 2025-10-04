@@ -48,7 +48,7 @@ Since this is a new repository without code, common setup tasks will depend on t
 
 ### BMAD CLI Usage
 **CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
-- Build and run: `go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli sm us-create 3.1`
+- Build and run: `go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli us create 3.1`
 - Use 10-minute timeout (600 seconds) for story generation commands that involve AI processing
 - This ensures proper path resolution for config files and tmp directories
 
