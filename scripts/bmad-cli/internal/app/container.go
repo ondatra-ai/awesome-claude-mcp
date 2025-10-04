@@ -15,7 +15,9 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
+	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/shell"
+	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
 )
@@ -57,8 +59,11 @@ func NewContainer() (*Container, error) {
 	// Setup PR triage command - required for operation
 	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
 
-	// Setup user story implement command - placeholder for future implementation
-	usImplementCmd := commands.NewUSImplementCommand()
+	// Setup user story implement command
+	gitService := git.NewGitService(shellExec)
+	branchManager := git.NewBranchManager(gitService)
+	storyLoader := story.NewStoryLoader(cfg)
+	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader)
 
 	return &Container{
 		Config:         cfg,

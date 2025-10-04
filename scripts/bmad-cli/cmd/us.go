@@ -42,13 +42,16 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 				os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
-			err := container.USImplementCmd.Execute(ctx, args[0])
+			force, _ := cmd.Flags().GetBool("force")
+			err := container.USImplementCmd.Execute(ctx, args[0], force)
 
 			stop()
 
 			return err
 		},
 	}
+
+	implementCmd.Flags().BoolP("force", "f", false, "Force recreate the story branch even if it already exists")
 
 	usCmd.AddCommand(createCmd)
 	usCmd.AddCommand(implementCmd)
