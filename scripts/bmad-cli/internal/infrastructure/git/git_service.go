@@ -81,12 +81,13 @@ func (s *GitService) LocalBranchExists(ctx context.Context, branch string) (bool
 // RemoteBranchExists checks if a branch exists on the remote
 func (s *GitService) RemoteBranchExists(ctx context.Context, branch string) (bool, error) {
 	slog.Debug("Checking if remote branch exists", "branch", branch)
-	_, err := s.shellExec.Run(ctx, "git", "ls-remote", "--heads", "origin", branch)
+	output, err := s.shellExec.Run(ctx, "git", "ls-remote", "--heads", "origin", branch)
 	if err != nil {
 		return false, nil
 	}
-	slog.Debug("Remote branch exists", "branch", branch)
-	return true, nil
+	exists := strings.TrimSpace(output) != ""
+	slog.Debug("Remote branch check result", "branch", branch, "exists", exists)
+	return exists, nil
 }
 
 // IsMainBehindOrigin checks if main branch is behind origin/main
