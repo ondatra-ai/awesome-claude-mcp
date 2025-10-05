@@ -1,4 +1,4 @@
-package epic
+package models
 
 import "bmad-cli/internal/domain/models/story"
 

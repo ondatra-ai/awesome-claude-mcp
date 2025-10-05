@@ -16,13 +16,13 @@ import (
 const lowRiskThreshold = 5
 
 type PRTriageCommand struct {
-	github          ports.GitHubService
+	github          ports.GitHubPort
 	threadProcessor *ai.ThreadProcessor
 	config          *config.ViperConfig
 }
 
 func NewPRTriageCommand(
-	github ports.GitHubService,
+	github ports.GitHubPort,
 	threadProcessor *ai.ThreadProcessor,
 	config *config.ViperConfig,
 ) *PRTriageCommand {

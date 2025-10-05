@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"bmad-cli/internal/common/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 )
 
-// TestingGenerator generates testing requirements for stories using AI
-type TestingGenerator struct {
+// AITestingGenerator generates testing requirements for stories using AI
+type AITestingGenerator struct {
 	aiClient AIClient
 	config   *config.ViperConfig
 }
@@ -25,18 +26,18 @@ type TestingData struct {
 	ArchitectureDocs *docs.ArchitectureDocs
 }
 
-// NewTestingGenerator creates a new testing requirements generator
-func NewTestingGenerator(aiClient AIClient, config *config.ViperConfig) *TestingGenerator {
-	return &TestingGenerator{
+// NewAITestingGenerator creates a new testing requirements generator
+func NewAITestingGenerator(aiClient AIClient, config *config.ViperConfig) *AITestingGenerator {
+	return &AITestingGenerator{
 		aiClient: aiClient,
 		config:   config,
 	}
 }
 
 // GenerateTesting generates comprehensive testing requirements based on story analysis
-func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error) {
+func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error) {
 	// Create AI generator for testing requirements
-	generator := NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
+	generator := ai.NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
 		WithData(func() (TestingData, error) {
 			return TestingData{
 				Story:            &storyDoc.Story,
@@ -62,7 +63,7 @@ func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing")).
 		WithValidator(g.validateTesting)
 
 	// Generate testing requirements
@@ -75,7 +76,7 @@ func (g *TestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.
 }
 
 // loadTestingPrompt loads the testing requirements prompt template
-func (g *TestingGenerator) loadTestingPrompt(data TestingData) (string, error) {
+func (g *AITestingGenerator) loadTestingPrompt(data TestingData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.testing")
 
 	promptLoader := template.NewTemplateLoader[TestingData](templatePath)
@@ -88,7 +89,7 @@ func (g *TestingGenerator) loadTestingPrompt(data TestingData) (string, error) {
 }
 
 // validateTesting validates the generated testing requirements
-func (g *TestingGenerator) validateTesting(testing story.Testing) error {
+func (g *AITestingGenerator) validateTesting(testing story.Testing) error {
 	if testing.TestLocation == "" {
 		return fmt.Errorf("test location cannot be empty")
 	}

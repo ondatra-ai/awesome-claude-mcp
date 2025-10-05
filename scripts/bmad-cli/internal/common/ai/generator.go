@@ -1,4 +1,4 @@
-package services
+package ai
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 )
 
 // AIClient defines the interface for AI communication
+// Note: This duplicates the interface from domain/services for package independence
 type AIClient interface {
 	ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ai.ExecutionMode) (string, error)
 }

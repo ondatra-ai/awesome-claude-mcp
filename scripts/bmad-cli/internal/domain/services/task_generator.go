@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bmad-cli/internal/common/ai"
 	"context"
 	"fmt"
 
@@ -32,7 +33,7 @@ func NewTaskGenerator(aiClient AIClient, config *config.ViperConfig) *AITaskGene
 
 // GenerateTasks generates story tasks using AI based on the story and architecture documents
 func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument) ([]story.Task, error) {
-	return NewAIGenerator[TaskPromptData, []story.Task](ctx, g.aiClient, g.config, storyDoc.Story.ID, "tasks").
+	return ai.NewAIGenerator[TaskPromptData, []story.Task](ctx, g.aiClient, g.config, storyDoc.Story.ID, "tasks").
 		WithData(func() (TaskPromptData, error) {
 			return TaskPromptData{
 				Story: &storyDoc.Story,
@@ -58,7 +59,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(CreateYAMLFileParser[[]story.Task](g.config, storyDoc.Story.ID, "tasks", "tasks")).
+		WithResponseParser(ai.CreateYAMLFileParser[[]story.Task](g.config, storyDoc.Story.ID, "tasks", "tasks")).
 		WithValidator(func(tasks []story.Task) error {
 			if len(tasks) == 0 {
 				return fmt.Errorf("AI generated no tasks")

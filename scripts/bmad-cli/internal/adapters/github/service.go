@@ -7,6 +7,8 @@ import (
 	"bmad-cli/internal/infrastructure/shell"
 )
 
+// GitHubService implements the GitHubPort interface (Hexagonal Architecture adapter)
+// This is the implementation/adapter, not the port interface
 type GitHubService struct {
 	prFetcher      *PRNumberFetcher
 	threadsFetcher *ThreadsFetcher
