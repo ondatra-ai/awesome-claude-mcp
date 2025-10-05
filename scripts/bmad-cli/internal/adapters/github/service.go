@@ -7,30 +7,32 @@ import (
 	"bmad-cli/internal/infrastructure/shell"
 )
 
-type GitHubPort struct {
+// GitHubService implements the GitHubPort interface (Hexagonal Architecture adapter)
+// This is the implementation/adapter, not the port interface
+type GitHubService struct {
 	prFetcher      *PRNumberFetcher
 	threadsFetcher *ThreadsFetcher
 	threadResolver *ThreadResolver
 }
 
-func NewGitHubPort(shell *shell.CommandRunner) *GitHubPort {
+func NewGitHubService(shell *shell.CommandRunner) *GitHubService {
 	client := NewGitHubCLIClient(shell)
 
-	return &GitHubPort{
+	return &GitHubService{
 		prFetcher:      NewPRNumberFetcher(client),
 		threadsFetcher: NewThreadsFetcher(client),
 		threadResolver: NewThreadResolver(client),
 	}
 }
 
-func (s *GitHubPort) GetPRNumber(ctx context.Context) (int, error) {
+func (s *GitHubService) GetPRNumber(ctx context.Context) (int, error) {
 	return s.prFetcher.Fetch(ctx)
 }
 
-func (s *GitHubPort) FetchThreads(ctx context.Context, prNumber int) ([]models.Thread, error) {
+func (s *GitHubService) FetchThreads(ctx context.Context, prNumber int) ([]models.Thread, error) {
 	return s.threadsFetcher.FetchAll(ctx, prNumber)
 }
 
-func (s *GitHubPort) ResolveThread(ctx context.Context, threadID, message string) error {
+func (s *GitHubService) ResolveThread(ctx context.Context, threadID, message string) error {
 	return s.threadResolver.Resolve(ctx, threadID, message)
 }

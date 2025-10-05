@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"bmad-cli/internal/domain/models/epic"
+	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 )
@@ -55,7 +55,7 @@ func (el *EpicLoader) parseStoryNumber(storyNumber string) (int, int, error) {
 	return epicNum, storyNum, nil
 }
 
-func (el *EpicLoader) loadEpicFile(epicNum int) (*epic.EpicDocument, error) {
+func (el *EpicLoader) loadEpicFile(epicNum int) (*models.EpicDocument, error) {
 	filename := fmt.Sprintf("epic-%02d-*.yaml", epicNum)
 	pattern := filepath.Join(el.basePath, filename)
 
@@ -78,7 +78,7 @@ func (el *EpicLoader) loadEpicFile(epicNum int) (*epic.EpicDocument, error) {
 		return nil, fmt.Errorf("failed to read epic file %s: %w", epicFilePath, err)
 	}
 
-	var epicDoc epic.EpicDocument
+	var epicDoc models.EpicDocument
 	if err := yaml.Unmarshal(data, &epicDoc); err != nil {
 		return nil, fmt.Errorf("failed to parse epic YAML from %s: %w", epicFilePath, err)
 	}
