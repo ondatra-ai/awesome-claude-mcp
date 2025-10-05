@@ -1,6 +1,7 @@
-package git
+package handlers
 
 import (
+	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"fmt"
 	"log/slog"
@@ -9,11 +10,11 @@ import (
 // DirtyWorkingTreeHandler checks for uncommitted changes
 type DirtyWorkingTreeHandler struct {
 	BaseBranchHandler
-	gitService *GitService
+	gitService *git.GitService
 }
 
 // NewDirtyWorkingTreeHandler creates a new dirty working tree handler
-func NewDirtyWorkingTreeHandler(gitService *GitService) *DirtyWorkingTreeHandler {
+func NewDirtyWorkingTreeHandler(gitService *git.GitService) *DirtyWorkingTreeHandler {
 	return &DirtyWorkingTreeHandler{
 		gitService: gitService,
 	}

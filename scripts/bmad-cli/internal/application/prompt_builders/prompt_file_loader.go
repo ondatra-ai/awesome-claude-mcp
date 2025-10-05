@@ -1,4 +1,4 @@
-package prompts
+package prompt_builders
 
 import (
 	"fmt"
@@ -6,15 +6,17 @@ import (
 	"path/filepath"
 )
 
-type TemplateLoader struct {
+// PromptFileLoader loads raw prompt template files and checklists from disk
+// This is distinct from infrastructure/template.TemplateLoader which executes Go templates
+type PromptFileLoader struct {
 	basePath string
 }
 
-func NewTemplateLoader(basePath string) *TemplateLoader {
-	return &TemplateLoader{basePath: basePath}
+func NewPromptFileLoader(basePath string) *PromptFileLoader {
+	return &PromptFileLoader{basePath: basePath}
 }
 
-func (l *TemplateLoader) LoadTemplate(templatePath string) (string, error) {
+func (l *PromptFileLoader) LoadTemplate(templatePath string) (string, error) {
 	tplPath := filepath.FromSlash(templatePath)
 	if !filepath.IsAbs(tplPath) && l.basePath != "" {
 		tplPath = filepath.Join(l.basePath, tplPath)
@@ -28,7 +30,7 @@ func (l *TemplateLoader) LoadTemplate(templatePath string) (string, error) {
 	return string(tplBytes), nil
 }
 
-func (l *TemplateLoader) LoadChecklist(checklistPath string) (string, error) {
+func (l *PromptFileLoader) LoadChecklist(checklistPath string) (string, error) {
 	if checklistPath == "" {
 		return "", nil
 	}
