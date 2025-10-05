@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bmad-cli/internal/common/ai"
 	"context"
 	"fmt"
 	"strings"
@@ -11,8 +12,8 @@ import (
 	"bmad-cli/internal/infrastructure/template"
 )
 
-// ScenariosGenerator generates test scenarios for stories using AI
-type ScenariosGenerator struct {
+// AIScenariosGenerator generates test scenarios for stories using AI
+type AIScenariosGenerator struct {
 	aiClient AIClient
 	config   *config.ViperConfig
 }
@@ -26,18 +27,18 @@ type ScenariosData struct {
 	ArchitectureDocs *docs.ArchitectureDocs
 }
 
-// NewScenariosGenerator creates a new test scenarios generator
-func NewScenariosGenerator(aiClient AIClient, config *config.ViperConfig) *ScenariosGenerator {
-	return &ScenariosGenerator{
+// NewAIScenariosGenerator creates a new test scenarios generator
+func NewAIScenariosGenerator(aiClient AIClient, config *config.ViperConfig) *AIScenariosGenerator {
+	return &AIScenariosGenerator{
 		aiClient: aiClient,
 		config:   config,
 	}
 }
 
 // GenerateScenarios generates comprehensive test scenarios in Given-When-Then format
-func (g *ScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument) (story.Scenarios, error) {
+func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument) (story.Scenarios, error) {
 	// Create AI generator for test scenarios
-	generator := NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
+	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
 		WithData(func() (ScenariosData, error) {
 			return ScenariosData{
 				Story:            &storyDoc.Story,
@@ -64,7 +65,7 @@ func (g *ScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *st
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios")).
 		WithValidator(g.validateScenarios(storyDoc.Story.AcceptanceCriteria))
 
 	// Generate test scenarios
@@ -77,7 +78,7 @@ func (g *ScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *st
 }
 
 // loadScenariosPrompt loads the test scenarios prompt template
-func (g *ScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, error) {
+func (g *AIScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.scenarios")
 
 	promptLoader := template.NewTemplateLoader[ScenariosData](templatePath)
@@ -90,7 +91,7 @@ func (g *ScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, er
 }
 
 // validateScenarios validates the generated test scenarios
-func (g *ScenariosGenerator) validateScenarios(acceptanceCriteria []story.AcceptanceCriterion) func(story.Scenarios) error {
+func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.AcceptanceCriterion) func(story.Scenarios) error {
 	return func(scenarios story.Scenarios) error {
 		if len(scenarios.TestScenarios) == 0 {
 			return fmt.Errorf("at least one test scenario must be specified")

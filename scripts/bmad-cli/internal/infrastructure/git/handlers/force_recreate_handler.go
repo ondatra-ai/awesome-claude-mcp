@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"log/slog"
 )
@@ -9,11 +8,11 @@ import (
 // ForceRecreateHandler handles the --force flag to recreate branches
 type ForceRecreateHandler struct {
 	BaseBranchHandler
-	gitService *git.GitService
+	gitService GitService
 }
 
 // NewForceRecreateHandler creates a new force recreate handler
-func NewForceRecreateHandler(gitService *git.GitService) *ForceRecreateHandler {
+func NewForceRecreateHandler(gitService GitService) *ForceRecreateHandler {
 	return &ForceRecreateHandler{
 		gitService: gitService,
 	}

@@ -7,30 +7,30 @@ import (
 	"bmad-cli/internal/infrastructure/shell"
 )
 
-type GitHubService struct {
+type GitHubPort struct {
 	prFetcher      *PRNumberFetcher
 	threadsFetcher *ThreadsFetcher
 	threadResolver *ThreadResolver
 }
 
-func NewGitHubService(shell *shell.CommandRunner) *GitHubService {
+func NewGitHubPort(shell *shell.CommandRunner) *GitHubPort {
 	client := NewGitHubCLIClient(shell)
 
-	return &GitHubService{
+	return &GitHubPort{
 		prFetcher:      NewPRNumberFetcher(client),
 		threadsFetcher: NewThreadsFetcher(client),
 		threadResolver: NewThreadResolver(client),
 	}
 }
 
-func (s *GitHubService) GetPRNumber(ctx context.Context) (int, error) {
+func (s *GitHubPort) GetPRNumber(ctx context.Context) (int, error) {
 	return s.prFetcher.Fetch(ctx)
 }
 
-func (s *GitHubService) FetchThreads(ctx context.Context, prNumber int) ([]models.Thread, error) {
+func (s *GitHubPort) FetchThreads(ctx context.Context, prNumber int) ([]models.Thread, error) {
 	return s.threadsFetcher.FetchAll(ctx, prNumber)
 }
 
-func (s *GitHubService) ResolveThread(ctx context.Context, threadID, message string) error {
+func (s *GitHubPort) ResolveThread(ctx context.Context, threadID, message string) error {
 	return s.threadResolver.Resolve(ctx, threadID, message)
 }

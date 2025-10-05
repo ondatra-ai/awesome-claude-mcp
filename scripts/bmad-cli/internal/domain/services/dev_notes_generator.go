@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"bmad-cli/internal/common/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
@@ -33,7 +34,7 @@ func NewDevNotesGenerator(aiClient AIClient, config *config.ViperConfig) *AIDevN
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
 func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error) {
-	return NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, g.config, storyDoc.Story.ID, "devnotes").
+	return ai.NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, g.config, storyDoc.Story.ID, "devnotes").
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
 				Story: &storyDoc.Story,
@@ -60,7 +61,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes")).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }

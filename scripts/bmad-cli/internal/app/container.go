@@ -39,7 +39,7 @@ func NewContainer() (*Container, error) {
 
 	shellExec := shell.NewCommandRunner()
 
-	githubService := github.NewGitHubService(shellExec)
+	githubService := github.NewGitHubPort(shellExec)
 
 	// Setup user story creation dependencies
 	epicLoader := epic.NewEpicLoader(cfg)
@@ -80,7 +80,7 @@ func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeC
 	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 }
 
-func createPRTriageCommand(githubService *github.GitHubService, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig) *commands.PRTriageCommand {
+func createPRTriageCommand(githubService *github.GitHubPort, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig) *commands.PRTriageCommand {
 	// Create prompt dependencies
 	templateEngine := prompt_builders.NewTemplateEngine()
 	yamlParser := prompt_builders.NewYAMLParser()

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"fmt"
 	"log/slog"
@@ -10,11 +9,11 @@ import (
 // MainBehindOriginHandler checks if main is behind origin/main
 type MainBehindOriginHandler struct {
 	BaseBranchHandler
-	gitService *git.GitService
+	gitService GitService
 }
 
 // NewMainBehindOriginHandler creates a new handler
-func NewMainBehindOriginHandler(gitService *git.GitService) *MainBehindOriginHandler {
+func NewMainBehindOriginHandler(gitService GitService) *MainBehindOriginHandler {
 	return &MainBehindOriginHandler{
 		gitService: gitService,
 	}

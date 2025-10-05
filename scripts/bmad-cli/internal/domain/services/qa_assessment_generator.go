@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bmad-cli/internal/common/ai"
 	"context"
 	"fmt"
 	"regexp"
@@ -13,8 +14,8 @@ import (
 	"bmad-cli/internal/infrastructure/template"
 )
 
-// QAAssessmentGenerator generates QA results for stories using AI
-type QAAssessmentGenerator struct {
+// AIQAAssessmentGenerator generates QA results for stories using AI
+type AIQAAssessmentGenerator struct {
 	aiClient AIClient
 	config   *config.ViperConfig
 }
@@ -27,18 +28,18 @@ type QAAssessmentData struct {
 	ArchitectureDocs *docs.ArchitectureDocs
 }
 
-// NewQAAssessmentGenerator creates a new QA assessment generator
-func NewQAAssessmentGenerator(aiClient AIClient, config *config.ViperConfig) *QAAssessmentGenerator {
-	return &QAAssessmentGenerator{
+// NewAIQAAssessmentGenerator creates a new QA assessment generator
+func NewAIQAAssessmentGenerator(aiClient AIClient, config *config.ViperConfig) *AIQAAssessmentGenerator {
+	return &AIQAAssessmentGenerator{
 		aiClient: aiClient,
 		config:   config,
 	}
 }
 
 // GenerateQAResults generates comprehensive QA results following Quinn persona
-func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error) {
+func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error) {
 	// Create AI generator for QA assessment
-	generator := NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
+	generator := ai.NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
 		WithData(func() (QAAssessmentData, error) {
 			return QAAssessmentData{
 				Story:            &storyDoc.Story,
@@ -64,7 +65,7 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results")).
 		WithValidator(g.validateQAResults)
 
 	// Generate QA results
@@ -86,7 +87,7 @@ func (g *QAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc 
 }
 
 // loadQAPrompt loads the QA assessment prompt template
-func (g *QAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, error) {
+func (g *AIQAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.qa")
 
 	promptLoader := template.NewTemplateLoader[QAAssessmentData](templatePath)
@@ -99,7 +100,7 @@ func (g *QAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, err
 }
 
 // validateQAResults validates the generated QA results
-func (g *QAAssessmentGenerator) validateQAResults(qaResults story.QAResults) error {
+func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) error {
 	if qaResults.Assessment.Summary == "" {
 		return fmt.Errorf("assessment summary cannot be empty")
 	}

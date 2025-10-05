@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"log/slog"
 )
@@ -9,11 +8,11 @@ import (
 // LocalBranchExistsHandler checks if the branch exists locally and switches to it
 type LocalBranchExistsHandler struct {
 	BaseBranchHandler
-	gitService *git.GitService
+	gitService GitService
 }
 
 // NewLocalBranchExistsHandler creates a new handler
-func NewLocalBranchExistsHandler(gitService *git.GitService) *LocalBranchExistsHandler {
+func NewLocalBranchExistsHandler(gitService GitService) *LocalBranchExistsHandler {
 	return &LocalBranchExistsHandler{
 		gitService: gitService,
 	}
