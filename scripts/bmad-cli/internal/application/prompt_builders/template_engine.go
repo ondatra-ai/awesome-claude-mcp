@@ -1,4 +1,4 @@
-package prompts
+package prompt_builders
 
 import (
 	"bytes"
@@ -10,11 +10,11 @@ import (
 )
 
 type TemplateEngine struct {
-	loader *TemplateLoader
+	loader *PromptFileLoader
 }
 
 func NewTemplateEngine() *TemplateEngine {
-	loader := NewTemplateLoader("")
+	loader := NewPromptFileLoader("")
 	return &TemplateEngine{loader: loader}
 }
 

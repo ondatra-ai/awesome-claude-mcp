@@ -1,4 +1,4 @@
-package prompts
+package prompt_builders
 
 import (
 	"bmad-cli/internal/domain/models"

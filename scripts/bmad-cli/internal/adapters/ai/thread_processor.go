@@ -6,24 +6,24 @@ import (
 	"log/slog"
 	"strings"
 
-	"bmad-cli/internal/application/prompts"
+	"bmad-cli/internal/application/prompt_builders"
 	"bmad-cli/internal/common/errors"
 	"bmad-cli/internal/domain/models"
 )
 
 type ThreadProcessor struct {
 	client                *ClaudeClient
-	heuristicBuilder      *prompts.HeuristicPromptBuilder
-	implementationBuilder *prompts.ImplementationPromptBuilder
-	yamlParser            *prompts.YAMLParser
+	heuristicBuilder      *prompt_builders.HeuristicPromptBuilder
+	implementationBuilder *prompt_builders.ImplementationPromptBuilder
+	yamlParser            *prompt_builders.YAMLParser
 	modeFactory           *ModeFactory
 }
 
 func NewThreadProcessor(
 	client *ClaudeClient,
-	heuristicBuilder *prompts.HeuristicPromptBuilder,
-	implementationBuilder *prompts.ImplementationPromptBuilder,
-	yamlParser *prompts.YAMLParser,
+	heuristicBuilder *prompt_builders.HeuristicPromptBuilder,
+	implementationBuilder *prompt_builders.ImplementationPromptBuilder,
+	yamlParser *prompt_builders.YAMLParser,
 	modeFactory *ModeFactory,
 ) *ThreadProcessor {
 	return &ThreadProcessor{

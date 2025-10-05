@@ -1,6 +1,7 @@
-package git
+package handlers
 
 import (
+	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"log/slog"
 )
@@ -8,11 +9,11 @@ import (
 // RemoteBranchExistsHandler checks if the branch exists on remote and checks it out
 type RemoteBranchExistsHandler struct {
 	BaseBranchHandler
-	gitService *GitService
+	gitService *git.GitService
 }
 
 // NewRemoteBranchExistsHandler creates a new handler
-func NewRemoteBranchExistsHandler(gitService *GitService) *RemoteBranchExistsHandler {
+func NewRemoteBranchExistsHandler(gitService *git.GitService) *RemoteBranchExistsHandler {
 	return &RemoteBranchExistsHandler{
 		gitService: gitService,
 	}

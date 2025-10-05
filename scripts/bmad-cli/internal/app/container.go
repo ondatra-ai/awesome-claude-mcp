@@ -10,7 +10,7 @@ import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/application/commands"
-	"bmad-cli/internal/application/prompts"
+	"bmad-cli/internal/application/prompt_builders"
 	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
@@ -82,10 +82,10 @@ func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeC
 
 func createPRTriageCommand(githubService *github.GitHubService, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig) *commands.PRTriageCommand {
 	// Create prompt dependencies
-	templateEngine := prompts.NewTemplateEngine()
-	yamlParser := prompts.NewYAMLParser()
-	heuristicBuilder := prompts.NewHeuristicPromptBuilder(templateEngine, cfg)
-	implementationBuilder := prompts.NewImplementationPromptBuilder(templateEngine, cfg)
+	templateEngine := prompt_builders.NewTemplateEngine()
+	yamlParser := prompt_builders.NewYAMLParser()
+	heuristicBuilder := prompt_builders.NewHeuristicPromptBuilder(templateEngine, cfg)
+	implementationBuilder := prompt_builders.NewImplementationPromptBuilder(templateEngine, cfg)
 	modeFactory := ai.NewModeFactory(cfg)
 
 	// Create thread processor with all AI-related dependencies

@@ -1,4 +1,5 @@
-package git
+package handlers
+import "bmad-cli/internal/infrastructure/git"
 
 import "context"
 

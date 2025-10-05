@@ -1,6 +1,7 @@
-package git
+package handlers
 
 import (
+	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"fmt"
 	"log/slog"
@@ -9,11 +10,11 @@ import (
 // GitRepoCheckHandler validates that the current directory is a git repository
 type GitRepoCheckHandler struct {
 	BaseBranchHandler
-	gitService *GitService
+	gitService *git.GitService
 }
 
 // NewGitRepoCheckHandler creates a new git repository check handler
-func NewGitRepoCheckHandler(gitService *GitService) *GitRepoCheckHandler {
+func NewGitRepoCheckHandler(gitService *git.GitService) *GitRepoCheckHandler {
 	return &GitRepoCheckHandler{
 		gitService: gitService,
 	}

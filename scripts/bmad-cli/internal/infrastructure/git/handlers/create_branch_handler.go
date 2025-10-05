@@ -1,6 +1,7 @@
-package git
+package handlers
 
 import (
+	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"log/slog"
 )
@@ -8,11 +9,11 @@ import (
 // CreateBranchHandler creates a new branch as the final handler in the chain
 type CreateBranchHandler struct {
 	BaseBranchHandler
-	gitService *GitService
+	gitService *git.GitService
 }
 
 // NewCreateBranchHandler creates a new handler
-func NewCreateBranchHandler(gitService *GitService) *CreateBranchHandler {
+func NewCreateBranchHandler(gitService *git.GitService) *CreateBranchHandler {
 	return &CreateBranchHandler{
 		gitService: gitService,
 	}

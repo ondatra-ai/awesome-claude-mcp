@@ -1,6 +1,7 @@
-package git
+package handlers
 
 import (
+	"bmad-cli/internal/infrastructure/git"
 	"context"
 	"fmt"
 	"log/slog"
@@ -9,11 +10,11 @@ import (
 // DetachedHeadHandler prevents operations on detached HEAD state
 type DetachedHeadHandler struct {
 	BaseBranchHandler
-	gitService *GitService
+	gitService *git.GitService
 }
 
 // NewDetachedHeadHandler creates a new detached HEAD handler
-func NewDetachedHeadHandler(gitService *GitService) *DetachedHeadHandler {
+func NewDetachedHeadHandler(gitService *git.GitService) *DetachedHeadHandler {
 	return &DetachedHeadHandler{
 		gitService: gitService,
 	}
