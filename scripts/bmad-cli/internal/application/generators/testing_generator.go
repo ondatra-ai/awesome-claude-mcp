@@ -1,6 +1,7 @@
-package services
+package generators
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"fmt"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 // AITestingGenerator generates testing requirements for stories using AI
 type AITestingGenerator struct {
-	aiClient AIClient
+	aiClient ports.AIClient
 	config   *config.ViperConfig
 }
 
@@ -27,7 +28,7 @@ type TestingData struct {
 }
 
 // NewAITestingGenerator creates a new testing requirements generator
-func NewAITestingGenerator(aiClient AIClient, config *config.ViperConfig) *AITestingGenerator {
+func NewAITestingGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AITestingGenerator {
 	return &AITestingGenerator{
 		aiClient: aiClient,
 		config:   config,

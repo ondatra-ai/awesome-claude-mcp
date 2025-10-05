@@ -10,8 +10,8 @@ import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/application/commands"
+	"bmad-cli/internal/application/factories"
 	"bmad-cli/internal/application/prompt_builders"
-	"bmad-cli/internal/domain/services"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
@@ -74,7 +74,7 @@ func NewContainer() (*Container, error) {
 }
 
 func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *commands.USCreateCommand {
-	storyFactory := services.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
+	storyFactory := factories.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
 	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
 	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
 	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)

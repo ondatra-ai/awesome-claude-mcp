@@ -1,6 +1,7 @@
-package services
+package generators
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/common/ai"
 	"context"
 	"fmt"
@@ -14,7 +15,7 @@ import (
 
 // AIScenariosGenerator generates test scenarios for stories using AI
 type AIScenariosGenerator struct {
-	aiClient AIClient
+	aiClient ports.AIClient
 	config   *config.ViperConfig
 }
 
@@ -28,7 +29,7 @@ type ScenariosData struct {
 }
 
 // NewAIScenariosGenerator creates a new test scenarios generator
-func NewAIScenariosGenerator(aiClient AIClient, config *config.ViperConfig) *AIScenariosGenerator {
+func NewAIScenariosGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AIScenariosGenerator {
 	return &AIScenariosGenerator{
 		aiClient: aiClient,
 		config:   config,

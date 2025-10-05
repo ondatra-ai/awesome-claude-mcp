@@ -1,4 +1,4 @@
-package services
+package factories
 
 import (
 	"context"
@@ -7,7 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"bmad-cli/internal/application/generators"
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
@@ -35,12 +37,12 @@ type TestingRequirementsGenerator interface {
 
 type StoryFactory struct {
 	epicLoader         *epic.EpicLoader
-	aiClient           AIClient
+	aiClient           ports.AIClient
 	config             *config.ViperConfig
 	architectureLoader *docs.ArchitectureLoader
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient AIClient, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIClient, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,
@@ -83,11 +85,11 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	}
 
 	// Create generators
-	taskGenerator := NewTaskGenerator(f.aiClient, f.config)
-	devNotesGenerator := NewDevNotesGenerator(f.aiClient, f.config)
-	testingGenerator := NewAITestingGenerator(f.aiClient, f.config)
-	scenariosGenerator := NewAIScenariosGenerator(f.aiClient, f.config)
-	qaResultsGenerator := NewAIQAAssessmentGenerator(f.aiClient, f.config)
+	taskGenerator := generators.NewTaskGenerator(f.aiClient, f.config)
+	devNotesGenerator := generators.NewDevNotesGenerator(f.aiClient, f.config)
+	testingGenerator := generators.NewAITestingGenerator(f.aiClient, f.config)
+	scenariosGenerator := generators.NewAIScenariosGenerator(f.aiClient, f.config)
+	qaResultsGenerator := generators.NewAIQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc)
