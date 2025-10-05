@@ -133,7 +133,7 @@ func (s *GitService) CheckoutRemoteBranch(ctx context.Context, branch string) er
 	return nil
 }
 
-// CreateBranch creates a new branch from the current HEAD
+// CreateBranch creates a new branch from the current HEAD and pushes it to remote
 func (s *GitService) CreateBranch(ctx context.Context, branch string) error {
 	slog.Info("Creating new branch", "branch", branch)
 	_, err := s.shellExec.Run(ctx, "git", "switch", "-c", branch)
@@ -141,6 +141,23 @@ func (s *GitService) CreateBranch(ctx context.Context, branch string) error {
 		return fmt.Errorf("failed to create branch %s: %w", branch, err)
 	}
 	slog.Info("Successfully created branch", "branch", branch)
+
+	// Push to remote immediately
+	if err := s.PushBranch(ctx, branch); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// PushBranch pushes a branch to remote with tracking
+func (s *GitService) PushBranch(ctx context.Context, branch string) error {
+	slog.Info("Pushing branch to remote", "branch", branch)
+	_, err := s.shellExec.Run(ctx, "git", "push", "-u", "origin", branch)
+	if err != nil {
+		return fmt.Errorf("failed to push branch %s: %w", branch, err)
+	}
+	slog.Info("Successfully pushed branch to remote", "branch", branch)
 	return nil
 }
 
