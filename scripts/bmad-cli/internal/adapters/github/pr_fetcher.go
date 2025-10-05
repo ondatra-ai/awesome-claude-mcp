@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"bmad-cli/internal/common/errors"
+	"bmad-cli/internal/pkg/errors"
 )
 
 type PRNumberFetcher struct {

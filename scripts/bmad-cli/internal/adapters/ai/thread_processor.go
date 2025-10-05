@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"bmad-cli/internal/application/prompt_builders"
-	"bmad-cli/internal/common/errors"
+	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 )
 

@@ -2,7 +2,7 @@ package generators
 
 import (
 	"bmad-cli/internal/domain/ports"
-	"bmad-cli/internal/common/ai"
+	"bmad-cli/internal/pkg/ai"
 	"context"
 	"fmt"
 	"strings"

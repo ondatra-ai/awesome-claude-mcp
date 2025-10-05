@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"bmad-cli/internal/adapters/ai"
-	"bmad-cli/internal/common/errors"
+	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"

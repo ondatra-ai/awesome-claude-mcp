@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"bmad-cli/internal/common/ai"
+	"bmad-cli/internal/pkg/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
