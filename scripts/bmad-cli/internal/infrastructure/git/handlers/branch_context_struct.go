@@ -1,16 +1,5 @@
 package handlers
 
-// BranchAction represents the action to be taken on the branch
-type BranchAction int
-
-const (
-	ActionNone BranchAction = iota
-	ActionCreate
-	ActionSwitch
-	ActionCheckout
-	ActionForceRecreate
-)
-
 // BranchContext holds the state and configuration for branch operations
 type BranchContext struct {
 	StoryNumber    string

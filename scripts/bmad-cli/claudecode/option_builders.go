@@ -1,43 +1,6 @@
 package claudecode
 
-import (
-	"bmad-cli/claudecode/internal/shared"
-)
-
-// Options contains configuration for Claude Code CLI interactions.
-type Options = shared.Options
-
-// PermissionMode defines the permission handling mode.
-type PermissionMode = shared.PermissionMode
-
-// McpServerType defines the type of MCP server.
-type McpServerType = shared.McpServerType
-
-// McpServerConfig represents an MCP server configuration.
-type McpServerConfig = shared.McpServerConfig
-
-// McpStdioServerConfig represents a stdio MCP server configuration.
-type McpStdioServerConfig = shared.McpStdioServerConfig
-
-// McpSSEServerConfig represents an SSE MCP server configuration.
-type McpSSEServerConfig = shared.McpSSEServerConfig
-
-// McpHTTPServerConfig represents an HTTP MCP server configuration.
-type McpHTTPServerConfig = shared.McpHTTPServerConfig
-
-// Re-export constants
-const (
-	PermissionModeDefault           = shared.PermissionModeDefault
-	PermissionModeAcceptEdits       = shared.PermissionModeAcceptEdits
-	PermissionModePlan              = shared.PermissionModePlan
-	PermissionModeBypassPermissions = shared.PermissionModeBypassPermissions
-	McpServerTypeStdio              = shared.McpServerTypeStdio
-	McpServerTypeSSE                = shared.McpServerTypeSSE
-	McpServerTypeHTTP               = shared.McpServerTypeHTTP
-)
-
-// Option configures Options using the functional options pattern.
-type Option func(*Options)
+const customTransportMarker = "custom_transport"
 
 // WithAllowedTools sets the allowed tools list.
 func WithAllowedTools(tools ...string) Option {
@@ -158,8 +121,6 @@ func WithCLIPath(path string) Option {
 	}
 }
 
-const customTransportMarker = "custom_transport"
-
 // WithTransport sets a custom transport for testing.
 // Since Transport is not part of Options struct, this is handled in client creation.
 func WithTransport(_ Transport) Option {
@@ -172,17 +133,4 @@ func WithTransport(_ Transport) Option {
 		marker := customTransportMarker
 		o.ExtraArgs["__transport_marker__"] = &marker
 	}
-}
-
-// NewOptions creates Options with default values using functional options pattern.
-func NewOptions(opts ...Option) *Options {
-	// Create options with defaults from shared package
-	options := shared.NewOptions()
-
-	// Apply functional options
-	for _, opt := range opts {
-		opt(options)
-	}
-
-	return options
 }
