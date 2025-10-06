@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"bmad-cli/internal/common/errors"
+	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 )
 

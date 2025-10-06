@@ -1,7 +1,8 @@
-package services
+package generators
 
 import (
-	"bmad-cli/internal/common/ai"
+	"bmad-cli/internal/domain/ports"
+	"bmad-cli/internal/pkg/ai"
 	"context"
 	"fmt"
 
@@ -19,12 +20,12 @@ type TaskPromptData struct {
 
 // AITaskGenerator generates story tasks using AI based on templates
 type AITaskGenerator struct {
-	aiClient AIClient
+	aiClient ports.AIClient
 	config   *config.ViperConfig
 }
 
 // NewTaskGenerator creates a new AITaskGenerator instance
-func NewTaskGenerator(aiClient AIClient, config *config.ViperConfig) *AITaskGenerator {
+func NewTaskGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AITaskGenerator {
 	return &AITaskGenerator{
 		aiClient: aiClient,
 		config:   config,

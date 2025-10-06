@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"bmad-cli/internal/common/errors"
+	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/infrastructure/shell"
 )

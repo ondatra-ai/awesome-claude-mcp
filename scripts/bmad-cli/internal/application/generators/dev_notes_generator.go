@@ -1,10 +1,11 @@
-package services
+package generators
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"fmt"
 
-	"bmad-cli/internal/common/ai"
+	"bmad-cli/internal/pkg/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
@@ -20,12 +21,12 @@ type DevNotesPromptData struct {
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
 type AIDevNotesGenerator struct {
-	aiClient AIClient
+	aiClient ports.AIClient
 	config   *config.ViperConfig
 }
 
 // NewDevNotesGenerator creates a new AIDevNotesGenerator instance
-func NewDevNotesGenerator(aiClient AIClient, config *config.ViperConfig) *AIDevNotesGenerator {
+func NewDevNotesGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AIDevNotesGenerator {
 	return &AIDevNotesGenerator{
 		aiClient: aiClient,
 		config:   config,

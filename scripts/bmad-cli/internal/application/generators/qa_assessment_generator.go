@@ -1,7 +1,8 @@
-package services
+package generators
 
 import (
-	"bmad-cli/internal/common/ai"
+	"bmad-cli/internal/domain/ports"
+	"bmad-cli/internal/pkg/ai"
 	"context"
 	"fmt"
 	"regexp"
@@ -16,7 +17,7 @@ import (
 
 // AIQAAssessmentGenerator generates QA results for stories using AI
 type AIQAAssessmentGenerator struct {
-	aiClient AIClient
+	aiClient ports.AIClient
 	config   *config.ViperConfig
 }
 
@@ -29,7 +30,7 @@ type QAAssessmentData struct {
 }
 
 // NewAIQAAssessmentGenerator creates a new QA assessment generator
-func NewAIQAAssessmentGenerator(aiClient AIClient, config *config.ViperConfig) *AIQAAssessmentGenerator {
+func NewAIQAAssessmentGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AIQAAssessmentGenerator {
 	return &AIQAAssessmentGenerator{
 		aiClient: aiClient,
 		config:   config,

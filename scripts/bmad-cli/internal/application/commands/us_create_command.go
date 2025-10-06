@@ -7,18 +7,18 @@ import (
 	"os"
 	"regexp"
 
-	"bmad-cli/internal/domain/services"
+	"bmad-cli/internal/application/factories"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
 )
 
 type USCreateCommand struct {
-	factory   *services.StoryFactory
+	factory   *factories.StoryFactory
 	loader    *template.TemplateLoader[*template.FlattenedStoryData]
 	validator *validation.YamaleValidator
 }
 
-func NewUSCreateCommand(factory *services.StoryFactory, loader *template.TemplateLoader[*template.FlattenedStoryData], validator *validation.YamaleValidator) *USCreateCommand {
+func NewUSCreateCommand(factory *factories.StoryFactory, loader *template.TemplateLoader[*template.FlattenedStoryData], validator *validation.YamaleValidator) *USCreateCommand {
 	return &USCreateCommand{
 		factory:   factory,
 		loader:    loader,
