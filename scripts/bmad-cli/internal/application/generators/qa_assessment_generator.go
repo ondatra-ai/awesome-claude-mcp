@@ -17,7 +17,7 @@ import (
 
 // AIQAAssessmentGenerator generates QA results for stories using AI
 type AIQAAssessmentGenerator struct {
-	aiClient ports.AIClient
+	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
@@ -30,7 +30,7 @@ type QAAssessmentData struct {
 }
 
 // NewAIQAAssessmentGenerator creates a new QA assessment generator
-func NewAIQAAssessmentGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AIQAAssessmentGenerator {
+func NewAIQAAssessmentGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AIQAAssessmentGenerator {
 	return &AIQAAssessmentGenerator{
 		aiClient: aiClient,
 		config:   config,

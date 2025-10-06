@@ -20,12 +20,12 @@ type TaskPromptData struct {
 
 // AITaskGenerator generates story tasks using AI based on templates
 type AITaskGenerator struct {
-	aiClient ports.AIClient
+	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
 // NewTaskGenerator creates a new AITaskGenerator instance
-func NewTaskGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AITaskGenerator {
+func NewTaskGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AITaskGenerator {
 	return &AITaskGenerator{
 		aiClient: aiClient,
 		config:   config,

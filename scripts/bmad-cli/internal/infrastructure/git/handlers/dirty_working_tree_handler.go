@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // DirtyWorkingTreeHandler checks for uncommitted changes
 type DirtyWorkingTreeHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewDirtyWorkingTreeHandler creates a new dirty working tree handler
-func NewDirtyWorkingTreeHandler(gitService GitService) *DirtyWorkingTreeHandler {
+func NewDirtyWorkingTreeHandler(gitService ports.GitPort) *DirtyWorkingTreeHandler {
 	return &DirtyWorkingTreeHandler{
 		gitService: gitService,
 	}
