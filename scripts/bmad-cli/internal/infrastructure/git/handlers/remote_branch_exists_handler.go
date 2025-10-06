@@ -3,16 +3,17 @@ package handlers
 import (
 	"context"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // RemoteBranchExistsHandler checks if the branch exists on remote and checks it out
 type RemoteBranchExistsHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewRemoteBranchExistsHandler creates a new handler
-func NewRemoteBranchExistsHandler(gitService GitService) *RemoteBranchExistsHandler {
+func NewRemoteBranchExistsHandler(gitService ports.GitPort) *RemoteBranchExistsHandler {
 	return &RemoteBranchExistsHandler{
 		gitService: gitService,
 	}

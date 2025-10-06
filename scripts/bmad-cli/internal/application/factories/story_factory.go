@@ -37,12 +37,12 @@ type TestingRequirementsGenerator interface {
 
 type StoryFactory struct {
 	epicLoader         *epic.EpicLoader
-	aiClient           ports.AIClient
+	aiClient           ports.AIPort
 	config             *config.ViperConfig
 	architectureLoader *docs.ArchitectureLoader
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIClient, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,

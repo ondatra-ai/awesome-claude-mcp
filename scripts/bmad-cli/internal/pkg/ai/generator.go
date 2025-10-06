@@ -7,21 +7,16 @@ import (
 	"os"
 
 	"bmad-cli/internal/adapters/ai"
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 
 	"gopkg.in/yaml.v3"
 )
 
-// AIClient defines the interface for AI communication
-// Note: This duplicates the interface from domain/services for package independence
-type AIClient interface {
-	ExecutePromptWithSystem(ctx context.Context, systemPrompt string, userPrompt string, model string, mode ai.ExecutionMode) (string, error)
-}
-
 // AIGenerator is a generic AI content generator with builder pattern
 type AIGenerator[T1 any, T2 any] struct {
 	ctx            context.Context
-	aiClient       AIClient
+	aiClient       ports.AIPort
 	config         *config.ViperConfig
 	storyID        string
 	filePrefix     string
@@ -34,7 +29,7 @@ type AIGenerator[T1 any, T2 any] struct {
 }
 
 // NewAIGenerator creates a new generator instance
-func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient AIClient, config *config.ViperConfig, storyID string, filePrefix string) *AIGenerator[T1, T2] {
+func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient ports.AIPort, config *config.ViperConfig, storyID string, filePrefix string) *AIGenerator[T1, T2] {
 	modeFactory := ai.NewModeFactory(config)
 	return &AIGenerator[T1, T2]{
 		ctx:        ctx,

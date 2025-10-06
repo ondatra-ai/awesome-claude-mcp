@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // MainBehindOriginHandler checks if main is behind origin/main
 type MainBehindOriginHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewMainBehindOriginHandler creates a new handler
-func NewMainBehindOriginHandler(gitService GitService) *MainBehindOriginHandler {
+func NewMainBehindOriginHandler(gitService ports.GitPort) *MainBehindOriginHandler {
 	return &MainBehindOriginHandler{
 		gitService: gitService,
 	}

@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // GitRepoCheckHandler validates that the current directory is a git repository
 type GitRepoCheckHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewGitRepoCheckHandler creates a new git repository check handler
-func NewGitRepoCheckHandler(gitService GitService) *GitRepoCheckHandler {
+func NewGitRepoCheckHandler(gitService ports.GitPort) *GitRepoCheckHandler {
 	return &GitRepoCheckHandler{
 		gitService: gitService,
 	}

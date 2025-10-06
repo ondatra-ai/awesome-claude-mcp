@@ -3,16 +3,18 @@ package handlers
 import (
 	"context"
 	"log/slog"
+
+	"bmad-cli/internal/domain/ports"
 )
 
 // CreateBranchHandler creates a new branch as the final handler in the chain
 type CreateBranchHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewCreateBranchHandler creates a new handler
-func NewCreateBranchHandler(gitService GitService) *CreateBranchHandler {
+func NewCreateBranchHandler(gitService ports.GitPort) *CreateBranchHandler {
 	return &CreateBranchHandler{
 		gitService: gitService,
 	}

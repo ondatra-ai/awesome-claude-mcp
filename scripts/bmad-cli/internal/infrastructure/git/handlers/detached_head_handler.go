@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // DetachedHeadHandler prevents operations on detached HEAD state
 type DetachedHeadHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewDetachedHeadHandler creates a new detached HEAD handler
-func NewDetachedHeadHandler(gitService GitService) *DetachedHeadHandler {
+func NewDetachedHeadHandler(gitService ports.GitPort) *DetachedHeadHandler {
 	return &DetachedHeadHandler{
 		gitService: gitService,
 	}

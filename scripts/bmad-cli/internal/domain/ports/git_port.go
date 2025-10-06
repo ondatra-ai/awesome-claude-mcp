@@ -1,10 +1,10 @@
-package handlers
+package ports
 
 import "context"
 
-// GitService defines the interface for git operations needed by handlers
-// This interface breaks the import cycle between git and git/handlers packages
-type GitService interface {
+// GitPort defines the interface for git operations
+// This port interface represents the contract for git operations in the domain layer
+type GitPort interface {
 	IsGitRepository(ctx context.Context) (bool, error)
 	IsDetachedHead(ctx context.Context) (bool, error)
 	GetCurrentBranch(ctx context.Context) (string, error)

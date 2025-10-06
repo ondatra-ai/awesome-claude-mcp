@@ -3,16 +3,17 @@ package handlers
 import (
 	"context"
 	"log/slog"
+	"bmad-cli/internal/domain/ports"
 )
 
 // LocalBranchExistsHandler checks if the branch exists locally and switches to it
 type LocalBranchExistsHandler struct {
 	BaseBranchHandler
-	gitService GitService
+	gitService ports.GitPort
 }
 
 // NewLocalBranchExistsHandler creates a new handler
-func NewLocalBranchExistsHandler(gitService GitService) *LocalBranchExistsHandler {
+func NewLocalBranchExistsHandler(gitService ports.GitPort) *LocalBranchExistsHandler {
 	return &LocalBranchExistsHandler{
 		gitService: gitService,
 	}

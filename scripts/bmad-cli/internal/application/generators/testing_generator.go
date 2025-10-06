@@ -15,7 +15,7 @@ import (
 
 // AITestingGenerator generates testing requirements for stories using AI
 type AITestingGenerator struct {
-	aiClient ports.AIClient
+	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
@@ -28,7 +28,7 @@ type TestingData struct {
 }
 
 // NewAITestingGenerator creates a new testing requirements generator
-func NewAITestingGenerator(aiClient ports.AIClient, config *config.ViperConfig) *AITestingGenerator {
+func NewAITestingGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AITestingGenerator {
 	return &AITestingGenerator{
 		aiClient: aiClient,
 		config:   config,
