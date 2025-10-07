@@ -20,229 +20,190 @@ story:
       description: "Concurrent connection support"
 
 tasks:
-  - name: "Implement WebSocket server for MCP protocol"
+  - name: "WebSocket Server Setup"
     acceptance_criteria:
       - "AC-1"
     subtasks:
-      - "Set up Go project structure for MCP service following source tree standards"
-      - "Add Fiber framework with WebSocket endpoint /mcp"
-      - "Implement basic WebSocket connection handling with gorilla/websocket"
-      - "Add connection lifecycle management (connect, disconnect, cleanup)"
-      - "Write unit tests for WebSocket server implementation"
-      - "Add integration tests for WebSocket connectivity"
+      - "Initialize Go module structure according to source-tree.md layout"
+      - "Implement WebSocket server using gorilla/websocket with base handlers"
+      - "Add connection lifecycle management (open/close/ping)"
+      - "Implement error handling and logging middleware"
+      - "Write integration tests for WebSocket connectivity"
     status: "pending"
 
-  - name: "Expose HTTP endpoint for MCP discovery"
+  - name: "HTTP Endpoint Implementation"
     acceptance_criteria:
       - "AC-2"
     subtasks:
-      - "Implement /health endpoint for MCP server monitoring"
-      - "Add /version endpoint for protocol version discovery"
-      - "Implement request logging and error handling middleware"
-      - "Set up structured logging with zerolog"
+      - "Create Fiber HTTP server and router setup"
+      - "Implement health check endpoint for monitoring"
+      - "Add MCP protocol version endpoint"
+      - "Configure CORS and security middleware"
       - "Write integration tests for HTTP endpoints"
     status: "pending"
 
-  - name: "Implement message parsing and validation"
+  - name: "Message Parsing & Validation"
     acceptance_criteria:
       - "AC-3"
     subtasks:
-      - "Define message schemas for MCP protocol using structs"
-      - "Implement JSON parsing for incoming messages"
-      - "Add message validation using struct tags"
-      - "Set up error types for validation failures"
-      - "Write unit tests for message parsing"
-      - "Add integration tests for invalid message handling"
+      - "Create MCP message type definitions and validators"
+      - "Implement JSON message parsing and validation"
+      - "Add request/response schema validation"
+      - "Set up structured error responses"
+      - "Write unit tests for message validation"
     status: "pending"
 
-  - name: "Set up MCP response formatting"
+  - name: "Response Formatting"
     acceptance_criteria:
       - "AC-4"
     subtasks:
-      - "Define response message structures per MCP spec"
-      - "Implement response serialization to JSON"
-      - "Add response validation before sending"
-      - "Set up error response formatting"
+      - "Create standardized MCP response formatter"
+      - "Implement success/error message templates"
+      - "Add response headers and metadata handling"
+      - "Set up logging for response tracking"
       - "Write unit tests for response formatting"
     status: "pending"
 
-  - name: "Implement connection management"
+  - name: "Connection Management"
     acceptance_criteria:
       - "AC-5"
     subtasks:
-      - "Set up connection tracking with unique IDs"
-      - "Implement connection timeouts and keepalive"
-      - "Add graceful shutdown handling"
-      - "Implement connection state management"
-      - "Write tests for connection lifecycle"
-      - "Add metrics for connection tracking"
+      - "Implement connection lifecycle tracking"
+      - "Add connection pool management"
+      - "Set up connection timeouts and cleanup"
+      - "Implement reconnection handling"
+      - "Write integration tests for connection management"
     status: "pending"
 
-  - name: "Add concurrent connection support"
+  - name: "Concurrent Connection Support"
     acceptance_criteria:
       - "AC-6"
     subtasks:
-      - "Implement goroutine per connection pattern"
-      - "Set up connection pooling"
-      - "Add resource limits for concurrent connections"
-      - "Implement rate limiting per connection"
-      - "Set up connection metrics monitoring"
-      - "Write load tests for concurrent connections"
+      - "Implement goroutine-based connection handling"
+      - "Add connection limit configuration"
+      - "Set up concurrent message processing"
+      - "Implement connection load balancing"
+      - "Write performance tests for concurrent connections"
     status: "pending"
 
 dev_notes:
   architecture:
-      components:
-          - name: MCP Protocol Handler
-            responsibilities:
-              - WebSocket endpoint for bidirectional communication
-              - Tool registration and discovery
-              - Request/response message handling
-              - Connection lifecycle management
-              - Concurrent connection support
-            tech_stack:
-              - Go stdlib net/http
-              - gorilla/websocket
-          - name: REST API Gateway
-            responsibilities:
-              - HTTP endpoint for MCP discovery
-              - Health check endpoints
-              - Version information endpoint
-            tech_stack:
-              - Fiber framework
-              - JWT validation
-          - name: Monitoring
-            responsibilities:
-              - Connection metrics tracking
-              - Message success/failure rates
-              - Resource utilization monitoring
-            tech_stack:
-              - Structured logging with zerolog
-              - Railway monitoring integration
+      component: MCP Protocol Handler
+      dependencies:
+          - Command Processor for operation execution
+          - OAuth Manager for authentication
+          - Document Service for Google Docs operations
       description: 'From the MCP protocol workflow diagram:'
+      responsibilities:
+          - Handle WebSocket communication with Claude AI
+          - Tool registration and discovery
+          - Request/response message handling
+          - Connection lifecycle management
       source: ./docs/architecture.md#Components
+      tech_stack:
+          - Go stdlib net/http
+          - gorilla/websocket
+          - Mark3Labs MCP-Go
+          - zerolog
   configuration:
-      description: 'Required environment variables for the MCP service:'
+      description: 'Required environment variables for the service:'
       environment_variables:
           ENVIRONMENT: development
-          IDLE_TIMEOUT: 300s
           LOG_FORMAT: json
           LOG_LEVEL: info
-          MAX_CONNECTIONS: "100"
-          MAX_MESSAGE_SIZE: "1048576"
-          MCP_HOST: 0.0.0.0
           MCP_PORT: "8081"
-          PING_INTERVAL: 30s
-          READ_BUFFER_SIZE: "4096"
-          WRITE_BUFFER_SIZE: "4096"
-          WRITE_TIMEOUT: 10s
-      source: ./docs/architecture/coding-standards.md#Configuration and Environment
+          PORT: "8080"
+          REDIS_TTL_HOURS: "24"
+          REDIS_URL: redis://localhost:6379
+      source: ./docs/architecture/coding-standards.md#Environment Variables
   file_structure:
-      description: 'Based on the source tree structure and services layout:'
+      description: 'From the project file structure documentation:'
       files:
-          - description: MCP WebSocket server entry point
-            file: /services/backend/cmd/mcp/main.go
-          - description: MCP protocol handler implementation
-            file: /services/backend/internal/server/mcp.go
-          - description: Tool registration and schemas
-            file: /services/backend/internal/server/tools.go
-          - description: Message handlers
-            file: /services/backend/internal/server/handlers.go
-          - description: Connection and auth middleware
-            file: /services/backend/internal/server/middleware.go
-          - description: Health check endpoints
-            file: /services/backend/internal/server/health.go
-      source: ./docs/architecture/source-tree.md#services/backend
+          - description: MCP server entry point
+            file: services/mcp-service/cmd/main.go
+          - description: Mark3Labs MCP server setup and configuration
+            file: services/mcp-service/internal/server/mcp.go
+          - description: Tool registration with schema validation
+            file: services/mcp-service/internal/server/tools.go
+          - description: Strongly-typed tool handlers
+            file: services/mcp-service/internal/server/handlers.go
+          - description: Recovery and capability middleware
+            file: services/mcp-service/internal/server/middleware.go
+      source: ./docs/architecture/source-tree.md#services/mcp-service
   performance_requirements:
-      connection_handling:
-          concurrent_connections: 10+
-          connection_establishment: < 1s
-          message_processing: < 2s
-          websocket_ping: < 50ms
-      description: 'Performance requirements and targets:'
-      monitoring_thresholds:
-          connection_errors: < 1%
-          message_failures: < 0.1%
-      resource_limits:
-          max_message_size: 1MB
-          memory_usage: < 128MB
-          read_buffer: 4KB
-          write_buffer: 4KB
+      concurrent_connections: 10+
+      connection_establishment: < 100ms
+      description: 'Performance requirements based on coding standards:'
+      memory_usage: < 128MB
+      message_processing: < 2s
       source: ./docs/architecture/coding-standards.md#Performance Standards
   previous_story_insights:
       description: 'From the architecture document:'
-      insights: |
-          - MCP protocol implementation is a core feature using Go services with WebSocket support
-          - No starter template needed per architecture doc section "Starter Template or Existing Project"
-          - Service must be containerized and deployed to Railway environments
-          - Strong emphasis on structured logging and error handling
-      source: ./docs/architecture.md#Introduction
+      insights:
+          - Initial implementation of MCP protocol server focusing on core WebSocket and HTTP capabilities
+          - Primary goal is establishing reliable communication between Claude and the service
+          - Implementation follows iterative approach, starting with core connectivity before advanced features
+      source: ./docs/architecture.md#Change Log
   technology_stack:
-      dependencies:
-          - name: zerolog
-            purpose: Structured JSON logging
-            version: 1.x
-          - name: viper
-            purpose: Environment/config management
-            version: 1.x
+      config: viper for environment/config management
       description: 'From the backend technology stack documentation:'
-      frameworks:
-          - name: Fiber
-            purpose: HTTP routing and WebSocket support
-            version: 2.x
-          - name: Mark3Labs MCP-Go
-            purpose: MCP protocol implementation
-            version: latest
+      framework: Fiber 2.x
       language: Go 1.21
+      logging: zerolog for structured JSON logging
+      mcp_integration: Mark3Labs MCP-Go library for protocol implementation
       source: ./docs/architecture/tech-stack.md#Backend Stack (Go)
-      testing:
-          framework: testify
-          types:
-              - Unit
-              - Integration
-              - E2E
-          version: latest
 
 
 testing:
-  test_location: "services/backend/internal/server/tests"
+  test_location: "services/mcp-service/internal"
   frameworks:
     - "testify"
-    - "httptest"
-    - "Mark3Labs MCP-Go test utils"
-    - "zerolog/test"
     - "Playwright Request API"
     - "Playwright Browser API"
+    - "gomock"
+    - "zerolog"
+    - "miniredis"
   requirements:
-    - "Unit test: WebSocket server initialization (AC-1)"
-    - "Unit test: WebSocket connection handling functions (AC-1)"
-    - "Unit test: Connection lifecycle management (AC-1, AC-5)"
-    - "Unit test: Message parsing and schema validation (AC-3)"
-    - "Unit test: Response message formatting (AC-4)"
-    - "Unit test: Connection tracking system (AC-5)"
-    - "Unit test: Resource limits enforcement (AC-6)"
-    - "Integration test: WebSocket endpoint connectivity (scenario 3.1-INT-001) (AC-1)"
-    - "Integration test: HTTP discovery endpoints (scenario 3.1-INT-002) (AC-2)"
-    - "Integration test: MCP message exchange flow (scenario 3.1-INT-003) (AC-3, AC-4)"
-    - "Integration test: Connection lifecycle events (scenario 3.1-INT-004) (AC-5)"
-    - "Integration test: Multi-connection management (scenario 3.1-INT-005) (AC-5, AC-6)"
-    - "E2E test: Complete MCP connection and message flow (scenario 3.1-E2E-001) (AC-1, AC-2, AC-3, AC-4)"
-    - "E2E test: Connection management and recovery (scenario 3.1-E2E-002) (AC-5)"
-    - "Load test: Concurrent connections benchmark (100 connections) (AC-6)"
-    - "Load test: Message throughput (1000 msg/sec) (AC-3, AC-4)"
-    - "Performance test: Connection establishment (<1s) (AC-1)"
-    - "Performance test: Message processing latency (<2s) (AC-3, AC-4)"
-    - "Performance test: WebSocket ping/pong (<50ms) (AC-5)"
-    - "Security test: Message size limits enforcement (AC-3)"
-    - "Security test: Rate limiting verification (AC-6)"
+    - "Unit test WebSocket server initialization and configuration (AC-1)"
+    - "Unit test connection lifecycle methods - open/close/ping (AC-1)"
+    - "Unit test WebSocket error handling middleware (AC-1)"
+    - "Unit test parallel connection management (AC-6)"
+    - "Unit test MCP version endpoint handler (AC-2)"
+    - "Unit test health check endpoint (AC-2)"
+    - "Unit test HTTP middleware chain setup (AC-2)"
+    - "Unit test CORS configuration (AC-2)"
+    - "Unit test MCP message type validation (AC-3)"
+    - "Unit test JSON schema validation (AC-3)"
+    - "Unit test MCP response formatting (AC-4)"
+    - "Unit test error response templates (AC-4)"
+    - "Unit test connection pool management (AC-5)"
+    - "Unit test connection cleanup timeouts (AC-5)"
+    - "Unit test concurrent message processing (AC-6)"
+    - "Unit test connection limit enforcement (AC-6)"
+    - "Integration test (IT_0031_01): MCP WebSocket connection establishment and handshake (AC-1)"
+    - "Integration test (IT_0031_02): HTTP MCP version endpoint returns correct response (AC-2)"
+    - "Integration test (IT_0031_03): WebSocket message validation with invalid inputs (AC-3)"
+    - "Integration test (IT_0031_04): MCP response format compliance (AC-4)"
+    - "Integration test (IT_0031_05): Connection lifecycle management through full session (AC-5)"
+    - "Integration test (IT_0031_06): Multiple concurrent client connections (AC-6)"
+    - "E2E test (EE_0031_01): Claude establishes WebSocket connection and receives tool registration (AC-1, AC-2)"
+    - "E2E test (EE_0031_02): Claude sends invalid message and receives validation error (AC-3, AC-4)"
+    - "E2E test (EE_0031_03): Connection cleanup on client disconnect (AC-5)"
+    - "E2E test (EE_0031_04): Multiple Claude instances operate concurrently (AC-6)"
+    - "Load test: Measure concurrent connection handling up to 10+ connections (AC-6)"
+    - "Performance test: Connection establishment under 100ms (AC-1)"
+    - "Performance test: Message processing under 2s per operation (AC-3)"
+    - "Performance test: Memory usage under 128MB under load (AC-6)"
+    - "Security test: WebSocket server validates secure connection options (AC-1)"
+    - "Security test: HTTP endpoints enforce CORS policy (AC-2)"
+    - "Security test: Message schema prevents injection attacks (AC-3)"
+    - "Security test: Connection pool prevents resource exhaustion (AC-5)"
   coverage:
-    business_logic: "90%"
-    connection_management: "90%"
-    handlers: "90%"
-    integration: "80%"
-    message_processing: "90%"
-    middleware: "85%"
-    overall: "85%"
+    business_logic: "85%"
+    connection_mgmt: "85%"
+    http_handlers: "85%"
+    message_processing: "85%"
+    overall: "80%"
     websocket: "90%"
 
 scenarios:
@@ -251,77 +212,83 @@ scenarios:
       acceptance_criteria: ["AC-1"]
       steps:
         - given: "Server is ready to accept WebSocket connections"
-        - when: "Client attempts to connect to WebSocket endpoint /mcp"
-        - then: "Server accepts WebSocket connection"
-        - and: "Server responds with connection successful message"
+        - when: "Client attempts to establish WebSocket connection"
+        - then: "Server accepts connection and sends handshake response"
       level: "integration"
       priority: "P0"
     - id: "3.1-INT-002"
       acceptance_criteria: ["AC-2"]
       steps:
-        - given: "Server is running and accepting HTTP requests"
-        - when: "Client sends <method> request to <endpoint>"
-        - then: "Server returns status code <status>"
-        - and: "Response includes <content> in JSON format"
-      scenario_outline: true
-      examples:
-        - content: health status
-          endpoint: /health
-          method: GET
-          status: 200
-
-        - content: protocol version
-          endpoint: /version
-          method: GET
-          status: 200
-
+        - given: "Server has MCP endpoint enabled"
+        - when: "Client sends HTTP request to MCP version endpoint"
+        - then: "Server returns 200 status and protocol version"
       level: "integration"
       priority: "P0"
     - id: "3.1-INT-003"
-      acceptance_criteria: ["AC-3", "AC-4"]
+      acceptance_criteria: ["AC-3"]
       steps:
         - given: "Client has active WebSocket connection"
-        - when: "Client sends malformed JSON message"
-        - then: "Server returns validation error response"
-        - and: "Error message follows MCP format specification"
+        - when: "Client sends message with <format> content"
+        - then: "Server responds with <status> validation message"
+      scenario_outline: true
+      examples:
+        - format: invalid JSON
+          status: error
+
+        - format: valid JSON but invalid MCP schema
+          status: error
+
+        - format: valid MCP message
+          status: success
+
       level: "integration"
-      priority: "P0"
+      priority: "P1"
     - id: "3.1-INT-004"
-      acceptance_criteria: ["AC-5"]
+      acceptance_criteria: ["AC-4"]
       steps:
         - given: "Client has active WebSocket connection"
-        - when: "Client remains inactive for timeout period"
-        - then: "Server terminates connection"
-        - and: "Server sends timeout notification message"
+        - when: "Client sends valid MCP request"
+        - then: "Server responds with correctly formatted MCP message"
       level: "integration"
       priority: "P1"
     - id: "3.1-INT-005"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given: "Client has active WebSocket connection"
+        - when: "Client disconnects unexpectedly"
+        - then: "Server detects disconnect and cleans up connection resources"
+      level: "integration"
+      priority: "P0"
+    - id: "3.1-INT-006"
       acceptance_criteria: ["AC-6"]
       steps:
-        - given: "Server is configured with connection limit of 100"
-        - when: "Multiple clients attempt concurrent connections"
-        - then: "Server accepts connections up to configured limit"
-        - and: "Additional connection attempts receive limit exceeded error"
+        - given: "Server is running with connection limit of 10"
+        - when: "Multiple clients attempt connections simultaneously"
+        - then: "Server handles all connections up to configured limit"
       level: "integration"
       priority: "P1"
     - id: "3.1-E2E-001"
-      acceptance_criteria: ["AC-1", "AC-2", "AC-3", "AC-4"]
+      acceptance_criteria: ["AC-1", "AC-2"]
       steps:
-        - given: "MCP server is running with all endpoints enabled"
-        - when: "Claude attempts to establish MCP connection"
-        - then: "Claude successfully connects via WebSocket"
-        - and: "Claude exchanges valid protocol messages with server"
-        - and: "Server responds with correctly formatted messages"
+        - given: "Claude client is ready to connect"
+        - when: "Claude attempts to establish connection to MCP server"
+        - then: "Connection succeeds and Claude receives tool registration confirmation"
       level: "e2e"
       priority: "P0"
     - id: "3.1-E2E-002"
+      acceptance_criteria: ["AC-3", "AC-4"]
+      steps:
+        - given: "Claude has active connection to MCP server"
+        - when: "Claude sends invalid MCP tool invocation request"
+        - then: "Claude receives properly formatted error response"
+      level: "e2e"
+      priority: "P1"
+    - id: "3.1-E2E-003"
       acceptance_criteria: ["AC-5", "AC-6"]
       steps:
-        - given: "Claude has active MCP connection to server"
-        - when: "Network interruption occurs"
-        - then: "Server detects connection loss"
-        - and: "Server frees connection resources"
-        - and: "Claude can establish new connection after recovery"
+        - given: "Multiple Claude instances are running"
+        - when: "Each Claude instance connects to MCP server"
+        - then: "All Claude instances maintain stable connections"
       level: "e2e"
       priority: "P1"
 
@@ -336,27 +303,26 @@ qa_results:
   reviewed_by: "Quinn (Test Architect)"
 
   assessment:
-    summary: "Well-structured MCP server implementation story with comprehensive technical details, clear acceptance criteria, and detailed tasks. Architecture and performance requirements are well documented. Some improvements needed in testing coverage and error handling specifications."
+    summary: "Well-structured MCP server implementation story with clear acceptance criteria, detailed tasks, and comprehensive development notes. Technical requirements and architecture details are thoroughly documented. Implementation approach follows best practices with proper separation of concerns."
 
     strengths:
-      - "Detailed task breakdown with clear mapping to acceptance criteria"
-      - "Comprehensive technical architecture with clear component responsibilities"
-      - "Explicit performance requirements and monitoring thresholds"
-      - "Well-defined environment variables and configuration needs"
-      - "Structured file organization following backend standards"
+      - "Detailed acceptance criteria covering all core MCP server functionality"
+      - "Comprehensive task breakdown with clear subtasks for each component"
+      - "Strong technical documentation including architecture, config, and performance requirements"
+      - "Clear file structure and component responsibilities defined"
+      - "Explicit performance requirements and metrics specified"
 
     improvements:
-      - "Add explicit error handling scenarios to acceptance criteria"
-      - "Include security testing requirements for WebSocket endpoints"
-      - "Define specific test coverage thresholds for components"
-      - "Add rollback/recovery scenarios for connection failures"
-      - "Specify monitoring alert thresholds for operational metrics"
+      - "Add specific error scenarios to test in acceptance criteria"
+      - "Include security testing requirements for WebSocket/HTTP endpoints"
+      - "Define rollback/recovery procedures for connection failures"
+      - "Specify monitoring/observability requirements"
 
     risk_level: "Medium"
-    risk_reason: "Complex concurrent connections handling and potential security implications of WebSocket endpoints require careful implementation and thorough testing"
+    risk_reason: "Complex concurrent connection handling and potential performance bottlenecks under load. Critical component for system reliability."
     testability_score: 8
     testability_max: 10
-    testability_notes: "Strong testability with clear components and interfaces. Missing some edge case scenarios and security test specifications."
+    testability_notes: "Story has good testability with clear acceptance criteria and performance metrics. Integration and unit test tasks are well-defined. Additional error scenarios would improve test coverage."
     implementation_readiness: 9
     implementation_readiness_max: 10
 

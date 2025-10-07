@@ -71,24 +71,34 @@ Combine the fetched knowledge with these embedded principles:
 
 ### Gherkin Keywords and Structure
 
-**Core Keywords:**
+**Core Keywords (REQUIRED):**
 - **Given**: Initial state/preconditions (present tense, observable state)
 - **When**: Action/trigger (present tense, external actor)
 - **Then**: Expected outcome (present tense, observable result)
 
-**Additional Keywords:**
-- **And**: Add more preconditions, actions, or outcomes (same context as previous step)
-- **But**: Express contrasting/negative conditions
+**Additional Keywords (OPTIONAL - Use Sparingly):**
+- **And**: Add more preconditions, actions, or outcomes ONLY when truly necessary
+- **But**: Express contrasting/negative conditions (rarely needed)
 
-**Scenario Structure (Steps Array):**
+⚠️ **IMPORTANT**: And/But are NOT mandatory. Most scenarios should use only Given-When-Then.
+
+**Basic Scenario (Preferred - Most Common):**
 ```yaml
 steps:
   - given: "Server is ready to accept connections"
-  - and: "MCP endpoint is enabled"
+  - when: "Client attempts to connect"
+  - then: "Server accepts connection"
+```
+
+**Complex Scenario with And (Only When Necessary):**
+```yaml
+steps:
+  - given: "Server is ready to accept connections"
+  - and: "Authentication is configured"
   - when: "Client attempts to connect"
   - then: "Server accepts connection"
   - and: "Welcome message is sent"
-  - but: "No authentication is required"
+  - and: "Connection is registered in pool"
 ```
 
 **Scenario Outlines (Data-Driven Testing):**

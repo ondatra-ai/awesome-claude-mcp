@@ -67,25 +67,39 @@ For EACH acceptance criterion ({{range $i, $ac := .Story.AcceptanceCriteria}}{{i
 3. Does it avoid mentioning internal components?
 4. Is it written in active voice?
 
-**Using And/But Keywords:**
-- **And**: Add additional preconditions, actions, or outcomes
-  - After Given: "And MCP endpoint is enabled"
-  - After When: "And client waits for response"
-  - After Then: "And connection remains active"
-- **But**: Express contrasting or negative conditions
+**Using And/But Keywords (OPTIONAL):**
+- **And/But are NOT mandatory** - use only when scenario truly needs multiple related steps
+- **And**: Add additional preconditions, actions, or outcomes (when necessary)
+  - After Given: "And MCP endpoint is enabled" (only if multiple preconditions needed)
+  - After When: "And client waits for response" (only if multiple actions needed)
+  - After Then: "And connection remains active" (only if multiple outcomes needed)
+- **But**: Express contrasting or negative conditions (rarely needed)
   - "But no error message is shown"
   - "But connection does not timeout"
 
-**Scenario Format with Steps Array:**
+**Basic Scenario Format (Most Common):**
 ```yaml
 id: "3.1-INT-001"
 acceptance_criteria: ["AC-1"]
 steps:
   - given: "Server is ready to accept WebSocket connections"
-  - and: "MCP endpoint is enabled"
   - when: "Client attempts to establish connection"
   - then: "Server accepts connection"
-  - and: "Welcome message is sent"
+level: "integration"
+priority: "P0"
+```
+
+**Complex Scenario with And (Only When Needed):**
+```yaml
+id: "3.1-INT-002"
+acceptance_criteria: ["AC-1"]
+steps:
+  - given: "Server is ready to accept connections"
+  - and: "MCP endpoint is configured with authentication"
+  - when: "Client attempts to connect"
+  - then: "Server accepts connection"
+  - and: "Server sends welcome message"
+  - and: "Connection is registered in pool"
 level: "integration"
 priority: "P0"
 ```
