@@ -67,6 +67,64 @@ For EACH acceptance criterion ({{range $i, $ac := .Story.AcceptanceCriteria}}{{i
 3. Does it avoid mentioning internal components?
 4. Is it written in active voice?
 
+**Using And/But Keywords:**
+- **And**: Add additional preconditions, actions, or outcomes
+  - After Given: "And MCP endpoint is enabled"
+  - After When: "And client waits for response"
+  - After Then: "And connection remains active"
+- **But**: Express contrasting or negative conditions
+  - "But no error message is shown"
+  - "But connection does not timeout"
+
+**Scenario Format with Steps Array:**
+```yaml
+id: "3.1-INT-001"
+acceptance_criteria: ["AC-1"]
+steps:
+  - given: "Server is ready to accept WebSocket connections"
+  - and: "MCP endpoint is enabled"
+  - when: "Client attempts to establish connection"
+  - then: "Server accepts connection"
+  - and: "Welcome message is sent"
+level: "integration"
+priority: "P0"
+```
+
+**Data-Driven Testing with Scenario Outlines:**
+
+Use Scenario Outlines when testing the same behavior with different inputs:
+
+```yaml
+id: "3.1-INT-002"
+acceptance_criteria: ["AC-2"]
+scenario_outline: true
+steps:
+  - given: "Server is running on port <port>"
+  - when: "Client sends <method> request to <endpoint>"
+  - then: "Response code should be <status>"
+  - and: "Response contains <field>"
+examples:
+  - port: 8080
+    method: "GET"
+    endpoint: "/version"
+    status: 200
+    field: "version"
+  - port: 8080
+    method: "POST"
+    endpoint: "/version"
+    status: 405
+    field: "error"
+level: "integration"
+priority: "P0"
+```
+
+**When to Use Scenario Outlines:**
+- ✅ Same behavior, different data (HTTP methods, status codes, validation rules)
+- ✅ Boundary testing (min/max values, edge cases)
+- ✅ Error conditions with different inputs
+- ❌ Different behaviors (use separate scenarios instead)
+- ❌ Complex setup variations (keep examples simple)
+
 ---
 
 ### Step 4: Self-Validation Checklist (MANDATORY)
@@ -123,10 +181,13 @@ level: "unit"  # ← NEVER USE THIS
 #### ✅ GOOD: Integration, BDD-compliant
 ```yaml
 id: "3.1-INT-001"
-given: "Client has active WebSocket connection"  # ← External state, active
-when: "Client sends message with invalid format"  # ← External actor, active
-then: "Server responds with validation error"  # ← Observable outcome, active
+acceptance_criteria: ["AC-1"]
+steps:
+  - given: "Client has active WebSocket connection"  # ← External state, active
+  - when: "Client sends message with invalid format"  # ← External actor, active
+  - then: "Server responds with validation error"  # ← Observable outcome, active
 level: "integration"
+priority: "P0"
 ```
 
 **Why Good**:
@@ -153,8 +214,10 @@ then: "All messages handled correctly and connections stable"  # ← Multiple ou
 
 #### ✅ GOOD: Single Behavior
 ```yaml
-when: "Multiple clients connect simultaneously"  # ← One behavior
-then: "Server accepts connections up to configured limit"  # ← Specific outcome
+steps:
+  - given: "Server is running with connection limit"
+  - when: "Multiple clients connect simultaneously"  # ← One behavior
+  - then: "Server accepts connections up to configured limit"  # ← Specific outcome
 ```
 
 **Why Good**:
@@ -180,9 +243,10 @@ then: "Response is formatted and returned"  # ← Passive
 
 #### ✅ GOOD: Active Voice, External
 ```yaml
-given: "Server is ready to accept requests"  # ← Active, external state
-when: "Client sends request to server"  # ← Active, external actor
-then: "Server returns formatted response"  # ← Active, observable
+steps:
+  - given: "Server is ready to accept requests"  # ← Active, external state
+  - when: "Client sends request to server"  # ← Active, external actor
+  - then: "Server returns formatted response"  # ← Active, observable
 ```
 
 **Why Good**:

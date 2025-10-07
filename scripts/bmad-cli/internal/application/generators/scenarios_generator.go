@@ -110,14 +110,59 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 			if len(scenario.AcceptanceCriteria) == 0 {
 				return fmt.Errorf("scenario %s: must reference at least one acceptance criterion", scenario.ID)
 			}
-			if scenario.Given == "" {
-				return fmt.Errorf("scenario %s: Given cannot be empty", scenario.ID)
+
+			// Validate steps array
+			if len(scenario.Steps) == 0 {
+				return fmt.Errorf("scenario %s: must have at least one step", scenario.ID)
 			}
-			if scenario.When == "" {
-				return fmt.Errorf("scenario %s: When cannot be empty", scenario.ID)
+
+			// Validate each step has exactly one keyword set
+			hasGiven, hasWhen, hasThen := false, false, false
+			for stepIdx, step := range scenario.Steps {
+				nonEmptyCount := 0
+				if step.Given != "" {
+					nonEmptyCount++
+					hasGiven = true
+				}
+				if step.When != "" {
+					nonEmptyCount++
+					hasWhen = true
+				}
+				if step.Then != "" {
+					nonEmptyCount++
+					hasThen = true
+				}
+				if step.And != "" {
+					nonEmptyCount++
+				}
+				if step.But != "" {
+					nonEmptyCount++
+				}
+
+				if nonEmptyCount == 0 {
+					return fmt.Errorf("scenario %s, step %d: step must have at least one keyword set", scenario.ID, stepIdx)
+				}
+				if nonEmptyCount > 1 {
+					return fmt.Errorf("scenario %s, step %d: step must have exactly one keyword set", scenario.ID, stepIdx)
+				}
 			}
-			if scenario.Then == "" {
-				return fmt.Errorf("scenario %s: Then cannot be empty", scenario.ID)
+
+			// Ensure scenario has at least Given, When, and Then (And/But are optional)
+			if !hasGiven {
+				return fmt.Errorf("scenario %s: must have at least one 'Given' step", scenario.ID)
+			}
+			if !hasWhen {
+				return fmt.Errorf("scenario %s: must have at least one 'When' step", scenario.ID)
+			}
+			if !hasThen {
+				return fmt.Errorf("scenario %s: must have at least one 'Then' step", scenario.ID)
+			}
+
+			// Validate scenario outline has examples
+			if scenario.ScenarioOutline {
+				if len(scenario.Examples) == 0 {
+					return fmt.Errorf("scenario %s: scenario outline must have at least one example", scenario.ID)
+				}
 			}
 
 			// Validate level (only integration and e2e allowed)

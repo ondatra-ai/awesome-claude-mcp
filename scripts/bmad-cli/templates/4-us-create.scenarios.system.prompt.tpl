@@ -69,6 +69,45 @@ Combine the fetched knowledge with these embedded principles:
 - **NO** → Integration (INT)
 - **YES** → End-to-End (E2E)
 
+### Gherkin Keywords and Structure
+
+**Core Keywords:**
+- **Given**: Initial state/preconditions (present tense, observable state)
+- **When**: Action/trigger (present tense, external actor)
+- **Then**: Expected outcome (present tense, observable result)
+
+**Additional Keywords:**
+- **And**: Add more preconditions, actions, or outcomes (same context as previous step)
+- **But**: Express contrasting/negative conditions
+
+**Scenario Structure (Steps Array):**
+```yaml
+steps:
+  - given: "Server is ready to accept connections"
+  - and: "MCP endpoint is enabled"
+  - when: "Client attempts to connect"
+  - then: "Server accepts connection"
+  - and: "Welcome message is sent"
+  - but: "No authentication is required"
+```
+
+**Scenario Outlines (Data-Driven Testing):**
+Use when testing same behavior with different data:
+```yaml
+scenario_outline: true
+steps:
+  - given: "Server is running on port <port>"
+  - when: "Client sends <method> request"
+  - then: "Response code should be <status>"
+examples:
+  - port: 8080
+    method: "GET"
+    status: 200
+  - port: 8080
+    method: "POST"
+    status: 405
+```
+
 ### Forbidden Scenario Patterns
 
 ❌ **NEVER Generate These:**
