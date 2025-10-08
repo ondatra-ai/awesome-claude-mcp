@@ -12,7 +12,7 @@ describe('ApiClient', () => {
   });
 
   describe('getVersion', () => {
-    it('UT_00007_01: should construct correct request for version', async () => {
+    it('ORPHAN: should construct correct request for version', async () => {
       const mockVersionResponse = { version: '1.0.0' };
       mockFetch.mockResolvedValueOnce({
         ok: true,
