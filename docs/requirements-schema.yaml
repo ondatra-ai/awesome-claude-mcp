@@ -12,22 +12,6 @@ metadata:
 # Note: Story lineage tracked via user_stories.scenario_id field
 scenarios: map(key=regex(r'^(?:INT|E2E)-\d{3}$'), val=include('scenario'))
 
-schema:
-  scenario_id_pattern: str()
-  status_values: list(str())
-  categories: list(str())
-  gherkin_keywords: list(str())
-  test_levels: list(str())
-  priorities: list(str())
-
-references:
-  test_naming: str()
-  coding_standards: str()
-  scenario_merge_design: str(required=False)
-  test_files:
-    integration_tests: list(str())
-    e2e_tests: list(str())
-
 ---
 # Include definitions
 
