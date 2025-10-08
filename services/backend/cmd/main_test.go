@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_1_1_INT_001_ServerRespondsWithCorrectStatus(t *testing.T) {
+func TestORPHAN_VersionEndpoint_Success(t *testing.T) {
 	// Arrange
 	app := createFiberApp("http://localhost:3000")
 	setupRoutes(app)
