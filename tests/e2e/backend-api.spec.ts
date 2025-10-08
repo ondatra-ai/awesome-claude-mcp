@@ -5,7 +5,7 @@ const { backendUrl, frontendUrl } = getEnvironmentConfig(process.env.E2E_ENV);
 
 test.describe('Backend API E2E Tests', () => {
 
-  test('1.1-E2E-001: service returns version with headers', async ({ request }) => {
+  test('E2E-001: service returns version with headers', async ({ request }) => {
     const response = await request.get(`${backendUrl}/version`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -15,7 +15,7 @@ test.describe('Backend API E2E Tests', () => {
     expect(data.version).toBe('1.0.0');
   });
 
-  test('1.1-E2E-002: health endpoint accessible via HTTP', async ({ request }) => {
+  test('E2E-002: health endpoint accessible via HTTP', async ({ request }) => {
     const response = await request.get(`${backendUrl}/health`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -26,17 +26,17 @@ test.describe('Backend API E2E Tests', () => {
     expect(data).toHaveProperty('timestamp');
   });
 
-  test('1.1-E2E-003: returns 404 for non-existent endpoints', async ({ request }) => {
+  test('E2E-003: returns 404 for non-existent endpoints', async ({ request }) => {
     const response = await request.get(`${backendUrl}/nonexistent`);
     expect(response.status()).toBe(404);
   });
 
-  test('1.1-E2E-004: returns 405 for POST on version endpoint', async ({ request }) => {
+  test('E2E-004: returns 405 for POST on version endpoint', async ({ request }) => {
     const response = await request.post(`${backendUrl}/version`);
     expect(response.status()).toBe(405);
   });
 
-  test('1.1-E2E-005: includes CORS headers for frontend requests', async ({ request }) => {
+  test('E2E-005: includes CORS headers for frontend requests', async ({ request }) => {
     const response = await request.get(`${backendUrl}/version`, {
       headers: {
         'Origin': frontendUrl

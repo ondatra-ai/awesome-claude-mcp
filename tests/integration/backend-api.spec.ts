@@ -5,7 +5,7 @@ const { backendUrl } = getEnvironmentConfig(process.env.E2E_ENV);
 
 test.describe('Backend API Integration Tests', () => {
 
-  test('1.1-INT-001: server responds with correct status', async ({ request }) => {
+  test('INT-001: server responds with correct status', async ({ request }) => {
     const response = await request.get(`${backendUrl}/version`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -15,12 +15,12 @@ test.describe('Backend API Integration Tests', () => {
     expect(data.version).toBe('1.0.0');
   });
 
-  test('1.1-INT-002: version endpoint rejects invalid methods', async ({ request }) => {
+  test('INT-002: version endpoint rejects invalid methods', async ({ request }) => {
     const response = await request.post(`${backendUrl}/version`);
     expect(response.status()).toBe(405);
   });
 
-  test('1.1-INT-003: health endpoint returns healthy status', async ({ request }) => {
+  test('INT-003: health endpoint returns healthy status', async ({ request }) => {
     const response = await request.get(`${backendUrl}/health`);
     expect(response.ok()).toBeTruthy();
     expect(response.status()).toBe(200);
@@ -31,12 +31,12 @@ test.describe('Backend API Integration Tests', () => {
     expect(data).toHaveProperty('timestamp');
   });
 
-  test('1.1-INT-004: health endpoint rejects invalid methods', async ({ request }) => {
+  test('INT-004: health endpoint rejects invalid methods', async ({ request }) => {
     const response = await request.delete(`${backendUrl}/health`);
     expect(response.status()).toBe(405);
   });
 
-  test('1.1-INT-005: non-existent endpoint returns 404', async ({ request }) => {
+  test('INT-005: non-existent endpoint returns 404', async ({ request }) => {
     const response = await request.get(`${backendUrl}/nonexistent`);
     expect(response.status()).toBe(404);
   });

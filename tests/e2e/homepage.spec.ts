@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Homepage E2E Tests', () => {
-  test('1.1-E2E-006: SPA loads in browser', async ({ page }) => {
+  test('E2E-006: SPA loads in browser', async ({ page }) => {
     await page.goto('/');
 
     // Check that the page loads successfully
@@ -14,7 +14,7 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('hero-description')).toContainText('A Model Context Protocol integration for seamless Google Docs editing');
   });
 
-  test('1.1-E2E-007: version appears at bottom of page', async ({ page }) => {
+  test('E2E-007: version appears at bottom of page', async ({ page }) => {
     await page.goto('/');
 
     // Check that backend version section is present
@@ -36,7 +36,7 @@ test.describe('Homepage E2E Tests', () => {
     }
   });
 
-  test('1.1-E2E-008: welcome card is visible', async ({ page }) => {
+  test('E2E-008: welcome card is visible', async ({ page }) => {
     await page.goto('/');
 
     // Check welcome card title
@@ -51,7 +51,7 @@ test.describe('Homepage E2E Tests', () => {
     await expect(page.getByTestId('feature-ai-integration-desc')).toContainText('Compatible with Claude Code and ChatGPT');
   });
 
-  test('1.1-E2E-009: adapts to different viewport sizes', async ({ page }) => {
+  test('E2E-009: adapts to different viewport sizes', async ({ page }) => {
     await page.goto('/');
 
     // Test mobile viewport
