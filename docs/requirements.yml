@@ -31,9 +31,9 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "Fiber server is running with version endpoint"
+        - "Fiber server runs with version endpoint configured"
       when:
-        - "HTTP GET request is made to /version"
+        - "client sends HTTP GET request to /version"
       then:
         - "server responds with correct JSON and 200 status"
 
@@ -55,7 +55,7 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "full backend service is deployed and running"
+        - "deployment system deploys full backend service"
       when:
         - "external HTTP client calls /version endpoint"
       then:
@@ -79,9 +79,9 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "services are running with health endpoints"
+        - "services run with health endpoints configured"
       when:
-        - "health check URLs are accessed via HTTP"
+        - "client accesses health check URLs via HTTP"
       then:
         - "both services respond with healthy status"
 
@@ -103,12 +103,12 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "backend service is running"
+        - "backend service runs"
       when:
-        - "GET request is sent to non-existent endpoint"
+        - "client sends GET request to non-existent endpoint"
       then:
         - "service returns 404 status code"
-        - and: "response indicates endpoint was not found"
+        - and: "response indicates endpoint does not exist"
 
   E2E-004:
     description: "returns 405 for POST on version endpoint"
@@ -128,12 +128,12 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "backend service is running"
+        - "backend service runs"
       when:
-        - "POST request is sent to /version endpoint"
+        - "client sends POST request to /version endpoint"
       then:
         - "service returns 405 Method Not Allowed status code"
-        - and: "response indicates method is not allowed"
+        - and: "response indicates method not allowed"
 
   E2E-005:
     description: "includes CORS headers for frontend requests"
@@ -153,11 +153,11 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "backend service is running"
+        - "backend service runs"
       when:
-        - "request with Origin header from frontend domain is sent"
+        - "client sends request with Origin header from frontend domain"
       then:
-        - "response includes appropriate CORS headers"
+        - "server includes appropriate CORS headers in response"
         - and: "Access-Control-Allow-Origin header allows frontend domain"
 
   INT-002:
@@ -178,11 +178,11 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "Next.js App Router is configured"
+        - "Next.js App Router configures application routes"
       when:
-        - "application routes are accessed"
+        - "client accesses application routes"
       then:
-        - "pages are served correctly by Next.js framework"
+        - "Next.js framework serves pages correctly"
 
   E2E-006:
     description: "SPA loads in browser"
@@ -202,7 +202,7 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "frontend application is built and served"
+        - "build system builds and serves frontend application"
       when:
         - "browser navigates to application URL"
       then:
@@ -226,11 +226,11 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "frontend and backend services are running"
+        - "frontend and backend services run"
       when:
         - "frontend makes API call to backend version endpoint"
       then:
-        - "version \"1.0.0\" is successfully retrieved and displayed"
+        - "frontend successfully retrieves and displays version \"1.0.0\""
 
   E2E-007:
     description: "version appears at bottom of page"
@@ -250,11 +250,11 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "full stack application is running"
+        - "full stack application runs"
       when:
         - "user loads homepage in browser"
       then:
-        - "backend version \"1.0.0\" appears at bottom of page"
+        - "page displays backend version \"1.0.0\" at bottom"
 
   E2E-008:
     description: "welcome card is visible"
@@ -274,11 +274,11 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "frontend application is loaded"
+        - "frontend application loads"
       when:
         - "user views homepage"
       then:
-        - "welcome card is visible"
+        - "homepage displays welcome card"
         - and: "welcome card displays key features"
 
   E2E-009:
@@ -299,9 +299,9 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "frontend application is loaded"
+        - "frontend application loads"
       when:
-        - "browser is resized to different viewport sizes"
+        - "user resizes browser to different viewport sizes"
       then:
         - "homepage layout adapts responsively"
         - and: "all elements remain accessible and properly positioned"
@@ -324,9 +324,9 @@ scenarios:
         merge_date: "2025-09-23"
     merged_steps:
       given:
-        - "frontend application is deployed"
+        - "deployment system deploys frontend application"
       when:
         - "user navigates to homepage"
       then:
         - "page fully loads in under 2000ms"
-        - and: "all critical resources are loaded within time limit"
+        - and: "browser loads all critical resources within time limit"
