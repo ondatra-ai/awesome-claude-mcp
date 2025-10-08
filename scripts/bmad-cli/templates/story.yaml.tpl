@@ -34,12 +34,16 @@ scenarios:
     - id: "{{.ID}}"
       acceptance_criteria: [{{range $i, $ac := .AcceptanceCriteria}}{{if $i}}, {{end}}"{{$ac}}"{{end}}]
       steps:{{range .Steps}}{{if .Given}}
-        - given: "{{.Given}}"{{end}}{{if .When}}
-        - when: "{{.When}}"{{end}}{{if .Then}}
-        - then: "{{.Then}}"{{end}}{{if .And}}
-        - and: "{{.And}}"{{end}}{{if .But}}
-        - but: "{{.But}}"{{end}}{{end}}{{if .ScenarioOutline}}
-      scenario_outline: true
+        - given:{{range .Given}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{if .When}}
+        - when:{{range .When}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{if .Then}}
+        - then:{{range .Then}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{end}}
+{{if .ScenarioOutline}}      scenario_outline: true
       examples:{{range .Examples}}
         - {{range $key, $val := .}}{{$key}}: {{$val}}
           {{end}}{{end}}{{end}}

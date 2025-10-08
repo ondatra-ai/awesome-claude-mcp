@@ -1,13 +1,81 @@
 package story
 
+import (
+	"fmt"
+	"gopkg.in/yaml.v3"
+)
+
+// ModifierType represents the type of statement modifier
+type ModifierType string
+
+const (
+	ModifierTypeAnd ModifierType = "and"
+	ModifierTypeBut ModifierType = "but"
+)
+
+// StepStatement represents a single statement in a Gherkin step
+// Can be either a main statement (plain string) or a modifier (and/but)
+type StepStatement struct {
+	Type      ModifierType // Empty for main statement, "and" or "but" for modifiers
+	Statement string
+}
+
+// UnmarshalYAML implements custom YAML unmarshaling
+// Handles both plain strings and objects with and/but keys
+func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
+	// Handle plain string (main statement)
+	if node.Kind == yaml.ScalarNode {
+		s.Type = ""
+		s.Statement = node.Value
+		return nil
+	}
+
+	// Handle object with and/but key
+	if node.Kind == yaml.MappingNode {
+		if len(node.Content) != 2 {
+			return fmt.Errorf("modifier must have exactly one key")
+		}
+
+		key := node.Content[0].Value
+		value := node.Content[1].Value
+
+		switch key {
+		case "and":
+			s.Type = ModifierTypeAnd
+			s.Statement = value
+		case "but":
+			s.Type = ModifierTypeBut
+			s.Statement = value
+		default:
+			return fmt.Errorf("invalid modifier type: %s (must be 'and' or 'but')", key)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("invalid step statement format")
+}
+
+// MarshalYAML implements custom YAML marshaling
+// Outputs plain string for main statement, object for modifiers
+func (s StepStatement) MarshalYAML() (interface{}, error) {
+	// Main statement: output as plain string
+	if s.Type == "" {
+		return s.Statement, nil
+	}
+
+	// Modifier: output as object with and/but key
+	return map[string]string{
+		string(s.Type): s.Statement,
+	}, nil
+}
+
 // ScenarioStep represents a single step in a Gherkin scenario
-// Each step should have exactly one keyword set (Given, When, Then, And, or But)
+// Each Given/When/Then is an array of statements
 type ScenarioStep struct {
-	Given string `yaml:"given,omitempty" json:"given,omitempty"`
-	When  string `yaml:"when,omitempty" json:"when,omitempty"`
-	Then  string `yaml:"then,omitempty" json:"then,omitempty"`
-	And   string `yaml:"and,omitempty" json:"and,omitempty"`
-	But   string `yaml:"but,omitempty" json:"but,omitempty"`
+	Given []StepStatement `yaml:"given,omitempty" json:"given,omitempty"`
+	When  []StepStatement `yaml:"when,omitempty" json:"when,omitempty"`
+	Then  []StepStatement `yaml:"then,omitempty" json:"then,omitempty"`
 }
 
 // TestScenario represents a single BDD test scenario with Gherkin format

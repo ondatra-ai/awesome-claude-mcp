@@ -67,56 +67,120 @@ For EACH acceptance criterion ({{range $i, $ac := .Story.AcceptanceCriteria}}{{i
 3. Does it avoid mentioning internal components?
 4. Is it written in active voice?
 
-**Using And/But Keywords (OPTIONAL):**
-- **And/But are NOT mandatory** - use only when scenario truly needs multiple related steps
-- **And**: Add additional preconditions, actions, or outcomes (when necessary)
-  - After Given: "And MCP endpoint is enabled" (only if multiple preconditions needed)
-  - After When: "And client waits for response" (only if multiple actions needed)
-  - After Then: "And connection remains active" (only if multiple outcomes needed)
-- **But**: Express contrasting or negative conditions (rarely needed)
-  - "But no error message is shown"
-  - "But connection does not timeout"
+**Step Structure with Array Format:**
 
-**Basic Scenario Format (Most Common):**
+Each Given/When/Then is an array where:
+- **First element**: Plain string (main statement)
+- **Additional elements**: Objects with `and:` or `but:` keys
+
+**Basic Scenario Format (Most Common - No Modifiers):**
 ```yaml
 id: "3.1-INT-001"
 acceptance_criteria: ["AC-1"]
 steps:
-  - given: "Server is ready to accept WebSocket connections"
-  - when: "Client attempts to establish connection"
-  - then: "Server accepts connection"
+  - given:
+      - "Server is ready to accept WebSocket connections"
+  - when:
+      - "Client attempts to establish connection"
+  - then:
+      - "Server accepts connection"
 level: "integration"
 priority: "P0"
 ```
 
-**Complex Scenario with And (Only When Needed):**
+**Scenario with 'And' Modifiers in Given (Multiple Preconditions):**
 ```yaml
 id: "3.1-INT-002"
 acceptance_criteria: ["AC-1"]
 steps:
-  - given: "Server is ready to accept connections"
-  - and: "MCP endpoint is configured with authentication"
-  - when: "Client attempts to connect"
-  - then: "Server accepts connection"
-  - and: "Server sends welcome message"
-  - and: "Connection is registered in pool"
+  - given:
+      - "Server is ready to accept connections"
+      - and: "MCP endpoint is configured with authentication"
+      - and: "Redis cache is available"
+  - when:
+      - "Client attempts to connect"
+  - then:
+      - "Server accepts connection"
 level: "integration"
 priority: "P0"
 ```
+
+**Scenario with 'And' Modifiers in When (Multiple Actions):**
+```yaml
+id: "3.1-INT-003"
+acceptance_criteria: ["AC-3"]
+steps:
+  - given:
+      - "Client has active WebSocket connection"
+  - when:
+      - "Client sends authentication request"
+      - and: "Client provides valid credentials"
+  - then:
+      - "Server returns authentication success"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'And' Modifiers in Then (Multiple Outcomes):**
+```yaml
+id: "3.1-INT-004"
+acceptance_criteria: ["AC-4"]
+steps:
+  - given:
+      - "Server is running normally"
+  - when:
+      - "Client sends valid request"
+  - then:
+      - "Server returns success response"
+      - and: "Response includes correlation ID"
+      - and: "Metrics are updated"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'But' Modifiers (Contrasting/Negative Conditions):**
+```yaml
+id: "3.1-INT-005"
+acceptance_criteria: ["AC-3"]
+steps:
+  - given:
+      - "Server is running with rate limiting enabled"
+      - but: "No requests have been made yet"
+  - when:
+      - "Client sends invalid request"
+  - then:
+      - "Server returns error response"
+      - but: "Connection remains active"
+      - but: "No alarm is triggered"
+level: "integration"
+priority: "P0"
+```
+
+**Important Rules:**
+- **All three keywords** (Given, When, Then) are arrays
+- First element must be a plain string (main statement)
+- Additional elements are objects with `and:` or `but:` keys
+- Use `and:` for additional preconditions, actions, or outcomes
+- Use `but:` for contrasting or negative conditions (rare)
+- Most scenarios should have 0-2 additional elements per step
+- Plain strings for main statements = cleaner, more readable YAML
 
 **Data-Driven Testing with Scenario Outlines:**
 
 Use Scenario Outlines when testing the same behavior with different inputs:
 
 ```yaml
-id: "3.1-INT-002"
+id: "3.1-INT-003"
 acceptance_criteria: ["AC-2"]
 scenario_outline: true
 steps:
-  - given: "Server is running on port <port>"
-  - when: "Client sends <method> request to <endpoint>"
-  - then: "Response code should be <status>"
-  - and: "Response contains <field>"
+  - given:
+      - "Server is running on port <port>"
+  - when:
+      - "Client sends <method> request to <endpoint>"
+  - then:
+      - "Response code should be <status>"
+      - "Response contains <field>"
 examples:
   - port: 8080
     method: "GET"
@@ -197,9 +261,12 @@ level: "unit"  # ← NEVER USE THIS
 id: "3.1-INT-001"
 acceptance_criteria: ["AC-1"]
 steps:
-  - given: "Client has active WebSocket connection"  # ← External state, active
-  - when: "Client sends message with invalid format"  # ← External actor, active
-  - then: "Server responds with validation error"  # ← Observable outcome, active
+  - given:
+      - "Client has active WebSocket connection"  # ← External state, active
+  - when:
+      - "Client sends message with invalid format"  # ← External actor, active
+  - then:
+      - "Server responds with validation error"  # ← Observable outcome, active
 level: "integration"
 priority: "P0"
 ```
@@ -229,9 +296,12 @@ then: "All messages handled correctly and connections stable"  # ← Multiple ou
 #### ✅ GOOD: Single Behavior
 ```yaml
 steps:
-  - given: "Server is running with connection limit"
-  - when: "Multiple clients connect simultaneously"  # ← One behavior
-  - then: "Server accepts connections up to configured limit"  # ← Specific outcome
+  - given:
+      - "Server is running with connection limit"
+  - when:
+      - "Multiple clients connect simultaneously"  # ← One behavior
+  - then:
+      - "Server accepts connections up to configured limit"  # ← Specific outcome
 ```
 
 **Why Good**:
@@ -258,9 +328,12 @@ then: "Response is formatted and returned"  # ← Passive
 #### ✅ GOOD: Active Voice, External
 ```yaml
 steps:
-  - given: "Server is ready to accept requests"  # ← Active, external state
-  - when: "Client sends request to server"  # ← Active, external actor
-  - then: "Server returns formatted response"  # ← Active, observable
+  - given:
+      - "Server is ready to accept requests"  # ← Active, external state
+  - when:
+      - "Client sends request to server"  # ← Active, external actor
+  - then:
+      - "Server returns formatted response"  # ← Active, observable
 ```
 
 **Why Good**:
@@ -368,7 +441,8 @@ given: "Connection manager is initialized"
 
 **Regenerate As:**
 ```yaml
-given: "Server is ready to accept connections"
+given:
+  - "Server is ready to accept connections"
 ```
 
 **Re-validate:**
@@ -393,17 +467,25 @@ scenarios:
   test_scenarios:
     - id: "{{.Story.ID}}-INT-001"
       acceptance_criteria: ["AC-1"]
-      given: "Clear description of initial state"
-      when: "Specific action or event occurs"
-      then: "Expected outcome that can be verified"
+      steps:
+        - given:
+            - "Clear description of initial state"
+        - when:
+            - "Specific action or event occurs"
+        - then:
+            - "Expected outcome that can be verified"
       level: "integration"
       priority: "P0"
 
     - id: "{{.Story.ID}}-E2E-001"
       acceptance_criteria: ["AC-1", "AC-2"]
-      given: "Complete system operational from user perspective"
-      when: "User performs complete journey"
-      then: "End-to-end flow completes successfully"
+      steps:
+        - given:
+            - "Complete system operational from user perspective"
+        - when:
+            - "User performs complete journey"
+        - then:
+            - "End-to-end flow completes successfully"
       level: "e2e"
       priority: "P1"
 ```

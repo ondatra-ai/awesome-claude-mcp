@@ -76,39 +76,93 @@ Combine the fetched knowledge with these embedded principles:
 - **When**: Action/trigger (present tense, external actor)
 - **Then**: Expected outcome (present tense, observable result)
 
-**Additional Keywords (OPTIONAL - Use Sparingly):**
-- **And**: Add more preconditions, actions, or outcomes ONLY when truly necessary
-- **But**: Express contrasting/negative conditions (rarely needed)
+**Each keyword is an array where:**
+- First element: Plain string (main statement)
+- Additional elements: Objects with `and:` or `but:` keys
 
-⚠️ **IMPORTANT**: And/But are NOT mandatory. Most scenarios should use only Given-When-Then.
-
-**Basic Scenario (Preferred - Most Common):**
+**Basic Scenario Format (Preferred - Most Common - No Modifiers):**
 ```yaml
 steps:
-  - given: "Server is ready to accept connections"
-  - when: "Client attempts to connect"
-  - then: "Server accepts connection"
+  - given:
+      - "Server is ready to accept connections"
+  - when:
+      - "Client attempts to connect"
+  - then:
+      - "Server accepts connection"
 ```
 
-**Complex Scenario with And (Only When Necessary):**
+**Scenario with 'And' Modifiers in Given (Multiple Preconditions):**
 ```yaml
 steps:
-  - given: "Server is ready to accept connections"
-  - and: "Authentication is configured"
-  - when: "Client attempts to connect"
-  - then: "Server accepts connection"
-  - and: "Welcome message is sent"
-  - and: "Connection is registered in pool"
+  - given:
+      - "Server is ready to accept connections"
+      - and: "Authentication is configured"
+      - and: "Redis cache is available"
+  - when:
+      - "Client attempts to connect"
+  - then:
+      - "Server accepts connection"
 ```
+
+**Scenario with 'And' Modifiers in When (Multiple Actions):**
+```yaml
+steps:
+  - given:
+      - "Client has active connection"
+  - when:
+      - "Client sends authentication request"
+      - and: "Client provides valid credentials"
+  - then:
+      - "Server returns authentication success"
+```
+
+**Scenario with 'And' Modifiers in Then (Multiple Outcomes):**
+```yaml
+steps:
+  - given:
+      - "Server is running normally"
+  - when:
+      - "Client sends valid request"
+  - then:
+      - "Server returns success response"
+      - and: "Response includes correlation ID"
+      - and: "Metrics are updated"
+```
+
+**Scenario with 'But' Modifiers (Contrasting/Negative Conditions - Rare):**
+```yaml
+steps:
+  - given:
+      - "Server has rate limiting enabled"
+      - but: "No requests made yet"
+  - when:
+      - "Client sends request"
+  - then:
+      - "Server processes request"
+      - but: "No rate limit warning sent"
+      - but: "No alarm triggered"
+```
+
+⚠️ **IMPORTANT**:
+- All three keywords (Given, When, Then) are arrays
+- First element must be plain string (main statement)
+- Additional elements are objects with `and:` or `but:` keys
+- Use `and:` for additional preconditions, actions, or outcomes
+- Use `but:` rarely, only for contrasting/negative conditions
+- Most scenarios should have 0-2 additional elements per step
+- Keep it simple - basic format is preferred
 
 **Scenario Outlines (Data-Driven Testing):**
 Use when testing same behavior with different data:
 ```yaml
 scenario_outline: true
 steps:
-  - given: "Server is running on port <port>"
-  - when: "Client sends <method> request"
-  - then: "Response code should be <status>"
+  - given:
+      - "Server is running on port <port>"
+  - when:
+      - "Client sends <method> request"
+  - then:
+      - "Response code should be <status>"
 examples:
   - port: 8080
     method: "GET"
