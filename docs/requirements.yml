@@ -1,234 +1,490 @@
-# E2E Test Requirements (Automatable Only)
+# Test Requirements Registry (Flattened Structure)
+# This file tracks all test scenarios and their implementation status across the codebase
 metadata:
-  title: "E2E Test Requirements (Automatable Only)"
-  version: "1.0"
-  last_updated: "2025-09-23"
+  title: "Test Requirements Registry"
+  version: "2.0"
+  last_updated: "2025-10-08"
+  description: "Flattened scenario registry tracking implementation status and user story lineage"
 
-requirements:
-  FR-00001:
-    title: "Backend /version endpoint returns 1.0.0"
-    story_id: "1.1-E2E-001"
-    story_reference: "Story 1.1"
+# Flattened scenario registry
+# Each scenario is tracked independently with:
+# - Implementation status (pending/implemented/failed/outdated)
+# - File path for test implementation
+# - User story lineage (tracks which stories modified this scenario)
+# - Merged steps from all contributing stories
+scenarios:
+  UT_00001_01:
+    description: "handler should return correct version"
     category: "backend"
-    scenarios:
-      UT_00001_01:
-        description: "handler should return correct version"
-        file_path: "services/backend/cmd/main_test.go"
-        steps:
-          - given: "version handler function exists"
-          - when: "handler is called with valid HTTP request"
-          - then: "JSON response {\"version\": \"1.0.0\"} is returned"
-      UT_00001_02:
-        description: "handler should reject invalid methods"
-        file_path: "services/backend/cmd/main_test.go"
-        steps:
-          - given: "version endpoint receives invalid HTTP method"
-          - when: "non-GET request is made to /version"
-          - then: "appropriate HTTP error status is returned"
-      IT_00001_03:
-        description: "server responds with correct status"
-        file_path: "tests/integration/backend.test.ts"
-        steps:
-          - given: "Fiber server is running with version endpoint"
-          - when: "HTTP GET request is made to /version"
-          - then: "server responds with correct JSON and 200 status"
-      EE_00001_04:
-        description: "service returns version with headers"
-        file_path: "tests/e2e/backend-api.spec.ts"
-        steps:
-          - given: "full backend service is deployed and running"
-          - when: "external HTTP client calls /version endpoint"
-          - then: "service responds with \"1.0.0\" and proper HTTP headers"
+    requirement: "Backend /version endpoint returns 1.0.0"
+    implementation_status:
+      status: "pending"  # pending/implemented/failed/outdated
+      file_path: "services/backend/cmd/main_test.go"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-001"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "version handler function exists"
+      when:
+        - "handler is called with valid HTTP request"
+      then:
+        - "JSON response {\"version\": \"1.0.0\"} is returned"
 
-  FR-00002:
-    title: "Backend /health endpoint returns healthy status"
-    story_id: "1.1-E2E-006"
-    story_reference: "Story 1.1"
+  UT_00001_02:
+    description: "handler should reject invalid methods"
     category: "backend"
-    scenarios:
-      UT_00002_01:
-        description: "health check handler returns correct status"
-        file_path: "services/backend/cmd/main_test.go"
-        steps:
-          - given: "health check handler functions exist"
-          - when: "handlers are called"
-          - then: "correct health status responses are returned"
-      EE_00002_02:
-        description: "health endpoint accessible via HTTP"
-        file_path: "tests/e2e/backend-api.spec.ts"
-        steps:
-          - given: "services are running with health endpoints"
-          - when: "health check URLs are accessed via HTTP"
-          - then: "both services respond with healthy status"
+    requirement: "Backend /version endpoint returns 1.0.0"
+    implementation_status:
+      status: "pending"
+      file_path: "services/backend/cmd/main_test.go"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-001"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "version endpoint receives invalid HTTP method"
+      when:
+        - "non-GET request is made to /version"
+      then:
+        - "appropriate HTTP error status is returned"
 
-  FR-00003:
-    title: "Backend handles 404 for non-existent endpoints"
+  IT_00001_03:
+    description: "server responds with correct status"
     category: "backend"
-    scenarios:
-      EE_00003_01:
-        description: "returns 404 for non-existent endpoints"
-        file_path: "tests/e2e/backend-api.spec.ts"
-        steps:
-          - given: "backend service is running"
-          - when: "GET request is sent to non-existent endpoint"
-          - then: "service returns 404 status code"
-          - and: "response indicates endpoint was not found"
+    requirement: "Backend /version endpoint returns 1.0.0"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/backend.test.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-001"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "Fiber server is running with version endpoint"
+      when:
+        - "HTTP GET request is made to /version"
+      then:
+        - "server responds with correct JSON and 200 status"
 
-  FR-00004:
-    title: "Backend rejects invalid HTTP methods"
+  EE_00001_04:
+    description: "service returns version with headers"
     category: "backend"
-    scenarios:
-      EE_00004_01:
-        description: "returns 405 for POST on version endpoint"
-        file_path: "tests/e2e/backend-api.spec.ts"
-        steps:
-          - given: "backend service is running"
-          - when: "POST request is sent to /version endpoint"
-          - then: "service returns 405 Method Not Allowed status code"
-          - and: "response indicates method is not allowed"
+    requirement: "Backend /version endpoint returns 1.0.0"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/backend-api.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-001"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "full backend service is deployed and running"
+      when:
+        - "external HTTP client calls /version endpoint"
+      then:
+        - "service responds with \"1.0.0\" and proper HTTP headers"
 
-  FR-00005:
-    title: "Backend provides CORS headers for frontend"
+  UT_00002_01:
+    description: "health check handler returns correct status"
     category: "backend"
-    scenarios:
-      EE_00005_01:
-        description: "includes CORS headers for frontend requests"
-        file_path: "tests/e2e/backend-api.spec.ts"
-        steps:
-          - given: "backend service is running"
-          - when: "request with Origin header from frontend domain is sent"
-          - then: "response includes appropriate CORS headers"
-          - and: "Access-Control-Allow-Origin header allows frontend domain"
+    requirement: "Backend /health endpoint returns healthy status"
+    implementation_status:
+      status: "pending"
+      file_path: "services/backend/cmd/main_test.go"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-006"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "health check handler functions exist"
+      when:
+        - "handlers are called"
+      then:
+        - "correct health status responses are returned"
 
-  FR-00006:
-    title: "Frontend single-page application loads successfully"
-    story_id: "1.1-E2E-002"
-    story_reference: "Story 1.1"
+  EE_00002_02:
+    description: "health endpoint accessible via HTTP"
+    category: "backend"
+    requirement: "Backend /health endpoint returns healthy status"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/backend-api.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-006"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "services are running with health endpoints"
+      when:
+        - "health check URLs are accessed via HTTP"
+      then:
+        - "both services respond with healthy status"
+
+  EE_00003_01:
+    description: "returns 404 for non-existent endpoints"
+    category: "backend"
+    requirement: "Backend handles 404 for non-existent endpoints"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/backend-api.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-004"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service is running"
+      when:
+        - "GET request is sent to non-existent endpoint"
+      then:
+        - "service returns 404 status code"
+        - and: "response indicates endpoint was not found"
+
+  EE_00004_01:
+    description: "returns 405 for POST on version endpoint"
+    category: "backend"
+    requirement: "Backend rejects invalid HTTP methods"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/backend-api.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-005"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service is running"
+      when:
+        - "POST request is sent to /version endpoint"
+      then:
+        - "service returns 405 Method Not Allowed status code"
+        - and: "response indicates method is not allowed"
+
+  EE_00005_01:
+    description: "includes CORS headers for frontend requests"
+    category: "backend"
+    requirement: "Backend provides CORS headers for frontend"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/backend-api.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-007"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service is running"
+      when:
+        - "request with Origin header from frontend domain is sent"
+      then:
+        - "response includes appropriate CORS headers"
+        - and: "Access-Control-Allow-Origin header allows frontend domain"
+
+  UT_00006_01:
+    description: "homepage component renders without errors"
     category: "frontend"
-    scenarios:
-      UT_00006_01:
-        description: "homepage component renders without errors"
-        file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
-        steps:
-          - given: "homepage React component is defined"
-          - when: "component is rendered in test environment"
-          - then: "component renders without errors and displays expected content"
-      UT_00006_02:
-        description: "component handles props correctly"
-        file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
-        steps:
-          - given: "component receives props for configuration"
-          - when: "props are passed to component"
-          - then: "component handles props correctly and renders accordingly"
-      IT_00006_03:
-        description: "Next.js routes serve pages correctly"
-        file_path: "tests/integration/frontend.test.ts"
-        steps:
-          - given: "Next.js App Router is configured"
-          - when: "application routes are accessed"
-          - then: "pages are served correctly by Next.js framework"
-      EE_00006_04:
-        description: "SPA loads in browser"
-        file_path: "tests/e2e/homepage.spec.ts"
-        steps:
-          - given: "frontend application is built and served"
-          - when: "browser navigates to application URL"
-          - then: "single-page application loads and renders in browser"
+    requirement: "Frontend single-page application loads successfully"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-002"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "homepage React component is defined"
+      when:
+        - "component is rendered in test environment"
+      then:
+        - "component renders without errors and displays expected content"
 
-  FR-00007:
-    title: "Homepage displays backend version at bottom"
-    story_id: "1.1-E2E-003"
-    story_reference: "Story 1.1"
+  UT_00006_02:
+    description: "component handles props correctly"
     category: "frontend"
-    scenarios:
-      UT_00007_01:
-        description: "API client constructs correct request"
-        file_path: "services/frontend/__tests__/lib/api.test.ts"
-        steps:
-          - given: "API client utility exists"
-          - when: "API client constructs version request"
-          - then: "correct HTTP request structure is created"
-      UT_00007_02:
-        description: "version component displays \"1.0.0\""
-        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-        steps:
-          - given: "version display component receives version data"
-          - when: "component is rendered with version \"1.0.0\""
-          - then: "version text is displayed at bottom of page"
-      UT_00007_03:
-        description: "handles API errors gracefully"
-        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-        steps:
-          - given: "API call fails with network error"
-          - when: "version fetch encounters failure"
-          - then: "error state is handled gracefully with user-friendly message"
-      UT_00007_04:
-        description: "shows loading state during fetch"
-        file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-        steps:
-          - given: "API call is in progress"
-          - when: "version is being fetched from backend"
-          - then: "loading state is displayed to user"
-      IT_00007_05:
-        description: "frontend fetches from backend successfully"
-        file_path: "tests/integration/fullstack.test.ts"
-        steps:
-          - given: "frontend and backend services are running"
-          - when: "frontend makes API call to backend version endpoint"
-          - then: "version \"1.0.0\" is successfully retrieved and displayed"
-      EE_00007_06:
-        description: "version appears at bottom of page"
-        file_path: "tests/e2e/homepage.spec.ts"
-        steps:
-          - given: "full stack application is running"
-          - when: "user loads homepage in browser"
-          - then: "backend version \"1.0.0\" appears at bottom of page"
+    requirement: "Frontend single-page application loads successfully"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-002"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "component receives props for configuration"
+      when:
+        - "props are passed to component"
+      then:
+        - "component handles props correctly and renders accordingly"
 
-  FR-00008:
-    title: "Homepage displays welcome card with features"
+  IT_00006_03:
+    description: "Next.js routes serve pages correctly"
     category: "frontend"
-    scenarios:
-      EE_00008_01:
-        description: "welcome card is visible"
-        file_path: "tests/e2e/homepage.spec.ts"
-        steps:
-          - given: "frontend application is loaded"
-          - when: "user views homepage"
-          - then: "welcome card is visible"
-          - and: "welcome card displays key features"
+    requirement: "Frontend single-page application loads successfully"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/frontend.test.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-002"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "Next.js App Router is configured"
+      when:
+        - "application routes are accessed"
+      then:
+        - "pages are served correctly by Next.js framework"
 
-  FR-00009:
-    title: "Homepage has responsive design"
+  EE_00006_04:
+    description: "SPA loads in browser"
     category: "frontend"
-    scenarios:
-      EE_00009_01:
-        description: "adapts to different viewport sizes"
-        file_path: "tests/e2e/homepage.spec.ts"
-        steps:
-          - given: "frontend application is loaded"
-          - when: "browser is resized to different viewport sizes"
-          - then: "homepage layout adapts responsively"
-          - and: "all elements remain accessible and properly positioned"
+    requirement: "Frontend single-page application loads successfully"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/homepage.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-002"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "frontend application is built and served"
+      when:
+        - "browser navigates to application URL"
+      then:
+        - "single-page application loads and renders in browser"
 
-  FR-00010:
-    title: "Homepage loads within 2 seconds"
-    story_id: "1.1-E2E-009"
-    story_reference: "Story 1.1"
+  UT_00007_01:
+    description: "API client constructs correct request"
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/lib/api.test.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "API client utility exists"
+      when:
+        - "API client constructs version request"
+      then:
+        - "correct HTTP request structure is created"
+
+  UT_00007_02:
+    description: "version component displays \"1.0.0\""
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "version display component receives version data"
+      when:
+        - "component is rendered with version \"1.0.0\""
+      then:
+        - "version text is displayed at bottom of page"
+
+  UT_00007_03:
+    description: "handles API errors gracefully"
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "API call fails with network error"
+      when:
+        - "version fetch encounters failure"
+      then:
+        - "error state is handled gracefully with user-friendly message"
+
+  UT_00007_04:
+    description: "shows loading state during fetch"
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "API call is in progress"
+      when:
+        - "version is being fetched from backend"
+      then:
+        - "loading state is displayed to user"
+
+  IT_00007_05:
+    description: "frontend fetches from backend successfully"
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/fullstack.test.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "frontend and backend services are running"
+      when:
+        - "frontend makes API call to backend version endpoint"
+      then:
+        - "version \"1.0.0\" is successfully retrieved and displayed"
+
+  EE_00007_06:
+    description: "version appears at bottom of page"
+    category: "frontend"
+    requirement: "Homepage displays backend version at bottom"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/homepage.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "full stack application is running"
+      when:
+        - "user loads homepage in browser"
+      then:
+        - "backend version \"1.0.0\" appears at bottom of page"
+
+  EE_00008_01:
+    description: "welcome card is visible"
+    category: "frontend"
+    requirement: "Homepage displays welcome card with features"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/homepage.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-008"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "frontend application is loaded"
+      when:
+        - "user views homepage"
+      then:
+        - "welcome card is visible"
+        - and: "welcome card displays key features"
+
+  EE_00009_01:
+    description: "adapts to different viewport sizes"
+    category: "frontend"
+    requirement: "Homepage has responsive design"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/homepage.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-010"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "frontend application is loaded"
+      when:
+        - "browser is resized to different viewport sizes"
+      then:
+        - "homepage layout adapts responsively"
+        - and: "all elements remain accessible and properly positioned"
+
+  EE_00010_01:
+    description: "page loads under 2000ms"
     category: "performance"
-    scenarios:
-      EE_00010_01:
-        description: "page loads under 2000ms"
-        file_path: "tests/e2e/performance.spec.ts"
-        steps:
-          - given: "frontend application is deployed"
-          - when: "user navigates to homepage"
-          - then: "page fully loads in under 2000ms"
-          - and: "all critical resources are loaded within time limit"
+    requirement: "Homepage loads within 2 seconds"
+    implementation_status:
+      status: "pending"
+      file_path: "tests/e2e/performance.spec.ts"
+    last_updated: "2025-09-23"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-009"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "frontend application is deployed"
+      when:
+        - "user navigates to homepage"
+      then:
+        - "page fully loads in under 2000ms"
+        - and: "all critical resources are loaded within time limit"
 
 # Schema validation and tooling support
 schema:
-  requirement_id_pattern: "^FR-\\d{5}$"
-  scenario_id_pattern: "^(UT|IT|EE)-\\d{5}-\\d{2}$"
+  scenario_id_pattern: "^(UT|IT|EE)_\\d{5}_\\d{2}$"
+  status_values: ["pending", "implemented", "failed", "outdated"]
   categories: ["backend", "frontend", "performance", "integration"]
   gherkin_keywords: ["given", "when", "then", "and", "but"]
 
@@ -236,6 +492,7 @@ schema:
 references:
   test_naming: "docs/test-naming.md"
   coding_standards: "docs/architecture/coding-standards.md"
+  scenario_merge_design: "docs/architecture/scenario-merge-design.md"
   test_files:
     unit_tests:
       - "services/backend/cmd/main_test.go"

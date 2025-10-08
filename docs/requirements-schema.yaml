@@ -1,23 +1,25 @@
-# Yamale schema for docs/requirements.yml
-# Full validation including regex patterns for requirement and scenario IDs
+# Yamale schema for docs/requirements.yml (Version 2.0 - Flattened Structure)
+# Validates flattened scenario registry with implementation status tracking
 
 metadata:
   title: str()
   version: str()
   last_updated: str()
+  description: str(required=False)
 
-# Requirements section - validates structure AND ID patterns
-requirements: map(key=regex(r'^FR-\d{5}$'), val=include('requirement'))
+# Flattened scenarios section - each scenario tracked independently
+scenarios: map(key=regex(r'^(UT|IT|EE)_\d{5}_\d{2}$'), val=include('scenario'))
 
 schema:
-  requirement_id_pattern: str()
   scenario_id_pattern: str()
+  status_values: list(str())
   categories: list(str())
   gherkin_keywords: list(str())
 
 references:
   test_naming: str()
   coding_standards: str()
+  scenario_merge_design: str(required=False)
   test_files:
     unit_tests: list(str())
     integration_tests: list(str())
@@ -26,21 +28,30 @@ references:
 ---
 # Include definitions
 
-requirement:
-  title: str()
-  story_id: str(required=False)
-  story_reference: str(required=False)
-  category: enum('backend', 'frontend', 'performance', 'integration')
-  scenarios: map(key=regex(r'^(UT|IT|EE)_\d{5}_\d{2}$'), val=include('scenario'))
-
 scenario:
   description: str()
-  file_path: str()
-  steps: list(include('step'), min=1)
+  category: enum('backend', 'frontend', 'performance', 'integration')
+  requirement: str()
+  implementation_status: include('implementation_status')
+  last_updated: str()
+  user_stories: list(include('user_story'), min=1)
+  merged_steps: include('merged_steps')
 
-step:
-  given: str(required=False)
-  when: str(required=False)
-  then: str(required=False)
+implementation_status:
+  status: enum('pending', 'implemented', 'failed', 'outdated')
+  file_path: str()
+
+user_story:
+  story_id: str()
+  story_file: str()
+  scenario_id: str()
+  merge_date: str()
+
+merged_steps:
+  given: list(any(str(), include('step_modifier')))
+  when: list(any(str(), include('step_modifier')))
+  then: list(any(str(), include('step_modifier')))
+
+step_modifier:
   and: str(required=False)
   but: str(required=False)
