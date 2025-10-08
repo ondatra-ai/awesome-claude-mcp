@@ -27,7 +27,7 @@ scenarios:
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-001"
+        scenario_id: "1.1-INT-001"
         merge_date: "2025-09-23"
     merged_steps:
       given:
@@ -36,6 +36,105 @@ scenarios:
         - "client sends HTTP GET request to /version"
       then:
         - "server responds with correct JSON and 200 status"
+
+  INT-002:
+    description: "version endpoint rejects invalid methods"
+    category: "backend"
+    requirement: "Backend rejects invalid HTTP methods"
+    level: "integration"
+    priority: "P1"
+    acceptance_criteria: ["AC-4"]
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/backend-api.spec.ts"
+    last_updated: "2025-10-08"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-004"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service runs"
+      when:
+        - "client sends POST request to /version endpoint"
+      then:
+        - "service returns 405 Method Not Allowed status code"
+        - and: "response indicates method not allowed"
+
+  INT-003:
+    description: "health endpoint returns healthy status"
+    category: "backend"
+    requirement: "Backend /health endpoint returns healthy status"
+    level: "integration"
+    priority: "P0"
+    acceptance_criteria: ["AC-2"]
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/backend-api.spec.ts"
+    last_updated: "2025-10-08"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-002"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "services run with health endpoints configured"
+      when:
+        - "client accesses health check URLs via HTTP"
+      then:
+        - "both services respond with healthy status"
+
+  INT-004:
+    description: "health endpoint rejects invalid methods"
+    category: "backend"
+    requirement: "Backend rejects invalid HTTP methods"
+    level: "integration"
+    priority: "P1"
+    acceptance_criteria: ["AC-4"]
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/backend-api.spec.ts"
+    last_updated: "2025-10-08"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-004"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service runs"
+      when:
+        - "client sends DELETE request to /health endpoint"
+      then:
+        - "service returns 405 Method Not Allowed status code"
+        - and: "response indicates method not allowed"
+
+  INT-005:
+    description: "non-existent endpoint returns 404"
+    category: "backend"
+    requirement: "Backend handles 404 for non-existent endpoints"
+    level: "integration"
+    priority: "P1"
+    acceptance_criteria: ["AC-3"]
+    implementation_status:
+      status: "pending"
+      file_path: "tests/integration/backend-api.spec.ts"
+    last_updated: "2025-10-08"
+    user_stories:
+      - story_id: "1.1"
+        story_file: "docs/stories/1.1-initial-setup.md"
+        scenario_id: "1.1-E2E-003"
+        merge_date: "2025-09-23"
+    merged_steps:
+      given:
+        - "backend service runs"
+      when:
+        - "client sends GET request to non-existent endpoint"
+      then:
+        - "service returns 404 status code"
+        - and: "response indicates endpoint does not exist"
 
   E2E-001:
     description: "service returns version with headers"
@@ -160,7 +259,7 @@ scenarios:
         - "server includes appropriate CORS headers in response"
         - and: "Access-Control-Allow-Origin header allows frontend domain"
 
-  INT-002:
+  INT-006:
     description: "Next.js routes serve pages correctly"
     category: "frontend"
     requirement: "Frontend single-page application loads successfully"
@@ -208,7 +307,7 @@ scenarios:
       then:
         - "single-page application loads and renders in browser"
 
-  INT-003:
+  INT-007:
     description: "frontend fetches from backend successfully"
     category: "frontend"
     requirement: "Homepage displays backend version at bottom"
