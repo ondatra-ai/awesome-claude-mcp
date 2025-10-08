@@ -13,7 +13,7 @@ metadata:
 # - User story lineage (tracks which stories modified this scenario)
 # - Merged steps from all contributing stories
 scenarios:
-  1.1-INT-001:
+  INT-001:
     description: "server responds with correct status"
     category: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
@@ -37,7 +37,7 @@ scenarios:
       then:
         - "server responds with correct JSON and 200 status"
 
-  1.1-E2E-001:
+  E2E-001:
     description: "service returns version with headers"
     category: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
@@ -61,7 +61,7 @@ scenarios:
       then:
         - "service responds with \"1.0.0\" and proper HTTP headers"
 
-  1.1-E2E-002:
+  E2E-002:
     description: "health endpoint accessible via HTTP"
     category: "backend"
     requirement: "Backend /health endpoint returns healthy status"
@@ -85,7 +85,7 @@ scenarios:
       then:
         - "both services respond with healthy status"
 
-  1.1-E2E-003:
+  E2E-003:
     description: "returns 404 for non-existent endpoints"
     category: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
@@ -110,7 +110,7 @@ scenarios:
         - "service returns 404 status code"
         - and: "response indicates endpoint was not found"
 
-  1.1-E2E-004:
+  E2E-004:
     description: "returns 405 for POST on version endpoint"
     category: "backend"
     requirement: "Backend rejects invalid HTTP methods"
@@ -135,7 +135,7 @@ scenarios:
         - "service returns 405 Method Not Allowed status code"
         - and: "response indicates method is not allowed"
 
-  1.1-E2E-005:
+  E2E-005:
     description: "includes CORS headers for frontend requests"
     category: "backend"
     requirement: "Backend provides CORS headers for frontend"
@@ -160,7 +160,7 @@ scenarios:
         - "response includes appropriate CORS headers"
         - and: "Access-Control-Allow-Origin header allows frontend domain"
 
-  1.1-INT-002:
+  INT-002:
     description: "Next.js routes serve pages correctly"
     category: "frontend"
     requirement: "Frontend single-page application loads successfully"
@@ -184,7 +184,7 @@ scenarios:
       then:
         - "pages are served correctly by Next.js framework"
 
-  1.1-E2E-006:
+  E2E-006:
     description: "SPA loads in browser"
     category: "frontend"
     requirement: "Frontend single-page application loads successfully"
@@ -208,7 +208,7 @@ scenarios:
       then:
         - "single-page application loads and renders in browser"
 
-  1.1-INT-003:
+  INT-003:
     description: "frontend fetches from backend successfully"
     category: "frontend"
     requirement: "Homepage displays backend version at bottom"
@@ -232,7 +232,7 @@ scenarios:
       then:
         - "version \"1.0.0\" is successfully retrieved and displayed"
 
-  1.1-E2E-007:
+  E2E-007:
     description: "version appears at bottom of page"
     category: "frontend"
     requirement: "Homepage displays backend version at bottom"
@@ -256,7 +256,7 @@ scenarios:
       then:
         - "backend version \"1.0.0\" appears at bottom of page"
 
-  1.1-E2E-008:
+  E2E-008:
     description: "welcome card is visible"
     category: "frontend"
     requirement: "Homepage displays welcome card with features"
@@ -281,7 +281,7 @@ scenarios:
         - "welcome card is visible"
         - and: "welcome card displays key features"
 
-  1.1-E2E-009:
+  E2E-009:
     description: "adapts to different viewport sizes"
     category: "frontend"
     requirement: "Homepage has responsive design"
@@ -306,7 +306,7 @@ scenarios:
         - "homepage layout adapts responsively"
         - and: "all elements remain accessible and properly positioned"
 
-  1.1-E2E-010:
+  E2E-010:
     description: "page loads under 2000ms"
     category: "performance"
     requirement: "Homepage loads within 2 seconds"
@@ -333,7 +333,7 @@ scenarios:
 
 # Schema validation and tooling support
 schema:
-  scenario_id_pattern: "^\\d+\\.\\d+-(?:INT|E2E)-\\d{3}$"
+  scenario_id_pattern: "^(?:INT|E2E)-\\d{3}$"
   status_values: ["pending", "implemented", "failed", "outdated"]
   categories: ["backend", "frontend", "performance", "integration"]
   gherkin_keywords: ["given", "when", "then", "and", "but"]

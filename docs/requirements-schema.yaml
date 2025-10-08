@@ -8,8 +8,9 @@ metadata:
   description: str(required=False)
 
 # Flattened scenarios section - each scenario tracked independently
-# Pattern: {story_id}-{LEVEL}-{sequence} (e.g., 3.1-INT-001, 1.1-E2E-002)
-scenarios: map(key=regex(r'^\d+\.\d+-(?:INT|E2E)-\d{3}$'), val=include('scenario'))
+# Pattern: {LEVEL}-{sequence} (e.g., INT-001, E2E-002)
+# Note: Story lineage tracked via user_stories.scenario_id field
+scenarios: map(key=regex(r'^(?:INT|E2E)-\d{3}$'), val=include('scenario'))
 
 schema:
   scenario_id_pattern: str()
