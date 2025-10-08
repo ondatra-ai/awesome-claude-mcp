@@ -22,7 +22,7 @@ scenarios:
     acceptance_criteria: ["AC-1"]
     implementation_status:
       status: "pending"
-      file_path: "tests/integration/backend.test.ts"
+      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
