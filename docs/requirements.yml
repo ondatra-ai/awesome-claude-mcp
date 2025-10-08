@@ -13,56 +13,17 @@ metadata:
 # - User story lineage (tracks which stories modified this scenario)
 # - Merged steps from all contributing stories
 scenarios:
-  UT_00001_01:
-    description: "handler should return correct version"
-    category: "backend"
-    requirement: "Backend /version endpoint returns 1.0.0"
-    implementation_status:
-      status: "pending"  # pending/implemented/failed/outdated
-      file_path: "services/backend/cmd/main_test.go"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-001"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "version handler function exists"
-      when:
-        - "handler is called with valid HTTP request"
-      then:
-        - "JSON response {\"version\": \"1.0.0\"} is returned"
-
-  UT_00001_02:
-    description: "handler should reject invalid methods"
-    category: "backend"
-    requirement: "Backend /version endpoint returns 1.0.0"
-    implementation_status:
-      status: "pending"
-      file_path: "services/backend/cmd/main_test.go"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-001"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "version endpoint receives invalid HTTP method"
-      when:
-        - "non-GET request is made to /version"
-      then:
-        - "appropriate HTTP error status is returned"
-
-  IT_00001_03:
+  1.1-INT-001:
     description: "server responds with correct status"
     category: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
+    level: "integration"
+    priority: "P0"
+    acceptance_criteria: ["AC-1"]
     implementation_status:
       status: "pending"
       file_path: "tests/integration/backend.test.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -76,14 +37,17 @@ scenarios:
       then:
         - "server responds with correct JSON and 200 status"
 
-  EE_00001_04:
+  1.1-E2E-001:
     description: "service returns version with headers"
     category: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
+    level: "e2e"
+    priority: "P0"
+    acceptance_criteria: ["AC-1"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/backend-api.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -97,35 +61,17 @@ scenarios:
       then:
         - "service responds with \"1.0.0\" and proper HTTP headers"
 
-  UT_00002_01:
-    description: "health check handler returns correct status"
-    category: "backend"
-    requirement: "Backend /health endpoint returns healthy status"
-    implementation_status:
-      status: "pending"
-      file_path: "services/backend/cmd/main_test.go"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-006"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "health check handler functions exist"
-      when:
-        - "handlers are called"
-      then:
-        - "correct health status responses are returned"
-
-  EE_00002_02:
+  1.1-E2E-002:
     description: "health endpoint accessible via HTTP"
     category: "backend"
     requirement: "Backend /health endpoint returns healthy status"
+    level: "e2e"
+    priority: "P0"
+    acceptance_criteria: ["AC-2"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/backend-api.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -139,14 +85,17 @@ scenarios:
       then:
         - "both services respond with healthy status"
 
-  EE_00003_01:
+  1.1-E2E-003:
     description: "returns 404 for non-existent endpoints"
     category: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
+    level: "e2e"
+    priority: "P1"
+    acceptance_criteria: ["AC-3"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/backend-api.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -161,14 +110,17 @@ scenarios:
         - "service returns 404 status code"
         - and: "response indicates endpoint was not found"
 
-  EE_00004_01:
+  1.1-E2E-004:
     description: "returns 405 for POST on version endpoint"
     category: "backend"
     requirement: "Backend rejects invalid HTTP methods"
+    level: "e2e"
+    priority: "P1"
+    acceptance_criteria: ["AC-4"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/backend-api.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -183,14 +135,17 @@ scenarios:
         - "service returns 405 Method Not Allowed status code"
         - and: "response indicates method is not allowed"
 
-  EE_00005_01:
+  1.1-E2E-005:
     description: "includes CORS headers for frontend requests"
     category: "backend"
     requirement: "Backend provides CORS headers for frontend"
+    level: "e2e"
+    priority: "P1"
+    acceptance_criteria: ["AC-5"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/backend-api.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -205,56 +160,17 @@ scenarios:
         - "response includes appropriate CORS headers"
         - and: "Access-Control-Allow-Origin header allows frontend domain"
 
-  UT_00006_01:
-    description: "homepage component renders without errors"
-    category: "frontend"
-    requirement: "Frontend single-page application loads successfully"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-002"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "homepage React component is defined"
-      when:
-        - "component is rendered in test environment"
-      then:
-        - "component renders without errors and displays expected content"
-
-  UT_00006_02:
-    description: "component handles props correctly"
-    category: "frontend"
-    requirement: "Frontend single-page application loads successfully"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/components/HomePage.test.tsx"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-002"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "component receives props for configuration"
-      when:
-        - "props are passed to component"
-      then:
-        - "component handles props correctly and renders accordingly"
-
-  IT_00006_03:
+  1.1-INT-002:
     description: "Next.js routes serve pages correctly"
     category: "frontend"
     requirement: "Frontend single-page application loads successfully"
+    level: "integration"
+    priority: "P0"
+    acceptance_criteria: ["AC-6"]
     implementation_status:
       status: "pending"
       file_path: "tests/integration/frontend.test.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -268,14 +184,17 @@ scenarios:
       then:
         - "pages are served correctly by Next.js framework"
 
-  EE_00006_04:
+  1.1-E2E-006:
     description: "SPA loads in browser"
     category: "frontend"
     requirement: "Frontend single-page application loads successfully"
+    level: "e2e"
+    priority: "P0"
+    acceptance_criteria: ["AC-6"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/homepage.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -289,98 +208,17 @@ scenarios:
       then:
         - "single-page application loads and renders in browser"
 
-  UT_00007_01:
-    description: "API client constructs correct request"
-    category: "frontend"
-    requirement: "Homepage displays backend version at bottom"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/lib/api.test.ts"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-003"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "API client utility exists"
-      when:
-        - "API client constructs version request"
-      then:
-        - "correct HTTP request structure is created"
-
-  UT_00007_02:
-    description: "version component displays \"1.0.0\""
-    category: "frontend"
-    requirement: "Homepage displays backend version at bottom"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-003"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "version display component receives version data"
-      when:
-        - "component is rendered with version \"1.0.0\""
-      then:
-        - "version text is displayed at bottom of page"
-
-  UT_00007_03:
-    description: "handles API errors gracefully"
-    category: "frontend"
-    requirement: "Homepage displays backend version at bottom"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-003"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "API call fails with network error"
-      when:
-        - "version fetch encounters failure"
-      then:
-        - "error state is handled gracefully with user-friendly message"
-
-  UT_00007_04:
-    description: "shows loading state during fetch"
-    category: "frontend"
-    requirement: "Homepage displays backend version at bottom"
-    implementation_status:
-      status: "pending"
-      file_path: "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-    last_updated: "2025-09-23"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-003"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "API call is in progress"
-      when:
-        - "version is being fetched from backend"
-      then:
-        - "loading state is displayed to user"
-
-  IT_00007_05:
+  1.1-INT-003:
     description: "frontend fetches from backend successfully"
     category: "frontend"
     requirement: "Homepage displays backend version at bottom"
+    level: "integration"
+    priority: "P0"
+    acceptance_criteria: ["AC-7"]
     implementation_status:
       status: "pending"
       file_path: "tests/integration/fullstack.test.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -394,14 +232,17 @@ scenarios:
       then:
         - "version \"1.0.0\" is successfully retrieved and displayed"
 
-  EE_00007_06:
+  1.1-E2E-007:
     description: "version appears at bottom of page"
     category: "frontend"
     requirement: "Homepage displays backend version at bottom"
+    level: "e2e"
+    priority: "P0"
+    acceptance_criteria: ["AC-7"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/homepage.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -415,14 +256,17 @@ scenarios:
       then:
         - "backend version \"1.0.0\" appears at bottom of page"
 
-  EE_00008_01:
+  1.1-E2E-008:
     description: "welcome card is visible"
     category: "frontend"
     requirement: "Homepage displays welcome card with features"
+    level: "e2e"
+    priority: "P1"
+    acceptance_criteria: ["AC-8"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/homepage.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -437,14 +281,17 @@ scenarios:
         - "welcome card is visible"
         - and: "welcome card displays key features"
 
-  EE_00009_01:
+  1.1-E2E-009:
     description: "adapts to different viewport sizes"
     category: "frontend"
     requirement: "Homepage has responsive design"
+    level: "e2e"
+    priority: "P1"
+    acceptance_criteria: ["AC-9"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/homepage.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -459,14 +306,17 @@ scenarios:
         - "homepage layout adapts responsively"
         - and: "all elements remain accessible and properly positioned"
 
-  EE_00010_01:
+  1.1-E2E-010:
     description: "page loads under 2000ms"
     category: "performance"
     requirement: "Homepage loads within 2 seconds"
+    level: "e2e"
+    priority: "P0"
+    acceptance_criteria: ["AC-10"]
     implementation_status:
       status: "pending"
       file_path: "tests/e2e/performance.spec.ts"
-    last_updated: "2025-09-23"
+    last_updated: "2025-10-08"
     user_stories:
       - story_id: "1.1"
         story_file: "docs/stories/1.1-initial-setup.md"
@@ -483,10 +333,12 @@ scenarios:
 
 # Schema validation and tooling support
 schema:
-  scenario_id_pattern: "^(UT|IT|EE)_\\d{5}_\\d{2}$"
+  scenario_id_pattern: "^\\d+\\.\\d+-(?:INT|E2E)-\\d{3}$"
   status_values: ["pending", "implemented", "failed", "outdated"]
   categories: ["backend", "frontend", "performance", "integration"]
   gherkin_keywords: ["given", "when", "then", "and", "but"]
+  test_levels: ["integration", "e2e"]
+  priorities: ["P0", "P1", "P2"]
 
 # Cross-references to related documentation
 references:
@@ -494,11 +346,6 @@ references:
   coding_standards: "docs/architecture/coding-standards.md"
   scenario_merge_design: "docs/architecture/scenario-merge-design.md"
   test_files:
-    unit_tests:
-      - "services/backend/cmd/main_test.go"
-      - "services/frontend/__tests__/lib/api.test.ts"
-      - "services/frontend/__tests__/components/VersionDisplay.test.tsx"
-      - "services/frontend/__tests__/components/HomePage.test.tsx"
     integration_tests:
       - "tests/integration/backend.test.ts"
       - "tests/integration/frontend.test.ts"

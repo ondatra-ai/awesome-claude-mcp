@@ -8,20 +8,22 @@ metadata:
   description: str(required=False)
 
 # Flattened scenarios section - each scenario tracked independently
-scenarios: map(key=regex(r'^(UT|IT|EE)_\d{5}_\d{2}$'), val=include('scenario'))
+# Pattern: {story_id}-{LEVEL}-{sequence} (e.g., 3.1-INT-001, 1.1-E2E-002)
+scenarios: map(key=regex(r'^\d+\.\d+-(?:INT|E2E)-\d{3}$'), val=include('scenario'))
 
 schema:
   scenario_id_pattern: str()
   status_values: list(str())
   categories: list(str())
   gherkin_keywords: list(str())
+  test_levels: list(str())
+  priorities: list(str())
 
 references:
   test_naming: str()
   coding_standards: str()
   scenario_merge_design: str(required=False)
   test_files:
-    unit_tests: list(str())
     integration_tests: list(str())
     e2e_tests: list(str())
 
@@ -32,6 +34,9 @@ scenario:
   description: str()
   category: enum('backend', 'frontend', 'performance', 'integration')
   requirement: str()
+  level: enum('integration', 'e2e')
+  priority: enum('P0', 'P1', 'P2')
+  acceptance_criteria: list(str(), min=1)
   implementation_status: include('implementation_status')
   last_updated: str()
   user_stories: list(include('user_story'), min=1)
