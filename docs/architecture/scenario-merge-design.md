@@ -101,38 +101,35 @@ scenarios:
 **File**: `docs/requirements.yml`
 
 ```yaml
-requirements:
-  FR-00015:
-    title: "..."                    # Auto-generated from story description
-    story_references:               # Multiple stories can reference same requirement!
-      - story_id: "3.1"
-        scenario_id: "3.1-INT-001"
-        merged_date: "2025-10-06"
-      - story_id: "3.3"             # Example: Another story updates this
-        scenario_id: "3.3-INT-002"
-        merged_date: "2025-10-08"
+scenarios:
+  INT-015:
+    description: "WebSocket connection establishment"
     category: "backend"
-    priority: "P0"                  # From latest story
-    acceptance_criteria: ["AC-1"]   # From latest story
-    scenarios:
-      INT_00015_01:
-        story_scenario_id: "3.1-INT-001"  # Primary reference
-        description: "..."
-        file_path: "tests/integration/mcp-server.test.ts"
-        implementation_status: "implemented"  # pending/implemented/failed/outdated
-        last_updated: "2025-10-06"
-        updated_by_story: "3.1"     # Last story that modified this
-        change_history:             # Track modifications
-          - date: "2025-10-06"
-            story_id: "3.1"
-            scenario_id: "3.1-INT-001"
-          - date: "2025-10-08"
-            story_id: "3.3"
-            scenario_id: "3.3-INT-002"
-        steps:
-          - given: "..."
-          - when: "..."
-          - then: "..."
+    requirement: "Server accepts WebSocket connections"
+    level: "integration"
+    priority: "P0"
+    acceptance_criteria: ["AC-1"]
+    implementation_status:
+      status: "implemented"  # pending/implemented/failed/outdated
+      file_path: "tests/integration/mcp-server.test.ts"
+    last_updated: "2025-10-08"
+    user_stories:             # Track modifications across stories
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-mcp-server-implementation.yaml"
+        scenario_id: "3.1-INT-001"
+        merge_date: "2025-10-06"
+      - story_id: "3.3"
+        story_file: "docs/stories/3.3-connection-retry.yaml"
+        scenario_id: "3.3-INT-002"
+        merge_date: "2025-10-08"
+    merged_steps:
+      given:
+        - "Server accepts WebSocket connections on port 8081"
+      when:
+        - "Client sends WebSocket connection request"
+      then:
+        - "Server establishes WebSocket connection"
+        - and: "Server returns connection ID"
 ```
 
 ---
