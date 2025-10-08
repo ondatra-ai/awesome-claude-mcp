@@ -79,11 +79,11 @@ id: "3.1-INT-001"
 acceptance_criteria: ["AC-1"]
 steps:
   - given:
-      - "Server is ready to accept WebSocket connections"
+      - "Server accepts WebSocket connections on port 8081"
   - when:
-      - "Client attempts to establish connection"
+      - "Client connects to ws://localhost:8081/mcp"
   - then:
-      - "Server accepts connection"
+      - "Server returns connection success with unique ID"
 level: "integration"
 priority: "P0"
 ```
@@ -94,13 +94,13 @@ id: "3.1-INT-002"
 acceptance_criteria: ["AC-1"]
 steps:
   - given:
-      - "Server is ready to accept connections"
-      - and: "MCP endpoint is configured with authentication"
-      - and: "Redis cache is available"
+      - "Server accepts connections on MCP endpoint"
+      - and: "MCP endpoint requires authentication token"
+      - and: "Redis cache serves connection data"
   - when:
-      - "Client attempts to connect"
+      - "Client connects with valid authentication token"
   - then:
-      - "Server accepts connection"
+      - "Server returns authenticated connection success"
 level: "integration"
 priority: "P0"
 ```
@@ -111,12 +111,12 @@ id: "3.1-INT-003"
 acceptance_criteria: ["AC-3"]
 steps:
   - given:
-      - "Client has active WebSocket connection"
+      - "Client maintains WebSocket connection to server"
   - when:
       - "Client sends authentication request"
       - and: "Client provides valid credentials"
   - then:
-      - "Server returns authentication success"
+      - "Server returns authentication success with session token"
 level: "integration"
 priority: "P0"
 ```
@@ -127,13 +127,13 @@ id: "3.1-INT-004"
 acceptance_criteria: ["AC-4"]
 steps:
   - given:
-      - "Server is running normally"
+      - "Server processes requests without errors"
   - when:
-      - "Client sends valid request"
+      - "Client sends valid MCP request"
   - then:
-      - "Server returns success response"
+      - "Server returns success response with status 200"
       - and: "Response includes correlation ID"
-      - and: "Metrics are updated"
+      - and: "Server updates connection metrics"
 level: "integration"
 priority: "P0"
 ```
@@ -144,14 +144,14 @@ id: "3.1-INT-005"
 acceptance_criteria: ["AC-3"]
 steps:
   - given:
-      - "Server is running with rate limiting enabled"
-      - but: "No requests have been made yet"
+      - "Server enforces rate limit of 100 requests per minute"
+      - but: "Client sends no requests yet"
   - when:
       - "Client sends invalid request"
   - then:
-      - "Server returns error response"
-      - but: "Connection remains active"
-      - but: "No alarm is triggered"
+      - "Server returns error response with status 400"
+      - but: "Server keeps connection open"
+      - but: "Server triggers no alarm"
 level: "integration"
 priority: "P0"
 ```
@@ -262,7 +262,7 @@ id: "3.1-INT-001"
 acceptance_criteria: ["AC-1"]
 steps:
   - given:
-      - "Client has active WebSocket connection"  # ← External state, active
+      - "Client maintains WebSocket connection to server"  # ← External state, active
   - when:
       - "Client sends message with invalid format"  # ← External actor, active
   - then:
@@ -297,11 +297,11 @@ then: "All messages handled correctly and connections stable"  # ← Multiple ou
 ```yaml
 steps:
   - given:
-      - "Server is running with connection limit"
+      - "Server accepts maximum 100 concurrent connections"
   - when:
       - "Multiple clients connect simultaneously"  # ← One behavior
   - then:
-      - "Server accepts connections up to configured limit"  # ← Specific outcome
+      - "Server accepts connections up to limit"  # ← Specific outcome
 ```
 
 **Why Good**:
@@ -329,17 +329,18 @@ then: "Response is formatted and returned"  # ← Passive
 ```yaml
 steps:
   - given:
-      - "Server is ready to accept requests"  # ← Active, external state
+      - "Server accepts requests on port 8081"  # ← Active, external state
   - when:
-      - "Client sends request to server"  # ← Active, external actor
+      - "Client sends POST request to /api/endpoint"  # ← Active, external actor
   - then:
-      - "Server returns formatted response"  # ← Active, observable
+      - "Server returns JSON response with status 200"  # ← Active, observable
 ```
 
 **Why Good**:
-- Active voice throughout
+- Active voice throughout (no "is ready to")
 - No internal components
 - External observable behavior
+- Specific details (port, method, status)
 
 ---
 
@@ -364,6 +365,29 @@ If ANY of these appear in Given/When/Then → REJECT scenario:
 **Vague Qualifiers:**
 - properly, correctly, specific
 - appropriate, suitable, valid (without criteria)
+
+**Passive Voice Patterns (Auto-Reject):**
+❌ "Server is ready to [verb]"
+❌ "Server is running" (without specific details)
+❌ "System is configured"
+❌ "Service is available"
+❌ "Client has [state]"
+❌ "Connection is established"
+❌ "Request is processed"
+❌ "Data is stored"
+
+**The "Remove State Verb" Test:**
+If the step uses "is/are/was/were/has/have" → Check if it's passive
+- ❌ "Server is ready" → Cannot remove "is" = Passive
+- ✅ "Server accepts connections" → No state verb = Active
+
+**Active Voice Replacements:**
+✅ "Server accepts" / "Server processes" / "Server responds"
+✅ "Server runs on port X" / "Server operates normally"
+✅ "System requires" / "System enforces" / "System provides"
+✅ "Service serves" / "Service handles"
+✅ "Client maintains" / "Client holds" / "Client keeps"
+✅ "Client establishes connection" / "Connection opens"
 
 ---
 
