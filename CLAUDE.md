@@ -38,26 +38,43 @@ See `docs/architecture/bdd-guidelines.md` for scenario writing standards.
 
 ## Development Setup
 
-Since this is a new repository without code, common setup tasks will depend on the project type:
+### Quick Start
+All development commands use the Makefile in the repository root:
 
-### For Go Projects
-- Run tests: `go test ./...`
-- Build: `go build`
-- Format code: `go fmt ./...`
-- Lint: `golangci-lint run` (if installed)
+```bash
+make help  # Show all available commands
+```
+
+### Common Commands
+
+#### Testing
+```bash
+make test-unit    # Run unit tests (Go backend + Jest frontend)
+make test-e2e     # Run integration & E2E tests (starts Docker services automatically)
+```
+
+#### Development
+```bash
+make init         # Install dependencies and build Docker images
+make dev          # Start all services with Docker Compose
+```
+
+#### Linting
+```bash
+make lint         # Run all linting checks
+make lint-backend # Lint Go backend code
+make lint-frontend # Lint TypeScript/React frontend code
+make lint-scripts # Lint Go scripts (bmad-cli)
+make lint-docs    # Validate YAML documentation
+```
 
 ### BMAD CLI Usage
 **CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
-- Build and run: `go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli us create 3.1`
+```bash
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli us create 3.1
+```
 - Use 10-minute timeout (600 seconds) for story generation commands that involve AI processing
 - This ensures proper path resolution for config files and tmp directories
-
-### For Other Project Types
-Update this file once the project structure is established with:
-- Build commands
-- Test commands
-- Linting/formatting commands
-- Local development setup
 
 ## Project Structure
 
