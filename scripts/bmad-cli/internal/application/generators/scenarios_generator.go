@@ -110,14 +110,68 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 			if len(scenario.AcceptanceCriteria) == 0 {
 				return fmt.Errorf("scenario %s: must reference at least one acceptance criterion", scenario.ID)
 			}
-			if scenario.Given == "" {
-				return fmt.Errorf("scenario %s: Given cannot be empty", scenario.ID)
+
+			// Validate steps array
+			if len(scenario.Steps) == 0 {
+				return fmt.Errorf("scenario %s: must have at least one step", scenario.ID)
 			}
-			if scenario.When == "" {
-				return fmt.Errorf("scenario %s: When cannot be empty", scenario.ID)
+
+			// Validate each step has exactly one keyword set and statements are valid
+			hasGiven, hasWhen, hasThen := false, false, false
+			for stepIdx, step := range scenario.Steps {
+				nonEmptyCount := 0
+
+				// Validate Given
+				if len(step.Given) > 0 {
+					nonEmptyCount++
+					hasGiven = true
+					if err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given); err != nil {
+						return err
+					}
+				}
+
+				// Validate When
+				if len(step.When) > 0 {
+					nonEmptyCount++
+					hasWhen = true
+					if err := validateStepStatements(scenario.ID, stepIdx, "When", step.When); err != nil {
+						return err
+					}
+				}
+
+				// Validate Then
+				if len(step.Then) > 0 {
+					nonEmptyCount++
+					hasThen = true
+					if err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then); err != nil {
+						return err
+					}
+				}
+
+				if nonEmptyCount == 0 {
+					return fmt.Errorf("scenario %s, step %d: step must have at least one keyword set", scenario.ID, stepIdx)
+				}
+				if nonEmptyCount > 1 {
+					return fmt.Errorf("scenario %s, step %d: step must have exactly one keyword set", scenario.ID, stepIdx)
+				}
 			}
-			if scenario.Then == "" {
-				return fmt.Errorf("scenario %s: Then cannot be empty", scenario.ID)
+
+			// Ensure scenario has at least Given, When, and Then
+			if !hasGiven {
+				return fmt.Errorf("scenario %s: must have at least one 'Given' step", scenario.ID)
+			}
+			if !hasWhen {
+				return fmt.Errorf("scenario %s: must have at least one 'When' step", scenario.ID)
+			}
+			if !hasThen {
+				return fmt.Errorf("scenario %s: must have at least one 'Then' step", scenario.ID)
+			}
+
+			// Validate scenario outline has examples
+			if scenario.ScenarioOutline {
+				if len(scenario.Examples) == 0 {
+					return fmt.Errorf("scenario %s: scenario outline must have at least one example", scenario.ID)
+				}
 			}
 
 			// Validate level (only integration and e2e allowed)
@@ -147,6 +201,34 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 
 		return nil
 	}
+}
+
+// validateStepStatements validates an array of step statements
+func validateStepStatements(scenarioID string, stepIdx int, keyword string, statements []story.StepStatement) error {
+	if len(statements) == 0 {
+		return fmt.Errorf("scenario %s, step %d: %s must have at least one statement", scenarioID, stepIdx, keyword)
+	}
+
+	for stmtIdx, stmt := range statements {
+		// Check statement is non-empty
+		if strings.TrimSpace(stmt.Statement) == "" {
+			return fmt.Errorf("scenario %s, step %d: %s statement[%d] cannot be empty", scenarioID, stepIdx, keyword, stmtIdx)
+		}
+
+		// First statement must be main (no type)
+		if stmtIdx == 0 && stmt.Type != "" {
+			return fmt.Errorf("scenario %s, step %d: %s first statement must be main (not 'and' or 'but')", scenarioID, stepIdx, keyword)
+		}
+
+		// Additional statements must be and/but
+		if stmtIdx > 0 {
+			if stmt.Type != story.ModifierTypeAnd && stmt.Type != story.ModifierTypeBut {
+				return fmt.Errorf("scenario %s, step %d: %s statement[%d] must be 'and' or 'but'", scenarioID, stepIdx, keyword, stmtIdx)
+			}
+		}
+	}
+
+	return nil
 }
 
 // validateScenarioID validates scenario ID format (e.g., "3.1-INT-001")

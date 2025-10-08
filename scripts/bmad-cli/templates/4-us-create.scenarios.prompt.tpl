@@ -67,6 +67,142 @@ For EACH acceptance criterion ({{range $i, $ac := .Story.AcceptanceCriteria}}{{i
 3. Does it avoid mentioning internal components?
 4. Is it written in active voice?
 
+**Step Structure with Array Format:**
+
+Each Given/When/Then is an array where:
+- **First element**: Plain string (main statement)
+- **Additional elements**: Objects with `and:` or `but:` keys
+
+**Basic Scenario Format (Most Common - No Modifiers):**
+```yaml
+id: "3.1-INT-001"
+acceptance_criteria: ["AC-1"]
+steps:
+  - given:
+      - "Server accepts WebSocket connections on port 8081"
+  - when:
+      - "Client connects to ws://localhost:8081/mcp"
+  - then:
+      - "Server returns connection success with unique ID"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'And' Modifiers in Given (Multiple Preconditions):**
+```yaml
+id: "3.1-INT-002"
+acceptance_criteria: ["AC-1"]
+steps:
+  - given:
+      - "Server accepts connections on MCP endpoint"
+      - and: "MCP endpoint requires authentication token"
+      - and: "Redis cache serves connection data"
+  - when:
+      - "Client connects with valid authentication token"
+  - then:
+      - "Server returns authenticated connection success"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'And' Modifiers in When (Multiple Actions):**
+```yaml
+id: "3.1-INT-003"
+acceptance_criteria: ["AC-3"]
+steps:
+  - given:
+      - "Client maintains WebSocket connection to server"
+  - when:
+      - "Client sends authentication request"
+      - and: "Client provides valid credentials"
+  - then:
+      - "Server returns authentication success with session token"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'And' Modifiers in Then (Multiple Outcomes):**
+```yaml
+id: "3.1-INT-004"
+acceptance_criteria: ["AC-4"]
+steps:
+  - given:
+      - "Server processes requests without errors"
+  - when:
+      - "Client sends valid MCP request"
+  - then:
+      - "Server returns success response with status 200"
+      - and: "Response includes correlation ID"
+      - and: "Server updates connection metrics"
+level: "integration"
+priority: "P0"
+```
+
+**Scenario with 'But' Modifiers (Contrasting/Negative Conditions):**
+```yaml
+id: "3.1-INT-005"
+acceptance_criteria: ["AC-3"]
+steps:
+  - given:
+      - "Server enforces rate limit of 100 requests per minute"
+      - but: "Client sends no requests yet"
+  - when:
+      - "Client sends invalid request"
+  - then:
+      - "Server returns error response with status 400"
+      - but: "Server keeps connection open"
+      - but: "Server triggers no alarm"
+level: "integration"
+priority: "P0"
+```
+
+**Important Rules:**
+- **All three keywords** (Given, When, Then) are arrays
+- First element must be a plain string (main statement)
+- Additional elements are objects with `and:` or `but:` keys
+- Use `and:` for additional preconditions, actions, or outcomes
+- Use `but:` for contrasting or negative conditions (rare)
+- Most scenarios should have 0-2 additional elements per step
+- Plain strings for main statements = cleaner, more readable YAML
+
+**Data-Driven Testing with Scenario Outlines:**
+
+Use Scenario Outlines when testing the same behavior with different inputs:
+
+```yaml
+id: "3.1-INT-003"
+acceptance_criteria: ["AC-2"]
+scenario_outline: true
+steps:
+  - given:
+      - "Server is running on port <port>"
+  - when:
+      - "Client sends <method> request to <endpoint>"
+  - then:
+      - "Response code should be <status>"
+      - "Response contains <field>"
+examples:
+  - port: 8080
+    method: "GET"
+    endpoint: "/version"
+    status: 200
+    field: "version"
+  - port: 8080
+    method: "POST"
+    endpoint: "/version"
+    status: 405
+    field: "error"
+level: "integration"
+priority: "P0"
+```
+
+**When to Use Scenario Outlines:**
+- ✅ Same behavior, different data (HTTP methods, status codes, validation rules)
+- ✅ Boundary testing (min/max values, edge cases)
+- ✅ Error conditions with different inputs
+- ❌ Different behaviors (use separate scenarios instead)
+- ❌ Complex setup variations (keep examples simple)
+
 ---
 
 ### Step 4: Self-Validation Checklist (MANDATORY)
@@ -123,10 +259,16 @@ level: "unit"  # ← NEVER USE THIS
 #### ✅ GOOD: Integration, BDD-compliant
 ```yaml
 id: "3.1-INT-001"
-given: "Client has active WebSocket connection"  # ← External state, active
-when: "Client sends message with invalid format"  # ← External actor, active
-then: "Server responds with validation error"  # ← Observable outcome, active
+acceptance_criteria: ["AC-1"]
+steps:
+  - given:
+      - "Client maintains WebSocket connection to server"  # ← External state, active
+  - when:
+      - "Client sends message with invalid format"  # ← External actor, active
+  - then:
+      - "Server responds with validation error"  # ← Observable outcome, active
 level: "integration"
+priority: "P0"
 ```
 
 **Why Good**:
@@ -153,8 +295,13 @@ then: "All messages handled correctly and connections stable"  # ← Multiple ou
 
 #### ✅ GOOD: Single Behavior
 ```yaml
-when: "Multiple clients connect simultaneously"  # ← One behavior
-then: "Server accepts connections up to configured limit"  # ← Specific outcome
+steps:
+  - given:
+      - "Server accepts maximum 100 concurrent connections"
+  - when:
+      - "Multiple clients connect simultaneously"  # ← One behavior
+  - then:
+      - "Server accepts connections up to limit"  # ← Specific outcome
 ```
 
 **Why Good**:
@@ -180,15 +327,20 @@ then: "Response is formatted and returned"  # ← Passive
 
 #### ✅ GOOD: Active Voice, External
 ```yaml
-given: "Server is ready to accept requests"  # ← Active, external state
-when: "Client sends request to server"  # ← Active, external actor
-then: "Server returns formatted response"  # ← Active, observable
+steps:
+  - given:
+      - "Server accepts requests on port 8081"  # ← Active, external state
+  - when:
+      - "Client sends POST request to /api/endpoint"  # ← Active, external actor
+  - then:
+      - "Server returns JSON response with status 200"  # ← Active, observable
 ```
 
 **Why Good**:
-- Active voice throughout
+- Active voice throughout (no "is ready to")
 - No internal components
 - External observable behavior
+- Specific details (port, method, status)
 
 ---
 
@@ -213,6 +365,29 @@ If ANY of these appear in Given/When/Then → REJECT scenario:
 **Vague Qualifiers:**
 - properly, correctly, specific
 - appropriate, suitable, valid (without criteria)
+
+**Passive Voice Patterns (Auto-Reject):**
+❌ "Server is ready to [verb]"
+❌ "Server is running" (without specific details)
+❌ "System is configured"
+❌ "Service is available"
+❌ "Client has [state]"
+❌ "Connection is established"
+❌ "Request is processed"
+❌ "Data is stored"
+
+**The "Remove State Verb" Test:**
+If the step uses "is/are/was/were/has/have" → Check if it's passive
+- ❌ "Server is ready" → Cannot remove "is" = Passive
+- ✅ "Server accepts connections" → No state verb = Active
+
+**Active Voice Replacements:**
+✅ "Server accepts" / "Server processes" / "Server responds"
+✅ "Server runs on port X" / "Server operates normally"
+✅ "System requires" / "System enforces" / "System provides"
+✅ "Service serves" / "Service handles"
+✅ "Client maintains" / "Client holds" / "Client keeps"
+✅ "Client establishes connection" / "Connection opens"
 
 ---
 
@@ -290,7 +465,8 @@ given: "Connection manager is initialized"
 
 **Regenerate As:**
 ```yaml
-given: "Server is ready to accept connections"
+given:
+  - "Server is ready to accept connections"
 ```
 
 **Re-validate:**
@@ -315,17 +491,25 @@ scenarios:
   test_scenarios:
     - id: "{{.Story.ID}}-INT-001"
       acceptance_criteria: ["AC-1"]
-      given: "Clear description of initial state"
-      when: "Specific action or event occurs"
-      then: "Expected outcome that can be verified"
+      steps:
+        - given:
+            - "Clear description of initial state"
+        - when:
+            - "Specific action or event occurs"
+        - then:
+            - "Expected outcome that can be verified"
       level: "integration"
       priority: "P0"
 
     - id: "{{.Story.ID}}-E2E-001"
       acceptance_criteria: ["AC-1", "AC-2"]
-      given: "Complete system operational from user perspective"
-      when: "User performs complete journey"
-      then: "End-to-end flow completes successfully"
+      steps:
+        - given:
+            - "Complete system operational from user perspective"
+        - when:
+            - "User performs complete journey"
+        - then:
+            - "End-to-end flow completes successfully"
       level: "e2e"
       priority: "P1"
 ```

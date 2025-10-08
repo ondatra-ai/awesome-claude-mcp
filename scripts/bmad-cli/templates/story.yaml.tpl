@@ -33,9 +33,20 @@ scenarios:
   test_scenarios:{{range .Scenarios.TestScenarios}}
     - id: "{{.ID}}"
       acceptance_criteria: [{{range $i, $ac := .AcceptanceCriteria}}{{if $i}}, {{end}}"{{$ac}}"{{end}}]
-      given: "{{.Given}}"
-      when: "{{.When}}"
-      then: "{{.Then}}"
+      steps:{{range .Steps}}{{if .Given}}
+        - given:{{range .Given}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{if .When}}
+        - when:{{range .When}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{if .Then}}
+        - then:{{range .Then}}{{if .Type}}
+            - {{.Type}}: "{{.Statement}}"{{else}}
+            - "{{.Statement}}"{{end}}{{end}}{{end}}{{end}}
+{{if .ScenarioOutline}}      scenario_outline: true
+      examples:{{range .Examples}}
+        - {{range $key, $val := .}}{{$key}}: {{$val}}
+          {{end}}{{end}}{{end}}
       level: "{{.Level}}"
       priority: "{{.Priority}}"{{if .MitigatesRisks}}
       mitigates_risks: [{{range $i, $risk := .MitigatesRisks}}{{if $i}}, {{end}}"{{$risk}}"{{end}}]{{end}}{{end}}
