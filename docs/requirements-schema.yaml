@@ -21,14 +21,13 @@ scenario:
   requirement: str()
   level: enum('integration', 'e2e')
   priority: enum('P0', 'P1', 'P2')
-  acceptance_criteria: list(str(), min=1)
   implementation_status: include('implementation_status')
   last_updated: str()
   user_stories: list(include('user_story'), min=1)
   merged_steps: include('merged_steps')
 
 implementation_status:
-  status: enum('pending', 'implemented', 'failed', 'outdated')
+  status: enum('pending', 'implemented', 'outdated')
   file_path: str()
 
 user_story:
