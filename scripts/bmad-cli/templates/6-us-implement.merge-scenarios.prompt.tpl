@@ -16,7 +16,6 @@ You are merging a test scenario from user story {{.StoryNumber}} into `docs/requ
 id: "{{.ScenarioID}}"
 level: "{{.Level}}"
 priority: "{{.Priority}}"
-acceptance_criteria: {{.AcceptanceCriteria}}
 steps:
 {{.Steps}}
 ```
@@ -108,7 +107,6 @@ For **NEW** scenarios:
   category: "backend"  # From story context
   level: "{{.Level}}"
   priority: "{{.Priority}}"
-  acceptance_criteria: {{.AcceptanceCriteria}}
   implementation_status:
     status: "pending"
     file_path: null
@@ -131,7 +129,6 @@ For **UPDATE** scenarios:
   category: "..."  # Keep existing
   level: "{{.Level}}"
   priority: "{{.Priority}}"
-  acceptance_criteria: {{.AcceptanceCriteria}}
   implementation_status:
     status: "pending"  # Reset to pending
     file_path: "..."  # PRESERVE existing path

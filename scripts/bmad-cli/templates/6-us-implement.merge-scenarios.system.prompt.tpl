@@ -133,20 +133,16 @@ Then: "Server returns error"  # ← CONFLICT!
 4. **priority**:
    - From scenario: `P0`, `P1`, `P2`
 
-5. **acceptance_criteria**:
-   - Copy from scenario
-   - Array of AC IDs (e.g., `["AC-1", "AC-2"]`)
-
-6. **implementation_status**:
+5. **implementation_status**:
    - New scenarios: `status: "pending"`, `file_path: null`
    - Updated scenarios: `status: "pending"`, **preserve existing `file_path`**
 
-7. **user_stories**:
+6. **user_stories**:
    - Array of story references
    - Each entry has: `story_id`, `story_file`, `scenario_id`, `merge_date`
    - Append new entry for updates
 
-8. **merged_steps**:
+7. **merged_steps**:
    - Transform scenario steps into flat structure
    - `given`: Array of strings
    - `when`: Array of strings

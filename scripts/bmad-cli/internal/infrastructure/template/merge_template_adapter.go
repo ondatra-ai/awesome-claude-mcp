@@ -9,25 +9,23 @@ import (
 
 // ScenarioMergeData represents data needed for scenario merge template processing
 type ScenarioMergeData struct {
-	StoryNumber        string
-	ScenarioID         string
-	Level              string
-	Priority           string
-	AcceptanceCriteria string // Pre-formatted for template
-	Steps              string // Pre-formatted Gherkin steps
-	RequirementsFile   string
+	StoryNumber      string
+	ScenarioID       string
+	Level            string
+	Priority         string
+	Steps            string // Pre-formatted Gherkin steps
+	RequirementsFile string
 }
 
 // NewScenarioMergeData creates a new ScenarioMergeData instance from a test scenario
 func NewScenarioMergeData(storyNumber string, scenario storyModels.TestScenario, outputFile string) *ScenarioMergeData {
 	return &ScenarioMergeData{
-		StoryNumber:        storyNumber,
-		ScenarioID:         scenario.ID,
-		Level:              scenario.Level,
-		Priority:           scenario.Priority,
-		AcceptanceCriteria: formatAcceptanceCriteria(scenario.AcceptanceCriteria),
-		Steps:              formatScenarioSteps(scenario),
-		RequirementsFile:   outputFile,
+		StoryNumber:      storyNumber,
+		ScenarioID:       scenario.ID,
+		Level:            scenario.Level,
+		Priority:         scenario.Priority,
+		Steps:            formatScenarioSteps(scenario),
+		RequirementsFile: outputFile,
 	}
 }
 
@@ -57,12 +55,4 @@ func formatScenarioSteps(scenario storyModels.TestScenario) string {
 	}
 
 	return result.String()
-}
-
-// formatAcceptanceCriteria formats acceptance criteria array for template
-func formatAcceptanceCriteria(criteria []string) string {
-	if len(criteria) == 0 {
-		return "[]"
-	}
-	return fmt.Sprintf(`["%s"]`, strings.Join(criteria, `", "`))
 }
