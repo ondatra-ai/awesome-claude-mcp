@@ -43,11 +43,13 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 		opts = append(opts, claudecode.WithSystemPrompt(systemPrompt))
 	}
 
-	// Set model based on parameter
-	if model == "opus" {
-		opts = append(opts, claudecode.WithModel("claude-3-opus-20240229")) // Use Opus 4.1 when available
+	// Set model using simple aliases (sonnet, opus, haiku, etc.)
+	// Claude Code API automatically resolves aliases to latest model versions
+	if model != "" {
+		opts = append(opts, claudecode.WithModel(model))
 	} else {
-		opts = append(opts, claudecode.WithModel("claude-3-5-sonnet-20241022"))
+		// Default to sonnet if no model specified
+		opts = append(opts, claudecode.WithModel("sonnet"))
 	}
 
 	// Apply mode permissions directly from struct fields
