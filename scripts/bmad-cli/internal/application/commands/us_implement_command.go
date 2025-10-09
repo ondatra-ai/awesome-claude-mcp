@@ -1,19 +1,17 @@
 package commands
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
-	"text/template"
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
+	"bmad-cli/internal/infrastructure/template"
 	storyModels "bmad-cli/internal/domain/models/story"
 )
 
@@ -108,21 +106,29 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber string, storyDoc *storyModels.StoryDocument, outputFile string) error {
 	slog.Info("Starting scenario merge", "story_id", storyNumber, "scenario_count", len(storyDoc.Scenarios.TestScenarios), "output_file", outputFile)
 
+	// Create template loaders
+	userPromptPath := c.config.GetString("templates.prompts.merge_scenarios")
+	systemPromptPath := c.config.GetString("templates.prompts.merge_scenarios_system")
+	userPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](systemPromptPath)
+
 	// Process each scenario individually
 	for i, scenario := range storyDoc.Scenarios.TestScenarios {
 		slog.Info("Processing scenario", "index", i+1, "scenario_id", scenario.ID)
 		fmt.Printf("\nMerging scenario %d/%d: %s\n", i+1, len(storyDoc.Scenarios.TestScenarios), scenario.ID)
 
-		// Load templates
-		userPrompt, systemPrompt, err := c.loadMergeTemplates()
+		// Create merge data adapter
+		mergeData := template.NewScenarioMergeData(storyNumber, scenario, outputFile)
+
+		// Load templates using TemplateLoader
+		userPrompt, err := userPromptLoader.LoadTemplate(mergeData)
 		if err != nil {
-			return fmt.Errorf("failed to load templates: %w", err)
+			return fmt.Errorf("failed to load user prompt for scenario %s: %w", scenario.ID, err)
 		}
 
-		// Render template with scenario data and output file
-		prompt, err := c.renderMergePrompt(userPrompt, storyNumber, scenario, outputFile)
+		systemPrompt, err := systemPromptLoader.LoadTemplate(mergeData)
 		if err != nil {
-			return fmt.Errorf("failed to render prompt for scenario %s: %w", scenario.ID, err)
+			return fmt.Errorf("failed to load system prompt for scenario %s: %w", scenario.ID, err)
 		}
 
 		// Call Claude Code API to analyze and merge
@@ -130,7 +136,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 		_, err = c.claudeClient.ExecutePromptWithSystem(
 			ctx,
 			systemPrompt,
-			prompt,
+			userPrompt,
 			"sonnet",
 			ai.ExecutionMode{
 				AllowedTools: []string{"Read", "Edit"},
@@ -146,89 +152,4 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 
 	slog.Info("All scenarios merged successfully", "total_count", len(storyDoc.Scenarios.TestScenarios))
 	return nil
-}
-
-func (c *USImplementCommand) loadMergeTemplates() (string, string, error) {
-	// Load user prompt template
-	userPromptPath := c.config.GetString("templates.prompts.merge_scenarios")
-	userPromptBytes, err := os.ReadFile(userPromptPath)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to read user prompt template: %w", err)
-	}
-
-	// Load system prompt template
-	systemPromptPath := c.config.GetString("templates.prompts.merge_scenarios_system")
-	systemPromptBytes, err := os.ReadFile(systemPromptPath)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to read system prompt template: %w", err)
-	}
-
-	return string(userPromptBytes), string(systemPromptBytes), nil
-}
-
-func (c *USImplementCommand) renderMergePrompt(templateStr string, storyNumber string, scenario storyModels.TestScenario, outputFile string) (string, error) {
-	// Create template
-	tmpl, err := template.New("merge").Parse(templateStr)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
-	}
-
-	// Format steps for template
-	stepsStr := c.formatScenarioSteps(scenario)
-
-	// Format acceptance criteria for template
-	acStr := c.formatAcceptanceCriteria(scenario.AcceptanceCriteria)
-
-	// Prepare template data
-	data := map[string]interface{}{
-		"StoryNumber":         storyNumber,
-		"ScenarioID":          scenario.ID,
-		"Level":               scenario.Level,
-		"Priority":            scenario.Priority,
-		"AcceptanceCriteria":  acStr,
-		"Steps":               stepsStr,
-		"RequirementsFile":    outputFile,
-	}
-
-	// Render template
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	return buf.String(), nil
-}
-
-func (c *USImplementCommand) formatScenarioSteps(scenario storyModels.TestScenario) string {
-	var result strings.Builder
-
-	for _, step := range scenario.Steps {
-		if len(step.Given) > 0 {
-			result.WriteString("  Given:\n")
-			for _, g := range step.Given {
-				result.WriteString(fmt.Sprintf("    - %s\n", g))
-			}
-		}
-		if len(step.When) > 0 {
-			result.WriteString("  When:\n")
-			for _, w := range step.When {
-				result.WriteString(fmt.Sprintf("    - %s\n", w))
-			}
-		}
-		if len(step.Then) > 0 {
-			result.WriteString("  Then:\n")
-			for _, t := range step.Then {
-				result.WriteString(fmt.Sprintf("    - %s\n", t))
-			}
-		}
-	}
-
-	return result.String()
-}
-
-func (c *USImplementCommand) formatAcceptanceCriteria(criteria []string) string {
-	if len(criteria) == 0 {
-		return "[]"
-	}
-	return fmt.Sprintf(`["%s"]`, strings.Join(criteria, `", "`))
 }
