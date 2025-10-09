@@ -9,6 +9,7 @@ import (
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
@@ -54,9 +55,15 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 
 	fmt.Println("⚠️  Branch management temporarily disabled for testing")
 
-	// Clone requirements.yml to tmp folder for safe testing
-	tmpDir := c.config.GetString("paths.tmp_dir")
-	outputFile := filepath.Join(tmpDir, "requirements-merged.yml")
+	// Create run directory for this execution
+	tmpBasePath := c.config.GetString("paths.tmp_dir")
+	runDir, err := fs.NewRunDirectory(tmpBasePath)
+	if err != nil {
+		return fmt.Errorf("failed to create run directory: %w", err)
+	}
+
+	// Clone requirements.yml to run directory for safe testing
+	outputFile := filepath.Join(runDir.GetPath(), "requirements-merged.yml")
 	if err := c.cloneRequirements(outputFile); err != nil {
 		return fmt.Errorf("failed to clone requirements file: %w", err)
 	}

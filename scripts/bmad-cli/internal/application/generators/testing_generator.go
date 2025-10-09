@@ -36,9 +36,10 @@ func NewAITestingGenerator(aiClient ports.AIPort, config *config.ViperConfig) *A
 }
 
 // GenerateTesting generates comprehensive testing requirements based on story analysis
-func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error) {
+func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Testing, error) {
 	// Create AI generator for testing requirements
 	generator := ai.NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
+		WithTmpDir(tmpDir).
 		WithData(func() (TestingData, error) {
 			return TestingData{
 				Story:            &storyDoc.Story,
@@ -64,7 +65,7 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing", tmpDir)).
 		WithValidator(g.validateTesting)
 
 	// Generate testing requirements

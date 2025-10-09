@@ -34,8 +34,9 @@ func NewDevNotesGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AI
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error) {
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.DevNotes, error) {
 	return ai.NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, g.config, storyDoc.Story.ID, "devnotes").
+		WithTmpDir(tmpDir).
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
 				Story: &storyDoc.Story,
@@ -62,7 +63,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes", tmpDir)).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }

@@ -37,9 +37,10 @@ func NewAIScenariosGenerator(aiClient ports.AIPort, config *config.ViperConfig) 
 }
 
 // GenerateScenarios generates comprehensive test scenarios in Given-When-Then format
-func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument) (story.Scenarios, error) {
+func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Scenarios, error) {
 	// Create AI generator for test scenarios
 	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
+		WithTmpDir(tmpDir).
 		WithData(func() (ScenariosData, error) {
 			return ScenariosData{
 				Story:            &storyDoc.Story,
@@ -66,7 +67,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios", tmpDir)).
 		WithValidator(g.validateScenarios(storyDoc.Story.AcceptanceCriteria))
 
 	// Generate test scenarios

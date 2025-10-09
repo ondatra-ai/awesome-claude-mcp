@@ -40,8 +40,11 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 		return fmt.Errorf("failed to create story: %w", err)
 	}
 
-	// 2. Flatten story document and process template to generate YAML
+	// 2. Flatten story document and set TmpDir for template processing
 	flattenedData := template.FlattenStoryDocument(storyDoc)
+	flattenedData.TmpDir = c.factory.GetRunDirPath()
+
+	// Process template to generate YAML
 	yamlContent, err := c.loader.LoadTemplate(flattenedData)
 	if err != nil {
 		return fmt.Errorf("failed to process template: %w", err)

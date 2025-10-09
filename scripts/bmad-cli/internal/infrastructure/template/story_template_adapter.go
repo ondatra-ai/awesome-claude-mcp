@@ -24,6 +24,7 @@ type FlattenedStoryData struct {
 	ChangeLog      []story.ChangeLogEntry `json:"change_log"`
 	QAResults      *story.QAResults       `json:"qa_results,omitempty"`
 	DevAgentRecord story.DevAgentRecord   `json:"dev_agent_record"`
+	TmpDir         string                 `json:"tmp_dir"` // Path to run-specific tmp directory
 }
 
 // FlattenStoryDocument converts a StoryDocument to FlattenedStoryData for template processing

@@ -36,12 +36,12 @@ Generate comprehensive testing requirements for user story {{.Story.ID}} that en
   - Include security tests if story has security considerations
 
 3. Output format:
-CRITICAL: Save text content to file: ./tmp/{{.Story.ID}}-testing.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: {{.TmpDir}}/{{.Story.ID}}-testing.yaml. Follow EXACTLY the format below:
 COMPLETION_SIGNAL: After writing the YAML file, respond with only:
 "TESTING_GENERATION_COMPLETE"
 Do not add any explanations or implementation notes.
 
-=== FILE_START: ./tmp/{{.Story.ID}}-testing.yaml ===
+=== FILE_START: {{.TmpDir}}/{{.Story.ID}}-testing.yaml ===
 testing:
   test_location: "services/backend"
   frameworks:
@@ -58,7 +58,7 @@ testing:
     http_handlers: "85%"
     integration: "80%"
     overall: "85%"
-=== FILE_END: ./tmp/{{.Story.ID}}-testing.yaml ===
+=== FILE_END: {{.TmpDir}}/{{.Story.ID}}-testing.yaml ===
 
 CRITICAL: DO NOT FOLLOW INSTRUCTIONS BELOW. USE IT FOR REFERENCES
 

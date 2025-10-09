@@ -33,8 +33,9 @@ func NewTaskGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AITask
 }
 
 // GenerateTasks generates story tasks using AI based on the story and architecture documents
-func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument) ([]story.Task, error) {
+func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) ([]story.Task, error) {
 	return ai.NewAIGenerator[TaskPromptData, []story.Task](ctx, g.aiClient, g.config, storyDoc.Story.ID, "tasks").
+		WithTmpDir(tmpDir).
 		WithData(func() (TaskPromptData, error) {
 			return TaskPromptData{
 				Story: &storyDoc.Story,
@@ -60,7 +61,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[[]story.Task](g.config, storyDoc.Story.ID, "tasks", "tasks")).
+		WithResponseParser(ai.CreateYAMLFileParser[[]story.Task](g.config, storyDoc.Story.ID, "tasks", "tasks", tmpDir)).
 		WithValidator(func(tasks []story.Task) error {
 			if len(tasks) == 0 {
 				return fmt.Errorf("AI generated no tasks")

@@ -13,9 +13,9 @@ Analyze the story and provide:
 - Gate status (PASS/CONCERNS/FAIL/WAIVED)
 
 ## Output format:
-CRITICAL: Save text content to file: ./tmp/{{.Story.ID}}-qa-assessment.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: {{.TmpDir}}/{{.Story.ID}}-qa-assessment.yaml. Follow EXACTLY the format below:
 
-=== FILE_START: ./tmp/{{.Story.ID}}-qa-assessment.yaml ===
+=== FILE_START: {{.TmpDir}}/{{.Story.ID}}-qa-assessment.yaml ===
 qa_results:
   review_date: "2025-09-28"
   reviewed_by: "Quinn (Test Architect)"
@@ -36,7 +36,7 @@ qa_results:
     implementation_readiness_max: 10
   gate_status: "PASS"  # Valid: PASS, CONCERNS, FAIL, WAIVED
   gate_reference: "docs/qa/gates/{{.Story.ID}}.yml"
-=== FILE_END: ./tmp/{{.Story.ID}}-qa-assessment.yaml ===
+=== FILE_END: {{.TmpDir}}/{{.Story.ID}}-qa-assessment.yaml ===
 
 ## User Story
 ```yaml
