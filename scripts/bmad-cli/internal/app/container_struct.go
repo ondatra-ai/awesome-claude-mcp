@@ -55,7 +55,7 @@ func NewContainer() (*Container, error) {
 	gitService := git.NewGitService(shellExec)
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
-	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader)
+	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader, claudeClient, cfg)
 
 	return &Container{
 		Config:         cfg,

@@ -18,6 +18,8 @@ templates:
     scenarios_system: "./scripts/bmad-cli/templates/4-us-create.scenarios.system.prompt.tpl"
     qa: "./scripts/bmad-cli/templates/5-us-create.qa-assessment.prompt.tpl"
     qa_system: "./scripts/bmad-cli/templates/5-us-create.qa-assessment.system.prompt.tpl"
+    merge_scenarios: "./scripts/bmad-cli/templates/6-us-implement.merge-scenarios.prompt.tpl"
+    merge_scenarios_system: "./scripts/bmad-cli/templates/6-us-implement.merge-scenarios.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
