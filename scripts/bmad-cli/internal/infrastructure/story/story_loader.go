@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
+	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 )
 
@@ -118,4 +121,47 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	slog.Debug("Story slug extracted", "story_number", storyNumber, "slug", slug, "file", storyFile)
 
 	return slug, nil
+}
+
+// Load loads the complete story document from YAML file
+func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
+	slog.Debug("Loading story document", "story_number", storyNumber)
+
+	// Find story file using same logic as GetStorySlug
+	pattern := filepath.Join(l.storiesDir, fmt.Sprintf("%s-*.yaml", storyNumber))
+
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
+		return nil, fmt.Errorf("failed to find story file: %w", err)
+	}
+
+	if len(matches) == 0 {
+		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
+		return nil, fmt.Errorf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, l.storiesDir, storyNumber)
+	}
+
+	if len(matches) > 1 {
+		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
+		return nil, fmt.Errorf("multiple story files found for story %s: %v", storyNumber, matches)
+	}
+
+	// Read story file
+	storyFile := matches[0]
+	data, err := os.ReadFile(storyFile)
+	if err != nil {
+		slog.Error("Failed to read story file", "file", storyFile, "error", err)
+		return nil, fmt.Errorf("failed to read story file %s: %w", storyFile, err)
+	}
+
+	// Unmarshal YAML
+	var storyDoc story.StoryDocument
+	if err := yaml.Unmarshal(data, &storyDoc); err != nil {
+		slog.Error("Failed to unmarshal story YAML", "file", storyFile, "error", err)
+		return nil, fmt.Errorf("failed to parse story YAML from %s: %w", storyFile, err)
+	}
+
+	slog.Debug("Story document loaded successfully", "story_number", storyNumber, "file", storyFile, "scenario_count", len(storyDoc.Scenarios.TestScenarios))
+
+	return &storyDoc, nil
 }
