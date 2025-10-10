@@ -162,6 +162,39 @@ type DataCache struct { /* caching complexity */ }
 - **Result**: Eliminated 200+ lines of unnecessary abstraction code
 - **Verification**: Story generation still works perfectly with much simpler code
 
+## Go File Naming Convention
+
+### Single Entity Single File Principle
+
+**Rule**: Each Go file should contain one primary entity (struct/interface/type), and the filename must match the entity name in snake_case.
+
+**Examples:**
+- `GitHubService` struct → `github_service.go`
+- `ClaudeClient` struct → `claude_client.go`
+- `BranchManager` struct → `branch_manager.go`
+- `ThreadProcessor` interface → `thread_processor.go`
+
+**Important**: Treat "GitHub" as a single word (not "Git" + "Hub"):
+- ✅ `GitHubService` → `github_service.go` (correct)
+- ❌ `GitHubService` → `git_hub_service.go` (wrong)
+
+**Exceptions (Acceptable):**
+- Files with only functions/constants (e.g., `logging.go`, `errors.go`)
+- Re-export files that aggregate types from internal packages
+- Multiple closely related types (e.g., `ExecutionMode` + `ModeFactory` in `execution_mode.go`)
+- Data structures bundled with their primary entity (e.g., `ArchitectureLoader` + `ArchitectureDoc`)
+
+**Enforcement:**
+- Currently enforced through code review
+- No automated linter rule in `.golangci.yml` yet
+- See audit report for compliance status
+
+**Current Status (as of 2025-10-10):**
+- 113/115 files (98.3%) comply with this convention
+- 2 files need renaming:
+  - `internal/adapters/github/client.go` → `github_cli_client.go` (GitHubCLIClient)
+  - `internal/adapters/github/queries.go` → `graphql_builder.go` (GraphQLBuilder)
+
 ## Notes
 
 - The .gitignore is configured for Go projects
