@@ -9,6 +9,7 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
+	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
@@ -19,6 +20,7 @@ type Container struct {
 	PRTriageCmd    *commands.PRTriageCommand
 	USCreateCmd    *commands.USCreateCommand
 	USImplementCmd *commands.USImplementCommand
+	RunDir         *fs.RunDirectory
 }
 
 func NewContainer() (*Container, error) {
@@ -28,6 +30,12 @@ func NewContainer() (*Container, error) {
 	}
 
 	configureLogging()
+
+	// Create run directory once for entire CLI execution
+	runDir, err := fs.NewRunDirectory(cfg.GetString("paths.tmp_dir"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create run directory: %w", err)
+	}
 
 	shellExec := shell.NewCommandRunner()
 
@@ -46,7 +54,7 @@ func NewContainer() (*Container, error) {
 	}
 
 	// Setup user story creation command - required for operation
-	usCreateCmd := createUSCreateCommand(epicLoader, claudeClient, cfg, architectureLoader)
+	usCreateCmd := createUSCreateCommand(epicLoader, claudeClient, cfg, architectureLoader, runDir)
 
 	// Setup PR triage command - required for operation
 	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
@@ -55,12 +63,13 @@ func NewContainer() (*Container, error) {
 	gitService := git.NewGitService(shellExec)
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
-	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader, claudeClient, cfg)
+	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader, claudeClient, cfg, runDir)
 
 	return &Container{
 		Config:         cfg,
 		PRTriageCmd:    prTriageCmd,
 		USCreateCmd:    usCreateCmd,
 		USImplementCmd: usImplementCmd,
+		RunDir:         runDir,
 	}, nil
 }

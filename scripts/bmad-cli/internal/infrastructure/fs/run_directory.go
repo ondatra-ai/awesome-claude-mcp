@@ -9,8 +9,7 @@ import (
 
 // RunDirectory manages timestamped run directories for organizing tmp files
 type RunDirectory struct {
-	basePath string
-	runPath  string
+	runPath string
 }
 
 // NewRunDirectory creates a new timestamped run directory
@@ -26,17 +25,11 @@ func NewRunDirectory(basePath string) (*RunDirectory, error) {
 	}
 
 	return &RunDirectory{
-		basePath: basePath,
-		runPath:  runPath,
+		runPath: runPath,
 	}, nil
 }
 
-// GetPath returns the full path to the run directory
-func (rd *RunDirectory) GetPath() string {
+// GetTmpOutPath returns the full path to the run directory
+func (rd *RunDirectory) GetTmpOutPath() string {
 	return rd.runPath
-}
-
-// GetFilePath returns the full path to a file within the run directory
-func (rd *RunDirectory) GetFilePath(filename string) string {
-	return filepath.Join(rd.runPath, filename)
 }

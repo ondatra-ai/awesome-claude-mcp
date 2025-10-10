@@ -21,6 +21,7 @@ type USImplementCommand struct {
 	storyLoader   *story.StoryLoader
 	claudeClient  *ai.ClaudeClient
 	config        *config.ViperConfig
+	runDir        *fs.RunDirectory
 }
 
 func NewUSImplementCommand(
@@ -28,12 +29,14 @@ func NewUSImplementCommand(
 	storyLoader *story.StoryLoader,
 	claudeClient *ai.ClaudeClient,
 	cfg *config.ViperConfig,
+	runDir *fs.RunDirectory,
 ) *USImplementCommand {
 	return &USImplementCommand{
 		branchManager: branchManager,
 		storyLoader:   storyLoader,
 		claudeClient:  claudeClient,
 		config:        cfg,
+		runDir:        runDir,
 	}
 }
 
@@ -55,15 +58,8 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 
 	fmt.Println("⚠️  Branch management temporarily disabled for testing")
 
-	// Create run directory for this execution
-	tmpBasePath := c.config.GetString("paths.tmp_dir")
-	runDir, err := fs.NewRunDirectory(tmpBasePath)
-	if err != nil {
-		return fmt.Errorf("failed to create run directory: %w", err)
-	}
-
 	// Clone requirements.yml to run directory for safe testing
-	outputFile := filepath.Join(runDir.GetPath(), "requirements-merged.yml")
+	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
 	if err := c.cloneRequirements(outputFile); err != nil {
 		return fmt.Errorf("failed to clone requirements file: %w", err)
 	}

@@ -44,24 +44,17 @@ type StoryFactory struct {
 	runDirectory       *fs.RunDirectory
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDirectory *fs.RunDirectory) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,
 		config:             config,
 		architectureLoader: architectureLoader,
+		runDirectory:       runDirectory,
 	}
 }
 
 func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*story.StoryDocument, error) {
-	// Create run directory for this execution
-	tmpBasePath := f.config.GetString("paths.tmp_dir")
-	runDir, err := fs.NewRunDirectory(tmpBasePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create run directory: %w", err)
-	}
-	f.runDirectory = runDir
-
 	// Load story from epic file - fail if not found
 	loadedStory, err := f.epicLoader.LoadStoryFromEpic(storyNumber)
 	if err != nil {
@@ -102,7 +95,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	qaResultsGenerator := generators.NewAIQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Get run directory path for passing to generators
-	runDirPath := runDir.GetPath()
+	runDirPath := f.runDirectory.GetTmpOutPath()
 
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc, runDirPath)
@@ -154,7 +147,7 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 // GetTmpDirPath returns the run-specific directory path for this execution
 func (f *StoryFactory) GetTmpDirPath() string {
 	if f.runDirectory != nil {
-		return f.runDirectory.GetPath()
+		return f.runDirectory.GetTmpOutPath()
 	}
 	// Fallback to configured tmp_dir if no run directory created yet
 	return f.config.GetString("paths.tmp_dir")
