@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
+	"bmad-cli/internal/pkg/errors"
 )
 
 const (

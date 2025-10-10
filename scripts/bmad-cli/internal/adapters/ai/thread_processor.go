@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"bmad-cli/internal/application/prompt_builders"
-	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
+	"bmad-cli/internal/pkg/errors"
 )
 
 type ThreadProcessor struct {

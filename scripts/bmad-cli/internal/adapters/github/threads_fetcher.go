@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
+	"bmad-cli/internal/pkg/errors"
 )
 
 type ThreadsFetcher struct {

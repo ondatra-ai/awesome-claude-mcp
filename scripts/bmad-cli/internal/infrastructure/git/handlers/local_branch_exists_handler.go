@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"log/slog"
-	"bmad-cli/internal/domain/ports"
 )
 
 // LocalBranchExistsHandler checks if the branch exists locally and switches to it

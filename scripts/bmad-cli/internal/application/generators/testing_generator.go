@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"strings"
 
-	"bmad-cli/internal/pkg/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/pkg/ai"
 )
 
 // AITestingGenerator generates testing requirements for stories using AI

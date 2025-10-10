@@ -7,9 +7,9 @@ import (
 	"os/exec"
 	"strings"
 
-	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/infrastructure/shell"
+	"bmad-cli/internal/pkg/errors"
 )
 
 const expectedParts = 2

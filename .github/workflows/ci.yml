@@ -68,6 +68,9 @@ jobs:
       - name: Run frontend linting
         run: make lint-frontend
 
+      - name: Run scripts linting
+        run: make lint-scripts
+
   validate-requirements:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}

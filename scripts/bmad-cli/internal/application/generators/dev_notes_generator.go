@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 
-	"bmad-cli/internal/pkg/ai"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/pkg/ai"
 )
 
 // DevNotesPromptData represents data needed for dev notes generation prompts

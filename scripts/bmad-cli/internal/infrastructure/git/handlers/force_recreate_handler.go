@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"log/slog"
-	"bmad-cli/internal/domain/ports"
 )
 
 // ForceRecreateHandler handles the --force flag to recreate branches
