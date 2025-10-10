@@ -20,6 +20,7 @@ type AIGenerator[T1 any, T2 any] struct {
 	config         *config.ViperConfig
 	storyID        string
 	filePrefix     string
+	tmpDir         string // run-specific tmp directory
 	dataLoader     func() (T1, error)
 	promptLoader   func(T1) (systemPrompt string, userPrompt string, err error)
 	responseParser func(aiResponse string) (T2, error)
@@ -88,12 +89,22 @@ func (g *AIGenerator[T1, T2]) WithMode(mode ai.ExecutionMode) *AIGenerator[T1, T
 	return g
 }
 
+// WithTmpDir sets the run-specific tmp directory path
+func (g *AIGenerator[T1, T2]) WithTmpDir(tmpDir string) *AIGenerator[T1, T2] {
+	g.tmpDir = tmpDir
+	return g
+}
+
 // Generate executes the generation pipeline
 func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	var zero T2
 
-	// 0. Create tmp directory for debugging early
-	tmpDir := g.config.GetString("paths.tmp_dir")
+	// 0. Get or fallback to default tmp directory
+	tmpDir := g.tmpDir
+	if tmpDir == "" {
+		tmpDir = g.config.GetString("paths.tmp_dir")
+	}
+	// Ensure tmp directory exists
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return zero, fmt.Errorf("failed to create tmp directory: %w", err)
 	}
@@ -177,13 +188,16 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 
 // CreateYAMLFileParser creates a parser function for reading YAML files
 // This is a higher-order function that returns a closure configured with the given parameters
-func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix, yamlKey string) func(string) (T, error) {
+func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix, yamlKey string, tmpDir string) func(string) (T, error) {
 	return func(aiResponse string) (T, error) {
 		var zero T
 
-		// Construct file path
-		tmpDir := config.GetString("paths.tmp_dir")
-		filePath := fmt.Sprintf("%s/%s-%s.yaml", tmpDir, storyID, filePrefix)
+		// Construct file path - use provided tmpDir or fallback to config
+		dir := tmpDir
+		if dir == "" {
+			dir = config.GetString("paths.tmp_dir")
+		}
+		filePath := fmt.Sprintf("%s/%s-%s.yaml", dir, storyID, filePrefix)
 
 		// Read file
 		content, err := os.ReadFile(filePath)

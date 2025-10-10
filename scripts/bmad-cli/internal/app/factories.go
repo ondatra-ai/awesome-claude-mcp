@@ -9,12 +9,13 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
+	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
 )
 
-func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *commands.USCreateCommand {
-	storyFactory := factories.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader)
+func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDir *fs.RunDirectory) *commands.USCreateCommand {
+	storyFactory := factories.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader, runDir)
 	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
 	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
 	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)

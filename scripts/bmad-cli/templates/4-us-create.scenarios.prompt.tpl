@@ -481,11 +481,11 @@ given:
 
 ## Output Format
 
-**CRITICAL**: Save text content to file: `./tmp/{{.Story.ID}}-scenarios.yaml`
+**CRITICAL**: Save text content to file: `{{.TmpDir}}/{{.Story.ID}}-scenarios.yaml`
 
 **Follow EXACTLY this format:**
 
-=== FILE_START: ./tmp/{{.Story.ID}}-scenarios.yaml ===
+=== FILE_START: {{.TmpDir}}/{{.Story.ID}}-scenarios.yaml ===
 ```yaml
 scenarios:
   test_scenarios:
@@ -513,7 +513,7 @@ scenarios:
       level: "e2e"
       priority: "P1"
 ```
-=== FILE_END: ./tmp/{{.Story.ID}}-scenarios.yaml ===
+=== FILE_END: {{.TmpDir}}/{{.Story.ID}}-scenarios.yaml ===
 
 **Scenario ID Rules:**
 - Format: `{story_id}-{LEVEL}-{sequence}`

@@ -31,12 +31,12 @@ To prepare a comprehensive, self-contained story file by breaking down acceptanc
   - Include unit testing as explicit subtasks based on the Testing Strategy
   - Link tasks to ACs where applicable (e.g., `[AC-1, AC-3]`)
 3. Output format:
-CRITICAL: Save text content to file: ./tmp/{{.Story.ID}}-tasks.yaml. Follow EXACTLY the format below:
+CRITICAL: Save text content to file: {{.TmpDir}}/{{.Story.ID}}-tasks.yaml. Follow EXACTLY the format below:
 COMPLETION_SIGNAL: After writing the YAML file, respond with only:
 "TASK_GENERATION_COMPLETE"
 Do not add any explanations or implementation notes.
 
-=== FILE_START: ./tmp/{{.Story.ID}}-tasks.yaml ===
+=== FILE_START: {{.TmpDir}}/{{.Story.ID}}-tasks.yaml ===
 tasks:
   - name: "Name"
     acceptance_criteria:
@@ -46,7 +46,7 @@ tasks:
       - "Subtask1"
       - "Subtask2"
     status: "pending"
-=== FILE_END: ./tmp/{{.Story.ID}}-tasks.yaml ===
+=== FILE_END: {{.TmpDir}}/{{.Story.ID}}-tasks.yaml ===
 
 CRITICAL: DO NOT FOLLOW INSTRUCTIONS BELOW. USE IT FOR REFERENCES
 

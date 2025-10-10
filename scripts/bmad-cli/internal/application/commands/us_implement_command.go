@@ -9,6 +9,7 @@ import (
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
@@ -20,6 +21,7 @@ type USImplementCommand struct {
 	storyLoader   *story.StoryLoader
 	claudeClient  *ai.ClaudeClient
 	config        *config.ViperConfig
+	runDir        *fs.RunDirectory
 }
 
 func NewUSImplementCommand(
@@ -27,12 +29,14 @@ func NewUSImplementCommand(
 	storyLoader *story.StoryLoader,
 	claudeClient *ai.ClaudeClient,
 	cfg *config.ViperConfig,
+	runDir *fs.RunDirectory,
 ) *USImplementCommand {
 	return &USImplementCommand{
 		branchManager: branchManager,
 		storyLoader:   storyLoader,
 		claudeClient:  claudeClient,
 		config:        cfg,
+		runDir:        runDir,
 	}
 }
 
@@ -54,9 +58,8 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 
 	fmt.Println("⚠️  Branch management temporarily disabled for testing")
 
-	// Clone requirements.yml to tmp folder for safe testing
-	tmpDir := c.config.GetString("paths.tmp_dir")
-	outputFile := filepath.Join(tmpDir, "requirements-merged.yml")
+	// Clone requirements.yml to run directory for safe testing
+	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
 	if err := c.cloneRequirements(outputFile); err != nil {
 		return fmt.Errorf("failed to clone requirements file: %w", err)
 	}

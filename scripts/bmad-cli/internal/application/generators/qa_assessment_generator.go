@@ -27,6 +27,7 @@ type QAAssessmentData struct {
 	Tasks            []story.Task
 	DevNotes         story.DevNotes
 	ArchitectureDocs *docs.ArchitectureDocs
+	TmpDir           string // Path to run-specific tmp directory
 }
 
 // NewAIQAAssessmentGenerator creates a new QA assessment generator
@@ -38,15 +39,17 @@ func NewAIQAAssessmentGenerator(aiClient ports.AIPort, config *config.ViperConfi
 }
 
 // GenerateQAResults generates comprehensive QA results following Quinn persona
-func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error) {
+func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.QAResults, error) {
 	// Create AI generator for QA assessment
 	generator := ai.NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
+		WithTmpDir(tmpDir).
 		WithData(func() (QAAssessmentData, error) {
 			return QAAssessmentData{
 				Story:            &storyDoc.Story,
 				Tasks:            storyDoc.Tasks,
 				DevNotes:         storyDoc.DevNotes,
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data QAAssessmentData) (systemPrompt string, userPrompt string, err error) {
@@ -66,7 +69,7 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results", tmpDir)).
 		WithValidator(g.validateQAResults)
 
 	// Generate QA results

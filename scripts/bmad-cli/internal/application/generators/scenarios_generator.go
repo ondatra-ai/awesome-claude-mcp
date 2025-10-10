@@ -26,6 +26,7 @@ type ScenariosData struct {
 	DevNotes         story.DevNotes
 	Testing          story.Testing
 	ArchitectureDocs *docs.ArchitectureDocs
+	TmpDir           string // Path to run-specific tmp directory
 }
 
 // NewAIScenariosGenerator creates a new test scenarios generator
@@ -37,9 +38,10 @@ func NewAIScenariosGenerator(aiClient ports.AIPort, config *config.ViperConfig) 
 }
 
 // GenerateScenarios generates comprehensive test scenarios in Given-When-Then format
-func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument) (story.Scenarios, error) {
+func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Scenarios, error) {
 	// Create AI generator for test scenarios
 	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
+		WithTmpDir(tmpDir).
 		WithData(func() (ScenariosData, error) {
 			return ScenariosData{
 				Story:            &storyDoc.Story,
@@ -47,6 +49,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 				DevNotes:         storyDoc.DevNotes,
 				Testing:          storyDoc.Testing,
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data ScenariosData) (systemPrompt string, userPrompt string, err error) {
@@ -66,7 +69,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios", tmpDir)).
 		WithValidator(g.validateScenarios(storyDoc.Story.AcceptanceCriteria))
 
 	// Generate test scenarios

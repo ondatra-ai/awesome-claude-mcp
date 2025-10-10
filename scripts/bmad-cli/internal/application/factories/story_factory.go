@@ -13,6 +13,7 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
+	"bmad-cli/internal/infrastructure/fs"
 )
 
 // TaskGenerator interface for generating tasks
@@ -40,14 +41,16 @@ type StoryFactory struct {
 	aiClient           ports.AIPort
 	config             *config.ViperConfig
 	architectureLoader *docs.ArchitectureLoader
+	runDirectory       *fs.RunDirectory
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader) *StoryFactory {
+func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDirectory *fs.RunDirectory) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,
 		config:             config,
 		architectureLoader: architectureLoader,
+		runDirectory:       runDirectory,
 	}
 }
 
@@ -91,36 +94,39 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	scenariosGenerator := generators.NewAIScenariosGenerator(f.aiClient, f.config)
 	qaResultsGenerator := generators.NewAIQAAssessmentGenerator(f.aiClient, f.config)
 
+	// Get run directory path for passing to generators
+	runDirPath := f.runDirectory.GetTmpOutPath()
+
 	// Generate tasks using AI - fail on any error
-	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc)
+	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc, runDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tasks: %w", err)
 	}
 	storyDoc.Tasks = tasks
 
 	// Generate dev_notes using AI - fail on any error
-	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc)
+	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc, runDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
 	}
 	storyDoc.DevNotes = devNotes
 
 	// Generate testing requirements using AI - fail on any error
-	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc)
+	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc, runDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
 	}
 	storyDoc.Testing = testing
 
 	// Generate test scenarios using AI - fail on any error
-	scenarios, err := scenariosGenerator.GenerateScenarios(ctx, storyDoc)
+	scenarios, err := scenariosGenerator.GenerateScenarios(ctx, storyDoc, runDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate test scenarios: %w", err)
 	}
 	storyDoc.Scenarios = scenarios
 
 	// Generate QA results using AI - fail on any error
-	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc)
+	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc, runDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate QA results: %w", err)
 	}
@@ -138,8 +144,12 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	return slug
 }
 
-// GetTmpDir returns the configured temporary directory path
-func (f *StoryFactory) GetTmpDir() string {
+// GetTmpDirPath returns the run-specific directory path for this execution
+func (f *StoryFactory) GetTmpDirPath() string {
+	if f.runDirectory != nil {
+		return f.runDirectory.GetTmpOutPath()
+	}
+	// Fallback to configured tmp_dir if no run directory created yet
 	return f.config.GetString("paths.tmp_dir")
 }
 

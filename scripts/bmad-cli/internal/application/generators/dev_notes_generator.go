@@ -14,9 +14,10 @@ import (
 
 // DevNotesPromptData represents data needed for dev notes generation prompts
 type DevNotesPromptData struct {
-	Story *story.Story
-	Tasks []story.Task
-	Docs  *docs.ArchitectureDocs
+	Story  *story.Story
+	Tasks  []story.Task
+	Docs   *docs.ArchitectureDocs
+	TmpDir string // Path to run-specific tmp directory
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
@@ -34,13 +35,15 @@ func NewDevNotesGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AI
 }
 
 // GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error) {
+func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.DevNotes, error) {
 	return ai.NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, g.config, storyDoc.Story.ID, "devnotes").
+		WithTmpDir(tmpDir).
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
-				Story: &storyDoc.Story,
-				Tasks: storyDoc.Tasks,
-				Docs:  storyDoc.ArchitectureDocs,
+				Story:  &storyDoc.Story,
+				Tasks:  storyDoc.Tasks,
+				Docs:   storyDoc.ArchitectureDocs,
+				TmpDir: tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (systemPrompt string, userPrompt string, err error) {
@@ -62,7 +65,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes")).
+		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes", tmpDir)).
 		WithValidator(g.validateDevNotes).
 		Generate()
 }
