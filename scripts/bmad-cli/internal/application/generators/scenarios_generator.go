@@ -26,6 +26,7 @@ type ScenariosData struct {
 	DevNotes         story.DevNotes
 	Testing          story.Testing
 	ArchitectureDocs *docs.ArchitectureDocs
+	TmpDir           string // Path to run-specific tmp directory
 }
 
 // NewAIScenariosGenerator creates a new test scenarios generator
@@ -48,6 +49,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 				DevNotes:         storyDoc.DevNotes,
 				Testing:          storyDoc.Testing,
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data ScenariosData) (systemPrompt string, userPrompt string, err error) {

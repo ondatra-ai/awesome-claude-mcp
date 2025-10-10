@@ -27,6 +27,7 @@ type QAAssessmentData struct {
 	Tasks            []story.Task
 	DevNotes         story.DevNotes
 	ArchitectureDocs *docs.ArchitectureDocs
+	TmpDir           string // Path to run-specific tmp directory
 }
 
 // NewAIQAAssessmentGenerator creates a new QA assessment generator
@@ -48,6 +49,7 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 				Tasks:            storyDoc.Tasks,
 				DevNotes:         storyDoc.DevNotes,
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data QAAssessmentData) (systemPrompt string, userPrompt string, err error) {
