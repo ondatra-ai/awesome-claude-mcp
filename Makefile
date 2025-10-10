@@ -104,4 +104,4 @@ lint-docs: ## Validate requirements.yml and epic YAML files against Yamale schem
 	yamale -s docs/epics/jsons/epics-schema.yaml docs/epics/jsons/epic-*.yaml
 	@echo "✅ Documentation validation completed!"
 
-lint: lint-backend lint-frontend lint-docs ## Run all linting checks
+lint: lint-backend lint-frontend lint-scripts lint-docs ## Run all linting checks
