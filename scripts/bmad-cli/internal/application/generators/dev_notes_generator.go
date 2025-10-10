@@ -14,9 +14,10 @@ import (
 
 // DevNotesPromptData represents data needed for dev notes generation prompts
 type DevNotesPromptData struct {
-	Story *story.Story
-	Tasks []story.Task
-	Docs  *docs.ArchitectureDocs
+	Story  *story.Story
+	Tasks  []story.Task
+	Docs   *docs.ArchitectureDocs
+	TmpDir string // Path to run-specific tmp directory
 }
 
 // AIDevNotesGenerator generates story dev_notes using AI based on templates
@@ -39,9 +40,10 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 		WithTmpDir(tmpDir).
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
-				Story: &storyDoc.Story,
-				Tasks: storyDoc.Tasks,
-				Docs:  storyDoc.ArchitectureDocs,
+				Story:  &storyDoc.Story,
+				Tasks:  storyDoc.Tasks,
+				Docs:   storyDoc.ArchitectureDocs,
+				TmpDir: tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data DevNotesPromptData) (systemPrompt string, userPrompt string, err error) {

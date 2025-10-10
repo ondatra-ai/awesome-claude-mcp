@@ -42,7 +42,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 
 	// 2. Flatten story document and set TmpDir for template processing
 	flattenedData := template.FlattenStoryDocument(storyDoc)
-	flattenedData.TmpDir = c.factory.GetRunDirPath()
+	flattenedData.TmpDir = c.factory.GetTmpDirPath()
 
 	// Process template to generate YAML
 	yamlContent, err := c.loader.LoadTemplate(flattenedData)

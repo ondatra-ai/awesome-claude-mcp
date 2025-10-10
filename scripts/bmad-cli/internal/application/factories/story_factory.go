@@ -151,8 +151,8 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	return slug
 }
 
-// GetRunDirPath returns the run-specific directory path for this execution
-func (f *StoryFactory) GetRunDirPath() string {
+// GetTmpDirPath returns the run-specific directory path for this execution
+func (f *StoryFactory) GetTmpDirPath() string {
 	if f.runDirectory != nil {
 		return f.runDirectory.GetPath()
 	}

@@ -25,6 +25,7 @@ type TestingData struct {
 	Tasks            []story.Task
 	DevNotes         story.DevNotes
 	ArchitectureDocs *docs.ArchitectureDocs
+	TmpDir           string // Path to run-specific tmp directory
 }
 
 // NewAITestingGenerator creates a new testing requirements generator
@@ -46,6 +47,7 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 				Tasks:            storyDoc.Tasks,
 				DevNotes:         storyDoc.DevNotes,
 				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data TestingData) (systemPrompt string, userPrompt string, err error) {

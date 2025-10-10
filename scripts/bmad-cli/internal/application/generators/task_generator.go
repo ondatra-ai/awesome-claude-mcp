@@ -14,8 +14,9 @@ import (
 
 // TaskPromptData represents data needed for task generation prompts
 type TaskPromptData struct {
-	Story *story.Story
-	Docs  *docs.ArchitectureDocs
+	Story  *story.Story
+	Docs   *docs.ArchitectureDocs
+	TmpDir string // Path to run-specific tmp directory
 }
 
 // AITaskGenerator generates story tasks using AI based on templates
@@ -38,8 +39,9 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 		WithTmpDir(tmpDir).
 		WithData(func() (TaskPromptData, error) {
 			return TaskPromptData{
-				Story: &storyDoc.Story,
-				Docs:  storyDoc.ArchitectureDocs,
+				Story:  &storyDoc.Story,
+				Docs:   storyDoc.ArchitectureDocs,
+				TmpDir: tmpDir,
 			}, nil
 		}).
 		WithPrompt(func(data TaskPromptData) (systemPrompt string, userPrompt string, err error) {
