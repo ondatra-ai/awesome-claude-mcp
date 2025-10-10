@@ -63,9 +63,7 @@ jobs:
         run: make init
 
       - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.63.4
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
 
       - name: Run backend linting
         run: make lint-backend
