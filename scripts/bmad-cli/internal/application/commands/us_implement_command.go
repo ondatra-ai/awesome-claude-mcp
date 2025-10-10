@@ -14,6 +14,8 @@ import (
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
+
+	"gopkg.in/yaml.v3"
 )
 
 type USImplementCommand struct {
@@ -242,15 +244,64 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 
 // parsePendingScenarios reads requirements file and extracts scenarios with status: "pending"
 func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*template.TestImplementationData, error) {
-	// NOTE: This is a placeholder - proper YAML parsing will be added
-	// For now, we'll skip test implementation until YAML parsing is properly implemented
-	slog.Warn("Test implementation parsing not yet fully implemented - skipping for now")
+	slog.Debug("Parsing requirements file", "file", requirementsFile)
 
-	// TODO: Implement full YAML parsing with gopkg.in/yaml.v3
-	// 1. Read requirementsFile
-	// 2. Parse YAML structure
-	// 3. Filter scenarios with implementation_status.status == "pending"
-	// 4. Convert to []*template.TestImplementationData
+	// Read requirements file
+	data, err := os.ReadFile(requirementsFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read requirements file: %w", err)
+	}
 
-	return []*template.TestImplementationData{}, nil
+	// Parse YAML structure
+	var requirements struct {
+		Scenarios map[string]struct {
+			Description          string `yaml:"description"`
+			Category             string `yaml:"category"`
+			Level                string `yaml:"level"`
+			Priority             string `yaml:"priority"`
+			ImplementationStatus struct {
+				Status   string `yaml:"status"`
+				FilePath string `yaml:"file_path"`
+			} `yaml:"implementation_status"`
+			MergedSteps struct {
+				Given []string `yaml:"given"`
+				When  []string `yaml:"when"`
+				Then  []string `yaml:"then"`
+			} `yaml:"merged_steps"`
+		} `yaml:"scenarios"`
+	}
+
+	if err := yaml.Unmarshal(data, &requirements); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal requirements YAML: %w", err)
+	}
+
+	// Filter pending scenarios and convert to TestImplementationData
+	var pendingScenarios []*template.TestImplementationData
+
+	for scenarioID, scenario := range requirements.Scenarios {
+		// Only process scenarios with status "pending"
+		if scenario.ImplementationStatus.Status != "pending" {
+			slog.Debug("Skipping non-pending scenario", "scenario_id", scenarioID, "status", scenario.ImplementationStatus.Status)
+			continue
+		}
+
+		// Create TestImplementationData
+		testData := template.NewTestImplementationData(
+			scenarioID,
+			scenario.Description,
+			scenario.Level,
+			scenario.Category,
+			scenario.Priority,
+			scenario.MergedSteps.Given,
+			scenario.MergedSteps.When,
+			scenario.MergedSteps.Then,
+			requirementsFile,
+		)
+
+		pendingScenarios = append(pendingScenarios, testData)
+		slog.Debug("Found pending scenario", "scenario_id", scenarioID)
+	}
+
+	slog.Info("Parsed requirements file", "total_scenarios", len(requirements.Scenarios), "pending_count", len(pendingScenarios))
+	return pendingScenarios, nil
 }
