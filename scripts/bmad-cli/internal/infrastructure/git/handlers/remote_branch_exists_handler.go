@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"log/slog"
-	"bmad-cli/internal/domain/ports"
 )
 
 // RemoteBranchExistsHandler checks if the branch exists on remote and checks it out

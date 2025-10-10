@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 
 	"bmad-cli/internal/adapters/ai"
+	storyModels "bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
-	storyModels "bmad-cli/internal/domain/models/story"
 )
 
 type USImplementCommand struct {

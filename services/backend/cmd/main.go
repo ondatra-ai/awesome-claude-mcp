@@ -15,12 +15,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// VersionResponse represents the API version information
+// VersionResponse represents the API version information.
 type VersionResponse struct {
 	Version string `json:"version"`
 }
 
-// HealthResponse represents the health check status of the service
+// HealthResponse represents the health check status of the service.
 type HealthResponse struct {
 	Status    string    `json:"status"`
 	Service   string    `json:"service"`
@@ -29,26 +29,26 @@ type HealthResponse struct {
 
 func setupRoutes(app *fiber.App) {
 	// Version endpoint - returns application version
-	app.Get("/version", func(c *fiber.Ctx) error {
+	app.Get("/version", func(ctx *fiber.Ctx) error {
 		log.Info().
 			Str("endpoint", "/version").
 			Str("method", "GET").
-			Str("user_agent", c.Get("User-Agent")).
+			Str("user_agent", ctx.Get("User-Agent")).
 			Msg("Version endpoint accessed")
 
-		return c.JSON(VersionResponse{
+		return ctx.JSON(VersionResponse{
 			Version: "1.0.0",
 		})
 	})
 
 	// Health check endpoint - returns service health status
-	app.Get("/health", func(c *fiber.Ctx) error {
+	app.Get("/health", func(ctx *fiber.Ctx) error {
 		log.Info().
 			Str("endpoint", "/health").
 			Str("method", "GET").
 			Msg("Health check endpoint accessed")
 
-		return c.JSON(HealthResponse{
+		return ctx.JSON(HealthResponse{
 			Status:    "healthy",
 			Service:   "MCP Google Docs Editor - Backend",
 			Timestamp: time.Now(),
@@ -121,7 +121,8 @@ func gracefulShutdown(app *fiber.App) {
 			Str("service", "backend").
 			Msg("Backend server starting")
 
-		if err := app.Listen(":" + port); err != nil {
+		err := app.Listen(":" + port)
+		if err != nil {
 			log.Fatal().Err(err).Msg("Server failed to start")
 		}
 	}()
@@ -132,11 +133,14 @@ func gracefulShutdown(app *fiber.App) {
 	log.Info().Msg("Graceful shutdown initiated")
 
 	// Create context with timeout for graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	const shutdownTimeout = 30 * time.Second
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
 	// Shutdown the server
-	if err := app.ShutdownWithContext(ctx); err != nil {
+	err := app.ShutdownWithContext(ctx)
+	if err != nil {
 		log.Error().Err(err).Msg("Server forced to shutdown")
 	} else {
 		log.Info().Msg("Server shutdown complete")

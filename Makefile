@@ -77,10 +77,10 @@ test-e2e: ## Run E2E tests (default local; append environment name e.g. `make te
 	exit $$TEST_EXIT_CODE
 
 lint-backend: ## Run Go linter on backend code (auto-fix when possible)
-	@echo "🔍 Running Go lint on backend..."
-	GOWORK=off go run -C services/backend golang.org/x/lint/golint@latest ./cmd
-	@echo "🔧 Running go fmt to fix formatting..."
-	gofmt -l -w services/backend/cmd
+	@echo "🔧 Running go fmt to fix formatting on backend..."
+	find services/backend/ -name "*.go" -exec gofmt -l -w {} \;
+	@echo "🔍 Running golangci-lint on backend..."
+	cd services/backend && golangci-lint run --fix ./...
 	@echo "✅ Backend linting completed!"
 
 lint-frontend: ## Run ESLint and Prettier on frontend code (auto-fix when possible)
@@ -104,4 +104,4 @@ lint-docs: ## Validate requirements.yml and epic YAML files against Yamale schem
 	yamale -s docs/epics/jsons/epics-schema.yaml docs/epics/jsons/epic-*.yaml
 	@echo "✅ Documentation validation completed!"
 
-lint: lint-backend lint-frontend lint-docs ## Run all linting checks
+lint: lint-backend lint-frontend lint-scripts lint-docs ## Run all linting checks

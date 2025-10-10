@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"bmad-cli/internal/domain/ports"
 	"context"
 	"fmt"
 	"log/slog"
-	"bmad-cli/internal/domain/ports"
 )
 
 // MainBehindOriginHandler checks if main is behind origin/main

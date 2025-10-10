@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"bmad-cli/internal/adapters/ai"
-	"bmad-cli/internal/pkg/errors"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/pkg/errors"
 )
 
 const lowRiskThreshold = 5
@@ -88,7 +88,6 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 
 	return nil
 }
-
 
 func (c *PRTriageCommand) firstRelevantComment(comments []models.Comment) (models.Comment, error) {
 	if len(comments) > 0 {
