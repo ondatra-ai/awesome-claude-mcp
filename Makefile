@@ -94,7 +94,7 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	@echo "🔧 Running go fmt to fix formatting on all Go scripts..."
 	find scripts/ -name "*.go" -exec gofmt -l -w {} \;
 	@echo "🔍 Running golangci-lint on bmad-cli..."
-	cd scripts/bmad-cli && golangci-lint run --fix .
+	cd scripts/bmad-cli && golangci-lint run --fix ./...
 	@echo "✅ Scripts linting completed!"
 
 lint-docs: ## Validate requirements.yml and epic YAML files against Yamale schemas

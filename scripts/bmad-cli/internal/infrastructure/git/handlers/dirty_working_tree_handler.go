@@ -4,8 +4,9 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // DirtyWorkingTreeHandler checks for uncommitted changes.
@@ -30,7 +31,7 @@ func (h *DirtyWorkingTreeHandler) Handle(ctx context.Context, branchCtx *BranchC
 	if err != nil {
 		slog.Error("Failed to check working tree status", "error", err)
 
-		return fmt.Errorf("failed to check working tree status: %w", err)
+		return pkgerrors.ErrCheckWorkingTreeStatusFailed(err)
 	}
 
 	if !isClean {

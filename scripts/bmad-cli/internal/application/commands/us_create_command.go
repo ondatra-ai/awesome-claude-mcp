@@ -11,6 +11,7 @@ import (
 	"bmad-cli/internal/application/factories"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 type USCreateCommand struct {
@@ -30,7 +31,7 @@ func NewUSCreateCommand(factory *factories.StoryFactory, loader *template.Templa
 func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error {
 	// Validate story number format
 	if err := c.validateStoryNumber(storyNumber); err != nil {
-		return fmt.Errorf("invalid story number format: %w", err)
+		return pkgerrors.ErrInvalidStoryNumberFormatError(storyNumber)
 	}
 
 	slog.Info("Creating user story", "story", storyNumber)
@@ -38,7 +39,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 	// 1. Create story document - fail on any errors
 	storyDoc, err := c.factory.CreateStory(ctx, storyNumber)
 	if err != nil {
-		return fmt.Errorf("failed to create story: %w", err)
+		return pkgerrors.ErrCreateStoryFailed(err)
 	}
 
 	// 2. Flatten story document and set TmpDir for template processing
@@ -48,7 +49,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 	// Process template to generate YAML
 	yamlContent, err := c.loader.LoadTemplate(flattenedData)
 	if err != nil {
-		return fmt.Errorf("failed to process template: %w", err)
+		return pkgerrors.ErrProcessTemplateFailed(err)
 	}
 
 	// 3. Skip validation - all fine
@@ -57,7 +58,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 	// 4. Generate filename and save to file
 	filename := c.generateFilename(storyNumber, storyDoc.Story.Title)
 	if err := os.WriteFile(filename, []byte(yamlContent), 0644); err != nil {
-		return fmt.Errorf("failed to save story file: %w", err)
+		return pkgerrors.ErrSaveStoryFileFailed(err)
 	}
 
 	slog.Info("User story created successfully", "file", filename)
@@ -69,7 +70,7 @@ func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
 	// Expected format: X.Y (e.g., 3.1, 3.2, 4.1)
 	matched, err := regexp.MatchString(`^\d+\.\d+$`, storyNumber)
 	if err != nil {
-		return fmt.Errorf("regex error: %w", err)
+		return pkgerrors.ErrRegexFailed(err)
 	}
 
 	if !matched {

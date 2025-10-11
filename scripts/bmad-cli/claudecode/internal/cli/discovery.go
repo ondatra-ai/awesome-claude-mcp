@@ -3,7 +3,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	"bmad-cli/claudecode/internal/shared"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const windowsOS = "windows"
@@ -270,7 +270,7 @@ func ValidateWorkingDirectory(cwd string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to check working directory: %w", err)
+		return pkgerrors.ErrCheckWorkingDirectoryFailed(err)
 	}
 
 	if !info.IsDir() {
@@ -289,14 +289,14 @@ func DetectCLIVersion(ctx context.Context, cliPath string) (string, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to get CLI version: %w", err)
+		return "", pkgerrors.ErrGetCLIVersionFailed(err)
 	}
 
 	version := strings.TrimSpace(string(output))
 
 	// Basic version format validation
 	if !strings.Contains(version, ".") {
-		return "", fmt.Errorf("invalid version format: %s", version)
+		return "", pkgerrors.ErrInvalidVersionFormat(version)
 	}
 
 	return version, nil

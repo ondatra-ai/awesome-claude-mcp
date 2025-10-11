@@ -2,11 +2,11 @@ package git
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 
 	"bmad-cli/internal/infrastructure/shell"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // GitService provides git operations.
@@ -39,7 +39,7 @@ func (s *GitService) GetCurrentBranch(ctx context.Context) (string, error) {
 
 	output, err := s.shellExec.Run(ctx, "git", "branch", "--show-current")
 	if err != nil {
-		return "", fmt.Errorf("failed to get current branch: %w", err)
+		return "", pkgerrors.ErrGetCurrentBranchFailed(err)
 	}
 
 	branch := strings.TrimSpace(output)
@@ -54,7 +54,7 @@ func (s *GitService) IsWorkingTreeClean(ctx context.Context) (bool, error) {
 
 	output, err := s.shellExec.Run(ctx, "git", "status", "--porcelain")
 	if err != nil {
-		return false, fmt.Errorf("failed to check working tree status: %w", err)
+		return false, pkgerrors.ErrCheckWorkingTreeStatusFailed(err)
 	}
 
 	clean := strings.TrimSpace(output) == ""
@@ -114,13 +114,13 @@ func (s *GitService) IsMainBehindOrigin(ctx context.Context) (bool, error) {
 	// Fetch latest from origin
 	_, err := s.shellExec.Run(ctx, "git", "fetch", "origin", "main")
 	if err != nil {
-		return false, fmt.Errorf("failed to fetch origin/main: %w", err)
+		return false, pkgerrors.ErrFetchOriginMainFailed(err)
 	}
 
 	// Check if main is behind origin/main
 	output, err := s.shellExec.Run(ctx, "git", "rev-list", "--count", "main..origin/main")
 	if err != nil {
-		return false, fmt.Errorf("failed to compare main with origin/main: %w", err)
+		return false, pkgerrors.ErrCompareMainWithOriginFailed(err)
 	}
 
 	behind := strings.TrimSpace(output) != "0"
@@ -135,7 +135,7 @@ func (s *GitService) SwitchBranch(ctx context.Context, branch string) error {
 
 	_, err := s.shellExec.Run(ctx, "git", "switch", branch)
 	if err != nil {
-		return fmt.Errorf("failed to switch to branch %s: %w", branch, err)
+		return pkgerrors.ErrSwitchBranchFailed(branch, err)
 	}
 
 	slog.Info("Successfully switched to branch", "branch", branch)
@@ -149,7 +149,7 @@ func (s *GitService) CheckoutRemoteBranch(ctx context.Context, branch string) er
 
 	_, err := s.shellExec.Run(ctx, "git", "checkout", "-b", branch, "origin/"+branch)
 	if err != nil {
-		return fmt.Errorf("failed to checkout remote branch %s: %w", branch, err)
+		return pkgerrors.ErrCheckoutRemoteBranchFailed(branch, err)
 	}
 
 	slog.Info("Successfully checked out remote branch", "branch", branch)
@@ -163,7 +163,7 @@ func (s *GitService) CreateBranch(ctx context.Context, branch string) error {
 
 	_, err := s.shellExec.Run(ctx, "git", "switch", "-c", branch)
 	if err != nil {
-		return fmt.Errorf("failed to create branch %s: %w", branch, err)
+		return pkgerrors.ErrCreateBranchFailed(branch, err)
 	}
 
 	slog.Info("Successfully created branch", "branch", branch)
@@ -182,7 +182,7 @@ func (s *GitService) PushBranch(ctx context.Context, branch string) error {
 
 	_, err := s.shellExec.Run(ctx, "git", "push", "-u", "origin", branch)
 	if err != nil {
-		return fmt.Errorf("failed to push branch %s: %w", branch, err)
+		return pkgerrors.ErrPushBranchFailed(branch, err)
 	}
 
 	slog.Info("Successfully pushed branch to remote", "branch", branch)
@@ -196,7 +196,7 @@ func (s *GitService) ForceRecreateBranch(ctx context.Context, branch string) err
 
 	// Switch to main first
 	if err := s.SwitchBranch(ctx, "main"); err != nil {
-		return fmt.Errorf("failed to switch to main: %w", err)
+		return pkgerrors.ErrSwitchToMainFailed(err)
 	}
 
 	// Delete local branch if exists
@@ -210,7 +210,7 @@ func (s *GitService) ForceRecreateBranch(ctx context.Context, branch string) err
 
 		_, err := s.shellExec.Run(ctx, "git", "branch", "-D", branch)
 		if err != nil {
-			return fmt.Errorf("failed to delete local branch %s: %w", branch, err)
+			return pkgerrors.ErrDeleteLocalBranchFailed(branch, err)
 		}
 	}
 
@@ -225,7 +225,7 @@ func (s *GitService) ForceRecreateBranch(ctx context.Context, branch string) err
 
 		_, err := s.shellExec.Run(ctx, "git", "push", "origin", "--delete", branch)
 		if err != nil {
-			return fmt.Errorf("failed to delete remote branch %s: %w", branch, err)
+			return pkgerrors.ErrDeleteRemoteBranchFailed(branch, err)
 		}
 	}
 

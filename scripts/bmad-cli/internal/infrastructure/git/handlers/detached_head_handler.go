@@ -4,8 +4,9 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // DetachedHeadHandler prevents operations on detached HEAD state.
@@ -30,7 +31,7 @@ func (h *DetachedHeadHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if err != nil {
 		slog.Error("Failed to check HEAD state", "error", err)
 
-		return fmt.Errorf("failed to check HEAD state: %w", err)
+		return pkgerrors.ErrCheckHEADStateFailed(err)
 	}
 
 	if isDetached {
@@ -44,7 +45,7 @@ func (h *DetachedHeadHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if err != nil {
 		slog.Error("Failed to get current branch", "error", err)
 
-		return fmt.Errorf("failed to get current branch: %w", err)
+		return pkgerrors.ErrGetCurrentBranchFailed(err)
 	}
 
 	branchCtx.CurrentBranch = currentBranch

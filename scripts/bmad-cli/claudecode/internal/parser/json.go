@@ -3,11 +3,11 @@ package parser
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 
 	"bmad-cli/claudecode/internal/shared"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const (
@@ -128,7 +128,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 		return nil, shared.NewJSONDecodeError(
 			"buffer overflow",
 			0,
-			fmt.Errorf("buffer size %d exceeds limit %d", bufferSize, p.maxBufferSize),
+			pkgerrors.ErrBufferSizeExceeded(bufferSize, p.maxBufferSize),
 		)
 	}
 
@@ -175,7 +175,7 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 		for i, blockData := range c {
 			block, err := p.parseContentBlock(blockData)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse content block %d: %w", i, err)
+				return nil, pkgerrors.ErrParseContentBlockFailed(i, err)
 			}
 
 			blocks[i] = block
@@ -210,7 +210,7 @@ func (p *Parser) parseAssistantMessage(data map[string]any) (*shared.AssistantMe
 	for i, blockData := range contentArray {
 		block, err := p.parseContentBlock(blockData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse content block %d: %w", i, err)
+			return nil, pkgerrors.ErrParseContentBlockFailed(i, err)
 		}
 
 		blocks[i] = block
@@ -398,7 +398,7 @@ func ParseMessages(lines []string) ([]shared.Message, error) {
 	for i, line := range lines {
 		messages, err := parser.ProcessLine(line)
 		if err != nil {
-			return allMessages, fmt.Errorf("error parsing line %d: %w", i, err)
+			return allMessages, pkgerrors.ErrParseLineFailed(i, err)
 		}
 
 		allMessages = append(allMessages, messages...)

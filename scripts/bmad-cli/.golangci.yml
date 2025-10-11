@@ -126,5 +126,5 @@ linters:
       branch-max-lines: 2
     forbidigo:
       forbid:
-        - pattern: '^fmt\.(Print(f|ln)?|Sprintf|Errorf)$'
+        - pattern: '^fmt\.(Print(f|ln)?|Errorf)$'
           msg: 'use slog for logging and proper error wrapping'

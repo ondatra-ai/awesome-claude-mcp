@@ -3,11 +3,11 @@ package claudecode
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/subprocess"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // ErrNoMoreMessages indicates the message iterator has no more messages.
@@ -22,7 +22,7 @@ func Query(ctx context.Context, prompt string, opts ...Option) (MessageIterator,
 	// This matches the Python SDK behavior where prompt is passed via --print flag
 	transport, err := createQueryTransport(prompt, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create query transport: %w", err)
+		return nil, pkgerrors.ErrCreateQueryTransportFailed(err)
 	}
 
 	return queryWithTransportAndOptions(ctx, prompt, transport, options)
@@ -149,7 +149,7 @@ func (qi *queryIterator) start() error {
 	// Connect to transport
 	err := qi.transport.Connect(qi.ctx)
 	if err != nil {
-		return fmt.Errorf("failed to connect transport: %w", err)
+		return pkgerrors.ErrConnectTransportFailed(err)
 	}
 
 	// Get message channels
@@ -166,7 +166,7 @@ func (qi *queryIterator) start() error {
 
 	err = qi.transport.SendMessage(qi.ctx, streamMsg)
 	if err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
+		return pkgerrors.ErrSendMessageFailed(err)
 	}
 
 	return nil

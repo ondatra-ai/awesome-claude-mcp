@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"bmad-cli/internal/domain/models"
+	"bmad-cli/internal/pkg/errors"
 )
 
 type TemplateEngine struct {
@@ -43,7 +44,7 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 
 	tmpl, err := template.New("prompt").Parse(templateContent)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
+		return "", errors.ErrParseTemplateFailed(err)
 	}
 
 	data := TemplateData{
@@ -58,7 +59,7 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
+		return "", errors.ErrExecuteTemplateFailed(err)
 	}
 
 	return buf.String(), nil

@@ -9,6 +9,7 @@ import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 
 	"gopkg.in/yaml.v3"
 )
@@ -115,19 +116,19 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	}
 	// Ensure tmp directory exists
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return zero, fmt.Errorf("failed to create tmp directory: %w", err)
+		return zero, pkgerrors.ErrCreateTmpDirectoryFailed(err)
 	}
 
 	// 1. Load input data
 	data, err := g.dataLoader()
 	if err != nil {
-		return zero, fmt.Errorf("failed to load data: %w", err)
+		return zero, pkgerrors.ErrLoadDataFailed(err)
 	}
 
 	// 2. Generate prompts and call AI
 	systemPrompt, userPrompt, err := g.promptLoader(data)
 	if err != nil {
-		return zero, fmt.Errorf("failed to load prompts: %w", err)
+		return zero, pkgerrors.ErrLoadPromptsFailed(err)
 	}
 
 	var response string
@@ -135,6 +136,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	if systemPrompt != "" {
 		// Dual prompt mode - save both prompts for debugging
 		systemPromptFile := fmt.Sprintf("%s/%s-%s-system-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+
 		err := os.WriteFile(systemPromptFile, []byte(systemPrompt), 0644)
 		if err != nil {
 			slog.Warn("Failed to save system prompt file", "error", err)
@@ -143,6 +145,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		}
 
 		userPromptFile := fmt.Sprintf("%s/%s-%s-user-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+
 		err = os.WriteFile(userPromptFile, []byte(userPrompt), 0644)
 		if err != nil {
 			slog.Warn("Failed to save user prompt file", "error", err)
@@ -153,11 +156,12 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		// Use system + user prompt
 		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, systemPrompt, userPrompt, g.model, g.mode)
 		if err != nil {
-			return zero, fmt.Errorf("failed to generate content with system prompt: %w", err)
+			return zero, pkgerrors.ErrGenerateContentWithSystemPromptFailed(err)
 		}
 	} else {
 		// Single prompt mode - save single prompt for debugging
 		promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
+
 		err := os.WriteFile(promptFile, []byte(userPrompt), 0644)
 		if err != nil {
 			slog.Warn("Failed to save prompt file", "error", err)
@@ -168,14 +172,14 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 		// Use single prompt (empty system prompt)
 		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, "", userPrompt, g.model, g.mode)
 		if err != nil {
-			return zero, fmt.Errorf("failed to generate content: %w", err)
+			return zero, pkgerrors.ErrGenerateContentFailed(err)
 		}
 	}
 
 	// 4. Save AI response for debugging
 	responseFile := fmt.Sprintf("%s/%s-%s-full-response.txt", tmpDir, g.storyID, g.filePrefix)
 	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
-		return zero, fmt.Errorf("failed to write response file: %w", err)
+		return zero, pkgerrors.ErrWriteResponseFileFailed(err)
 	}
 
 	slog.Info("💾 AI response saved", "file", responseFile)
@@ -183,7 +187,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	// 5. Parse response
 	result, err := g.responseParser(response)
 	if err != nil {
-		return zero, fmt.Errorf("failed to parse response: %w", err)
+		return zero, pkgerrors.ErrParseResponseFailed(err)
 	}
 
 	// 6. Log success
@@ -193,7 +197,7 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	if g.validator != nil {
 		err := g.validator(result)
 		if err != nil {
-			return zero, fmt.Errorf("validation failed: %w", err)
+			return zero, pkgerrors.ErrValidationFailed(err)
 		}
 	}
 
@@ -217,18 +221,18 @@ func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix
 		// Read file
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return zero, fmt.Errorf("%s file not found: %s", filePrefix, filePath)
+			return zero, pkgerrors.ErrYAMLFileNotFound(filePrefix, filePath)
 		}
 
 		// Parse YAML based on key
 		data := make(map[string]T)
 		if err := yaml.Unmarshal(content, &data); err != nil {
-			return zero, fmt.Errorf("failed to parse %s YAML: %w", filePrefix, err)
+			return zero, pkgerrors.ErrParseYAMLFailed(filePrefix, err)
 		}
 
 		result, exists := data[yamlKey]
 		if !exists {
-			return zero, fmt.Errorf("%s key not found in YAML", yamlKey)
+			return zero, pkgerrors.ErrYAMLKeyNotFound(yamlKey)
 		}
 
 		return result, nil

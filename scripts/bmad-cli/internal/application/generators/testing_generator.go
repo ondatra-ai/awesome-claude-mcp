@@ -4,7 +4,6 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -12,6 +11,7 @@ import (
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/pkg/ai"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // AITestingGenerator generates testing requirements for stories using AI.
@@ -58,13 +58,13 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 
 			systemPrompt, err = systemLoader.LoadTemplate(TestingData{})
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load testing system prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadTestingSystemPromptFailed(err)
 			}
 
 			// Load user prompt
 			userPrompt, err = g.loadTestingPrompt(data)
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load testing user prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadTestingUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
@@ -75,7 +75,7 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 	// Generate testing requirements
 	testing, err := generator.Generate()
 	if err != nil {
-		return story.Testing{}, fmt.Errorf("failed to generate testing requirements: %w", err)
+		return story.Testing{}, pkgerrors.ErrGenerateTestingFailed(err)
 	}
 
 	return testing, nil
@@ -89,7 +89,7 @@ func (g *AITestingGenerator) loadTestingPrompt(data TestingData) (string, error)
 
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
-		return "", fmt.Errorf("failed to load testing prompt: %w", err)
+		return "", pkgerrors.ErrLoadTestingPromptFailed(err)
 	}
 
 	return prompt, nil
@@ -116,11 +116,11 @@ func (g *AITestingGenerator) validateTesting(testing story.Testing) error {
 	// Validate coverage values are percentages
 	for key, value := range testing.Coverage {
 		if value == "" {
-			return fmt.Errorf("coverage value for %s cannot be empty", key)
+			return pkgerrors.ErrEmptyCoverageError(key)
 		}
 		// Simple validation that value contains % sign
 		if !strings.Contains(value, "%") {
-			return fmt.Errorf("coverage value for %s should be a percentage", key)
+			return pkgerrors.ErrInvalidCoverageError(key)
 		}
 	}
 

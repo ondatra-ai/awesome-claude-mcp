@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -28,12 +27,12 @@ func (p *PRNumberFetcher) Fetch(ctx context.Context) (int, error) {
 
 	branch, err := p.client.GetCurrentBranch(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get current branch: %w", err)
+		return 0, errors.ErrGetCurrentBranchFailed(err)
 	}
 
 	prs, err := p.client.ListPRsForBranch(ctx, branch)
 	if err != nil {
-		return 0, fmt.Errorf("failed to list PRs for branch %s: %w", branch, err)
+		return 0, errors.ErrListPRsFailed(branch, err)
 	}
 
 	if len(prs) == 0 {

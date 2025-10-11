@@ -7,6 +7,8 @@ import (
 	"strings"
 	"text/template"
 
+	"bmad-cli/internal/pkg/errors"
+
 	"github.com/Masterminds/sprig/v3"
 	"gopkg.in/yaml.v3"
 )
@@ -76,13 +78,13 @@ func (l *TemplateLoader[T]) LoadTemplate(inputData T) (string, error) {
 	// Load the template file
 	templateContent, err := l.loadTemplateFile()
 	if err != nil {
-		return "", fmt.Errorf("failed to load template file: %w", err)
+		return "", errors.ErrLoadTemplateFileFailed(err)
 	}
 
 	// Execute template directly with input data
 	prompt, err := l.executeTemplate(templateContent, inputData)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
+		return "", errors.ErrExecuteTemplateFailed(err)
 	}
 
 	return prompt, nil
@@ -92,7 +94,7 @@ func (l *TemplateLoader[T]) LoadTemplate(inputData T) (string, error) {
 func (l *TemplateLoader[T]) loadTemplateFile() (string, error) {
 	content, err := os.ReadFile(l.templateFilePath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read template file %s: %w", l.templateFilePath, err)
+		return "", errors.ErrReadTemplateFileFailed(l.templateFilePath, err)
 	}
 
 	return string(content), nil
@@ -103,13 +105,13 @@ func (l *TemplateLoader[T]) executeTemplate(templateContent string, data T) (str
 	// Parse the template with custom functions
 	tmpl, err := template.New("prompt").Funcs(l.funcMap).Parse(templateContent)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
+		return "", errors.ErrParseTemplateFailed(err)
 	}
 
 	// Execute the template with data
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
+		return "", errors.ErrExecuteTemplateFailed(err)
 	}
 
 	return buf.String(), nil

@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // UnrelatedBranchHandler fails if on a branch unrelated to the story.
@@ -38,6 +39,5 @@ func (h *UnrelatedBranchHandler) Handle(ctx context.Context, branchCtx *BranchCo
 		"current", branchCtx.CurrentBranch,
 		"story", branchCtx.StoryNumber)
 
-	return fmt.Errorf("currently on branch '%s' which is not related to story %s - please switch to main first",
-		branchCtx.CurrentBranch, branchCtx.StoryNumber)
+	return pkgerrors.ErrUnrelatedBranchError(branchCtx.CurrentBranch, branchCtx.StoryNumber)
 }

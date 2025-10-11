@@ -1,10 +1,10 @@
 package docs
 
 import (
-	"fmt"
 	"os"
 
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/pkg/errors"
 )
 
 // ArchitectureDoc represents an architecture document with content and file path.
@@ -51,12 +51,12 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 	for key, configKey := range docConfigKeys {
 		filepath := l.config.GetString(configKey)
 		if filepath == "" {
-			return nil, fmt.Errorf("document path not configured for key: %s", configKey)
+			return nil, errors.ErrDocumentPathNotConfigured(configKey)
 		}
 
 		content, err := l.loadDocument(filepath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load required architecture document %s (from %s): %w", configKey, filepath, err)
+			return nil, errors.ErrLoadDocumentFailed(configKey, filepath, err)
 		}
 
 		docs[key] = ArchitectureDoc{
@@ -73,31 +73,31 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs,
 	// Load architecture document
 	archContent, err := l.loadDocumentWithPath("documents.architecture")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture document: %w", err)
+		return nil, errors.ErrLoadArchitectureFailed(err)
 	}
 
 	// Load frontend architecture document
 	frontendContent, err := l.loadDocumentWithPath("documents.frontend_architecture")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load frontend architecture document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("frontend_architecture", "documents.frontend_architecture", err)
 	}
 
 	// Load coding standards document
 	codingContent, err := l.loadDocumentWithPath("documents.coding_standards")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load coding standards document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("coding_standards", "documents.coding_standards", err)
 	}
 
 	// Load source tree document
 	sourceContent, err := l.loadDocumentWithPath("documents.source_tree")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load source tree document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("source_tree", "documents.source_tree", err)
 	}
 
 	// Load tech stack document
 	techContent, err := l.loadDocumentWithPath("documents.tech_stack")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load tech stack document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("tech_stack", "documents.tech_stack", err)
 	}
 
 	return &ArchitectureDocs{
@@ -113,12 +113,12 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs,
 func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (ArchitectureDoc, error) {
 	filepath := l.config.GetString(configKey)
 	if filepath == "" {
-		return ArchitectureDoc{}, fmt.Errorf("document path not configured for key: %s", configKey)
+		return ArchitectureDoc{}, errors.ErrDocumentPathNotConfigured(configKey)
 	}
 
 	content, err := l.loadDocument(filepath)
 	if err != nil {
-		return ArchitectureDoc{}, fmt.Errorf("failed to load document %s (from %s): %w", configKey, filepath, err)
+		return ArchitectureDoc{}, errors.ErrLoadDocumentFailed(configKey, filepath, err)
 	}
 
 	return ArchitectureDoc{
@@ -131,13 +131,13 @@ func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (Architectur
 func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
 	// Check if file exists
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return "", fmt.Errorf("document not found: %s", filepath)
+		return "", errors.ErrDocumentNotFound(filepath)
 	}
 
 	// Read the file
 	content, err := os.ReadFile(filepath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read document %s: %w", filepath, err)
+		return "", errors.ErrReadDocumentFailed(filepath, err)
 	}
 
 	return string(content), nil

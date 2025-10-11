@@ -1,9 +1,10 @@
 package prompt_builders
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"bmad-cli/internal/pkg/errors"
 )
 
 // PromptFileLoader loads raw prompt template files and checklists from disk
@@ -24,7 +25,7 @@ func (l *PromptFileLoader) LoadTemplate(templatePath string) (string, error) {
 
 	tplBytes, err := os.ReadFile(tplPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read template file %s: %w", tplPath, err)
+		return "", errors.ErrReadTemplateFileFailed(tplPath, err)
 	}
 
 	return string(tplBytes), nil
@@ -42,7 +43,7 @@ func (l *PromptFileLoader) LoadChecklist(checklistPath string) (string, error) {
 
 	chkBytes, err := os.ReadFile(chkPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read checklist file %s: %w", chkPath, err)
+		return "", errors.ErrReadChecklistFileFailed(chkPath, err)
 	}
 
 	return string(chkBytes), nil

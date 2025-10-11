@@ -1,7 +1,6 @@
 package prompt_builders
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,7 +42,7 @@ func (p *YAMLParser) ParseHeuristicResult(rawOutput string) (models.HeuristicAna
 
 	summary, err := p.parseSummaryFromYAML(cleaned)
 	if err != nil || strings.TrimSpace(summary) == "" {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("missing summary in YAML: %w", err)
+		return models.HeuristicAnalysisResult{}, errors.ErrParseSummaryYAMLFailed(err)
 	}
 
 	items, err := p.parseItemsFromYAML(cleaned)
@@ -85,7 +84,7 @@ func (p *YAMLParser) parseRiskFromYAML(yaml string) (int, error) {
 
 	score, err := strconv.Atoi(m[1])
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse risk score: %w", err)
+		return 0, errors.ErrParseRiskScoreFailed(err)
 	}
 
 	return score, nil

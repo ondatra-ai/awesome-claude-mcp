@@ -1,7 +1,9 @@
 package config
 
 import (
-	"fmt"
+	"log/slog"
+
+	"bmad-cli/internal/pkg/errors"
 	"github.com/spf13/viper"
 )
 
@@ -17,7 +19,9 @@ func NewViperConfig() (*ViperConfig, error) {
 
 	err := v.ReadInConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		slog.Error("Failed to read config file", "error", err)
+
+		return nil, errors.ErrReadConfigFailed(err)
 	}
 
 	return &ViperConfig{viper: v}, nil

@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 
 	"gopkg.in/yaml.v3"
 )
@@ -49,7 +49,7 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	// Get story slug from file
 	_, err := c.storyLoader.GetStorySlug(storyNumber)
 	if err != nil {
-		return fmt.Errorf("failed to get story slug: %w", err)
+		return pkgerrors.ErrGetStorySlugFailed(err)
 	}
 
 	// TEMPORARILY COMMENTED OUT FOR TESTING
@@ -59,41 +59,38 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	// }
 	// slog.Info("Branch setup completed successfully")
 
-	fmt.Println("⚠️  Branch management temporarily disabled for testing")
+	slog.Warn("Branch management temporarily disabled for testing")
 
 	// Clone requirements.yml to run directory for safe testing
 	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
 	if err := c.cloneRequirements(outputFile); err != nil {
-		return fmt.Errorf("failed to clone requirements file: %w", err)
+		return pkgerrors.ErrCloneRequirementsFileFailed(err)
 	}
 
 	// Load story document
 	storyDoc, err := c.storyLoader.Load(storyNumber)
 	if err != nil {
-		return fmt.Errorf("failed to load story: %w", err)
+		return pkgerrors.ErrLoadStoryFailed(err)
 	}
 
 	// Merge scenarios from story into requirements-merged.yml (test file)
 	if err := c.mergeScenarios(ctx, storyNumber, storyDoc, outputFile); err != nil {
-		return fmt.Errorf("failed to merge scenarios: %w", err)
+		return pkgerrors.ErrMergeScenariosFailed(err)
 	}
 
-	fmt.Println("\n✅ Scenario merge completed successfully!")
-	fmt.Printf("Merged %d scenarios from story %s\n", len(storyDoc.Scenarios.TestScenarios), storyNumber)
+	slog.Info("✅ Scenario merge completed successfully", "scenarios", len(storyDoc.Scenarios.TestScenarios), "story", storyNumber)
 
 	// Replace original requirements.yml with merged version
 	if err := c.replaceRequirements(outputFile); err != nil {
-		return fmt.Errorf("failed to replace requirements: %w", err)
+		return pkgerrors.ErrReplaceRequirementsFailed(err)
 	}
 
 	// Implement tests for pending scenarios
 	if err := c.implementTests(ctx, "docs/requirements.yml"); err != nil {
-		return fmt.Errorf("failed to implement tests: %w", err)
+		return pkgerrors.ErrImplementTestsFailed(err)
 	}
 
-	slog.Info("User story implementation completed successfully")
-	fmt.Println("\n✅ User story implementation completed successfully!")
-	fmt.Printf("\nBackup available at: docs/requirements.yml.backup\n")
+	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
 
 	return nil
 }
@@ -104,21 +101,21 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 	// Ensure tmp directory exists
 	outputDir := filepath.Dir(outputFile)
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", outputDir, err)
+		return pkgerrors.ErrCreateOutputDirectoryFailed(outputDir, err)
 	}
 
 	// Read original file
 	data, err := os.ReadFile("docs/requirements.yml")
 	if err != nil {
-		return fmt.Errorf("failed to read requirements.yml: %w", err)
+		return pkgerrors.ErrReadRequirementsFileFailed(err)
 	}
 
 	// Write to output file
 	if err := os.WriteFile(outputFile, data, 0644); err != nil {
-		return fmt.Errorf("failed to write %s: %w", outputFile, err)
+		return pkgerrors.ErrWriteOutputFileFailed(outputFile, err)
 	}
 
-	fmt.Printf("✓ Cloned docs/requirements.yml → %s\n", outputFile)
+	slog.Info("✓ Cloned requirements file", "source", "docs/requirements.yml", "destination", outputFile)
 
 	return nil
 }
@@ -134,30 +131,29 @@ func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 	// Create backup
 	originalData, err := os.ReadFile(requirementsPath)
 	if err != nil {
-		return fmt.Errorf("failed to read original: %w", err)
+		return pkgerrors.ErrReadOriginalFileFailed(err)
 	}
 
 	if err := os.WriteFile(backupPath, originalData, 0644); err != nil {
-		return fmt.Errorf("failed to create backup: %w", err)
+		return pkgerrors.ErrCreateBackupFileFailed(err)
 	}
 
-	fmt.Printf("✓ Created backup: %s\n", backupPath)
+	slog.Info("✓ Created backup", "path", backupPath)
 
 	// Read merged file
 	mergedData, err := os.ReadFile(mergedFile)
 	if err != nil {
-		return fmt.Errorf("failed to read merged: %w", err)
+		return pkgerrors.ErrReadMergedFileFailed(err)
 	}
 
 	// Replace original
 	if err := os.WriteFile(requirementsPath, mergedData, 0644); err != nil {
 		_ = os.WriteFile(requirementsPath, originalData, 0644) // Restore
 
-		return fmt.Errorf("failed to replace: %w", err)
+		return pkgerrors.ErrReplaceFileFailed(err)
 	}
 
-	fmt.Printf("✓ Replaced %s with merged scenarios\n", requirementsPath)
-	slog.Info("Requirements replaced successfully")
+	slog.Info("✓ Replaced requirements with merged scenarios", "path", requirementsPath)
 
 	return nil
 }
@@ -175,8 +171,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 	for i, scenario := range storyDoc.Scenarios.TestScenarios {
 		startTime := time.Now()
 
-		slog.Info("Processing scenario", "index", i+1, "scenario_id", scenario.ID)
-		fmt.Printf("\nMerging scenario %d/%d: %s\n", i+1, len(storyDoc.Scenarios.TestScenarios), scenario.ID)
+		slog.Info("Processing scenario", "index", i+1, "total", len(storyDoc.Scenarios.TestScenarios), "scenario_id", scenario.ID)
 
 		// Create merge data adapter
 		mergeData := template.NewScenarioMergeData(storyNumber, scenario, outputFile)
@@ -184,12 +179,12 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 		// Load templates using TemplateLoader
 		userPrompt, err := userPromptLoader.LoadTemplate(mergeData)
 		if err != nil {
-			return fmt.Errorf("failed to load user prompt for scenario %s: %w", scenario.ID, err)
+			return pkgerrors.ErrLoadUserPromptForScenarioFailed(scenario.ID, err)
 		}
 
 		systemPrompt, err := systemPromptLoader.LoadTemplate(mergeData)
 		if err != nil {
-			return fmt.Errorf("failed to load system prompt for scenario %s: %w", scenario.ID, err)
+			return pkgerrors.ErrLoadSystemPromptForScenarioFailed(scenario.ID, err)
 		}
 
 		// Call Claude Code API to analyze and merge
@@ -205,12 +200,11 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 			},
 		)
 		if err != nil {
-			return fmt.Errorf("failed to merge scenario %s: %w", scenario.ID, err)
+			return pkgerrors.ErrMergeScenarioFailed(scenario.ID, err)
 		}
 
 		duration := time.Since(startTime)
-		slog.Info("Scenario merged successfully", "scenario_id", scenario.ID, "duration", duration)
-		fmt.Printf("✓ Merged scenario: %s (took %v)\n", scenario.ID, duration.Round(time.Second))
+		slog.Info("✓ Scenario merged successfully", "scenario_id", scenario.ID, "duration", duration.Round(time.Second))
 	}
 
 	slog.Info("All scenarios merged successfully", "total_count", len(storyDoc.Scenarios.TestScenarios))
@@ -219,22 +213,21 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 }
 
 func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFile string) error {
-	slog.Info("Starting test implementation", "requirements_file", requirementsFile)
-	fmt.Println("\n⚙️  Implementing pending tests...")
+	slog.Info("⚙️  Starting test implementation", "requirements_file", requirementsFile)
 
 	// Parse requirements file to find pending scenarios
 	pendingScenarios, err := c.parsePendingScenarios(requirementsFile)
 	if err != nil {
-		return fmt.Errorf("failed to parse pending scenarios: %w", err)
+		return pkgerrors.ErrParsePendingScenariosFailed(err)
 	}
 
 	if len(pendingScenarios) == 0 {
-		fmt.Println("✓ No pending scenarios to implement")
+		slog.Info("✓ No pending scenarios to implement")
 
 		return nil
 	}
 
-	fmt.Printf("Found %d pending scenario(s) to implement\n", len(pendingScenarios))
+	slog.Info("Found pending scenarios to implement", "count", len(pendingScenarios))
 
 	// Create template loaders
 	userPromptPath := c.config.GetString("templates.prompts.implement_tests")
@@ -248,8 +241,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 	for i, scenario := range pendingScenarios {
 		startTime := time.Now()
 
-		slog.Info("Processing pending scenario", "index", i+1, "scenario_id", scenario.ScenarioID)
-		fmt.Printf("\nImplementing test %d/%d: %s\n", i+1, len(pendingScenarios), scenario.ScenarioID)
+		slog.Info("Implementing test scenario", "progress", i+1, "total", len(pendingScenarios), "scenario_id", scenario.ScenarioID)
 
 		// Create test implementation data
 		testData := scenario
@@ -257,16 +249,14 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		// Load templates
 		userPrompt, err := userPromptLoader.LoadTemplate(testData)
 		if err != nil {
-			slog.Error("Failed to load user prompt", "scenario_id", scenario.ScenarioID, "error", err)
-			fmt.Printf("⚠️  Skipping %s: failed to load user prompt\n", scenario.ScenarioID)
+			slog.Warn("⚠️  Skipping scenario: failed to load user prompt", "scenario_id", scenario.ScenarioID, "error", err)
 
 			continue
 		}
 
 		systemPrompt, err := systemPromptLoader.LoadTemplate(testData)
 		if err != nil {
-			slog.Error("Failed to load system prompt", "scenario_id", scenario.ScenarioID, "error", err)
-			fmt.Printf("⚠️  Skipping %s: failed to load system prompt\n", scenario.ScenarioID)
+			slog.Warn("⚠️  Skipping scenario: failed to load system prompt", "scenario_id", scenario.ScenarioID, "error", err)
 
 			continue
 		}
@@ -284,8 +274,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 			},
 		)
 		if err != nil {
-			slog.Error("Failed to implement test", "scenario_id", scenario.ScenarioID, "error", err)
-			fmt.Printf("⚠️  Failed to implement %s: %v\n", scenario.ScenarioID, err)
+			slog.Warn("⚠️  Failed to implement test scenario", "scenario_id", scenario.ScenarioID, "error", err)
 
 			continue
 		}
@@ -293,13 +282,10 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		duration := time.Since(startTime)
 		implementedCount++
 
-		slog.Info("Test implemented successfully", "scenario_id", scenario.ScenarioID, "duration", duration)
-		fmt.Printf("✓ Implemented test: %s (took %v)\n", scenario.ScenarioID, duration.Round(time.Second))
+		slog.Info("✓ Test implemented successfully", "scenario_id", scenario.ScenarioID, "duration", duration.Round(time.Second))
 	}
 
-	slog.Info("Test implementation completed", "implemented_count", implementedCount, "total_pending", len(pendingScenarios))
-	fmt.Printf("\n✅ Test implementation completed!")
-	fmt.Printf("Successfully implemented %d/%d test(s)\n", implementedCount, len(pendingScenarios))
+	slog.Info("✅ Test implementation completed", "implemented_count", implementedCount, "total_pending", len(pendingScenarios))
 
 	return nil
 }
@@ -311,7 +297,7 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 	// Read requirements file
 	data, err := os.ReadFile(requirementsFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read requirements file: %w", err)
+		return nil, pkgerrors.ErrReadRequirementsFailed(err)
 	}
 
 	// Parse YAML structure
@@ -334,7 +320,7 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 	}
 
 	if err := yaml.Unmarshal(data, &requirements); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal requirements YAML: %w", err)
+		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
 	}
 
 	// Filter pending scenarios and convert to TestImplementationData

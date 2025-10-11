@@ -3,12 +3,12 @@ package claudecode
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"sync"
 
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/subprocess"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const defaultSessionID = "default"
@@ -109,7 +109,7 @@ func WithClient(ctx context.Context, fn func(Client) error, opts ...Option) erro
 
 	err := client.Connect(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to connect client: %w", err)
+		return pkgerrors.ErrConnectClientFailed(err)
 	}
 
 	defer func() {
@@ -153,7 +153,7 @@ func WithClientTransport(ctx context.Context, transport Transport, fn func(Clien
 
 	err := client.Connect(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to connect client: %w", err)
+		return pkgerrors.ErrConnectClientFailed(err)
 	}
 
 	defer func() {
@@ -177,13 +177,13 @@ func (c *ClientImpl) validateOptions() error {
 	// Validate working directory
 	if c.options.Cwd != nil {
 		if _, err := os.Stat(*c.options.Cwd); os.IsNotExist(err) {
-			return fmt.Errorf("working directory does not exist: %s", *c.options.Cwd)
+			return pkgerrors.ErrWorkingDirectoryDoesNotExist(*c.options.Cwd)
 		}
 	}
 
 	// Validate max turns
 	if c.options.MaxTurns < 0 {
-		return fmt.Errorf("max_turns must be non-negative, got: %d", c.options.MaxTurns)
+		return pkgerrors.ErrMaxTurnsMustBeNonNegative(c.options.MaxTurns)
 	}
 
 	// Validate permission mode
@@ -195,7 +195,7 @@ func (c *ClientImpl) validateOptions() error {
 			PermissionModeBypassPermissions: true,
 		}
 		if !validModes[*c.options.PermissionMode] {
-			return fmt.Errorf("invalid permission mode: %s", string(*c.options.PermissionMode))
+			return pkgerrors.ErrInvalidPermissionModeValue(string(*c.options.PermissionMode))
 		}
 	}
 
@@ -220,7 +220,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	// Validate configuration before connecting
 	err := c.validateOptions()
 	if err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
+		return pkgerrors.ErrInvalidConfigurationError(err)
 	}
 
 	// Use custom transport if provided, otherwise create default
@@ -230,7 +230,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 		// Create default subprocess transport directly (like Python SDK)
 		cliPath, err := cli.FindCLI()
 		if err != nil {
-			return fmt.Errorf("claude CLI not found: %w", err)
+			return pkgerrors.ErrCLINotFoundError(err)
 		}
 
 		// Create subprocess transport for streaming mode (closeStdin=false)
@@ -240,7 +240,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	// Connect the transport
 	err = c.transport.Connect(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to connect transport: %w", err)
+		return pkgerrors.ErrConnectTransportFailed(err)
 	}
 
 	// Get message channels
@@ -259,7 +259,7 @@ func (c *ClientImpl) Disconnect() error {
 	if c.transport != nil && c.connected {
 		err := c.transport.Close()
 		if err != nil {
-			return fmt.Errorf("failed to close transport: %w", err)
+			return pkgerrors.ErrCloseTransportFailed(err)
 		}
 	}
 
@@ -358,8 +358,8 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 				if !ok {
 					return // Channel closed
 				}
-				err := transport.SendMessage(ctx, msg)
 
+				err := transport.SendMessage(ctx, msg)
 				if err != nil {
 					// Log error but continue processing
 					return

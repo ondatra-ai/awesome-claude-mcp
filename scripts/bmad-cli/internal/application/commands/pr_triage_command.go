@@ -79,7 +79,7 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 
 			summary, err := c.threadProcessor.ImplementChanges(ctx, threadCtx)
 			if err != nil {
-				return fmt.Errorf("apply failed for thread %s: %w", thread.ID, err)
+				return pkgerrors.ErrApplyThreadActionFailed(thread.ID, err)
 			}
 
 			slog.Info("Applied code changes; resolving.")

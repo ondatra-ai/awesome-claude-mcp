@@ -4,8 +4,9 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // MainBehindOriginHandler checks if main is behind origin/main.
@@ -37,7 +38,7 @@ func (h *MainBehindOriginHandler) Handle(ctx context.Context, branchCtx *BranchC
 	if err != nil {
 		slog.Error("Failed to check if main is behind origin", "error", err)
 
-		return fmt.Errorf("failed to check if main is behind origin: %w", err)
+		return pkgerrors.ErrCheckMainBehindOriginFailed(err)
 	}
 
 	if isBehind {

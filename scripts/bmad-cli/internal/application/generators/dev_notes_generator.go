@@ -1,15 +1,15 @@
 package generators
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
-	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/pkg/ai"
+	"bmad-cli/internal/pkg/errors"
 )
 
 // DevNotesPromptData represents data needed for dev notes generation prompts.
@@ -53,7 +53,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 
 			systemPrompt, err = systemLoader.LoadTemplate(DevNotesPromptData{})
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load devnotes system prompt: %w", err)
+				return "", "", errors.ErrLoadDevNotesPromptFailed(err)
 			}
 
 			// Load user prompt
@@ -62,7 +62,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 
 			userPrompt, err = userLoader.LoadTemplate(data)
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load devnotes user prompt: %w", err)
+				return "", "", errors.ErrLoadDevNotesUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
@@ -79,7 +79,7 @@ func (g *AIDevNotesGenerator) validateDevNotes(devNotes story.DevNotes) error {
 	for _, entityName := range mandatoryEntities {
 		entity, exists := devNotes[entityName]
 		if !exists {
-			return fmt.Errorf("mandatory entity '%s' is missing", entityName)
+			return errors.ErrMandatoryEntityMissingError(entityName)
 		}
 
 		// Handle both map[string]interface{} and story.DevNotes (which is also map[string]interface{})
@@ -89,17 +89,17 @@ func (g *AIDevNotesGenerator) validateDevNotes(devNotes story.DevNotes) error {
 		} else if dn, ok := entity.(story.DevNotes); ok {
 			entityMap = dn
 		} else {
-			return fmt.Errorf("entity '%s' must be a map, got %T", entityName, entity)
+			return errors.ErrEntityInvalidTypeError(entityName, entity)
 		}
 
 		// Check for mandatory source field
 		if _, hasSource := entityMap["source"]; !hasSource {
-			return fmt.Errorf("entity '%s' is missing mandatory 'source' field", entityName)
+			return errors.ErrEntityMissingFieldError(entityName, "source")
 		}
 
 		// Check for mandatory description field
 		if _, hasDescription := entityMap["description"]; !hasDescription {
-			return fmt.Errorf("entity '%s' is missing mandatory 'description' field", entityName)
+			return errors.ErrEntityMissingFieldError(entityName, "description")
 		}
 	}
 

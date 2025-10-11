@@ -2,7 +2,6 @@ package factories
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // TaskGenerator interface for generating tasks.
@@ -58,13 +58,13 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Load story from epic file - fail if not found
 	loadedStory, err := f.epicLoader.LoadStoryFromEpic(storyNumber)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load story from epic file: %w", err)
+		return nil, pkgerrors.ErrLoadStoryFromEpicFailed(err)
 	}
 
 	// Load architecture documents once for all generators
 	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
+		return nil, pkgerrors.ErrLoadArchitectureDocsFailed(err)
 	}
 
 	// Create initial story document with all required data
@@ -100,7 +100,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate tasks: %w", err)
+		return nil, pkgerrors.ErrGenerateTasksFailed(err)
 	}
 
 	storyDoc.Tasks = tasks
@@ -108,7 +108,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate dev_notes using AI - fail on any error
 	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
+		return nil, pkgerrors.ErrGenerateDevNotesFailed(err)
 	}
 
 	storyDoc.DevNotes = devNotes
@@ -116,7 +116,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate testing requirements using AI - fail on any error
 	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
+		return nil, pkgerrors.ErrGenerateTestingReqsFailed(err)
 	}
 
 	storyDoc.Testing = testing
@@ -124,7 +124,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate test scenarios using AI - fail on any error
 	scenarios, err := scenariosGenerator.GenerateScenarios(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate test scenarios: %w", err)
+		return nil, pkgerrors.ErrGenerateTestScenariosFailed(err)
 	}
 
 	storyDoc.Scenarios = scenarios
@@ -132,7 +132,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate QA results using AI - fail on any error
 	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate QA results: %w", err)
+		return nil, pkgerrors.ErrGenerateQAFailed(err)
 	}
 
 	storyDoc.QAResults = &qaResults

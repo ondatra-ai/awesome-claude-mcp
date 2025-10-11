@@ -1,8 +1,6 @@
 package generators
 
 import (
-	"bmad-cli/internal/domain/ports"
-	"bmad-cli/internal/pkg/ai"
 	"context"
 	"errors"
 	"fmt"
@@ -11,9 +9,12 @@ import (
 	"time"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/pkg/ai"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // AIQAAssessmentGenerator generates QA results for stories using AI.
@@ -60,13 +61,13 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 
 			systemPrompt, err = systemLoader.LoadTemplate(QAAssessmentData{})
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load QA system prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadQASystemPromptFailed(err)
 			}
 
 			// Load user prompt
 			userPrompt, err = g.loadQAPrompt(data)
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load QA user prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadQAUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
@@ -77,7 +78,7 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 	// Generate QA results
 	qaResults, err := generator.Generate()
 	if err != nil {
-		return story.QAResults{}, fmt.Errorf("failed to generate QA results: %w", err)
+		return story.QAResults{}, pkgerrors.ErrGenerateQAResultsFailed(err)
 	}
 
 	// Set review metadata
@@ -100,7 +101,7 @@ func (g *AIQAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, e
 
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
-		return "", fmt.Errorf("failed to load QA prompt: %w", err)
+		return "", pkgerrors.ErrLoadQAPromptFailed(err)
 	}
 
 	return prompt, nil
@@ -126,7 +127,7 @@ func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) e
 		"High":   true,
 	}
 	if !validRiskLevels[qaResults.Assessment.RiskLevel] {
-		return fmt.Errorf("invalid risk level: %s (must be Low, Medium, or High)", qaResults.Assessment.RiskLevel)
+		return pkgerrors.ErrInvalidRiskLevelError(qaResults.Assessment.RiskLevel)
 	}
 
 	if qaResults.Assessment.TestabilityScore < 1 || qaResults.Assessment.TestabilityScore > 10 {
@@ -144,7 +145,7 @@ func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) e
 		"WAIVED":   true,
 	}
 	if !validGateStatuses[qaResults.GateStatus] {
-		return fmt.Errorf("invalid gate status: %s", qaResults.GateStatus)
+		return pkgerrors.ErrInvalidGateStatusError(qaResults.GateStatus)
 	}
 
 	return nil

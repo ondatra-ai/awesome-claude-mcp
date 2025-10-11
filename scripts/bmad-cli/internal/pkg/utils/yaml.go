@@ -1,7 +1,9 @@
 package utils
 
 import (
-	"fmt"
+	"log/slog"
+
+	"bmad-cli/internal/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -9,7 +11,9 @@ import (
 func MarshalToYAML[T any](data T) (string, error) {
 	yamlBytes, err := yaml.Marshal(data)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal to YAML: %w", err)
+		slog.Error("Failed to marshal to YAML", "error", err)
+
+		return "", errors.ErrMarshalToYAMLFailed(err)
 	}
 
 	return string(yamlBytes), nil
@@ -18,9 +22,12 @@ func MarshalToYAML[T any](data T) (string, error) {
 // UnmarshalFromYAML converts YAML string to specified type.
 func UnmarshalFromYAML[T any](yamlString string) (T, error) {
 	var result T
+
 	err := yaml.Unmarshal([]byte(yamlString), &result)
 	if err != nil {
-		return result, fmt.Errorf("failed to unmarshal from YAML: %w", err)
+		slog.Error("Failed to unmarshal from YAML", "error", err)
+
+		return result, errors.ErrUnmarshalFromYAMLFailed(err)
 	}
 
 	return result, nil

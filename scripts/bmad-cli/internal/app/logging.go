@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -12,13 +11,13 @@ func configureLogging() {
 
 	// Ensure tmp directory exists
 	if err := os.MkdirAll("./tmp", 0755); err != nil {
-		fmt.Printf("Warning: failed to create tmp directory: %v\n", err)
+		log.Println("Warning: failed to create tmp directory:", err)
 	}
 
 	// Open log file for JSON output (all levels)
 	logFile, err := os.OpenFile("./tmp/bmad-cli.log.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Printf("Warning: failed to open log file: %v\n", err)
+		log.Println("Warning: failed to open log file:", err)
 		// Fallback to console only
 		opts := &slog.HandlerOptions{
 			Level: slog.LevelInfo,

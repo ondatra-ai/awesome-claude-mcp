@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"bmad-cli/internal/domain/models"
@@ -25,7 +24,7 @@ func NewThreadsFetcher(client *GitHubCLIClient) *ThreadsFetcher {
 func (t *ThreadsFetcher) FetchAll(ctx context.Context, prNumber int) ([]models.Thread, error) {
 	owner, name, err := t.client.GetRepoOwnerAndName(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get repository owner and name: %w", err)
+		return nil, errors.ErrGetRepoOwnerAndNameFailed(err)
 	}
 
 	all, err := t.fetchAllPages(ctx, owner, name, prNumber)
@@ -82,14 +81,14 @@ func (t *ThreadsFetcher) fetchSinglePage(
 
 	out, err := t.client.ExecuteGraphQL(ctx, query, variables)
 	if err != nil {
-		return threadsPageResponse{}, fmt.Errorf("graphql list threads: %w, out=%s", err, out)
+		return threadsPageResponse{}, errors.ErrGraphQLListThreadsFailed(err, out)
 	}
 
 	var page threadsPageResponse
 
 	err = json.Unmarshal([]byte(out), &page)
 	if err != nil {
-		return threadsPageResponse{}, fmt.Errorf("parse threads page: %w", err)
+		return threadsPageResponse{}, errors.ErrParseThreadsPageFailed(err)
 	}
 
 	return page, nil

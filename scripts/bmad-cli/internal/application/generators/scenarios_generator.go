@@ -3,9 +3,9 @@ package generators
 import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/pkg/ai"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -60,13 +60,13 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 
 			systemPrompt, err = systemLoader.LoadTemplate(ScenariosData{})
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load scenarios system prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadScenariosSystemPromptFailed(err)
 			}
 
 			// Load user prompt
 			userPrompt, err = g.loadScenariosPrompt(data)
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load scenarios user prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadScenariosUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
@@ -77,7 +77,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 	// Generate test scenarios
 	scenarios, err := generator.Generate()
 	if err != nil {
-		return story.Scenarios{}, fmt.Errorf("failed to generate test scenarios: %w", err)
+		return story.Scenarios{}, pkgerrors.ErrGenerateTestScenariosFailed(err)
 	}
 
 	return scenarios, nil
@@ -91,7 +91,7 @@ func (g *AIScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, 
 
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
-		return "", fmt.Errorf("failed to load scenarios prompt: %w", err)
+		return "", pkgerrors.ErrLoadScenariosPromptFailed(err)
 	}
 
 	return prompt, nil
@@ -111,16 +111,16 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 		for i, scenario := range scenarios.TestScenarios {
 			// Validate required fields
 			if scenario.ID == "" {
-				return fmt.Errorf("scenario %d: ID cannot be empty", i)
+				return pkgerrors.ErrEmptyScenarioIDError(i)
 			}
 
 			if len(scenario.AcceptanceCriteria) == 0 {
-				return fmt.Errorf("scenario %s: must reference at least one acceptance criterion", scenario.ID)
+				return pkgerrors.ErrNoCriteriaError(scenario.ID)
 			}
 
 			// Validate steps array
 			if len(scenario.Steps) == 0 {
-				return fmt.Errorf("scenario %s: must have at least one step", scenario.ID)
+				return pkgerrors.ErrNoStepsError(scenario.ID)
 			}
 
 			// Validate each step has exactly one keyword set and statements are valid
@@ -133,8 +133,8 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.Given) > 0 {
 					nonEmptyCount++
 					hasGiven = true
-					err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given)
 
+					err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given)
 					if err != nil {
 						return err
 					}
@@ -144,8 +144,8 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.When) > 0 {
 					nonEmptyCount++
 					hasWhen = true
-					err := validateStepStatements(scenario.ID, stepIdx, "When", step.When)
 
+					err := validateStepStatements(scenario.ID, stepIdx, "When", step.When)
 					if err != nil {
 						return err
 					}
@@ -155,52 +155,52 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.Then) > 0 {
 					nonEmptyCount++
 					hasThen = true
-					err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then)
 
+					err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then)
 					if err != nil {
 						return err
 					}
 				}
 
 				if nonEmptyCount == 0 {
-					return fmt.Errorf("scenario %s, step %d: step must have at least one keyword set", scenario.ID, stepIdx)
+					return pkgerrors.ErrNoKeywordSetError(scenario.ID, stepIdx)
 				}
 
 				if nonEmptyCount > 1 {
-					return fmt.Errorf("scenario %s, step %d: step must have exactly one keyword set", scenario.ID, stepIdx)
+					return pkgerrors.ErrMultipleKeywordsError(scenario.ID, stepIdx)
 				}
 			}
 
 			// Ensure scenario has at least Given, When, and Then
 			if !hasGiven {
-				return fmt.Errorf("scenario %s: must have at least one 'Given' step", scenario.ID)
+				return pkgerrors.ErrNoGivenStepError(scenario.ID)
 			}
 
 			if !hasWhen {
-				return fmt.Errorf("scenario %s: must have at least one 'When' step", scenario.ID)
+				return pkgerrors.ErrNoWhenStepError(scenario.ID)
 			}
 
 			if !hasThen {
-				return fmt.Errorf("scenario %s: must have at least one 'Then' step", scenario.ID)
+				return pkgerrors.ErrNoThenStepError(scenario.ID)
 			}
 
 			// Validate scenario outline has examples
 			if scenario.ScenarioOutline {
 				if len(scenario.Examples) == 0 {
-					return fmt.Errorf("scenario %s: scenario outline must have at least one example", scenario.ID)
+					return pkgerrors.ErrNoExamplesError(scenario.ID)
 				}
 			}
 
 			// Validate level (only integration and e2e allowed)
 			validLevels := map[string]bool{"integration": true, "e2e": true}
 			if !validLevels[scenario.Level] {
-				return fmt.Errorf("scenario %s: level must be integration or e2e (unit scenarios are not allowed in BDD)", scenario.ID)
+				return pkgerrors.ErrInvalidLevelError(scenario.ID)
 			}
 
 			// Validate priority
 			validPriorities := map[string]bool{"P0": true, "P1": true, "P2": true, "P3": true}
 			if !validPriorities[scenario.Priority] {
-				return fmt.Errorf("scenario %s: priority must be P0, P1, P2, or P3", scenario.ID)
+				return pkgerrors.ErrInvalidPriorityError(scenario.ID)
 			}
 
 			// Track covered ACs
@@ -212,7 +212,7 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 		// Verify all ACs are covered by at least one scenario
 		for _, ac := range acceptanceCriteria {
 			if !coveredACs[ac.ID] {
-				return fmt.Errorf("acceptance criterion %s is not covered by any test scenario", ac.ID)
+				return pkgerrors.ErrUncoveredCriterionError(ac.ID)
 			}
 		}
 
@@ -223,24 +223,24 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 // validateStepStatements validates an array of step statements.
 func validateStepStatements(scenarioID string, stepIdx int, keyword string, statements []story.StepStatement) error {
 	if len(statements) == 0 {
-		return fmt.Errorf("scenario %s, step %d: %s must have at least one statement", scenarioID, stepIdx, keyword)
+		return pkgerrors.ErrNoStatementsError(scenarioID, stepIdx, keyword)
 	}
 
 	for stmtIdx, stmt := range statements {
 		// Check statement is non-empty
 		if strings.TrimSpace(stmt.Statement) == "" {
-			return fmt.Errorf("scenario %s, step %d: %s statement[%d] cannot be empty", scenarioID, stepIdx, keyword, stmtIdx)
+			return pkgerrors.ErrEmptyStatementError(scenarioID, stepIdx, keyword, stmtIdx)
 		}
 
 		// First statement must be main (no type)
 		if stmtIdx == 0 && stmt.Type != "" {
-			return fmt.Errorf("scenario %s, step %d: %s first statement must be main (not 'and' or 'but')", scenarioID, stepIdx, keyword)
+			return pkgerrors.ErrInvalidFirstStmtError(scenarioID, stepIdx, keyword)
 		}
 
 		// Additional statements must be and/but
 		if stmtIdx > 0 {
 			if stmt.Type != story.ModifierTypeAnd && stmt.Type != story.ModifierTypeBut {
-				return fmt.Errorf("scenario %s, step %d: %s statement[%d] must be 'and' or 'but'", scenarioID, stepIdx, keyword, stmtIdx)
+				return pkgerrors.ErrInvalidFollowingStmtError(scenarioID, stepIdx, keyword, stmtIdx)
 			}
 		}
 	}

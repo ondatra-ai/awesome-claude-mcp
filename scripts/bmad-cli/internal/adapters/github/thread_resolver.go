@@ -2,7 +2,8 @@ package github
 
 import (
 	"context"
-	"fmt"
+
+	"bmad-cli/internal/pkg/errors"
 )
 
 type ThreadResolver struct {
@@ -28,7 +29,7 @@ func (t *ThreadResolver) resolveReply(ctx context.Context, threadID, body string
 
 		out, err := t.client.ExecuteGraphQL(ctx, query, variables)
 		if err != nil {
-			return fmt.Errorf("resolve thread: %w, out=%s", err, out)
+			return errors.ErrResolveThreadFailed(err, out)
 		}
 
 		return nil
@@ -39,7 +40,7 @@ func (t *ThreadResolver) resolveReply(ctx context.Context, threadID, body string
 
 	out, err := t.client.ExecuteGraphQL(ctx, query, variables)
 	if err != nil {
-		return fmt.Errorf("reply thread: %w, out=%s", err, out)
+		return errors.ErrReplyThreadFailed(err, out)
 	}
 
 	return nil

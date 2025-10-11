@@ -4,8 +4,9 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // GitRepoCheckHandler validates that the current directory is a git repository.
@@ -30,7 +31,7 @@ func (h *GitRepoCheckHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if err != nil {
 		slog.Error("Failed to check git repository", "error", err)
 
-		return fmt.Errorf("failed to check git repository: %w", err)
+		return pkgerrors.ErrCheckGitRepositoryFailed(err)
 	}
 
 	if !isRepo {

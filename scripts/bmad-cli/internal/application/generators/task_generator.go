@@ -5,12 +5,12 @@ import (
 	"bmad-cli/internal/pkg/ai"
 	"context"
 	"errors"
-	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // TaskPromptData represents data needed for task generation prompts.
@@ -52,7 +52,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 
 			systemPrompt, err = systemLoader.LoadTemplate(TaskPromptData{})
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load tasks system prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadTasksSystemPromptFailed(err)
 			}
 
 			// Load user prompt
@@ -61,7 +61,7 @@ func (g *AITaskGenerator) GenerateTasks(ctx context.Context, storyDoc *story.Sto
 
 			userPrompt, err = userLoader.LoadTemplate(data)
 			if err != nil {
-				return "", "", fmt.Errorf("failed to load tasks user prompt: %w", err)
+				return "", "", pkgerrors.ErrLoadTasksUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil

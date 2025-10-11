@@ -10,6 +10,7 @@ import (
 	"time"
 
 	claudecode "bmad-cli/claudecode"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 type ClaudeClient struct {
@@ -74,12 +75,12 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 
 		// Send user prompt only - system prompt is handled by the SDK via options
 		slog.Debug("Sending user prompt to Claude", "length", len(userPrompt))
-		err := client.Query(timeoutCtx, userPrompt)
 
+		err := client.Query(timeoutCtx, userPrompt)
 		if err != nil {
 			slog.Error("Query failed", "error", err)
 
-			return fmt.Errorf("failed to send query: %w", err)
+			return pkgerrors.ErrSendQueryFailed(err)
 		}
 
 		slog.Debug("Query sent successfully")
@@ -145,7 +146,7 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 					slog.Debug("ResultMessage received", "is_error", msg.IsError, "result", msg.Result)
 
 					if msg.IsError {
-						return fmt.Errorf("Claude returned error: %s", msg.Result)
+						return pkgerrors.ErrClaudeError(fmt.Sprintf("%v", msg.Result))
 					}
 
 					resultStr = result.String()
@@ -168,10 +169,10 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 		// Check for buffer overflow errors and provide helpful context
 		errStr := err.Error()
 		if strings.Contains(errStr, "token too long") || strings.Contains(errStr, "bufio.Scanner") {
-			return "", fmt.Errorf("Claude response too large for buffer (using streaming approach): %w", err)
+			return "", pkgerrors.ErrResponseTooLargeForBuffer(err)
 		}
 
-		return "", fmt.Errorf("claude execution failed: %w", err)
+		return "", pkgerrors.ErrClaudeExecutionFailed(err)
 	}
 
 	slog.Info("Claude returned result", "length", len(resultStr))

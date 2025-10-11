@@ -19,6 +19,7 @@ import (
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/parser"
 	"bmad-cli/claudecode/internal/shared"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const (
@@ -135,20 +136,20 @@ func (t *Transport) Connect(ctx context.Context) error {
 		// Only create stdin pipe if we need to send messages via stdin
 		t.stdin, err = t.cmd.StdinPipe()
 		if err != nil {
-			return fmt.Errorf("failed to create stdin pipe: %w", err)
+			return pkgerrors.ErrCreateStdinPipeFailed(err)
 		}
 	}
 
 	t.stdout, err = t.cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("failed to create stdout pipe: %w", err)
+		return pkgerrors.ErrCreateStdoutPipeFailed(err)
 	}
 
 	// Isolate stderr using temporary file to prevent deadlocks
 	// This matches Python SDK pattern to avoid subprocess pipe deadlocks
 	t.stderr, err = os.CreateTemp("", "claude_stderr_*.log")
 	if err != nil {
-		return fmt.Errorf("failed to create stderr file: %w", err)
+		return pkgerrors.ErrCreateStderrFileFailed(err)
 	}
 
 	t.cmd.Stderr = t.stderr
@@ -209,13 +210,13 @@ func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessag
 	// Serialize message to JSON
 	data, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
+		return pkgerrors.ErrMarshalMessageFailed(err)
 	}
 
 	// Send with newline
 	_, err = t.stdin.Write(append(data, '\n'))
 	if err != nil {
-		return fmt.Errorf("failed to write message: %w", err)
+		return pkgerrors.ErrWriteMessageFailed(err)
 	}
 
 	// For one-shot mode, close stdin after sending the message
@@ -365,7 +366,7 @@ func (t *Transport) handleStdout() {
 	err := scanner.Err()
 	if err != nil {
 		select {
-		case t.errChan <- fmt.Errorf("stdout scanner error: %w", err):
+		case t.errChan <- pkgerrors.ErrStdoutScannerFailed(err):
 		case <-t.ctx.Done():
 		}
 	}

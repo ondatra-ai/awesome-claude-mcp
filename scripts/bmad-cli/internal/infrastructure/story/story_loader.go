@@ -2,7 +2,6 @@ package story
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -12,6 +11,7 @@ import (
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // ValidationRule represents a validation check.
@@ -46,7 +46,7 @@ var filenameValidations = []ValidationRule{
 		Name: "NoSpaces",
 		Validator: func(nameWithoutExt, slug string) error {
 			if strings.Contains(slug, " ") {
-				return fmt.Errorf("invalid story slug '%s': cannot contain spaces (use dashes instead)", slug)
+				return pkgerrors.ErrInvalidStorySlugError(slug)
 			}
 
 			return nil
@@ -90,19 +90,19 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
 
-		return "", fmt.Errorf("failed to find story file: %w", err)
+		return "", pkgerrors.ErrFindStoryFileFailed(err)
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
 
-		return "", fmt.Errorf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, l.storiesDir, storyNumber)
+		return "", pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
 
-		return "", fmt.Errorf("multiple story files found for story %s: %v", storyNumber, matches)
+		return "", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches)
 	}
 
 	// Verify file exists and is readable
@@ -110,7 +110,7 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	if _, err := os.Stat(storyFile); err != nil {
 		slog.Error("Story file not accessible", "file", storyFile, "error", err)
 
-		return "", fmt.Errorf("story file not accessible: %s: %w", storyFile, err)
+		return "", pkgerrors.ErrStoryFileNotAccessibleError(storyFile, err)
 	}
 
 	// Extract slug from filename: "3.1-mcp-server-implementation.yaml" -> "mcp-server-implementation"
@@ -146,19 +146,19 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
 
-		return nil, fmt.Errorf("failed to find story file: %w", err)
+		return nil, pkgerrors.ErrFindStoryFileFailed(err)
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
 
-		return nil, fmt.Errorf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, l.storiesDir, storyNumber)
+		return nil, pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
 
-		return nil, fmt.Errorf("multiple story files found for story %s: %v", storyNumber, matches)
+		return nil, pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches)
 	}
 
 	// Read story file
@@ -168,7 +168,7 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err != nil {
 		slog.Error("Failed to read story file", "file", storyFile, "error", err)
 
-		return nil, fmt.Errorf("failed to read story file %s: %w", storyFile, err)
+		return nil, pkgerrors.ErrReadStoryFileFailed(storyFile, err)
 	}
 
 	// Unmarshal YAML
@@ -176,7 +176,7 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err := yaml.Unmarshal(data, &storyDoc); err != nil {
 		slog.Error("Failed to unmarshal story YAML", "file", storyFile, "error", err)
 
-		return nil, fmt.Errorf("failed to parse story YAML from %s: %w", storyFile, err)
+		return nil, pkgerrors.ErrParseStoryYAMLFailed(storyFile, err)
 	}
 
 	slog.Debug("Story document loaded successfully", "story_number", storyNumber, "file", storyFile, "scenario_count", len(storyDoc.Scenarios.TestScenarios))

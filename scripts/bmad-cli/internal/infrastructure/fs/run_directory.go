@@ -1,10 +1,12 @@
 package fs
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
+
+	"bmad-cli/internal/pkg/errors"
 )
 
 // RunDirectory manages timestamped run directories for organizing tmp files.
@@ -22,7 +24,9 @@ func NewRunDirectory(basePath string) (*RunDirectory, error) {
 
 	err := os.MkdirAll(runPath, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create run directory: %w", err)
+		slog.Error("Failed to create run directory", "path", runPath, "error", err)
+
+		return nil, errors.ErrCreateRunDirectoryFailed(err)
 	}
 
 	return &RunDirectory{

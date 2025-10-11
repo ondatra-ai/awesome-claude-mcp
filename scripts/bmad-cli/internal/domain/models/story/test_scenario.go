@@ -2,8 +2,9 @@ package story
 
 import (
 	"errors"
-	"fmt"
 	"gopkg.in/yaml.v3"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // ModifierType represents the type of statement modifier.
@@ -49,7 +50,7 @@ func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
 			s.Type = ModifierTypeBut
 			s.Statement = value
 		default:
-			return fmt.Errorf("invalid modifier type: %s (must be 'and' or 'but')", key)
+			return pkgerrors.ErrInvalidModifierError(key)
 		}
 
 		return nil
