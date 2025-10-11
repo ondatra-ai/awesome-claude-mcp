@@ -124,5 +124,7 @@ linters:
       allow-first-in-block: true
       allow-whole-block: false
       branch-max-lines: 2
-
-   # Allow fmt.Printf for CLI output
+    forbidigo:
+      forbid:
+        - pattern: '^fmt\.Print.*$'
+          msg: 'use slog for logging instead of fmt.Print*'
