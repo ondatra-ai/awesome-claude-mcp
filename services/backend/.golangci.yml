@@ -127,7 +127,7 @@ linters:
       branch-max-lines: 2
     forbidigo:
       forbid:
-        - pattern: '^fmt\.Print.*$'
+        - pattern: '^fmt\.Print(f|ln)?$'
           msg: 'use slog for logging instead of fmt.Print*'
 
   exclusions:
