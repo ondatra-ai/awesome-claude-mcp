@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"bmad-cli/internal/adapters/ai"
 	storyModels "bmad-cli/internal/domain/models/story"
@@ -78,16 +79,21 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	}
 
 	fmt.Println("\n✅ Scenario merge completed successfully!")
-	fmt.Printf("Merged %d scenarios from story %s into %s\n", len(storyDoc.Scenarios.TestScenarios), storyNumber, outputFile)
+	fmt.Printf("Merged %d scenarios from story %s\n", len(storyDoc.Scenarios.TestScenarios), storyNumber)
+
+	// Replace original requirements.yml with merged version
+	if err := c.replaceRequirements(outputFile); err != nil {
+		return fmt.Errorf("failed to replace requirements: %w", err)
+	}
 
 	// Implement tests for pending scenarios
-	if err := c.implementTests(ctx, outputFile); err != nil {
+	if err := c.implementTests(ctx, "docs/requirements.yml"); err != nil {
 		return fmt.Errorf("failed to implement tests: %w", err)
 	}
 
 	slog.Info("User story implementation completed successfully")
 	fmt.Println("\n✅ User story implementation completed successfully!")
-	fmt.Printf("\nTo review changes: diff docs/requirements.yml %s\n", outputFile)
+	fmt.Printf("\nBackup available at: docs/requirements.yml.backup\n")
 	return nil
 }
 
@@ -115,6 +121,42 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 	return nil
 }
 
+func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
+	const requirementsPath = "docs/requirements.yml"
+	const backupPath = "docs/requirements.yml.backup"
+
+	slog.Info("Replacing requirements file", "source", mergedFile)
+
+	// Create backup
+	originalData, err := os.ReadFile(requirementsPath)
+	if err != nil {
+		return fmt.Errorf("failed to read original: %w", err)
+	}
+
+	if err := os.WriteFile(backupPath, originalData, 0644); err != nil {
+		return fmt.Errorf("failed to create backup: %w", err)
+	}
+
+	fmt.Printf("✓ Created backup: %s\n", backupPath)
+
+	// Read merged file
+	mergedData, err := os.ReadFile(mergedFile)
+	if err != nil {
+		return fmt.Errorf("failed to read merged: %w", err)
+	}
+
+	// Replace original
+	if err := os.WriteFile(requirementsPath, mergedData, 0644); err != nil {
+		_ = os.WriteFile(requirementsPath, originalData, 0644) // Restore
+		return fmt.Errorf("failed to replace: %w", err)
+	}
+
+	fmt.Printf("✓ Replaced %s with merged scenarios\n", requirementsPath)
+	slog.Info("Requirements replaced successfully")
+
+	return nil
+}
+
 func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber string, storyDoc *storyModels.StoryDocument, outputFile string) error {
 	slog.Info("Starting scenario merge", "story_id", storyNumber, "scenario_count", len(storyDoc.Scenarios.TestScenarios), "output_file", outputFile)
 
@@ -126,6 +168,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 
 	// Process each scenario individually
 	for i, scenario := range storyDoc.Scenarios.TestScenarios {
+		startTime := time.Now()
 		slog.Info("Processing scenario", "index", i+1, "scenario_id", scenario.ID)
 		fmt.Printf("\nMerging scenario %d/%d: %s\n", i+1, len(storyDoc.Scenarios.TestScenarios), scenario.ID)
 
@@ -158,8 +201,9 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 			return fmt.Errorf("failed to merge scenario %s: %w", scenario.ID, err)
 		}
 
-		slog.Info("Scenario merged successfully", "scenario_id", scenario.ID)
-		fmt.Printf("✓ Merged scenario: %s\n", scenario.ID)
+		duration := time.Since(startTime)
+		slog.Info("Scenario merged successfully", "scenario_id", scenario.ID, "duration", duration)
+		fmt.Printf("✓ Merged scenario: %s (took %v)\n", scenario.ID, duration.Round(time.Second))
 	}
 
 	slog.Info("All scenarios merged successfully", "total_count", len(storyDoc.Scenarios.TestScenarios))
@@ -192,6 +236,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 	// Process each pending scenario
 	implementedCount := 0
 	for i, scenario := range pendingScenarios {
+		startTime := time.Now()
 		slog.Info("Processing pending scenario", "index", i+1, "scenario_id", scenario.ScenarioID)
 		fmt.Printf("\nImplementing test %d/%d: %s\n", i+1, len(pendingScenarios), scenario.ScenarioID)
 
@@ -230,9 +275,10 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 			continue
 		}
 
+		duration := time.Since(startTime)
 		implementedCount++
-		slog.Info("Test implemented successfully", "scenario_id", scenario.ScenarioID)
-		fmt.Printf("✓ Implemented test: %s\n", scenario.ScenarioID)
+		slog.Info("Test implemented successfully", "scenario_id", scenario.ScenarioID, "duration", duration)
+		fmt.Printf("✓ Implemented test: %s (took %v)\n", scenario.ScenarioID, duration.Round(time.Second))
 	}
 
 	slog.Info("Test implementation completed", "implemented_count", implementedCount, "total_pending", len(pendingScenarios))
@@ -264,9 +310,9 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 				FilePath string `yaml:"file_path"`
 			} `yaml:"implementation_status"`
 			MergedSteps struct {
-				Given []string `yaml:"given"`
-				When  []string `yaml:"when"`
-				Then  []string `yaml:"then"`
+				Given []interface{} `yaml:"given"`
+				When  []interface{} `yaml:"when"`
+				Then  []interface{} `yaml:"then"`
 			} `yaml:"merged_steps"`
 		} `yaml:"scenarios"`
 	}
@@ -285,6 +331,11 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 			continue
 		}
 
+		// Convert interface{} arrays to string arrays
+		givenSteps := convertStepsToStrings(scenario.MergedSteps.Given)
+		whenSteps := convertStepsToStrings(scenario.MergedSteps.When)
+		thenSteps := convertStepsToStrings(scenario.MergedSteps.Then)
+
 		// Create TestImplementationData
 		testData := template.NewTestImplementationData(
 			scenarioID,
@@ -292,9 +343,9 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 			scenario.Level,
 			scenario.Category,
 			scenario.Priority,
-			scenario.MergedSteps.Given,
-			scenario.MergedSteps.When,
-			scenario.MergedSteps.Then,
+			givenSteps,
+			whenSteps,
+			thenSteps,
 			requirementsFile,
 		)
 
@@ -304,4 +355,25 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 
 	slog.Info("Parsed requirements file", "total_scenarios", len(requirements.Scenarios), "pending_count", len(pendingScenarios))
 	return pendingScenarios, nil
+}
+
+// convertStepsToStrings converts []interface{} to []string, handling both string and map formats
+// Example: "step" -> "step", {and: "step"} -> "And step"
+func convertStepsToStrings(steps []interface{}) []string {
+	result := make([]string, 0, len(steps))
+	for _, step := range steps {
+		switch v := step.(type) {
+		case string:
+			result = append(result, v)
+		case map[string]interface{}:
+			// Handle Gherkin keywords like {and: "step"}, {but: "step"}
+			for keyword, value := range v {
+				if strValue, ok := value.(string); ok {
+					// Capitalize keyword and prepend
+					result = append(result, keyword+" "+strValue)
+				}
+			}
+		}
+	}
+	return result
 }
