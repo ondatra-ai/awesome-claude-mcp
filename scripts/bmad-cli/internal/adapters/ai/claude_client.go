@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -67,15 +68,20 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 
 	// Use WithClient pattern with streaming to prevent buffer overflow
 	var resultStr string
+
 	err := claudecode.WithClient(timeoutCtx, func(client claudecode.Client) error {
 		slog.Debug("Connected to Claude client")
 
 		// Send user prompt only - system prompt is handled by the SDK via options
 		slog.Debug("Sending user prompt to Claude", "length", len(userPrompt))
-		if err := client.Query(timeoutCtx, userPrompt); err != nil {
+		err := client.Query(timeoutCtx, userPrompt)
+
+		if err != nil {
 			slog.Error("Query failed", "error", err)
+
 			return fmt.Errorf("failed to send query: %w", err)
 		}
+
 		slog.Debug("Query sent successfully")
 
 		// Use local builder inside the function scope
@@ -83,30 +89,37 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 
 		// Stream messages using exact pattern from SDK docs
 		slog.Debug("Starting message stream")
+
 		msgChan := client.ReceiveMessages(timeoutCtx)
 		messageCount := 0
+
 		for {
 			select {
 			case message := <-msgChan:
 				messageCount++
 				slog.Debug("Message received", "count", messageCount, "type", fmt.Sprintf("%T", message))
+
 				if message == nil {
 					slog.Error("Received nil message from Claude stream")
-					return fmt.Errorf("Claude stream returned nil message")
+
+					return errors.New("Claude stream returned nil message")
 				}
 
 				switch msg := message.(type) {
 				case *claudecode.AssistantMessage:
 					slog.Debug("AssistantMessage received", "content_blocks", len(msg.Content))
 					slog.Debug("AssistantMessage content", "msg", fmt.Sprintf("%+v", msg))
+
 					for i, block := range msg.Content {
 						slog.Debug("Processing content block", "index", i, "type", fmt.Sprintf("%T", block))
+
 						if textBlock, ok := block.(*claudecode.TextBlock); ok {
 							slog.Debug("TextBlock received")
 							slog.Debug("TextBlock content", "text", textBlock.Text)
 							result.WriteString(textBlock.Text)
 						} else if toolUseBlock, ok := block.(*claudecode.ToolUseBlock); ok {
 							slog.Debug("ToolUseBlock received")
+
 							if toolBytes, err := json.MarshalIndent(toolUseBlock, "      ", "  "); err == nil {
 								slog.Debug("ToolUseBlock details", "content", string(toolBytes))
 							} else {
@@ -114,6 +127,7 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 							}
 						} else {
 							slog.Debug("Unknown block type", "type", fmt.Sprintf("%T", block))
+
 							if blockBytes, err := json.MarshalIndent(block, "      ", "  "); err == nil {
 								slog.Debug("Unknown block content", "content", string(blockBytes))
 							} else {
@@ -129,11 +143,14 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 					slog.Debug("SystemMessage content", "msg", fmt.Sprintf("%+v", msg))
 				case *claudecode.ResultMessage:
 					slog.Debug("ResultMessage received", "is_error", msg.IsError, "result", msg.Result)
+
 					if msg.IsError {
 						return fmt.Errorf("Claude returned error: %s", msg.Result)
 					}
+
 					resultStr = result.String()
 					slog.Debug("ResultMessage success", "captured_chars", len(resultStr))
+
 					return nil
 				default:
 					slog.Debug("Unhandled message type", "type", fmt.Sprintf("%T", message))
@@ -141,11 +158,11 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 				}
 			case <-timeoutCtx.Done():
 				slog.Warn("Timeout reached", "error", timeoutCtx.Err())
+
 				return timeoutCtx.Err()
 			}
 		}
 	}, opts...)
-
 	if err != nil {
 		slog.Error("WithClient error", "error", err)
 		// Check for buffer overflow errors and provide helpful context
@@ -153,9 +170,11 @@ func (c *ClaudeClient) ExecutePromptWithSystem(ctx context.Context, systemPrompt
 		if strings.Contains(errStr, "token too long") || strings.Contains(errStr, "bufio.Scanner") {
 			return "", fmt.Errorf("Claude response too large for buffer (using streaming approach): %w", err)
 		}
+
 		return "", fmt.Errorf("claude execution failed: %w", err)
 	}
 
 	slog.Info("Claude returned result", "length", len(resultStr))
+
 	return resultStr, nil
 }

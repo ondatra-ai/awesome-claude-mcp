@@ -8,15 +8,15 @@ import (
 	"bmad-cli/internal/infrastructure/git/handlers"
 )
 
-// BranchManager manages the branch creation/switching logic using Chain of Responsibility
+// BranchManager manages the branch creation/switching logic using Chain of Responsibility.
 type BranchManager struct {
 	chain handlers.BranchHandler
 }
 
-// HandlerFactory creates a handler instance
+// HandlerFactory creates a handler instance.
 type HandlerFactory func(*GitService) handlers.BranchHandler
 
-// handlerFactories defines the handler chain order
+// handlerFactories defines the handler chain order.
 var handlerFactories = []HandlerFactory{
 	func(gs *GitService) handlers.BranchHandler { return handlers.NewGitRepoCheckHandler(gs) },
 	func(gs *GitService) handlers.BranchHandler { return handlers.NewDirtyWorkingTreeHandler(gs) },
@@ -30,7 +30,7 @@ var handlerFactories = []HandlerFactory{
 	func(gs *GitService) handlers.BranchHandler { return handlers.NewCreateBranchHandler(gs) },
 }
 
-// NewBranchManager creates a new branch manager with the complete handler chain
+// NewBranchManager creates a new branch manager with the complete handler chain.
 func NewBranchManager(gitService *GitService) *BranchManager {
 	// Create handlers from factories
 	var handlerList []handlers.BranchHandler
@@ -39,7 +39,7 @@ func NewBranchManager(gitService *GitService) *BranchManager {
 	}
 
 	// Chain handlers automatically
-	for i := 0; i < len(handlerList)-1; i++ {
+	for i := range len(handlerList) - 1 {
 		handlerList[i].SetNext(handlerList[i+1])
 	}
 
@@ -48,7 +48,7 @@ func NewBranchManager(gitService *GitService) *BranchManager {
 	}
 }
 
-// EnsureBranch ensures the correct branch is checked out for the story
+// EnsureBranch ensures the correct branch is checked out for the story.
 func (m *BranchManager) EnsureBranch(ctx context.Context, storyNumber, storySlug string, force bool) error {
 	expectedBranch := fmt.Sprintf("%s-%s", storyNumber, storySlug)
 
@@ -61,8 +61,10 @@ func (m *BranchManager) EnsureBranch(ctx context.Context, storyNumber, storySlug
 	branchCtx := handlers.NewBranchContext(storyNumber, force)
 	branchCtx.ExpectedBranch = expectedBranch
 
-	if err := m.chain.Handle(ctx, branchCtx); err != nil {
+	err := m.chain.Handle(ctx, branchCtx)
+	if err != nil {
 		slog.Error("Failed to ensure branch", "error", err)
+
 		return err
 	}
 

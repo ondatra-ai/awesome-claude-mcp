@@ -1,7 +1,7 @@
 package story
 
 type UserStory struct {
-	AsA    string `yaml:"as_a" json:"as_a"`
-	IWant  string `yaml:"i_want" json:"i_want"`
-	SoThat string `yaml:"so_that" json:"so_that"`
+	AsA    string `json:"as_a"    yaml:"as_a"`
+	IWant  string `json:"i_want"  yaml:"i_want"`
+	SoThat string `json:"so_that" yaml:"so_that"`
 }

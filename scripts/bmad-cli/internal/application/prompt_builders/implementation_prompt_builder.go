@@ -16,6 +16,7 @@ func NewImplementationPromptBuilder(engine *TemplateEngine, config *config.Viper
 
 func (b *ImplementationPromptBuilder) Build(threadCtx models.ThreadContext) (string, error) {
 	templatePath := b.config.GetString("templates.prompts.apply")
+
 	return b.engine.BuildFromTemplate(
 		threadCtx,
 		templatePath,

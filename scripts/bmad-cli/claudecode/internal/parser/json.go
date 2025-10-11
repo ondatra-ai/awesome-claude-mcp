@@ -56,6 +56,7 @@ func (p *Parser) ProcessLine(line string) ([]shared.Message, error) {
 		if err != nil {
 			return messages, err
 		}
+
 		if msg != nil {
 			messages = append(messages, msg)
 		}
@@ -83,7 +84,7 @@ func (p *Parser) ParseMessage(data map[string]any) (shared.Message, error) {
 		return p.parseResultMessage(data)
 	default:
 		return nil, shared.NewMessageParseError(
-			fmt.Sprintf("unknown message type: %s", msgType),
+			"unknown message type: "+msgType,
 			data,
 		)
 	}
@@ -93,6 +94,7 @@ func (p *Parser) ParseMessage(data map[string]any) (shared.Message, error) {
 func (p *Parser) Reset() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	p.buffer.Reset()
 }
 
@@ -100,6 +102,7 @@ func (p *Parser) Reset() {
 func (p *Parser) BufferSize() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	return p.buffer.Len()
 }
 
@@ -121,6 +124,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 	if p.buffer.Len() > p.maxBufferSize {
 		bufferSize := p.buffer.Len()
 		p.buffer.Reset()
+
 		return nil, shared.NewJSONDecodeError(
 			"buffer overflow",
 			0,
@@ -130,9 +134,11 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 
 	// Attempt speculative JSON parsing
 	var rawData map[string]any
+
 	bufferContent := p.buffer.String()
 
-	if err := json.Unmarshal([]byte(bufferContent), &rawData); err != nil {
+	err := json.Unmarshal([]byte(bufferContent), &rawData)
+	if err != nil {
 		// JSON is incomplete - continue accumulating
 		// This is NOT an error condition in speculative parsing!
 		return nil, nil
@@ -140,6 +146,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 
 	// Successfully parsed complete JSON - reset buffer and parse message
 	p.buffer.Reset()
+
 	return p.ParseMessage(rawData)
 }
 
@@ -170,8 +177,10 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse content block %d: %w", i, err)
 			}
+
 			blocks[i] = block
 		}
+
 		return &shared.UserMessage{
 			Content: blocks,
 		}, nil
@@ -203,6 +212,7 @@ func (p *Parser) parseAssistantMessage(data map[string]any) (*shared.AssistantMe
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse content block %d: %w", i, err)
 		}
+
 		blocks[i] = block
 	}
 
@@ -307,7 +317,7 @@ func (p *Parser) parseContentBlock(blockData any) (shared.ContentBlock, error) {
 		return p.parseToolResultBlock(data)
 	default:
 		return nil, shared.NewMessageParseError(
-			fmt.Sprintf("unknown content block type: %s", blockType),
+			"unknown content block type: "+blockType,
 			data,
 		)
 	}
@@ -318,6 +328,7 @@ func (p *Parser) parseTextBlock(data map[string]any) (shared.ContentBlock, error
 	if !ok {
 		return nil, shared.NewMessageParseError("text block missing text field", data)
 	}
+
 	return &shared.TextBlock{Text: text}, nil
 }
 
@@ -326,7 +337,9 @@ func (p *Parser) parseThinkingBlock(data map[string]any) (shared.ContentBlock, e
 	if !ok {
 		return nil, shared.NewMessageParseError("thinking block missing thinking field", data)
 	}
+
 	signature, _ := data["signature"].(string) // Optional field
+
 	return &shared.ThinkingBlock{
 		Thinking:  thinking,
 		Signature: signature,
@@ -338,14 +351,17 @@ func (p *Parser) parseToolUseBlock(data map[string]any) (shared.ContentBlock, er
 	if !ok {
 		return nil, shared.NewMessageParseError("tool_use block missing id field", data)
 	}
+
 	name, ok := data["name"].(string)
 	if !ok {
 		return nil, shared.NewMessageParseError("tool_use block missing name field", data)
 	}
+
 	input, _ := data["input"].(map[string]any) // Optional field
 	if input == nil {
 		input = make(map[string]any)
 	}
+
 	return &shared.ToolUseBlock{
 		ToolUseID: id,
 		Name:      name,
@@ -376,6 +392,7 @@ func (p *Parser) parseToolResultBlock(data map[string]any) (shared.ContentBlock,
 // ParseMessages is a convenience function to parse multiple JSON lines.
 func ParseMessages(lines []string) ([]shared.Message, error) {
 	parser := New()
+
 	var allMessages []shared.Message
 
 	for i, line := range lines {
@@ -383,6 +400,7 @@ func ParseMessages(lines []string) ([]shared.Message, error) {
 		if err != nil {
 			return allMessages, fmt.Errorf("error parsing line %d: %w", i, err)
 		}
+
 		allMessages = append(allMessages, messages...)
 	}
 

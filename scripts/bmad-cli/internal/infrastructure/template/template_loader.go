@@ -11,13 +11,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TemplateLoader is a generic template loader for any data type
+// TemplateLoader is a generic template loader for any data type.
 type TemplateLoader[T any] struct {
 	templateFilePath string
 	funcMap          template.FuncMap
 }
 
-// NewTemplateLoader creates a new generic TemplateLoader instance
+// NewTemplateLoader creates a new generic TemplateLoader instance.
 func NewTemplateLoader[T any](templateFilePath string) *TemplateLoader[T] {
 	return &TemplateLoader[T]{
 		templateFilePath: templateFilePath,
@@ -25,15 +25,16 @@ func NewTemplateLoader[T any](templateFilePath string) *TemplateLoader[T] {
 	}
 }
 
-// WithFunctions adds custom template functions to the loader
+// WithFunctions adds custom template functions to the loader.
 func (l *TemplateLoader[T]) WithFunctions(funcMap template.FuncMap) *TemplateLoader[T] {
 	for name, fn := range funcMap {
 		l.funcMap[name] = fn
 	}
+
 	return l
 }
 
-// getCommonTemplateFunctions returns commonly used template functions
+// getCommonTemplateFunctions returns commonly used template functions.
 func getCommonTemplateFunctions() template.FuncMap {
 	// Start with Sprig's comprehensive function map
 	funcMap := sprig.FuncMap()
@@ -45,16 +46,19 @@ func getCommonTemplateFunctions() template.FuncMap {
 			if err != nil {
 				return fmt.Sprintf("# Error marshaling to YAML: %v", err)
 			}
+
 			return string(data)
 		},
 		"nindent": func(spaces int, text string) string {
 			lines := strings.Split(text, "\n")
 			indent := strings.Repeat(" ", spaces)
+
 			for i, line := range lines {
 				if line != "" {
 					lines[i] = indent + line
 				}
 			}
+
 			return strings.Join(lines, "\n")
 		},
 	}
@@ -63,10 +67,11 @@ func getCommonTemplateFunctions() template.FuncMap {
 	for name, fn := range customFuncs {
 		funcMap[name] = fn
 	}
+
 	return funcMap
 }
 
-// LoadTemplate loads and processes the template with the provided data
+// LoadTemplate loads and processes the template with the provided data.
 func (l *TemplateLoader[T]) LoadTemplate(inputData T) (string, error) {
 	// Load the template file
 	templateContent, err := l.loadTemplateFile()
@@ -83,16 +88,17 @@ func (l *TemplateLoader[T]) LoadTemplate(inputData T) (string, error) {
 	return prompt, nil
 }
 
-// loadTemplateFile loads the template file from disk
+// loadTemplateFile loads the template file from disk.
 func (l *TemplateLoader[T]) loadTemplateFile() (string, error) {
 	content, err := os.ReadFile(l.templateFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read template file %s: %w", l.templateFilePath, err)
 	}
+
 	return string(content), nil
 }
 
-// executeTemplate uses Go's text/template system to properly inject data
+// executeTemplate uses Go's text/template system to properly inject data.
 func (l *TemplateLoader[T]) executeTemplate(templateContent string, data T) (string, error) {
 	// Parse the template with custom functions
 	tmpl, err := template.New("prompt").Funcs(l.funcMap).Parse(templateContent)

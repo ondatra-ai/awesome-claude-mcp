@@ -75,10 +75,12 @@ func (tp *ThreadProcessor) ImplementChanges(ctx context.Context, threadContext m
 
 	// Extract first line as summary
 	lines := strings.Split(rawOutput, "\n")
+
 	summary := ""
 	if len(lines) > 0 {
 		summary = strings.TrimSpace(lines[0])
 	}
+
 	if summary == "" {
 		summary = "Applied changes as requested"
 	}

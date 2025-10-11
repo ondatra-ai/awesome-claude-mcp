@@ -19,6 +19,7 @@ type EpicLoader struct {
 func NewEpicLoader(cfg *config.ViperConfig) *EpicLoader {
 	// Get the epic path from configuration
 	basePath := cfg.GetString("epics.path")
+
 	return &EpicLoader{
 		basePath: basePath,
 	}
@@ -42,16 +43,19 @@ func (el *EpicLoader) LoadStoryFromEpic(storyNumber string) (*story.Story, error
 
 	// Stories are 1-indexed in the story number, but 0-indexed in the slice
 	targetStory := epicDoc.Stories[storyIndex-1]
+
 	return &targetStory, nil
 }
 
 func (el *EpicLoader) parseStoryNumber(storyNumber string) (int, int, error) {
 	// Parse format like "3.1" into epic=3, story=1
 	var epicNum, storyNum int
+
 	n, err := fmt.Sscanf(storyNumber, "%d.%d", &epicNum, &storyNum)
 	if n != 2 || err != nil {
 		return 0, 0, fmt.Errorf("invalid story number format, expected X.Y but got %s", storyNumber)
 	}
+
 	return epicNum, storyNum, nil
 }
 
@@ -73,6 +77,7 @@ func (el *EpicLoader) loadEpicFile(epicNum int) (*models.EpicDocument, error) {
 	}
 
 	epicFilePath := matches[0]
+
 	data, err := os.ReadFile(epicFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read epic file %s: %w", epicFilePath, err)

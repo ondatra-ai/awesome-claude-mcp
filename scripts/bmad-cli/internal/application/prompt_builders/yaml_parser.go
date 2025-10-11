@@ -71,6 +71,7 @@ func (p *YAMLParser) extractFinalYAML(input string) string {
 	}
 
 	start := locs[len(locs)-1][0]
+
 	return input[start:]
 }
 
@@ -99,6 +100,7 @@ func (p *YAMLParser) parseActionsFromYAML(yaml string) ([]string, error) {
 			parts := strings.SplitN(l, ":", keyValueSplitLimit)
 			if len(parts) == keyValueSplitLimit {
 				v := strings.TrimSpace(parts[1])
+
 				v = strings.Trim(v, "\"'")
 				if v != "" {
 					actions = append(actions, v)
@@ -122,6 +124,7 @@ func (p *YAMLParser) parseSummaryFromYAML(yaml string) (string, error) {
 			if len(parts) == keyValueSplitLimit {
 				v := strings.TrimSpace(parts[1])
 				v = strings.Trim(v, "\"'")
+
 				return v, nil
 			}
 		}
@@ -140,6 +143,7 @@ func (p *YAMLParser) parseItemsFromYAML(yaml string) (map[string]bool, error) {
 
 		if strings.HasPrefix(trimmedLine, "items:") {
 			inItems = true
+
 			continue
 		}
 
@@ -187,6 +191,7 @@ func (p *YAMLParser) parseItemsFromYAML(yaml string) (map[string]bool, error) {
 
 func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string {
 	var alts []map[string]string
+
 	inAlts := false
 	current := map[string]string{}
 
@@ -196,6 +201,7 @@ func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string 
 
 		if strings.HasPrefix(trimmedLine, "alternatives:") {
 			inAlts = true
+
 			continue
 		}
 
@@ -207,11 +213,13 @@ func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string 
 			if len(current) > 0 {
 				alts = append(alts, current)
 			}
+
 			break
 		}
 
 		if strings.HasPrefix(trimmedLine, "- ") {
 			alts, current = p.processNewAlternativeItem(alts, current, trimmedLine)
+
 			continue
 		}
 
@@ -230,6 +238,7 @@ func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string 
 func (p *YAMLParser) shouldBreakFromAlternatives(trimmedLine, line string) bool {
 	isEmpty := trimmedLine == ""
 	isNotIndented := !strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "\t")
+
 	return isEmpty || isNotIndented
 }
 
@@ -243,6 +252,7 @@ func (p *YAMLParser) processNewAlternativeItem(
 	}
 
 	newCurrent := map[string]string{}
+
 	rest := strings.TrimSpace(strings.TrimPrefix(trimmedLine, "- "))
 	if strings.Contains(rest, ":") {
 		p.processKeyValuePair(newCurrent, rest)
@@ -267,6 +277,7 @@ func (p *YAMLParser) deduplicateAlternatives(alts []map[string]string) []map[str
 	}
 
 	seen := map[string]bool{}
+
 	var uniq []map[string]string
 
 	for _, alternative := range alts {
@@ -276,6 +287,7 @@ func (p *YAMLParser) deduplicateAlternatives(alts []map[string]string) []map[str
 				uniq = append(uniq, alternative)
 				seen["__empty__"] = true
 			}
+
 			continue
 		}
 

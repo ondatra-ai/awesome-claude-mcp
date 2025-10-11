@@ -26,6 +26,7 @@ func configureLogging() {
 				if a.Key == slog.TimeKey {
 					return slog.Attr{}
 				}
+
 				if a.Key == slog.LevelKey {
 					level := a.Value.String()
 					switch level {
@@ -41,10 +42,12 @@ func configureLogging() {
 						return slog.String("", level)
 					}
 				}
+
 				return a
 			},
 		}
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
+
 		return
 	}
 

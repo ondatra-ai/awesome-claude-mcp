@@ -16,13 +16,15 @@ func (m *SystemMessage) Type() string {
 	return MessageTypeSystem
 }
 
-// MarshalJSON implements custom JSON marshaling for SystemMessage
+// MarshalJSON implements custom JSON marshaling for SystemMessage.
 func (m *SystemMessage) MarshalJSON() ([]byte, error) {
 	data := make(map[string]any)
 	for k, v := range m.Data {
 		data[k] = v
 	}
+
 	data["type"] = MessageTypeSystem
 	data["subtype"] = m.Subtype
+
 	return json.Marshal(data)
 }

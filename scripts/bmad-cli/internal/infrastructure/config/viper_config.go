@@ -14,6 +14,7 @@ func NewViperConfig() (*ViperConfig, error) {
 
 	v.SetConfigFile("./bmad-cli.yml")
 	v.SetConfigType("yaml")
+
 	err := v.ReadInConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -26,5 +27,6 @@ func (c *ViperConfig) GetString(key string) string {
 	if !c.viper.IsSet(key) {
 		return ""
 	}
+
 	return c.viper.GetString(key)
 }

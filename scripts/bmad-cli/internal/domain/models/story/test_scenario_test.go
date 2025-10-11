@@ -32,6 +32,7 @@ func TestStepStatementUnmarshal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var stmt StepStatement
+
 			err := yaml.Unmarshal([]byte(tt.yaml), &stmt)
 			if err != nil {
 				t.Fatalf("Unmarshal error: %v", err)
@@ -40,6 +41,7 @@ func TestStepStatementUnmarshal(t *testing.T) {
 			if stmt.Type != tt.expected.Type {
 				t.Errorf("Type = %v, want %v", stmt.Type, tt.expected.Type)
 			}
+
 			if stmt.Statement != tt.expected.Statement {
 				t.Errorf("Statement = %v, want %v", stmt.Statement, tt.expected.Statement)
 			}
@@ -60,6 +62,7 @@ then:
 `
 
 	var step ScenarioStep
+
 	err := yaml.Unmarshal([]byte(yamlData), &step)
 	if err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
@@ -69,12 +72,15 @@ then:
 	if len(step.Given) != 2 {
 		t.Errorf("Given length = %d, want 2", len(step.Given))
 	}
+
 	if step.Given[0].Type != "" {
 		t.Errorf("Given[0].Type = %v, want empty", step.Given[0].Type)
 	}
+
 	if step.Given[0].Statement != "Server is ready to accept connections" {
 		t.Errorf("Given[0].Statement = %v", step.Given[0].Statement)
 	}
+
 	if step.Given[1].Type != ModifierTypeAnd {
 		t.Errorf("Given[1].Type = %v, want and", step.Given[1].Type)
 	}

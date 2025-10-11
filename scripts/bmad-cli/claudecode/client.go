@@ -2,6 +2,7 @@ package claudecode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -41,12 +42,14 @@ func NewClient(opts ...Option) Client {
 	client := &ClientImpl{
 		options: options,
 	}
+
 	return client
 }
 
 // NewClientWithTransport creates a new Client with a custom transport (for testing).
 func NewClientWithTransport(transport Transport, opts ...Option) Client {
 	options := NewOptions(opts...)
+
 	return &ClientImpl{
 		customTransport: transport,
 		options:         options,
@@ -104,14 +107,16 @@ func WithClient(ctx context.Context, fn func(Client) error, opts ...Option) erro
 
 	client := NewClient(opts...)
 
-	if err := client.Connect(ctx); err != nil {
+	err := client.Connect(ctx)
+	if err != nil {
 		return fmt.Errorf("failed to connect client: %w", err)
 	}
 
 	defer func() {
 		// Following Go idiom: cleanup errors don't override the original error
 		// This matches patterns in database/sql, os.File, and other stdlib packages
-		if disconnectErr := client.Disconnect(); disconnectErr != nil {
+		disconnectErr := client.Disconnect()
+		if disconnectErr != nil {
 			// Log cleanup errors but don't return them to preserve the original error
 			// This follows the standard Go pattern for resource cleanup
 			_ = disconnectErr // Explicitly acknowledge we're ignoring this error
@@ -146,13 +151,15 @@ func WithClientTransport(ctx context.Context, transport Transport, fn func(Clien
 
 	client := NewClientWithTransport(transport, opts...)
 
-	if err := client.Connect(ctx); err != nil {
+	err := client.Connect(ctx)
+	if err != nil {
 		return fmt.Errorf("failed to connect client: %w", err)
 	}
 
 	defer func() {
 		// Following Go idiom: cleanup errors don't override the original error
-		if disconnectErr := client.Disconnect(); disconnectErr != nil {
+		disconnectErr := client.Disconnect()
+		if disconnectErr != nil {
 			// Log cleanup errors but don't return them to preserve the original error
 			_ = disconnectErr // Explicitly acknowledge we're ignoring this error
 		}
@@ -161,7 +168,7 @@ func WithClientTransport(ctx context.Context, transport Transport, fn func(Clien
 	return fn(client)
 }
 
-// validateOptions validates the client configuration options
+// validateOptions validates the client configuration options.
 func (c *ClientImpl) validateOptions() error {
 	if c.options == nil {
 		return nil // Nil options are acceptable (use defaults)
@@ -211,7 +218,8 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	}
 
 	// Validate configuration before connecting
-	if err := c.validateOptions(); err != nil {
+	err := c.validateOptions()
+	if err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
 
@@ -230,7 +238,8 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	}
 
 	// Connect the transport
-	if err := c.transport.Connect(ctx); err != nil {
+	err = c.transport.Connect(ctx)
+	if err != nil {
 		return fmt.Errorf("failed to connect transport: %w", err)
 	}
 
@@ -238,6 +247,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	c.msgChan, c.errChan = c.transport.ReceiveMessages(ctx)
 
 	c.connected = true
+
 	return nil
 }
 
@@ -247,14 +257,17 @@ func (c *ClientImpl) Disconnect() error {
 	defer c.mu.Unlock()
 
 	if c.transport != nil && c.connected {
-		if err := c.transport.Close(); err != nil {
+		err := c.transport.Close()
+		if err != nil {
 			return fmt.Errorf("failed to close transport: %w", err)
 		}
 	}
+
 	c.connected = false
 	c.transport = nil
 	c.msgChan = nil
 	c.errChan = nil
+
 	return nil
 }
 
@@ -284,6 +297,7 @@ func (c *ClientImpl) QueryWithSession(ctx context.Context, prompt string, sessio
 	if sessionID == "" {
 		sessionID = defaultSessionID
 	}
+
 	return c.queryWithSession(ctx, prompt, sessionID)
 }
 
@@ -301,7 +315,7 @@ func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessio
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
+		return errors.New("client not connected")
 	}
 
 	// Check context again after acquiring connection info
@@ -333,7 +347,7 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
+		return errors.New("client not connected")
 	}
 
 	// Send messages from channel in a goroutine
@@ -344,7 +358,9 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 				if !ok {
 					return // Channel closed
 				}
-				if err := transport.SendMessage(ctx, msg); err != nil {
+				err := transport.SendMessage(ctx, msg)
+
+				if err != nil {
 					// Log error but continue processing
 					return
 				}
@@ -369,6 +385,7 @@ func (c *ClientImpl) ReceiveMessages(_ context.Context) <-chan Message {
 		// Return closed channel if not connected
 		closedChan := make(chan Message)
 		close(closedChan)
+
 		return closedChan
 	}
 
@@ -410,13 +427,13 @@ func (c *ClientImpl) Interrupt(ctx context.Context) error {
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
+		return errors.New("client not connected")
 	}
 
 	return transport.Interrupt(ctx)
 }
 
-// clientIterator implements MessageIterator for client message reception
+// clientIterator implements MessageIterator for client message reception.
 type clientIterator struct {
 	msgChan <-chan Message
 	errChan <-chan error
@@ -432,19 +449,24 @@ func (ci *clientIterator) Next(ctx context.Context) (Message, error) {
 	case msg, ok := <-ci.msgChan:
 		if !ok {
 			ci.closed = true
+
 			return nil, ErrNoMoreMessages
 		}
+
 		return msg, nil
 	case err := <-ci.errChan:
 		ci.closed = true
+
 		return nil, err
 	case <-ctx.Done():
 		ci.closed = true
+
 		return nil, ctx.Err()
 	}
 }
 
 func (ci *clientIterator) Close() error {
 	ci.closed = true
+
 	return nil
 }

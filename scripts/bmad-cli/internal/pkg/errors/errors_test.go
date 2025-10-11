@@ -51,7 +51,8 @@ func TestAppError_Unwrap(t *testing.T) {
 		Cause:    cause,
 	}
 
-	if got := err.Unwrap(); got != cause {
+	got := err.Unwrap()
+	if !errors.Is(got, cause) {
 		t.Errorf("AppError.Unwrap() = %v, want %v", got, cause)
 	}
 }
@@ -170,6 +171,7 @@ func TestErrorConstructors(t *testing.T) {
 			var appErr *AppError
 			if !errors.As(tt.err, &appErr) {
 				t.Errorf("%s should return AppError type", tt.name)
+
 				return
 			}
 

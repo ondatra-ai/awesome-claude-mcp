@@ -1,6 +1,6 @@
 package shared
 
-// Message type constants
+// Message type constants.
 const (
 	MessageTypeUser      = "user"
 	MessageTypeAssistant = "assistant"

@@ -94,6 +94,7 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	slog.Info("User story implementation completed successfully")
 	fmt.Println("\n✅ User story implementation completed successfully!")
 	fmt.Printf("\nBackup available at: docs/requirements.yml.backup\n")
+
 	return nil
 }
 
@@ -118,12 +119,15 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 	}
 
 	fmt.Printf("✓ Cloned docs/requirements.yml → %s\n", outputFile)
+
 	return nil
 }
 
 func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
-	const requirementsPath = "docs/requirements.yml"
-	const backupPath = "docs/requirements.yml.backup"
+	const (
+		requirementsPath = "docs/requirements.yml"
+		backupPath       = "docs/requirements.yml.backup"
+	)
 
 	slog.Info("Replacing requirements file", "source", mergedFile)
 
@@ -148,6 +152,7 @@ func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 	// Replace original
 	if err := os.WriteFile(requirementsPath, mergedData, 0644); err != nil {
 		_ = os.WriteFile(requirementsPath, originalData, 0644) // Restore
+
 		return fmt.Errorf("failed to replace: %w", err)
 	}
 
@@ -169,6 +174,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 	// Process each scenario individually
 	for i, scenario := range storyDoc.Scenarios.TestScenarios {
 		startTime := time.Now()
+
 		slog.Info("Processing scenario", "index", i+1, "scenario_id", scenario.ID)
 		fmt.Printf("\nMerging scenario %d/%d: %s\n", i+1, len(storyDoc.Scenarios.TestScenarios), scenario.ID)
 
@@ -188,6 +194,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 
 		// Call Claude Code API to analyze and merge
 		slog.Debug("Calling Claude Code for scenario merge", "scenario_id", scenario.ID)
+
 		_, err = c.claudeClient.ExecutePromptWithSystem(
 			ctx,
 			systemPrompt,
@@ -207,6 +214,7 @@ func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber str
 	}
 
 	slog.Info("All scenarios merged successfully", "total_count", len(storyDoc.Scenarios.TestScenarios))
+
 	return nil
 }
 
@@ -222,6 +230,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 
 	if len(pendingScenarios) == 0 {
 		fmt.Println("✓ No pending scenarios to implement")
+
 		return nil
 	}
 
@@ -235,8 +244,10 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 
 	// Process each pending scenario
 	implementedCount := 0
+
 	for i, scenario := range pendingScenarios {
 		startTime := time.Now()
+
 		slog.Info("Processing pending scenario", "index", i+1, "scenario_id", scenario.ScenarioID)
 		fmt.Printf("\nImplementing test %d/%d: %s\n", i+1, len(pendingScenarios), scenario.ScenarioID)
 
@@ -248,6 +259,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		if err != nil {
 			slog.Error("Failed to load user prompt", "scenario_id", scenario.ScenarioID, "error", err)
 			fmt.Printf("⚠️  Skipping %s: failed to load user prompt\n", scenario.ScenarioID)
+
 			continue
 		}
 
@@ -255,11 +267,13 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		if err != nil {
 			slog.Error("Failed to load system prompt", "scenario_id", scenario.ScenarioID, "error", err)
 			fmt.Printf("⚠️  Skipping %s: failed to load system prompt\n", scenario.ScenarioID)
+
 			continue
 		}
 
 		// Call Claude Code API to generate test
 		slog.Debug("Calling Claude Code for test implementation", "scenario_id", scenario.ScenarioID)
+
 		_, err = c.claudeClient.ExecutePromptWithSystem(
 			ctx,
 			systemPrompt,
@@ -272,11 +286,13 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		if err != nil {
 			slog.Error("Failed to implement test", "scenario_id", scenario.ScenarioID, "error", err)
 			fmt.Printf("⚠️  Failed to implement %s: %v\n", scenario.ScenarioID, err)
+
 			continue
 		}
 
 		duration := time.Since(startTime)
 		implementedCount++
+
 		slog.Info("Test implemented successfully", "scenario_id", scenario.ScenarioID, "duration", duration)
 		fmt.Printf("✓ Implemented test: %s (took %v)\n", scenario.ScenarioID, duration.Round(time.Second))
 	}
@@ -288,7 +304,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 	return nil
 }
 
-// parsePendingScenarios reads requirements file and extracts scenarios with status: "pending"
+// parsePendingScenarios reads requirements file and extracts scenarios with status: "pending".
 func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*template.TestImplementationData, error) {
 	slog.Debug("Parsing requirements file", "file", requirementsFile)
 
@@ -328,6 +344,7 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 		// Only process scenarios with status "pending"
 		if scenario.ImplementationStatus.Status != "pending" {
 			slog.Debug("Skipping non-pending scenario", "scenario_id", scenarioID, "status", scenario.ImplementationStatus.Status)
+
 			continue
 		}
 
@@ -350,15 +367,17 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 		)
 
 		pendingScenarios = append(pendingScenarios, testData)
+
 		slog.Debug("Found pending scenario", "scenario_id", scenarioID)
 	}
 
 	slog.Info("Parsed requirements file", "total_scenarios", len(requirements.Scenarios), "pending_count", len(pendingScenarios))
+
 	return pendingScenarios, nil
 }
 
 // convertStepsToStrings converts []interface{} to []string, handling both string and map formats
-// Example: "step" -> "step", {and: "step"} -> "And step"
+// Example: "step" -> "step", {and: "step"} -> "And step".
 func convertStepsToStrings(steps []interface{}) []string {
 	result := make([]string, 0, len(steps))
 	for _, step := range steps {
@@ -375,5 +394,6 @@ func convertStepsToStrings(steps []interface{}) []string {
 			}
 		}
 	}
+
 	return result
 }

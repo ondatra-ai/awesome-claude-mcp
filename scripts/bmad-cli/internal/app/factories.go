@@ -18,6 +18,7 @@ func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeC
 	storyFactory := factories.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader, runDir)
 	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
 	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
+
 	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 }
 

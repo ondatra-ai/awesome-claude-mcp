@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Category represents the type of error
+// Category represents the type of error.
 type Category string
 
 const (
@@ -14,7 +14,7 @@ const (
 	CategoryParsing Category = "parsing"
 )
 
-// AppError represents a structured application error
+// AppError represents a structured application error.
 type AppError struct {
 	Category Category
 	Code     string
@@ -26,6 +26,7 @@ func (e *AppError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("[%s:%s] %s: %v", e.Category, e.Code, e.Message, e.Cause)
 	}
+
 	return fmt.Sprintf("[%s:%s] %s", e.Category, e.Code, e.Message)
 }
 
@@ -33,7 +34,7 @@ func (e *AppError) Unwrap() error {
 	return e.Cause
 }
 
-// AI Errors
+// AI Errors.
 var (
 	ErrEmptyOutput = errors.New("client returned empty output")
 )
@@ -42,12 +43,12 @@ func ErrEmptyClientOutput(clientName string) error {
 	return &AppError{
 		Category: CategoryAI,
 		Code:     "EMPTY_OUTPUT",
-		Message:  fmt.Sprintf("%s returned empty output", clientName),
+		Message:  clientName + " returned empty output",
 		Cause:    ErrEmptyOutput,
 	}
 }
 
-// GitHub Errors
+// GitHub Errors.
 var (
 	ErrNoPRFound               = errors.New("no PR found")
 	ErrUnexpectedRepoOutput    = errors.New("unexpected repo output")
@@ -60,7 +61,7 @@ func ErrNoPRFoundForBranch(branch string) error {
 	return &AppError{
 		Category: CategoryGitHub,
 		Code:     "NO_PR_FOUND",
-		Message:  fmt.Sprintf("no PR found for branch: %s", branch),
+		Message:  "no PR found for branch: " + branch,
 		Cause:    ErrNoPRFound,
 	}
 }
@@ -69,7 +70,7 @@ func ErrUnexpectedRepoOutputWithDetails(output string) error {
 	return &AppError{
 		Category: CategoryGitHub,
 		Code:     "UNEXPECTED_REPO_OUTPUT",
-		Message:  fmt.Sprintf("unexpected repo view output: %s", output),
+		Message:  "unexpected repo view output: " + output,
 		Cause:    ErrUnexpectedRepoOutput,
 	}
 }
@@ -87,12 +88,12 @@ func ErrNoCommentsInThread(threadID string) error {
 	return &AppError{
 		Category: CategoryGitHub,
 		Code:     "NO_COMMENTS",
-		Message:  fmt.Sprintf("no comments found in thread %s", threadID),
+		Message:  "no comments found in thread " + threadID,
 		Cause:    ErrNoComments,
 	}
 }
 
-// Parsing Errors
+// Parsing Errors.
 var (
 	ErrRiskScoreNotFound       = errors.New("risk_score not found")
 	ErrPreferredOptionNotFound = errors.New("preferred_option not found in YAML")
@@ -116,7 +117,7 @@ func ErrMissingItems(key string) error {
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "MISSING_REQUIRED_ITEM",
-		Message:  fmt.Sprintf("missing items.%s", key),
+		Message:  "missing items." + key,
 		Cause:    ErrMissingRequiredItem,
 	}
 }
@@ -130,12 +131,13 @@ func ErrInvalidRiskScore(score int) error {
 	}
 }
 
-// Helper functions for error checking
+// Helper functions for error checking.
 func IsCategory(err error, category Category) bool {
 	var appErr *AppError
 	if errors.As(err, &appErr) {
 		return appErr.Category == category
 	}
+
 	return false
 }
 

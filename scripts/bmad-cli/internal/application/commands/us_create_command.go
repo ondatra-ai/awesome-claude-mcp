@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -60,6 +61,7 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 	}
 
 	slog.Info("User story created successfully", "file", filename)
+
 	return nil
 }
 
@@ -69,14 +71,17 @@ func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
 	if err != nil {
 		return fmt.Errorf("regex error: %w", err)
 	}
+
 	if !matched {
-		return fmt.Errorf("story number must be in format X.Y (e.g., 3.1, 3.2)")
+		return errors.New("story number must be in format X.Y (e.g., 3.1, 3.2)")
 	}
+
 	return nil
 }
 
 func (c *USCreateCommand) generateFilename(storyNumber, title string) string {
 	slug := c.factory.SlugifyTitle(title)
 	storiesDir := c.factory.GetStoriesDir()
+
 	return fmt.Sprintf("%s/%s-%s.yaml", storiesDir, storyNumber, slug)
 }

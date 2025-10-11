@@ -3,13 +3,13 @@ package story
 import "bmad-cli/internal/infrastructure/docs"
 
 type StoryDocument struct {
-	Story            Story                  `yaml:"story" json:"story"`
-	Tasks            []Task                 `yaml:"tasks" json:"tasks"`
-	DevNotes         DevNotes               `yaml:"dev_notes" json:"dev_notes"`
-	Testing          Testing                `yaml:"testing" json:"testing"`
-	Scenarios        Scenarios              `yaml:"scenarios" json:"scenarios"`
-	ChangeLog        []ChangeLogEntry       `yaml:"change_log" json:"change_log"`
-	QAResults        *QAResults             `yaml:"qa_results,omitempty" json:"qa_results,omitempty"`
-	DevAgentRecord   DevAgentRecord         `yaml:"dev_agent_record" json:"dev_agent_record"`
-	ArchitectureDocs *docs.ArchitectureDocs `yaml:"-" json:"-"` // Not serialized, used for generation
+	Story            Story                  `json:"story"                yaml:"story"`
+	Tasks            []Task                 `json:"tasks"                yaml:"tasks"`
+	DevNotes         DevNotes               `json:"dev_notes"            yaml:"dev_notes"`
+	Testing          Testing                `json:"testing"              yaml:"testing"`
+	Scenarios        Scenarios              `json:"scenarios"            yaml:"scenarios"`
+	ChangeLog        []ChangeLogEntry       `json:"change_log"           yaml:"change_log"`
+	QAResults        *QAResults             `json:"qa_results,omitempty" yaml:"qa_results,omitempty"`
+	DevAgentRecord   DevAgentRecord         `json:"dev_agent_record"     yaml:"dev_agent_record"`
+	ArchitectureDocs *docs.ArchitectureDocs `json:"-"                    yaml:"-"` // Not serialized, used for generation
 }

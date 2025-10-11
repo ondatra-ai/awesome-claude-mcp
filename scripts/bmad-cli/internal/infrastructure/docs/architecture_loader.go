@@ -7,13 +7,13 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 )
 
-// ArchitectureDoc represents an architecture document with content and file path
+// ArchitectureDoc represents an architecture document with content and file path.
 type ArchitectureDoc struct {
 	Content  string
 	FilePath string
 }
 
-// ArchitectureDocs represents all loaded architecture documents
+// ArchitectureDocs represents all loaded architecture documents.
 type ArchitectureDocs struct {
 	Architecture         ArchitectureDoc
 	FrontendArchitecture ArchitectureDoc
@@ -22,19 +22,19 @@ type ArchitectureDocs struct {
 	TechStack            ArchitectureDoc
 }
 
-// ArchitectureLoader loads architecture documents using configured paths
+// ArchitectureLoader loads architecture documents using configured paths.
 type ArchitectureLoader struct {
 	config *config.ViperConfig
 }
 
-// NewArchitectureLoader creates a new ArchitectureLoader instance
+// NewArchitectureLoader creates a new ArchitectureLoader instance.
 func NewArchitectureLoader(config *config.ViperConfig) *ArchitectureLoader {
 	return &ArchitectureLoader{
 		config: config,
 	}
 }
 
-// LoadAllArchitectureDocs loads all architecture documents and returns them as a map
+// LoadAllArchitectureDocs loads all architecture documents and returns them as a map.
 func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureDoc, error) {
 	docs := make(map[string]ArchitectureDoc)
 
@@ -58,6 +58,7 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 		if err != nil {
 			return nil, fmt.Errorf("failed to load required architecture document %s (from %s): %w", configKey, filepath, err)
 		}
+
 		docs[key] = ArchitectureDoc{
 			Content:  content,
 			FilePath: filepath,
@@ -67,7 +68,7 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 	return docs, nil
 }
 
-// LoadAllArchitectureDocsStruct loads all architecture documents and returns them as a struct
+// LoadAllArchitectureDocsStruct loads all architecture documents and returns them as a struct.
 func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs, error) {
 	// Load architecture document
 	archContent, err := l.loadDocumentWithPath("documents.architecture")
@@ -108,7 +109,7 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs,
 	}, nil
 }
 
-// loadDocumentWithPath loads a document given its config key path
+// loadDocumentWithPath loads a document given its config key path.
 func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (ArchitectureDoc, error) {
 	filepath := l.config.GetString(configKey)
 	if filepath == "" {
@@ -126,9 +127,8 @@ func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (Architectur
 	}, nil
 }
 
-// loadDocument loads a single document from the specified path
+// loadDocument loads a single document from the specified path.
 func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
-
 	// Check if file exists
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		return "", fmt.Errorf("document not found: %s", filepath)

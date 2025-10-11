@@ -5,7 +5,7 @@ import (
 )
 
 // FlattenedStoryData represents a flattened version of StoryDocument for template processing
-// This matches the structure expected by the story.yaml.tpl template
+// This matches the structure expected by the story.yaml.tpl template.
 type FlattenedStoryData struct {
 	// Story fields at root level
 	ID                 string                      `json:"id"`
@@ -27,7 +27,7 @@ type FlattenedStoryData struct {
 	TmpDir         string                 `json:"tmp_dir"` // Path to run-specific tmp directory
 }
 
-// FlattenStoryDocument converts a StoryDocument to FlattenedStoryData for template processing
+// FlattenStoryDocument converts a StoryDocument to FlattenedStoryData for template processing.
 func FlattenStoryDocument(doc *story.StoryDocument) *FlattenedStoryData {
 	return &FlattenedStoryData{
 		// Flatten story fields to root level

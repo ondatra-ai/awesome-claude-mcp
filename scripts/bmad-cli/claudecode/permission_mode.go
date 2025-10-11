@@ -7,7 +7,7 @@ import (
 // PermissionMode defines the permission handling mode.
 type PermissionMode = shared.PermissionMode
 
-// Re-export permission mode constants
+// Re-export permission mode constants.
 const (
 	PermissionModeDefault           = shared.PermissionModeDefault
 	PermissionModeAcceptEdits       = shared.PermissionModeAcceptEdits

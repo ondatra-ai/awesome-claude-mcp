@@ -4,6 +4,7 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/pkg/ai"
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -15,13 +16,13 @@ import (
 	"bmad-cli/internal/infrastructure/template"
 )
 
-// AIQAAssessmentGenerator generates QA results for stories using AI
+// AIQAAssessmentGenerator generates QA results for stories using AI.
 type AIQAAssessmentGenerator struct {
 	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
-// QAAssessmentData contains all data needed for QA assessment generation
+// QAAssessmentData contains all data needed for QA assessment generation.
 type QAAssessmentData struct {
 	Story            *story.Story
 	Tasks            []story.Task
@@ -30,7 +31,7 @@ type QAAssessmentData struct {
 	TmpDir           string // Path to run-specific tmp directory
 }
 
-// NewAIQAAssessmentGenerator creates a new QA assessment generator
+// NewAIQAAssessmentGenerator creates a new QA assessment generator.
 func NewAIQAAssessmentGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AIQAAssessmentGenerator {
 	return &AIQAAssessmentGenerator{
 		aiClient: aiClient,
@@ -38,7 +39,7 @@ func NewAIQAAssessmentGenerator(aiClient ports.AIPort, config *config.ViperConfi
 	}
 }
 
-// GenerateQAResults generates comprehensive QA results following Quinn persona
+// GenerateQAResults generates comprehensive QA results following Quinn persona.
 func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.QAResults, error) {
 	// Create AI generator for QA assessment
 	generator := ai.NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
@@ -56,6 +57,7 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 			// Load system prompt (doesn't need data)
 			systemTemplatePath := g.config.GetString("templates.prompts.qa_system")
 			systemLoader := template.NewTemplateLoader[QAAssessmentData](systemTemplatePath)
+
 			systemPrompt, err = systemLoader.LoadTemplate(QAAssessmentData{})
 			if err != nil {
 				return "", "", fmt.Errorf("failed to load QA system prompt: %w", err)
@@ -90,11 +92,12 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 	return qaResults, nil
 }
 
-// loadQAPrompt loads the QA assessment prompt template
+// loadQAPrompt loads the QA assessment prompt template.
 func (g *AIQAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.qa")
 
 	promptLoader := template.NewTemplateLoader[QAAssessmentData](templatePath)
+
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
 		return "", fmt.Errorf("failed to load QA prompt: %w", err)
@@ -103,18 +106,18 @@ func (g *AIQAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, e
 	return prompt, nil
 }
 
-// validateQAResults validates the generated QA results
+// validateQAResults validates the generated QA results.
 func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) error {
 	if qaResults.Assessment.Summary == "" {
-		return fmt.Errorf("assessment summary cannot be empty")
+		return errors.New("assessment summary cannot be empty")
 	}
 
 	if len(qaResults.Assessment.Strengths) == 0 {
-		return fmt.Errorf("at least one strength must be identified")
+		return errors.New("at least one strength must be identified")
 	}
 
 	if qaResults.Assessment.RiskLevel == "" {
-		return fmt.Errorf("risk level must be specified")
+		return errors.New("risk level must be specified")
 	}
 
 	validRiskLevels := map[string]bool{
@@ -127,11 +130,11 @@ func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) e
 	}
 
 	if qaResults.Assessment.TestabilityScore < 1 || qaResults.Assessment.TestabilityScore > 10 {
-		return fmt.Errorf("testability score must be between 1 and 10")
+		return errors.New("testability score must be between 1 and 10")
 	}
 
 	if qaResults.Assessment.ImplementationReadiness < 1 || qaResults.Assessment.ImplementationReadiness > 10 {
-		return fmt.Errorf("implementation readiness must be between 1 and 10")
+		return errors.New("implementation readiness must be between 1 and 10")
 	}
 
 	validGateStatuses := map[string]bool{
@@ -147,12 +150,13 @@ func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) e
 	return nil
 }
 
-// slugifyTitle converts a title to a URL-friendly slug
+// slugifyTitle converts a title to a URL-friendly slug.
 func slugifyTitle(title string) string {
 	// Convert to lowercase and replace spaces with hyphens
 	slug := strings.ToLower(title)
 	slug = regexp.MustCompile(`[^\w\s-]`).ReplaceAllString(slug, "")
 	slug = regexp.MustCompile(`[\s_-]+`).ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
+
 	return slug
 }

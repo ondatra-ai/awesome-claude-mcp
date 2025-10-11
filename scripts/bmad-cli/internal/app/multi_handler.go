@@ -5,7 +5,7 @@ import (
 	"log/slog"
 )
 
-// MultiHandler writes to both file and console with different levels
+// MultiHandler writes to both file and console with different levels.
 type MultiHandler struct {
 	fileHandler    slog.Handler
 	consoleHandler slog.Handler
@@ -17,13 +17,15 @@ func (h *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (h *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
 	// Always write to file
-	if err := h.fileHandler.Handle(ctx, record); err != nil {
+	err := h.fileHandler.Handle(ctx, record)
+	if err != nil {
 		// Don't fail if file write fails, continue to console
 	}
 
 	// Write to console only for info and above
 	if record.Level >= slog.LevelInfo {
-		if err := h.consoleHandler.Handle(ctx, record); err != nil {
+		err := h.consoleHandler.Handle(ctx, record)
+		if err != nil {
 			return err
 		}
 	}

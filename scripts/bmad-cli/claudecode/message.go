@@ -7,7 +7,7 @@ import (
 // Message represents any message type in the Claude Code protocol.
 type Message = shared.Message
 
-// Message type constants
+// Message type constants.
 const (
 	MessageTypeUser      = shared.MessageTypeUser
 	MessageTypeAssistant = shared.MessageTypeAssistant

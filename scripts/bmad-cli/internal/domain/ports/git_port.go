@@ -3,7 +3,7 @@ package ports
 import "context"
 
 // GitPort defines the interface for git operations
-// This port interface represents the contract for git operations in the domain layer
+// This port interface represents the contract for git operations in the domain layer.
 type GitPort interface {
 	IsGitRepository(ctx context.Context) (bool, error)
 	IsDetachedHead(ctx context.Context) (bool, error)

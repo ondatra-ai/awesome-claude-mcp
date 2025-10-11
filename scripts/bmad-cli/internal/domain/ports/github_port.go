@@ -7,7 +7,7 @@ import (
 )
 
 // GitHubPort defines the port interface for GitHub operations
-// Following Hexagonal Architecture, ports define contracts for external adapters
+// Following Hexagonal Architecture, ports define contracts for external adapters.
 type GitHubPort interface {
 	GetPRNumber(ctx context.Context) (int, error)
 	FetchThreads(ctx context.Context, prNumber int) ([]models.Thread, error)

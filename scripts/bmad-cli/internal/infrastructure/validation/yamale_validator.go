@@ -41,6 +41,7 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	if _, err := tmpFile.WriteString(yamlContent); err != nil {
 		return fmt.Errorf("failed to write YAML content: %w", err)
 	}
+
 	if err := tmpFile.Close(); err != nil {
 		return fmt.Errorf("failed to close temporary file: %w", err)
 	}
@@ -53,32 +54,35 @@ func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) err
 	// Check if yamale command is available first
 	if _, err := exec.LookPath("yamale"); err != nil {
 		fmt.Println("Warning: yamale command not found - skipping validation")
+
 		return nil
 	}
 
 	// Run yamale validation
 	cmd := exec.Command("yamale", "-s", schemaPath, dataPath)
-	output, err := cmd.CombinedOutput()
 
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("yamale validation failed: %s\nOutput: %s", err, string(output))
+		return fmt.Errorf("yamale validation failed: %w\nOutput: %s", err, string(output))
 	}
 
 	fmt.Println("✅ YAML validation passed")
+
 	return nil
 }
 
 func (v *YamaleValidator) validateWithPythonModule(schemaPath, dataPath string) error {
 	// Try python -m yamale
 	cmd := exec.Command("python", "-m", "yamale", "--schema", schemaPath, dataPath)
-	output, err := cmd.CombinedOutput()
 
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		// Try python3 if python failed
 		cmd = exec.Command("python3", "-m", "yamale", "--schema", schemaPath, dataPath)
+
 		output, err = cmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("python yamale validation failed: %s\nOutput: %s", err, string(output))
+			return fmt.Errorf("python yamale validation failed: %w\nOutput: %s", err, string(output))
 		}
 	}
 
@@ -101,10 +105,10 @@ func (v *YamaleValidator) ValidateFromStdin(yamlContent string) error {
 		// Try with python module if CLI fails
 		cmd = exec.Command("python", "-m", "yamale", "--schema", absSchemaPath, "-")
 		cmd.Stdin = strings.NewReader(yamlContent)
-		output, err = cmd.CombinedOutput()
 
+		output, err = cmd.CombinedOutput()
 		if err != nil {
-			return fmt.Errorf("yamale validation failed: %s\nOutput: %s", err, string(output))
+			return fmt.Errorf("yamale validation failed: %w\nOutput: %s", err, string(output))
 		}
 	}
 

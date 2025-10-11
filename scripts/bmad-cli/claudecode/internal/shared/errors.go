@@ -19,6 +19,7 @@ func (e *BaseError) Error() string {
 	if e.cause != nil {
 		return fmt.Sprintf("%s: %v", e.message, e.cause)
 	}
+
 	return e.message
 }
 
@@ -51,6 +52,7 @@ func NewConnectionError(message string, cause error) *ConnectionError {
 // CLINotFoundError indicates the Claude CLI was not found.
 type CLINotFoundError struct {
 	BaseError
+
 	Path string
 }
 
@@ -65,6 +67,7 @@ func NewCLINotFoundError(path, message string) *CLINotFoundError {
 	if path != "" {
 		message = fmt.Sprintf("%s: %s", message, path)
 	}
+
 	return &CLINotFoundError{
 		BaseError: BaseError{message: message},
 		Path:      path,
@@ -74,6 +77,7 @@ func NewCLINotFoundError(path, message string) *CLINotFoundError {
 // ProcessError represents subprocess execution failures.
 type ProcessError struct {
 	BaseError
+
 	ExitCode int
 	Stderr   string
 }
@@ -88,9 +92,11 @@ func (e *ProcessError) Error() string {
 	if e.ExitCode != 0 {
 		message = fmt.Sprintf("%s (exit code: %d)", message, e.ExitCode)
 	}
+
 	if e.Stderr != "" {
 		message = fmt.Sprintf("%s\nError output: %s", message, e.Stderr)
 	}
+
 	return message
 }
 
@@ -106,6 +112,7 @@ func NewProcessError(message string, exitCode int, stderr string) *ProcessError 
 // JSONDecodeError represents JSON parsing failures.
 type JSONDecodeError struct {
 	BaseError
+
 	Line          string
 	Position      int
 	OriginalError error
@@ -125,6 +132,7 @@ func NewJSONDecodeError(line string, position int, cause error) *JSONDecodeError
 	if len(line) > maxLineDisplayLength {
 		truncatedLine = line[:maxLineDisplayLength]
 	}
+
 	message := fmt.Sprintf("Failed to decode JSON: %s...", truncatedLine)
 
 	return &JSONDecodeError{
@@ -142,6 +150,7 @@ func (e *JSONDecodeError) Unwrap() error {
 // MessageParseError represents message structure parsing failures.
 type MessageParseError struct {
 	BaseError
+
 	Data any
 }
 

@@ -16,22 +16,22 @@ import (
 	"bmad-cli/internal/infrastructure/fs"
 )
 
-// TaskGenerator interface for generating tasks
+// TaskGenerator interface for generating tasks.
 type TaskGenerator interface {
 	GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument) ([]story.Task, error)
 }
 
-// DevNotesGenerator interface for generating dev notes
+// DevNotesGenerator interface for generating dev notes.
 type DevNotesGenerator interface {
 	GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error)
 }
 
-// QAResultsGenerator interface for generating QA results
+// QAResultsGenerator interface for generating QA results.
 type QAResultsGenerator interface {
 	GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error)
 }
 
-// TestingRequirementsGenerator interface for generating testing requirements
+// TestingRequirementsGenerator interface for generating testing requirements.
 type TestingRequirementsGenerator interface {
 	GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error)
 }
@@ -102,6 +102,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate tasks: %w", err)
 	}
+
 	storyDoc.Tasks = tasks
 
 	// Generate dev_notes using AI - fail on any error
@@ -109,6 +110,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
 	}
+
 	storyDoc.DevNotes = devNotes
 
 	// Generate testing requirements using AI - fail on any error
@@ -116,6 +118,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
 	}
+
 	storyDoc.Testing = testing
 
 	// Generate test scenarios using AI - fail on any error
@@ -123,6 +126,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate test scenarios: %w", err)
 	}
+
 	storyDoc.Scenarios = scenarios
 
 	// Generate QA results using AI - fail on any error
@@ -130,6 +134,7 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate QA results: %w", err)
 	}
+
 	storyDoc.QAResults = &qaResults
 
 	return storyDoc, nil
@@ -141,10 +146,11 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	slug = regexp.MustCompile(`[^\w\s-]`).ReplaceAllString(slug, "")
 	slug = regexp.MustCompile(`[\s_-]+`).ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
+
 	return slug
 }
 
-// GetTmpDirPath returns the run-specific directory path for this execution
+// GetTmpDirPath returns the run-specific directory path for this execution.
 func (f *StoryFactory) GetTmpDirPath() string {
 	if f.runDirectory != nil {
 		return f.runDirectory.GetTmpOutPath()
@@ -153,7 +159,7 @@ func (f *StoryFactory) GetTmpDirPath() string {
 	return f.config.GetString("paths.tmp_dir")
 }
 
-// GetStoriesDir returns the configured stories output directory path
+// GetStoriesDir returns the configured stories output directory path.
 func (f *StoryFactory) GetStoriesDir() string {
 	return f.config.GetString("paths.stories_dir")
 }

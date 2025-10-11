@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
-	"bmad-cli/internal/pkg/errors"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const lowRiskThreshold = 5
@@ -47,14 +48,16 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 	for _, thread := range threads {
 		comment, err := c.firstRelevantComment(thread.Comments)
 		if err != nil {
-			if err == errors.ErrNoComments {
+			if errors.Is(err, pkgerrors.ErrNoComments) {
 				continue // Skip threads with no comments
 			}
+
 			return err // Return other errors
 		}
 
 		if comment.Outdated {
 			_ = c.github.ResolveThread(ctx, thread.ID, "This thread resolved as outdated.")
+
 			continue
 		}
 
@@ -93,7 +96,8 @@ func (c *PRTriageCommand) firstRelevantComment(comments []models.Comment) (model
 	if len(comments) > 0 {
 		return comments[0], nil
 	}
-	return models.Comment{}, errors.ErrNoComments
+
+	return models.Comment{}, pkgerrors.ErrNoComments
 }
 
 func (c *PRTriageCommand) printHeuristic(result models.HeuristicAnalysisResult) {

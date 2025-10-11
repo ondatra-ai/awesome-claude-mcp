@@ -4,6 +4,7 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/pkg/ai"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,13 +14,13 @@ import (
 	"bmad-cli/internal/infrastructure/template"
 )
 
-// AIScenariosGenerator generates test scenarios for stories using AI
+// AIScenariosGenerator generates test scenarios for stories using AI.
 type AIScenariosGenerator struct {
 	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
-// ScenariosData contains all data needed for test scenarios generation
+// ScenariosData contains all data needed for test scenarios generation.
 type ScenariosData struct {
 	Story            *story.Story
 	Tasks            []story.Task
@@ -29,7 +30,7 @@ type ScenariosData struct {
 	TmpDir           string // Path to run-specific tmp directory
 }
 
-// NewAIScenariosGenerator creates a new test scenarios generator
+// NewAIScenariosGenerator creates a new test scenarios generator.
 func NewAIScenariosGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AIScenariosGenerator {
 	return &AIScenariosGenerator{
 		aiClient: aiClient,
@@ -37,7 +38,7 @@ func NewAIScenariosGenerator(aiClient ports.AIPort, config *config.ViperConfig) 
 	}
 }
 
-// GenerateScenarios generates comprehensive test scenarios in Given-When-Then format
+// GenerateScenarios generates comprehensive test scenarios in Given-When-Then format.
 func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Scenarios, error) {
 	// Create AI generator for test scenarios
 	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
@@ -56,6 +57,7 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 			// Load system prompt (doesn't need data)
 			systemTemplatePath := g.config.GetString("templates.prompts.scenarios_system")
 			systemLoader := template.NewTemplateLoader[ScenariosData](systemTemplatePath)
+
 			systemPrompt, err = systemLoader.LoadTemplate(ScenariosData{})
 			if err != nil {
 				return "", "", fmt.Errorf("failed to load scenarios system prompt: %w", err)
@@ -81,11 +83,12 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 	return scenarios, nil
 }
 
-// loadScenariosPrompt loads the test scenarios prompt template
+// loadScenariosPrompt loads the test scenarios prompt template.
 func (g *AIScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.scenarios")
 
 	promptLoader := template.NewTemplateLoader[ScenariosData](templatePath)
+
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
 		return "", fmt.Errorf("failed to load scenarios prompt: %w", err)
@@ -94,11 +97,11 @@ func (g *AIScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, 
 	return prompt, nil
 }
 
-// validateScenarios validates the generated test scenarios
+// validateScenarios validates the generated test scenarios.
 func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.AcceptanceCriterion) func(story.Scenarios) error {
 	return func(scenarios story.Scenarios) error {
 		if len(scenarios.TestScenarios) == 0 {
-			return fmt.Errorf("at least one test scenario must be specified")
+			return errors.New("at least one test scenario must be specified")
 		}
 
 		// Track which ACs are covered
@@ -110,6 +113,7 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 			if scenario.ID == "" {
 				return fmt.Errorf("scenario %d: ID cannot be empty", i)
 			}
+
 			if len(scenario.AcceptanceCriteria) == 0 {
 				return fmt.Errorf("scenario %s: must reference at least one acceptance criterion", scenario.ID)
 			}
@@ -121,6 +125,7 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 
 			// Validate each step has exactly one keyword set and statements are valid
 			hasGiven, hasWhen, hasThen := false, false, false
+
 			for stepIdx, step := range scenario.Steps {
 				nonEmptyCount := 0
 
@@ -128,7 +133,9 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.Given) > 0 {
 					nonEmptyCount++
 					hasGiven = true
-					if err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given); err != nil {
+					err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given)
+
+					if err != nil {
 						return err
 					}
 				}
@@ -137,7 +144,9 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.When) > 0 {
 					nonEmptyCount++
 					hasWhen = true
-					if err := validateStepStatements(scenario.ID, stepIdx, "When", step.When); err != nil {
+					err := validateStepStatements(scenario.ID, stepIdx, "When", step.When)
+
+					if err != nil {
 						return err
 					}
 				}
@@ -146,7 +155,9 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if len(step.Then) > 0 {
 					nonEmptyCount++
 					hasThen = true
-					if err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then); err != nil {
+					err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then)
+
+					if err != nil {
 						return err
 					}
 				}
@@ -154,6 +165,7 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 				if nonEmptyCount == 0 {
 					return fmt.Errorf("scenario %s, step %d: step must have at least one keyword set", scenario.ID, stepIdx)
 				}
+
 				if nonEmptyCount > 1 {
 					return fmt.Errorf("scenario %s, step %d: step must have exactly one keyword set", scenario.ID, stepIdx)
 				}
@@ -163,9 +175,11 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 			if !hasGiven {
 				return fmt.Errorf("scenario %s: must have at least one 'Given' step", scenario.ID)
 			}
+
 			if !hasWhen {
 				return fmt.Errorf("scenario %s: must have at least one 'When' step", scenario.ID)
 			}
+
 			if !hasThen {
 				return fmt.Errorf("scenario %s: must have at least one 'Then' step", scenario.ID)
 			}
@@ -206,7 +220,7 @@ func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.Acce
 	}
 }
 
-// validateStepStatements validates an array of step statements
+// validateStepStatements validates an array of step statements.
 func validateStepStatements(scenarioID string, stepIdx int, keyword string, statements []story.StepStatement) error {
 	if len(statements) == 0 {
 		return fmt.Errorf("scenario %s, step %d: %s must have at least one statement", scenarioID, stepIdx, keyword)
@@ -234,16 +248,16 @@ func validateStepStatements(scenarioID string, stepIdx int, keyword string, stat
 	return nil
 }
 
-// validateScenarioID validates scenario ID format (e.g., "3.1-INT-001")
+// validateScenarioID validates scenario ID format (e.g., "3.1-INT-001").
 func validateScenarioID(id string) error {
 	parts := strings.Split(id, "-")
 	if len(parts) != 3 {
-		return fmt.Errorf("scenario ID must be in format {epic}.{story}-{LEVEL}-{SEQ}")
+		return errors.New("scenario ID must be in format {epic}.{story}-{LEVEL}-{SEQ}")
 	}
 
 	level := strings.ToUpper(parts[1])
 	if level != "INT" && level != "E2E" {
-		return fmt.Errorf("scenario ID level must be INT or E2E (UNIT is not allowed in BDD scenarios)")
+		return errors.New("scenario ID level must be INT or E2E (UNIT is not allowed in BDD scenarios)")
 	}
 
 	return nil

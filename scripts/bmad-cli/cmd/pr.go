@@ -41,5 +41,6 @@ func NewPRCommand(container *app.Container) *cobra.Command {
 	}
 
 	prCmd.AddCommand(triageCmd)
+
 	return prCmd
 }

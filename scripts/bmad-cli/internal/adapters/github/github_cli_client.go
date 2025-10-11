@@ -28,10 +28,12 @@ func (c *GitHubCLIClient) GetCurrentCheckoutPR(ctx context.Context) (string, err
 
 func (c *GitHubCLIClient) GetCurrentBranch(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("git branch: %w", err)
 	}
+
 	return strings.TrimSpace(string(out)), nil
 }
 
@@ -43,6 +45,7 @@ func (c *GitHubCLIClient) ListPRsForBranch(ctx context.Context, branch string) (
 	}
 
 	var prs []models.PullRequest
+
 	err = json.Unmarshal([]byte(out), &prs)
 	if err != nil {
 		return nil, fmt.Errorf("parse pr list: %w", err)

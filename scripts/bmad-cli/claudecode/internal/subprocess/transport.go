@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -27,7 +28,7 @@ const (
 	terminationTimeoutSeconds = 5
 	// windowsOS is the GOOS value for Windows platform.
 	windowsOS = "windows"
-	// BUFFER FIX: Increase default buffer size to handle large responses
+	// BUFFER FIX: Increase default buffer size to handle large responses.
 	maxScanTokenSize = 10 * 1024 * 1024 // 10MB buffer (vs default 64KB)
 )
 
@@ -90,6 +91,7 @@ func NewWithPrompt(cliPath string, options *shared.Options, prompt string) *Tran
 func (t *Transport) IsConnected() bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+
 	return t.connected && t.cmd != nil && t.cmd.Process != nil
 }
 
@@ -99,7 +101,7 @@ func (t *Transport) Connect(ctx context.Context) error {
 	defer t.mu.Unlock()
 
 	if t.connected {
-		return fmt.Errorf("transport already connected")
+		return errors.New("transport already connected")
 	}
 
 	// Build command with all options
@@ -119,9 +121,11 @@ func (t *Transport) Connect(ctx context.Context) error {
 
 	// Set working directory if specified
 	if t.options != nil && t.options.Cwd != nil {
-		if err := cli.ValidateWorkingDirectory(*t.options.Cwd); err != nil {
+		err := cli.ValidateWorkingDirectory(*t.options.Cwd)
+		if err != nil {
 			return err
 		}
+
 		t.cmd.Dir = *t.options.Cwd
 	}
 
@@ -146,11 +150,13 @@ func (t *Transport) Connect(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create stderr file: %w", err)
 	}
+
 	t.cmd.Stderr = t.stderr
 
 	// Start the process
 	if err := t.cmd.Start(); err != nil {
 		t.cleanup()
+
 		return shared.NewConnectionError(
 			fmt.Sprintf("failed to start Claude CLI: %v", err),
 			err,
@@ -166,6 +172,7 @@ func (t *Transport) Connect(ctx context.Context) error {
 
 	// Start I/O handling goroutines
 	t.wg.Add(1)
+
 	go t.handleStdout()
 
 	// Note: Do NOT close stdin here for one-shot mode
@@ -173,6 +180,7 @@ func (t *Transport) Connect(ctx context.Context) error {
 	// stdin will be closed after sending the message in SendMessage()
 
 	t.connected = true
+
 	return nil
 }
 
@@ -188,7 +196,7 @@ func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessag
 	}
 
 	if !t.connected || t.stdin == nil {
-		return fmt.Errorf("transport not connected or stdin closed")
+		return errors.New("transport not connected or stdin closed")
 	}
 
 	// Check context cancellation
@@ -228,8 +236,10 @@ func (t *Transport) ReceiveMessages(_ context.Context) (<-chan shared.Message, <
 		// Return closed channels if not connected
 		msgChan := make(chan shared.Message)
 		errChan := make(chan error)
+
 		close(msgChan)
 		close(errChan)
+
 		return msgChan, errChan
 	}
 
@@ -242,12 +252,12 @@ func (t *Transport) Interrupt(_ context.Context) error {
 	defer t.mu.RUnlock()
 
 	if !t.connected || t.cmd == nil || t.cmd.Process == nil {
-		return fmt.Errorf("process not running")
+		return errors.New("process not running")
 	}
 
 	// Windows doesn't support os.Interrupt signal
 	if runtime.GOOS == windowsOS {
-		return fmt.Errorf("interrupt not supported by windows")
+		return errors.New("interrupt not supported by windows")
 	}
 
 	// Send interrupt signal (Unix/Linux/macOS)
@@ -278,6 +288,7 @@ func (t *Transport) Close() error {
 
 	// Wait for goroutines to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		t.wg.Wait()
 		close(done)
@@ -304,7 +315,7 @@ func (t *Transport) Close() error {
 }
 
 // handleStdout processes stdout in a separate goroutine
-// BUFFER OVERFLOW FIX: Use custom scanner with larger buffer
+// BUFFER OVERFLOW FIX: Use custom scanner with larger buffer.
 func (t *Transport) handleStdout() {
 	defer t.wg.Done()
 	defer close(t.msgChan)
@@ -335,6 +346,7 @@ func (t *Transport) handleStdout() {
 			case <-t.ctx.Done():
 				return
 			}
+
 			continue
 		}
 
@@ -350,7 +362,8 @@ func (t *Transport) handleStdout() {
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	err := scanner.Err()
+	if err != nil {
 		select {
 		case t.errChan <- fmt.Errorf("stdout scanner error: %w", err):
 		case <-t.ctx.Done():
@@ -364,21 +377,24 @@ func isProcessAlreadyFinishedError(err error) bool {
 	if err == nil {
 		return false
 	}
+
 	errStr := err.Error()
+
 	return strings.Contains(errStr, "process already finished") ||
 		strings.Contains(errStr, "process already released") ||
 		strings.Contains(errStr, "no child processes") ||
 		strings.Contains(errStr, "signal: killed")
 }
 
-// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence
+// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence.
 func (t *Transport) terminateProcess() error {
 	if t.cmd == nil || t.cmd.Process == nil {
 		return nil
 	}
 
 	// Send SIGTERM
-	if err := t.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+	err := t.cmd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
 		// If process is already finished, that's success
 		if isProcessAlreadyFinishedError(err) {
 			return nil
@@ -388,6 +404,7 @@ func (t *Transport) terminateProcess() error {
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
+
 		return nil // Don't return error for expected termination
 	}
 
@@ -395,6 +412,7 @@ func (t *Transport) terminateProcess() error {
 	done := make(chan error, 1)
 	// Capture cmd while we know it's valid to avoid data race
 	cmd := t.cmd
+
 	go func() {
 		done <- cmd.Wait()
 	}()
@@ -408,28 +426,33 @@ func (t *Transport) terminateProcess() error {
 				return nil // Expected signal termination
 			}
 		}
+
 		return err
 	case <-time.After(terminationTimeoutSeconds * time.Second):
 		// Force kill after 5 seconds
-		if killErr := t.cmd.Process.Kill(); killErr != nil && !isProcessAlreadyFinishedError(killErr) {
+		killErr := t.cmd.Process.Kill()
+		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
 		// Wait for process to exit after kill
 		<-done
+
 		return nil
 	case <-t.ctx.Done():
 		// Context canceled - force kill immediately
-		if killErr := t.cmd.Process.Kill(); killErr != nil && !isProcessAlreadyFinishedError(killErr) {
+		killErr := t.cmd.Process.Kill()
+		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
 		// Wait for process to exit after kill, but don't return context error
 		// since this is normal cleanup behavior
 		<-done
+
 		return nil
 	}
 }
 
-// cleanup cleans up all resources
+// cleanup cleans up all resources.
 func (t *Transport) cleanup() {
 	if t.stdout != nil {
 		_ = t.stdout.Close()

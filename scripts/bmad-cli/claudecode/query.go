@@ -37,14 +37,15 @@ func QueryWithTransport(
 	opts ...Option,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, fmt.Errorf("transport is required")
+		return nil, errors.New("transport is required")
 	}
 
 	options := NewOptions(opts...)
+
 	return queryWithTransportAndOptions(ctx, prompt, transport, options)
 }
 
-// Internal helper functions
+// Internal helper functions.
 func queryWithTransportAndOptions(
 	ctx context.Context,
 	prompt string,
@@ -52,7 +53,7 @@ func queryWithTransportAndOptions(
 	options *Options,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, fmt.Errorf("transport is required")
+		return nil, errors.New("transport is required")
 	}
 
 	// Create iterator that manages the transport lifecycle
@@ -64,7 +65,7 @@ func queryWithTransportAndOptions(
 	}, nil
 }
 
-// queryIterator implements MessageIterator for simple queries
+// queryIterator implements MessageIterator for simple queries.
 type queryIterator struct {
 	transport Transport
 	prompt    string
@@ -80,19 +81,25 @@ type queryIterator struct {
 
 func (qi *queryIterator) Next(_ context.Context) (Message, error) {
 	qi.mu.Lock()
+
 	if qi.closed {
 		qi.mu.Unlock()
+
 		return nil, ErrNoMoreMessages
 	}
 
 	// Initialize on first call
 	if !qi.started {
-		if err := qi.start(); err != nil {
+		err := qi.start()
+		if err != nil {
 			qi.mu.Unlock()
+
 			return nil, err
 		}
+
 		qi.started = true
 	}
+
 	qi.mu.Unlock()
 
 	// Read from message channels
@@ -102,38 +109,46 @@ func (qi *queryIterator) Next(_ context.Context) (Message, error) {
 			qi.mu.Lock()
 			qi.closed = true
 			qi.mu.Unlock()
+
 			return nil, ErrNoMoreMessages
 		}
+
 		return msg, nil
 	case err := <-qi.errChan:
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
+
 		return nil, err
 	case <-qi.ctx.Done():
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
+
 		return nil, qi.ctx.Err()
 	}
 }
 
 func (qi *queryIterator) Close() error {
 	var err error
+
 	qi.closeOnce.Do(func() {
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
+
 		if qi.transport != nil {
 			err = qi.transport.Close()
 		}
 	})
+
 	return err
 }
 
 func (qi *queryIterator) start() error {
 	// Connect to transport
-	if err := qi.transport.Connect(qi.ctx); err != nil {
+	err := qi.transport.Connect(qi.ctx)
+	if err != nil {
 		return fmt.Errorf("failed to connect transport: %w", err)
 	}
 
@@ -149,7 +164,8 @@ func (qi *queryIterator) start() error {
 		Message: userMsg,
 	}
 
-	if err := qi.transport.SendMessage(qi.ctx, streamMsg); err != nil {
+	err = qi.transport.SendMessage(qi.ctx, streamMsg)
+	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 // PromptFileLoader loads raw prompt template files and checklists from disk
-// This is distinct from infrastructure/template.TemplateLoader which executes Go templates
+// This is distinct from infrastructure/template.TemplateLoader which executes Go templates.
 type PromptFileLoader struct {
 	basePath string
 }

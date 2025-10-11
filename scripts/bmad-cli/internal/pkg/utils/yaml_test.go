@@ -36,8 +36,10 @@ func TestMarshalToYAML(t *testing.T) {
 			result, err := MarshalToYAML(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MarshalToYAML() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if result != tt.expected {
 				t.Errorf("MarshalToYAML() = %v, want %v", result, tt.expected)
 			}
@@ -75,8 +77,10 @@ func TestUnmarshalFromYAML(t *testing.T) {
 			result, err := UnmarshalFromYAML[testStruct](tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalFromYAML() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if !tt.wantErr && result != tt.expected {
 				t.Errorf("UnmarshalFromYAML() = %v, want %v", result, tt.expected)
 			}
@@ -113,8 +117,10 @@ func TestMarshalWithWrapper(t *testing.T) {
 			result, err := MarshalWithWrapper(tt.input, tt.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MarshalWithWrapper() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if result != tt.expected {
 				t.Errorf("MarshalWithWrapper() = %v, want %v", result, tt.expected)
 			}

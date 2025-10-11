@@ -1,6 +1,6 @@
 package handlers
 
-// BranchContext holds the state and configuration for branch operations
+// BranchContext holds the state and configuration for branch operations.
 type BranchContext struct {
 	StoryNumber    string
 	ExpectedBranch string
@@ -9,7 +9,7 @@ type BranchContext struct {
 	Action         BranchAction
 }
 
-// NewBranchContext creates a new branch context with the given story number and force flag
+// NewBranchContext creates a new branch context with the given story number and force flag.
 func NewBranchContext(storyNumber string, force bool) *BranchContext {
 	return &BranchContext{
 		StoryNumber: storyNumber,

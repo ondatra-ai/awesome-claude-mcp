@@ -1,6 +1,7 @@
 package story
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,20 +14,21 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 )
 
-// ValidationRule represents a validation check
+// ValidationRule represents a validation check.
 type ValidationRule struct {
 	Name      string
 	Validator func(nameWithoutExt, slug string) error
 }
 
-// filenameValidations defines all validation rules
+// filenameValidations defines all validation rules.
 var filenameValidations = []ValidationRule{
 	{
 		Name: "DashSeparator",
 		Validator: func(nameWithoutExt, slug string) error {
 			if !strings.Contains(nameWithoutExt, "-") {
-				return fmt.Errorf("invalid story filename: must have format '<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')")
+				return errors.New("invalid story filename: must have format '<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')")
 			}
+
 			return nil
 		},
 	},
@@ -34,8 +36,9 @@ var filenameValidations = []ValidationRule{
 		Name: "EmptySlug",
 		Validator: func(nameWithoutExt, slug string) error {
 			if slug == "" {
-				return fmt.Errorf("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
+				return errors.New("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
 			}
+
 			return nil
 		},
 	},
@@ -45,53 +48,60 @@ var filenameValidations = []ValidationRule{
 			if strings.Contains(slug, " ") {
 				return fmt.Errorf("invalid story slug '%s': cannot contain spaces (use dashes instead)", slug)
 			}
+
 			return nil
 		},
 	},
 }
 
-// validateFilename executes all validation rules
+// validateFilename executes all validation rules.
 func validateFilename(filename, nameWithoutExt, slug string) error {
 	for _, rule := range filenameValidations {
-		if err := rule.Validator(nameWithoutExt, slug); err != nil {
+		err := rule.Validator(nameWithoutExt, slug)
+		if err != nil {
 			slog.Error("Validation failed", "rule", rule.Name, "filename", filename, "error", err)
+
 			return err
 		}
 	}
+
 	return nil
 }
 
-// StoryLoader provides utilities for loading story information
+// StoryLoader provides utilities for loading story information.
 type StoryLoader struct {
 	storiesDir string
 }
 
-// NewStoryLoader creates a new story loader
+// NewStoryLoader creates a new story loader.
 func NewStoryLoader(cfg *config.ViperConfig) *StoryLoader {
 	return &StoryLoader{
 		storiesDir: cfg.GetString("paths.stories_dir"),
 	}
 }
 
-// GetStorySlug extracts the slug from the story filename
+// GetStorySlug extracts the slug from the story filename.
 func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	slog.Debug("Getting story slug", "story_number", storyNumber)
 
-	pattern := filepath.Join(l.storiesDir, fmt.Sprintf("%s-*.yaml", storyNumber))
+	pattern := filepath.Join(l.storiesDir, storyNumber+"-*.yaml")
 
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
+
 		return "", fmt.Errorf("failed to find story file: %w", err)
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
+
 		return "", fmt.Errorf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, l.storiesDir, storyNumber)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
+
 		return "", fmt.Errorf("multiple story files found for story %s: %v", storyNumber, matches)
 	}
 
@@ -99,6 +109,7 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	storyFile := matches[0]
 	if _, err := os.Stat(storyFile); err != nil {
 		slog.Error("Story file not accessible", "file", storyFile, "error", err)
+
 		return "", fmt.Errorf("story file not accessible: %s: %w", storyFile, err)
 	}
 
@@ -108,6 +119,7 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 
 	// Parse slug from filename
 	parts := strings.SplitN(nameWithoutExt, "-", 2)
+
 	slug := ""
 	if len(parts) == 2 {
 		slug = parts[1]
@@ -123,34 +135,39 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	return slug, nil
 }
 
-// Load loads the complete story document from YAML file
+// Load loads the complete story document from YAML file.
 func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	slog.Debug("Loading story document", "story_number", storyNumber)
 
 	// Find story file using same logic as GetStorySlug
-	pattern := filepath.Join(l.storiesDir, fmt.Sprintf("%s-*.yaml", storyNumber))
+	pattern := filepath.Join(l.storiesDir, storyNumber+"-*.yaml")
 
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
+
 		return nil, fmt.Errorf("failed to find story file: %w", err)
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
+
 		return nil, fmt.Errorf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, l.storiesDir, storyNumber)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
+
 		return nil, fmt.Errorf("multiple story files found for story %s: %v", storyNumber, matches)
 	}
 
 	// Read story file
 	storyFile := matches[0]
+
 	data, err := os.ReadFile(storyFile)
 	if err != nil {
 		slog.Error("Failed to read story file", "file", storyFile, "error", err)
+
 		return nil, fmt.Errorf("failed to read story file %s: %w", storyFile, err)
 	}
 
@@ -158,6 +175,7 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	var storyDoc story.StoryDocument
 	if err := yaml.Unmarshal(data, &storyDoc); err != nil {
 		slog.Error("Failed to unmarshal story YAML", "file", storyFile, "error", err)
+
 		return nil, fmt.Errorf("failed to parse story YAML from %s: %w", storyFile, err)
 	}
 

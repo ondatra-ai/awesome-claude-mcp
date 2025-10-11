@@ -130,6 +130,7 @@ func WithTransport(_ Transport) Option {
 		if o.ExtraArgs == nil {
 			o.ExtraArgs = make(map[string]*string)
 		}
+
 		marker := customTransportMarker
 		o.ExtraArgs["__transport_marker__"] = &marker
 	}

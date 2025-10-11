@@ -43,6 +43,7 @@ func (t *ThreadsFetcher) FetchAll(ctx context.Context, prNumber int) ([]models.T
 
 func (t *ThreadsFetcher) fetchAllPages(ctx context.Context, owner, name string, prNumber int) ([]models.Thread, error) {
 	var all []models.Thread
+
 	after := ""
 
 	for {
@@ -85,6 +86,7 @@ func (t *ThreadsFetcher) fetchSinglePage(
 	}
 
 	var page threadsPageResponse
+
 	err = json.Unmarshal([]byte(out), &page)
 	if err != nil {
 		return threadsPageResponse{}, fmt.Errorf("parse threads page: %w", err)

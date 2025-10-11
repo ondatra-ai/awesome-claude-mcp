@@ -15,6 +15,7 @@ type TemplateEngine struct {
 
 func NewTemplateEngine() *TemplateEngine {
 	loader := NewPromptFileLoader("")
+
 	return &TemplateEngine{loader: loader}
 }
 
@@ -54,6 +55,7 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 	}
 
 	var buf bytes.Buffer
+
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
@@ -69,6 +71,7 @@ func (e *TemplateEngine) joinAllComments(thread models.Thread) string {
 		if i > 0 {
 			builder.WriteString("\n---\n")
 		}
+
 		builder.WriteString(comment.Body)
 	}
 
