@@ -15,15 +15,18 @@ func (m *UserMessage) Type() string {
 	return MessageTypeUser
 }
 
-// MarshalJSON implements custom JSON marshaling for UserMessage
+// MarshalJSON implements custom JSON marshaling for UserMessage.
 func (m *UserMessage) MarshalJSON() ([]byte, error) {
 	type userMessage UserMessage
+
 	temp := struct {
-		Type string `json:"type"`
 		*userMessage
+
+		Type string `json:"type"`
 	}{
-		Type:        MessageTypeUser,
 		userMessage: (*userMessage)(m),
+		Type:        MessageTypeUser,
 	}
+
 	return json.Marshal(temp)
 }

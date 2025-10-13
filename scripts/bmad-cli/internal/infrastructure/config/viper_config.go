@@ -1,7 +1,9 @@
 package config
 
 import (
-	"fmt"
+	"log/slog"
+
+	"bmad-cli/internal/pkg/errors"
 	"github.com/spf13/viper"
 )
 
@@ -10,21 +12,25 @@ type ViperConfig struct {
 }
 
 func NewViperConfig() (*ViperConfig, error) {
-	v := viper.New()
+	viperInstance := viper.New()
 
-	v.SetConfigFile("./bmad-cli.yml")
-	v.SetConfigType("yaml")
-	err := v.ReadInConfig()
+	viperInstance.SetConfigFile("./bmad-cli.yml")
+	viperInstance.SetConfigType("yaml")
+
+	err := viperInstance.ReadInConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		slog.Error("Failed to read config file", "error", err)
+
+		return nil, errors.ErrReadConfigFailed(err)
 	}
 
-	return &ViperConfig{viper: v}, nil
+	return &ViperConfig{viper: viperInstance}, nil
 }
 
 func (c *ViperConfig) GetString(key string) string {
 	if !c.viper.IsSet(key) {
 		return ""
 	}
+
 	return c.viper.GetString(key)
 }

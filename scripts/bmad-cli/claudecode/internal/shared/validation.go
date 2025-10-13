@@ -1,6 +1,6 @@
 package shared
 
-import "fmt"
+import "bmad-cli/internal/pkg/errors"
 
 const (
 	// DefaultMaxThinkingTokens is the default maximum number of thinking tokens.
@@ -11,12 +11,12 @@ const (
 func (o *Options) Validate() error {
 	// Validate MaxThinkingTokens
 	if o.MaxThinkingTokens < 0 {
-		return fmt.Errorf("MaxThinkingTokens must be non-negative, got %d", o.MaxThinkingTokens)
+		return errors.ErrNegativeMaxThinkingTokens(o.MaxThinkingTokens)
 	}
 
 	// Validate MaxTurns
 	if o.MaxTurns < 0 {
-		return fmt.Errorf("MaxTurns must be non-negative, got %d", o.MaxTurns)
+		return errors.ErrNegativeMaxTurns(o.MaxTurns)
 	}
 
 	// Validate tool conflicts (same tool in both allowed and disallowed)
@@ -27,7 +27,7 @@ func (o *Options) Validate() error {
 
 	for _, tool := range o.DisallowedTools {
 		if allowedSet[tool] {
-			return fmt.Errorf("tool '%s' cannot be in both AllowedTools and DisallowedTools", tool)
+			return errors.ErrToolInBothLists(tool)
 		}
 	}
 

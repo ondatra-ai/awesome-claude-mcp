@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os/exec"
 	"strings"
 
@@ -28,10 +27,12 @@ func (c *GitHubCLIClient) GetCurrentCheckoutPR(ctx context.Context) (string, err
 
 func (c *GitHubCLIClient) GetCurrentBranch(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("git branch: %w", err)
+		return "", errors.ErrGitBranchFailed(err)
 	}
+
 	return strings.TrimSpace(string(out)), nil
 }
 
@@ -39,13 +40,14 @@ func (c *GitHubCLIClient) ListPRsForBranch(ctx context.Context, branch string) (
 	out, err := c.shell.Run(ctx, "gh", "pr", "list", "--head", branch,
 		"--json", "number,title,state,url", "--limit", "1")
 	if err != nil {
-		return nil, fmt.Errorf("gh pr list failed: %w, out=%s", err, out)
+		return nil, errors.ErrGHPRListFailed(err, out)
 	}
 
 	var prs []models.PullRequest
+
 	err = json.Unmarshal([]byte(out), &prs)
 	if err != nil {
-		return nil, fmt.Errorf("parse pr list: %w", err)
+		return nil, errors.ErrParsePRListFailed(err)
 	}
 
 	return prs, nil
@@ -54,7 +56,7 @@ func (c *GitHubCLIClient) ListPRsForBranch(ctx context.Context, branch string) (
 func (c *GitHubCLIClient) GetRepoOwnerAndName(ctx context.Context) (string, string, error) {
 	out, err := c.shell.Run(ctx, "gh", "repo", "view", "--json", "owner,name", "-q", ".owner.login + \" \" + .name")
 	if err != nil {
-		return "", "", fmt.Errorf("repo view: %w", err)
+		return "", "", errors.ErrRepoViewFailed(err)
 	}
 
 	parts := strings.Split(strings.TrimSpace(out), " ")
@@ -65,7 +67,11 @@ func (c *GitHubCLIClient) GetRepoOwnerAndName(ctx context.Context) (string, stri
 	return parts[0], parts[1], nil
 }
 
-func (c *GitHubCLIClient) ExecuteGraphQL(ctx context.Context, query string, variables map[string]string) (string, error) {
+func (c *GitHubCLIClient) ExecuteGraphQL(
+	ctx context.Context,
+	query string,
+	variables map[string]string,
+) (string, error) {
 	args := []string{"api", "graphql", "-f", "query=" + query}
 	for key, value := range variables {
 		args = append(args, "-F", key+"="+value)

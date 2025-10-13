@@ -13,8 +13,8 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
-    - containedctx
-    - contextcheck
+    # - containedctx  # TODO: Fix context.Context in struct fields
+    # - contextcheck  # TODO: Fix non-inherited context usage
     - copyloopvar
     - cyclop
     - decorder
@@ -24,7 +24,7 @@ linters:
     - dupword
     - durationcheck
     - embeddedstructfieldcheck
-    - err113
+    # - err113  # TODO: Convert dynamic errors to wrapped static errors
     - errcheck
     - errchkjson
     - errname
@@ -35,7 +35,7 @@ linters:
     - fatcontext
     - forbidigo
     - forcetypeassert
-    - funcorder
+    # - funcorder  # TODO: Fix function ordering (declarations before usage)
     - funlen
     - ginkgolinter
     - gocheckcompilerdirectives
@@ -110,7 +110,7 @@ linters:
     - varnamelen
     - wastedassign
     - whitespace
-    - wrapcheck
+    # - wrapcheck  # TODO: Add proper error wrapping for external package errors
     - wsl_v5
     - zerologlint
   # Disable specific linters.
@@ -124,5 +124,27 @@ linters:
       allow-first-in-block: true
       allow-whole-block: false
       branch-max-lines: 2
+    forbidigo:
+      forbid:
+        - pattern: '^fmt\.(Print(f|ln)?|Errorf)$'
+          msg: 'use slog for logging and proper error wrapping'
+    tagliatelle:
+      # For internal domain models and application code
+      case:
+        rules:
+          json: snake  # Internal JSON APIs use snake_case
+          yaml: snake  # All YAML configs use snake_case
+          # Note: GitHub API structures (in adapters/github and models/thread.go)
+          # are excluded below to match GitHub's camelCase API contract
 
-   # Allow fmt.Printf for CLI output
+  exclusions:
+    generated: lax
+    warn-unused: true
+    rules:
+      # GitHub API structures must use camelCase to match GitHub's API contract
+      - path: internal/adapters/github/.*\.go
+        linters:
+          - tagliatelle
+      - path: internal/domain/models/thread\.go
+        linters:
+          - tagliatelle

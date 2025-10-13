@@ -1,33 +1,39 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
+)
+
+const (
+	fileModeReadWrite = 0644 // Standard file permission for read/write files
+	fileModeDirectory = 0755 // Standard directory permission
 )
 
 func configureLogging() {
 	log.SetFlags(0)
 
 	// Ensure tmp directory exists
-	if err := os.MkdirAll("./tmp", 0755); err != nil {
-		fmt.Printf("Warning: failed to create tmp directory: %v\n", err)
+	err := os.MkdirAll("./tmp", fileModeDirectory)
+	if err != nil {
+		log.Println("Warning: failed to create tmp directory:", err)
 	}
 
 	// Open log file for JSON output (all levels)
-	logFile, err := os.OpenFile("./tmp/bmad-cli.log.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logFile, err := os.OpenFile("./tmp/bmad-cli.log.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, fileModeReadWrite)
 	if err != nil {
-		fmt.Printf("Warning: failed to open log file: %v\n", err)
+		log.Println("Warning: failed to open log file:", err)
 		// Fallback to console only
 		opts := &slog.HandlerOptions{
 			Level: slog.LevelInfo,
-			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				if a.Key == slog.TimeKey {
+			ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
+				if attr.Key == slog.TimeKey {
 					return slog.Attr{}
 				}
-				if a.Key == slog.LevelKey {
-					level := a.Value.String()
+
+				if attr.Key == slog.LevelKey {
+					level := attr.Value.String()
 					switch level {
 					case "INFO":
 						return slog.String("", "ℹ️")
@@ -41,10 +47,12 @@ func configureLogging() {
 						return slog.String("", level)
 					}
 				}
-				return a
+
+				return attr
 			},
 		}
 		slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
+
 		return
 	}
 

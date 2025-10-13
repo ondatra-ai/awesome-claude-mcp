@@ -19,7 +19,7 @@ type McpSSEServerConfig = shared.McpSSEServerConfig
 // McpHTTPServerConfig represents an HTTP MCP server configuration.
 type McpHTTPServerConfig = shared.McpHTTPServerConfig
 
-// Re-export MCP server type constants
+// Re-export MCP server type constants.
 const (
 	McpServerTypeStdio = shared.McpServerTypeStdio
 	McpServerTypeSSE   = shared.McpServerTypeSSE

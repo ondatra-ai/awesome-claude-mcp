@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"bmad-cli/internal/app"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func NewPRCommand(container *app.Container) *cobra.Command {
 			stop()
 
 			if err != nil {
-				return fmt.Errorf("triage: %w", err)
+				return pkgerrors.ErrTriageFailed(err)
 			}
 
 			return nil
@@ -41,5 +42,6 @@ func NewPRCommand(container *app.Container) *cobra.Command {
 	}
 
 	prCmd.AddCommand(triageCmd)
+
 	return prCmd
 }

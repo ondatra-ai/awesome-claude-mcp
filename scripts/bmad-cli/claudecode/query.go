@@ -3,11 +3,11 @@ package claudecode
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/subprocess"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 // ErrNoMoreMessages indicates the message iterator has no more messages.
@@ -22,7 +22,7 @@ func Query(ctx context.Context, prompt string, opts ...Option) (MessageIterator,
 	// This matches the Python SDK behavior where prompt is passed via --print flag
 	transport, err := createQueryTransport(prompt, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create query transport: %w", err)
+		return nil, pkgerrors.ErrCreateQueryTransportFailed(err)
 	}
 
 	return queryWithTransportAndOptions(ctx, prompt, transport, options)
@@ -37,14 +37,15 @@ func QueryWithTransport(
 	opts ...Option,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, fmt.Errorf("transport is required")
+		return nil, errors.New("transport is required")
 	}
 
 	options := NewOptions(opts...)
+
 	return queryWithTransportAndOptions(ctx, prompt, transport, options)
 }
 
-// Internal helper functions
+// Internal helper functions.
 func queryWithTransportAndOptions(
 	ctx context.Context,
 	prompt string,
@@ -52,23 +53,23 @@ func queryWithTransportAndOptions(
 	options *Options,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, fmt.Errorf("transport is required")
+		return nil, errors.New("transport is required")
 	}
 
 	// Create iterator that manages the transport lifecycle
 	return &queryIterator{
+		ctx:       ctx,
 		transport: transport,
 		prompt:    prompt,
-		ctx:       ctx,
 		options:   options,
 	}, nil
 }
 
-// queryIterator implements MessageIterator for simple queries
+// queryIterator implements MessageIterator for simple queries.
 type queryIterator struct {
+	ctx       context.Context
 	transport Transport
 	prompt    string
-	ctx       context.Context
 	options   *Options
 	started   bool
 	msgChan   <-chan Message
@@ -78,21 +79,27 @@ type queryIterator struct {
 	closeOnce sync.Once
 }
 
-func (qi *queryIterator) Next(_ context.Context) (Message, error) {
+func (qi *queryIterator) Next(ctx context.Context) (Message, error) {
 	qi.mu.Lock()
+
 	if qi.closed {
 		qi.mu.Unlock()
+
 		return nil, ErrNoMoreMessages
 	}
 
 	// Initialize on first call
 	if !qi.started {
-		if err := qi.start(); err != nil {
+		err := qi.start(qi.ctx)
+		if err != nil {
 			qi.mu.Unlock()
+
 			return nil, err
 		}
+
 		qi.started = true
 	}
+
 	qi.mu.Unlock()
 
 	// Read from message channels
@@ -102,43 +109,51 @@ func (qi *queryIterator) Next(_ context.Context) (Message, error) {
 			qi.mu.Lock()
 			qi.closed = true
 			qi.mu.Unlock()
+
 			return nil, ErrNoMoreMessages
 		}
+
 		return msg, nil
 	case err := <-qi.errChan:
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
+
 		return nil, err
-	case <-qi.ctx.Done():
+	case <-ctx.Done():
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
-		return nil, qi.ctx.Err()
+
+		return nil, ctx.Err()
 	}
 }
 
 func (qi *queryIterator) Close() error {
 	var err error
+
 	qi.closeOnce.Do(func() {
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
+
 		if qi.transport != nil {
 			err = qi.transport.Close()
 		}
 	})
+
 	return err
 }
 
-func (qi *queryIterator) start() error {
+func (qi *queryIterator) start(ctx context.Context) error {
 	// Connect to transport
-	if err := qi.transport.Connect(qi.ctx); err != nil {
-		return fmt.Errorf("failed to connect transport: %w", err)
+	err := qi.transport.Connect(ctx)
+	if err != nil {
+		return pkgerrors.ErrConnectTransportFailed(err)
 	}
 
 	// Get message channels
-	msgChan, errChan := qi.transport.ReceiveMessages(qi.ctx)
+	msgChan, errChan := qi.transport.ReceiveMessages(ctx)
 	qi.msgChan = msgChan
 	qi.errChan = errChan
 
@@ -149,8 +164,9 @@ func (qi *queryIterator) start() error {
 		Message: userMsg,
 	}
 
-	if err := qi.transport.SendMessage(qi.ctx, streamMsg); err != nil {
-		return fmt.Errorf("failed to send message: %w", err)
+	err = qi.transport.SendMessage(ctx, streamMsg)
+	if err != nil {
+		return pkgerrors.ErrSendMessageFailed(err)
 	}
 
 	return nil

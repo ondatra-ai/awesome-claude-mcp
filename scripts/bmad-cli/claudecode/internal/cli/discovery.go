@@ -3,27 +3,24 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"bmad-cli/claudecode/internal/shared"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const windowsOS = "windows"
 
-// DiscoveryPaths defines the standard search paths for Claude CLI.
-var DiscoveryPaths = []string{
-	// Will be populated with dynamic paths in FindCLI()
-}
-
 // FindCLI searches for the Claude CLI binary in standard locations.
 func FindCLI() (string, error) {
 	// 1. Check PATH first - most common case
-	if path, err := exec.LookPath("claude"); err == nil {
+	path, err := exec.LookPath("claude")
+	if err == nil {
 		return path, nil
 	}
 
@@ -31,19 +28,22 @@ func FindCLI() (string, error) {
 	locations := getCommonCLILocations()
 
 	for _, location := range locations {
-		if info, err := os.Stat(location); err == nil && !info.IsDir() {
+		info, statErr := os.Stat(location)
+		if statErr == nil && !info.IsDir() {
 			// Verify it's executable (Unix-like systems)
 			if runtime.GOOS != windowsOS {
 				if info.Mode()&0o111 == 0 {
 					continue // Not executable
 				}
 			}
+
 			return location, nil
 		}
 	}
 
 	// 3. Check Node.js dependency
-	if _, err := exec.LookPath("node"); err != nil {
+	_, nodeErr := exec.LookPath("node")
+	if nodeErr != nil {
 		return "", shared.NewCLINotFoundError("",
 			"Claude Code requires Node.js, which is not installed.\n\n"+
 				"Install Node.js from: https://nodejs.org/\n\n"+
@@ -60,7 +60,7 @@ func FindCLI() (string, error) {
 			"Or specify the path when creating client")
 }
 
-// getCommonCLILocations returns platform-specific CLI search locations
+// getCommonCLILocations returns platform-specific CLI search locations.
 func getCommonCLILocations() []string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -132,7 +132,7 @@ func BuildCommandWithPrompt(cliPath string, options *shared.Options, prompt stri
 	return cmd
 }
 
-// addOptionsToCommand adds all Options fields as CLI flags
+// addOptionsToCommand adds all Options fields as CLI flags.
 func addOptionsToCommand(cmd []string, options *shared.Options) []string {
 	cmd = addToolControlFlags(cmd, options)
 	cmd = addModelAndPromptFlags(cmd, options)
@@ -141,6 +141,7 @@ func addOptionsToCommand(cmd []string, options *shared.Options) []string {
 	cmd = addFileSystemFlags(cmd, options)
 	cmd = addMCPFlags(cmd, options)
 	cmd = addExtraFlags(cmd, options)
+
 	return cmd
 }
 
@@ -148,9 +149,11 @@ func addToolControlFlags(cmd []string, options *shared.Options) []string {
 	if len(options.AllowedTools) > 0 {
 		cmd = append(cmd, "--allowed-tools", strings.Join(options.AllowedTools, ","))
 	}
+
 	if len(options.DisallowedTools) > 0 {
 		cmd = append(cmd, "--disallowed-tools", strings.Join(options.DisallowedTools, ","))
 	}
+
 	return cmd
 }
 
@@ -158,9 +161,11 @@ func addModelAndPromptFlags(cmd []string, options *shared.Options) []string {
 	if options.SystemPrompt != nil {
 		cmd = append(cmd, "--system-prompt", *options.SystemPrompt)
 	}
+
 	if options.AppendSystemPrompt != nil {
 		cmd = append(cmd, "--append-system-prompt", *options.AppendSystemPrompt)
 	}
+
 	if options.Model != nil {
 		cmd = append(cmd, "--model", *options.Model)
 	}
@@ -175,9 +180,11 @@ func addPermissionFlags(cmd []string, options *shared.Options) []string {
 	if options.PermissionMode != nil {
 		cmd = append(cmd, "--permission-mode", string(*options.PermissionMode))
 	}
+
 	if options.PermissionPromptToolName != nil {
 		cmd = append(cmd, "--permission-prompt-tool", *options.PermissionPromptToolName)
 	}
+
 	return cmd
 }
 
@@ -185,15 +192,19 @@ func addSessionFlags(cmd []string, options *shared.Options) []string {
 	if options.ContinueConversation {
 		cmd = append(cmd, "--continue")
 	}
+
 	if options.Resume != nil {
 		cmd = append(cmd, "--resume", *options.Resume)
 	}
+
 	if options.MaxTurns > 0 {
-		cmd = append(cmd, "--max-turns", fmt.Sprintf("%d", options.MaxTurns))
+		cmd = append(cmd, "--max-turns", strconv.Itoa(options.MaxTurns))
 	}
+
 	if options.Settings != nil {
 		cmd = append(cmd, "--settings", *options.Settings)
 	}
+
 	return cmd
 }
 
@@ -201,15 +212,17 @@ func addFileSystemFlags(cmd []string, options *shared.Options) []string {
 	if options.Cwd != nil {
 		cmd = append(cmd, "--cwd", *options.Cwd)
 	}
+
 	for _, dir := range options.AddDirs {
 		cmd = append(cmd, "--add-dir", dir)
 	}
+
 	return cmd
 }
 
 func addMCPFlags(cmd []string, _ *shared.Options) []string {
-	// TODO: Implement MCP configuration file generation when len(options.McpServers) > 0
-	// For now, skip MCP servers - this will be added in a subsequent commit
+	// Note: MCP configuration file generation is not yet implemented
+	// This will be added in a subsequent commit when len(options.McpServers) > 0
 	return cmd
 }
 
@@ -223,18 +236,21 @@ func addExtraFlags(cmd []string, options *shared.Options) []string {
 			cmd = append(cmd, "--"+flag, *value)
 		}
 	}
+
 	return cmd
 }
 
 // ValidateNodeJS checks if Node.js is available.
 func ValidateNodeJS() error {
-	if _, err := exec.LookPath("node"); err != nil {
+	_, err := exec.LookPath("node")
+	if err != nil {
 		return shared.NewCLINotFoundError("node",
 			"Node.js is required for Claude CLI but was not found.\n\n"+
 				"Install Node.js from: https://nodejs.org/\n\n"+
 				"After installing Node.js, install Claude Code:\n"+
 				"  npm install -g @anthropic-ai/claude-code")
 	}
+
 	return nil
 }
 
@@ -247,17 +263,18 @@ func ValidateWorkingDirectory(cwd string) error {
 	info, err := os.Stat(cwd)
 	if os.IsNotExist(err) {
 		return shared.NewConnectionError(
-			fmt.Sprintf("working directory does not exist: %s", cwd),
+			"working directory does not exist: "+cwd,
 			err,
 		)
 	}
+
 	if err != nil {
-		return fmt.Errorf("failed to check working directory: %w", err)
+		return pkgerrors.ErrCheckWorkingDirectoryFailed(err)
 	}
 
 	if !info.IsDir() {
 		return shared.NewConnectionError(
-			fmt.Sprintf("working directory path is not a directory: %s", cwd),
+			"working directory path is not a directory: "+cwd,
 			nil,
 		)
 	}
@@ -268,16 +285,17 @@ func ValidateWorkingDirectory(cwd string) error {
 // DetectCLIVersion detects the Claude CLI version for compatibility checks.
 func DetectCLIVersion(ctx context.Context, cliPath string) (string, error) {
 	cmd := exec.CommandContext(ctx, cliPath, "--version")
+
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to get CLI version: %w", err)
+		return "", pkgerrors.ErrGetCLIVersionFailed(err)
 	}
 
 	version := strings.TrimSpace(string(output))
 
 	// Basic version format validation
 	if !strings.Contains(version, ".") {
-		return "", fmt.Errorf("invalid version format: %s", version)
+		return "", pkgerrors.ErrInvalidVersionFormat(version)
 	}
 
 	return version, nil

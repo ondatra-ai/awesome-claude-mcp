@@ -3,7 +3,7 @@ package generators
 import (
 	"bmad-cli/internal/domain/ports"
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -11,15 +11,16 @@ import (
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/pkg/ai"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
-// AITestingGenerator generates testing requirements for stories using AI
+// AITestingGenerator generates testing requirements for stories using AI.
 type AITestingGenerator struct {
 	aiClient ports.AIPort
 	config   *config.ViperConfig
 }
 
-// TestingData contains all data needed for testing requirements generation
+// TestingData contains all data needed for testing requirements generation.
 type TestingData struct {
 	Story            *story.Story
 	Tasks            []story.Task
@@ -28,7 +29,7 @@ type TestingData struct {
 	TmpDir           string // Path to run-specific tmp directory
 }
 
-// NewAITestingGenerator creates a new testing requirements generator
+// NewAITestingGenerator creates a new testing requirements generator.
 func NewAITestingGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AITestingGenerator {
 	return &AITestingGenerator{
 		aiClient: aiClient,
@@ -36,10 +37,60 @@ func NewAITestingGenerator(aiClient ports.AIPort, config *config.ViperConfig) *A
 	}
 }
 
-// GenerateTesting generates comprehensive testing requirements based on story analysis
-func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Testing, error) {
+// GenerateTesting generates comprehensive testing requirements based on story
+// analysis.
+func (g *AITestingGenerator) GenerateTesting(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) (story.Testing, error) {
 	// Create AI generator for testing requirements
-	generator := ai.NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
+	generator := g.createTestingGenerator(ctx, storyDoc, tmpDir)
+
+	// Generate testing requirements
+	testing, err := generator.Generate(ctx)
+	if err != nil {
+		return story.Testing{}, pkgerrors.ErrGenerateTestingFailed(err)
+	}
+
+	return testing, nil
+}
+
+// loadPrompts loads system and user prompts for testing requirements.
+func (g *AITestingGenerator) loadPrompts(
+	data TestingData,
+) (string, string, error) {
+	// Load system prompt (doesn't need data)
+	systemTemplatePath := g.config.GetString("templates.prompts.testing_system")
+	systemLoader := template.NewTemplateLoader[TestingData](systemTemplatePath)
+
+	sysPrompt, err := systemLoader.LoadTemplate(TestingData{})
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadTestingSystemPromptFailed(err)
+	}
+
+	// Load user prompt
+	usrPrompt, err := g.loadTestingPrompt(data)
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadTestingUserPromptFailed(err)
+	}
+
+	return sysPrompt, usrPrompt, nil
+}
+
+// createTestingGenerator creates and configures the AI generator for testing requirements.
+func (g *AITestingGenerator) createTestingGenerator(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) *ai.AIGenerator[TestingData, story.Testing] {
+	return ai.NewAIGenerator[TestingData, story.Testing](
+		ctx,
+		g.aiClient,
+		g.config,
+		storyDoc.Story.ID,
+		"testing",
+	).
 		WithTmpDir(tmpDir).
 		WithData(func() (TestingData, error) {
 			return TestingData{
@@ -50,74 +101,57 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 				TmpDir:           tmpDir,
 			}, nil
 		}).
-		WithPrompt(func(data TestingData) (systemPrompt string, userPrompt string, err error) {
-			// Load system prompt (doesn't need data)
-			systemTemplatePath := g.config.GetString("templates.prompts.testing_system")
-			systemLoader := template.NewTemplateLoader[TestingData](systemTemplatePath)
-			systemPrompt, err = systemLoader.LoadTemplate(TestingData{})
-			if err != nil {
-				return "", "", fmt.Errorf("failed to load testing system prompt: %w", err)
-			}
-
-			// Load user prompt
-			userPrompt, err = g.loadTestingPrompt(data)
-			if err != nil {
-				return "", "", fmt.Errorf("failed to load testing user prompt: %w", err)
-			}
-
-			return systemPrompt, userPrompt, nil
-		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing", tmpDir)).
+		WithPrompt(g.loadPrompts).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](
+			g.config,
+			storyDoc.Story.ID,
+			"testing",
+			"testing",
+			tmpDir,
+		)).
 		WithValidator(g.validateTesting)
-
-	// Generate testing requirements
-	testing, err := generator.Generate()
-	if err != nil {
-		return story.Testing{}, fmt.Errorf("failed to generate testing requirements: %w", err)
-	}
-
-	return testing, nil
 }
 
-// loadTestingPrompt loads the testing requirements prompt template
+// loadTestingPrompt loads the testing requirements prompt template.
 func (g *AITestingGenerator) loadTestingPrompt(data TestingData) (string, error) {
 	templatePath := g.config.GetString("templates.prompts.testing")
 
 	promptLoader := template.NewTemplateLoader[TestingData](templatePath)
+
 	prompt, err := promptLoader.LoadTemplate(data)
 	if err != nil {
-		return "", fmt.Errorf("failed to load testing prompt: %w", err)
+		return "", pkgerrors.ErrLoadTestingPromptFailed(err)
 	}
 
 	return prompt, nil
 }
 
-// validateTesting validates the generated testing requirements
+// validateTesting validates the generated testing requirements.
 func (g *AITestingGenerator) validateTesting(testing story.Testing) error {
 	if testing.TestLocation == "" {
-		return fmt.Errorf("test location cannot be empty")
+		return errors.New("test location cannot be empty")
 	}
 
 	if len(testing.Frameworks) == 0 {
-		return fmt.Errorf("at least one testing framework must be specified")
+		return errors.New("at least one testing framework must be specified")
 	}
 
 	if len(testing.Requirements) == 0 {
-		return fmt.Errorf("at least one testing requirement must be specified")
+		return errors.New("at least one testing requirement must be specified")
 	}
 
 	if len(testing.Coverage) == 0 {
-		return fmt.Errorf("coverage targets must be specified")
+		return errors.New("coverage targets must be specified")
 	}
 
 	// Validate coverage values are percentages
 	for key, value := range testing.Coverage {
 		if value == "" {
-			return fmt.Errorf("coverage value for %s cannot be empty", key)
+			return pkgerrors.ErrEmptyCoverageError(key)
 		}
 		// Simple validation that value contains % sign
 		if !strings.Contains(value, "%") {
-			return fmt.Errorf("coverage value for %s should be a percentage", key)
+			return pkgerrors.ErrInvalidCoverageError(key)
 		}
 	}
 

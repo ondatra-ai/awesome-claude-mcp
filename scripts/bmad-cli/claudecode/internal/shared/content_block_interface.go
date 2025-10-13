@@ -1,6 +1,6 @@
 package shared
 
-// Content block type constants
+// Content block type constants.
 const (
 	ContentBlockTypeText       = "text"
 	ContentBlockTypeThinking   = "thinking"

@@ -1,6 +1,6 @@
 package story
 
 type AcceptanceCriterion struct {
-	ID          string `yaml:"id" json:"id"`
-	Description string `yaml:"description" json:"description"`
+	ID          string `json:"id"          yaml:"id"`
+	Description string `json:"description" yaml:"description"`
 }

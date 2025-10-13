@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/parser"
 	"bmad-cli/claudecode/internal/shared"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const (
@@ -27,7 +29,7 @@ const (
 	terminationTimeoutSeconds = 5
 	// windowsOS is the GOOS value for Windows platform.
 	windowsOS = "windows"
-	// BUFFER FIX: Increase default buffer size to handle large responses
+	// BUFFER FIX: Increase default buffer size to handle large responses.
 	maxScanTokenSize = 10 * 1024 * 1024 // 10MB buffer (vs default 64KB)
 )
 
@@ -58,7 +60,7 @@ type Transport struct {
 	errChan chan error
 
 	// Control and cleanup
-	ctx    context.Context
+	done   chan struct{}
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
@@ -90,18 +92,12 @@ func NewWithPrompt(cliPath string, options *shared.Options, prompt string) *Tran
 func (t *Transport) IsConnected() bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+
 	return t.connected && t.cmd != nil && t.cmd.Process != nil
 }
 
-// Connect starts the Claude CLI subprocess.
-func (t *Transport) Connect(ctx context.Context) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if t.connected {
-		return fmt.Errorf("transport already connected")
-	}
-
+// setupCommand builds and configures the command with arguments and environment.
+func (t *Transport) setupCommand(ctx context.Context) {
 	// Build command with all options
 	var args []string
 	if t.promptArg != nil {
@@ -119,38 +115,64 @@ func (t *Transport) Connect(ctx context.Context) error {
 
 	// Set working directory if specified
 	if t.options != nil && t.options.Cwd != nil {
-		if err := cli.ValidateWorkingDirectory(*t.options.Cwd); err != nil {
-			return err
+		err := cli.ValidateWorkingDirectory(*t.options.Cwd)
+		if err == nil {
+			t.cmd.Dir = *t.options.Cwd
 		}
-		t.cmd.Dir = *t.options.Cwd
 	}
+}
 
-	// Set up I/O pipes
+// setupIOPipes sets up stdin, stdout, and stderr pipes for the command.
+func (t *Transport) setupIOPipes() error {
 	var err error
 	if t.promptArg == nil {
 		// Only create stdin pipe if we need to send messages via stdin
 		t.stdin, err = t.cmd.StdinPipe()
 		if err != nil {
-			return fmt.Errorf("failed to create stdin pipe: %w", err)
+			return pkgerrors.ErrCreateStdinPipeFailed(err)
 		}
 	}
 
 	t.stdout, err = t.cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("failed to create stdout pipe: %w", err)
+		return pkgerrors.ErrCreateStdoutPipeFailed(err)
 	}
 
 	// Isolate stderr using temporary file to prevent deadlocks
 	// This matches Python SDK pattern to avoid subprocess pipe deadlocks
 	t.stderr, err = os.CreateTemp("", "claude_stderr_*.log")
 	if err != nil {
-		return fmt.Errorf("failed to create stderr file: %w", err)
+		return pkgerrors.ErrCreateStderrFileFailed(err)
 	}
+
 	t.cmd.Stderr = t.stderr
 
+	return nil
+}
+
+// Connect starts the Claude CLI subprocess.
+func (t *Transport) Connect(ctx context.Context) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.connected {
+		return errors.New("transport already connected")
+	}
+
+	// Set up command and working directory
+	t.setupCommand(ctx)
+
+	// Set up I/O pipes
+	err := t.setupIOPipes()
+	if err != nil {
+		return err
+	}
+
 	// Start the process
-	if err := t.cmd.Start(); err != nil {
+	err = t.cmd.Start()
+	if err != nil {
 		t.cleanup()
+
 		return shared.NewConnectionError(
 			fmt.Sprintf("failed to start Claude CLI: %v", err),
 			err,
@@ -158,14 +180,23 @@ func (t *Transport) Connect(ctx context.Context) error {
 	}
 
 	// Set up context for goroutine management
-	t.ctx, t.cancel = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	t.cancel = cancel
+	t.done = make(chan struct{})
 
 	// Initialize channels
 	t.msgChan = make(chan shared.Message, channelBufferSize)
 	t.errChan = make(chan error, channelBufferSize)
 
+	// Close done channel when context is cancelled
+	go func() {
+		<-ctx.Done()
+		close(t.done)
+	}()
+
 	// Start I/O handling goroutines
 	t.wg.Add(1)
+
 	go t.handleStdout()
 
 	// Note: Do NOT close stdin here for one-shot mode
@@ -173,6 +204,7 @@ func (t *Transport) Connect(ctx context.Context) error {
 	// stdin will be closed after sending the message in SendMessage()
 
 	t.connected = true
+
 	return nil
 }
 
@@ -188,7 +220,7 @@ func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessag
 	}
 
 	if !t.connected || t.stdin == nil {
-		return fmt.Errorf("transport not connected or stdin closed")
+		return errors.New("transport not connected or stdin closed")
 	}
 
 	// Check context cancellation
@@ -201,13 +233,13 @@ func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessag
 	// Serialize message to JSON
 	data, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf("failed to marshal message: %w", err)
+		return pkgerrors.ErrMarshalMessageFailed(err)
 	}
 
 	// Send with newline
 	_, err = t.stdin.Write(append(data, '\n'))
 	if err != nil {
-		return fmt.Errorf("failed to write message: %w", err)
+		return pkgerrors.ErrWriteMessageFailed(err)
 	}
 
 	// For one-shot mode, close stdin after sending the message
@@ -228,8 +260,10 @@ func (t *Transport) ReceiveMessages(_ context.Context) (<-chan shared.Message, <
 		// Return closed channels if not connected
 		msgChan := make(chan shared.Message)
 		errChan := make(chan error)
+
 		close(msgChan)
 		close(errChan)
+
 		return msgChan, errChan
 	}
 
@@ -242,12 +276,12 @@ func (t *Transport) Interrupt(_ context.Context) error {
 	defer t.mu.RUnlock()
 
 	if !t.connected || t.cmd == nil || t.cmd.Process == nil {
-		return fmt.Errorf("process not running")
+		return errors.New("process not running")
 	}
 
 	// Windows doesn't support os.Interrupt signal
 	if runtime.GOOS == windowsOS {
-		return fmt.Errorf("interrupt not supported by windows")
+		return errors.New("interrupt not supported by windows")
 	}
 
 	// Send interrupt signal (Unix/Linux/macOS)
@@ -278,6 +312,7 @@ func (t *Transport) Close() error {
 
 	// Wait for goroutines to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		t.wg.Wait()
 		close(done)
@@ -304,7 +339,7 @@ func (t *Transport) Close() error {
 }
 
 // handleStdout processes stdout in a separate goroutine
-// BUFFER OVERFLOW FIX: Use custom scanner with larger buffer
+// BUFFER OVERFLOW FIX: Use custom scanner with larger buffer.
 func (t *Transport) handleStdout() {
 	defer t.wg.Done()
 	defer close(t.msgChan)
@@ -317,7 +352,7 @@ func (t *Transport) handleStdout() {
 
 	for scanner.Scan() {
 		select {
-		case <-t.ctx.Done():
+		case <-t.done:
 			return
 		default:
 		}
@@ -332,9 +367,10 @@ func (t *Transport) handleStdout() {
 		if err != nil {
 			select {
 			case t.errChan <- err:
-			case <-t.ctx.Done():
+			case <-t.done:
 				return
 			}
+
 			continue
 		}
 
@@ -343,17 +379,18 @@ func (t *Transport) handleStdout() {
 			if msg != nil {
 				select {
 				case t.msgChan <- msg:
-				case <-t.ctx.Done():
+				case <-t.done:
 					return
 				}
 			}
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
+	err := scanner.Err()
+	if err != nil {
 		select {
-		case t.errChan <- fmt.Errorf("stdout scanner error: %w", err):
-		case <-t.ctx.Done():
+		case t.errChan <- pkgerrors.ErrStdoutScannerFailed(err):
+		case <-t.done:
 		}
 	}
 }
@@ -364,21 +401,19 @@ func isProcessAlreadyFinishedError(err error) bool {
 	if err == nil {
 		return false
 	}
+
 	errStr := err.Error()
+
 	return strings.Contains(errStr, "process already finished") ||
 		strings.Contains(errStr, "process already released") ||
 		strings.Contains(errStr, "no child processes") ||
 		strings.Contains(errStr, "signal: killed")
 }
 
-// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence
-func (t *Transport) terminateProcess() error {
-	if t.cmd == nil || t.cmd.Process == nil {
-		return nil
-	}
-
-	// Send SIGTERM
-	if err := t.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+// sendTerminationSignal sends SIGTERM to the process and handles failures.
+func (t *Transport) sendTerminationSignal() error {
+	err := t.cmd.Process.Signal(syscall.SIGTERM)
+	if err != nil {
 		// If process is already finished, that's success
 		if isProcessAlreadyFinishedError(err) {
 			return nil
@@ -388,13 +423,30 @@ func (t *Transport) terminateProcess() error {
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
+
 		return nil // Don't return error for expected termination
+	}
+
+	return nil
+}
+
+// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence.
+func (t *Transport) terminateProcess() error {
+	if t.cmd == nil || t.cmd.Process == nil {
+		return nil
+	}
+
+	// Send SIGTERM
+	err := t.sendTerminationSignal()
+	if err != nil {
+		return err
 	}
 
 	// Wait exactly 5 seconds
 	done := make(chan error, 1)
 	// Capture cmd while we know it's valid to avoid data race
 	cmd := t.cmd
+
 	go func() {
 		done <- cmd.Wait()
 	}()
@@ -408,28 +460,33 @@ func (t *Transport) terminateProcess() error {
 				return nil // Expected signal termination
 			}
 		}
+
 		return err
 	case <-time.After(terminationTimeoutSeconds * time.Second):
 		// Force kill after 5 seconds
-		if killErr := t.cmd.Process.Kill(); killErr != nil && !isProcessAlreadyFinishedError(killErr) {
+		killErr := t.cmd.Process.Kill()
+		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
 		// Wait for process to exit after kill
 		<-done
+
 		return nil
-	case <-t.ctx.Done():
+	case <-t.done:
 		// Context canceled - force kill immediately
-		if killErr := t.cmd.Process.Kill(); killErr != nil && !isProcessAlreadyFinishedError(killErr) {
+		killErr := t.cmd.Process.Kill()
+		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
 			return killErr
 		}
 		// Wait for process to exit after kill, but don't return context error
 		// since this is normal cleanup behavior
 		<-done
+
 		return nil
 	}
 }
 
-// cleanup cleans up all resources
+// cleanup cleans up all resources.
 func (t *Transport) cleanup() {
 	if t.stdout != nil {
 		_ = t.stdout.Close()

@@ -26,16 +26,26 @@ type JSONDecodeError = shared.JSONDecodeError
 type MessageParseError = shared.MessageParseError
 
 // NewConnectionError creates a new connection error.
-var NewConnectionError = shared.NewConnectionError
+func NewConnectionError(message string, cause error) *ConnectionError {
+	return shared.NewConnectionError(message, cause)
+}
 
 // NewCLINotFoundError creates a new CLI not found error.
-var NewCLINotFoundError = shared.NewCLINotFoundError
+func NewCLINotFoundError(path, message string) *CLINotFoundError {
+	return shared.NewCLINotFoundError(path, message)
+}
 
 // NewProcessError creates a new process error.
-var NewProcessError = shared.NewProcessError
+func NewProcessError(message string, exitCode int, stderr string) *ProcessError {
+	return shared.NewProcessError(message, exitCode, stderr)
+}
 
 // NewJSONDecodeError creates a new JSON decode error.
-var NewJSONDecodeError = shared.NewJSONDecodeError
+func NewJSONDecodeError(line string, position int, cause error) *JSONDecodeError {
+	return shared.NewJSONDecodeError(line, position, cause)
+}
 
 // NewMessageParseError creates a new message parse error.
-var NewMessageParseError = shared.NewMessageParseError
+func NewMessageParseError(message string, data any) *MessageParseError {
+	return shared.NewMessageParseError(message, data)
+}

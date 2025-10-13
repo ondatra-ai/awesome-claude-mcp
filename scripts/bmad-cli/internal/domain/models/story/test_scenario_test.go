@@ -1,7 +1,9 @@
-package story
+package story_test
 
 import (
 	"testing"
+
+	"bmad-cli/internal/domain/models/story"
 
 	"gopkg.in/yaml.v3"
 )
@@ -10,38 +12,40 @@ func TestStepStatementUnmarshal(t *testing.T) {
 	tests := []struct {
 		name     string
 		yaml     string
-		expected StepStatement
+		expected story.StepStatement
 	}{
 		{
 			name:     "plain string",
 			yaml:     `"Server is ready"`,
-			expected: StepStatement{Type: "", Statement: "Server is ready"},
+			expected: story.StepStatement{Type: "", Statement: "Server is ready"},
 		},
 		{
 			name:     "and modifier",
 			yaml:     `and: "Authentication configured"`,
-			expected: StepStatement{Type: ModifierTypeAnd, Statement: "Authentication configured"},
+			expected: story.StepStatement{Type: story.ModifierTypeAnd, Statement: "Authentication configured"},
 		},
 		{
 			name:     "but modifier",
 			yaml:     `but: "No requests made"`,
-			expected: StepStatement{Type: ModifierTypeBut, Statement: "No requests made"},
+			expected: story.StepStatement{Type: story.ModifierTypeBut, Statement: "No requests made"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var stmt StepStatement
-			err := yaml.Unmarshal([]byte(tt.yaml), &stmt)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			var stmt story.StepStatement
+
+			err := yaml.Unmarshal([]byte(testCase.yaml), &stmt)
 			if err != nil {
 				t.Fatalf("Unmarshal error: %v", err)
 			}
 
-			if stmt.Type != tt.expected.Type {
-				t.Errorf("Type = %v, want %v", stmt.Type, tt.expected.Type)
+			if stmt.Type != testCase.expected.Type {
+				t.Errorf("Type = %v, want %v", stmt.Type, testCase.expected.Type)
 			}
-			if stmt.Statement != tt.expected.Statement {
-				t.Errorf("Statement = %v, want %v", stmt.Statement, tt.expected.Statement)
+
+			if stmt.Statement != testCase.expected.Statement {
+				t.Errorf("Statement = %v, want %v", stmt.Statement, testCase.expected.Statement)
 			}
 		})
 	}
@@ -59,7 +63,8 @@ then:
   - and: "Welcome message sent"
 `
 
-	var step ScenarioStep
+	var step story.ScenarioStep
+
 	err := yaml.Unmarshal([]byte(yamlData), &step)
 	if err != nil {
 		t.Fatalf("Unmarshal error: %v", err)
@@ -69,13 +74,16 @@ then:
 	if len(step.Given) != 2 {
 		t.Errorf("Given length = %d, want 2", len(step.Given))
 	}
+
 	if step.Given[0].Type != "" {
 		t.Errorf("Given[0].Type = %v, want empty", step.Given[0].Type)
 	}
+
 	if step.Given[0].Statement != "Server is ready to accept connections" {
 		t.Errorf("Given[0].Statement = %v", step.Given[0].Statement)
 	}
-	if step.Given[1].Type != ModifierTypeAnd {
+
+	if step.Given[1].Type != story.ModifierTypeAnd {
 		t.Errorf("Given[1].Type = %v, want and", step.Given[1].Type)
 	}
 

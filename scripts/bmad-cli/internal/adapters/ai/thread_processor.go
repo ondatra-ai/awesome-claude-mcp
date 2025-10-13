@@ -2,7 +2,6 @@ package ai
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -35,15 +34,18 @@ func NewThreadProcessor(
 	}
 }
 
-func (tp *ThreadProcessor) AnalyzeThread(ctx context.Context, threadContext models.ThreadContext) (models.HeuristicAnalysisResult, error) {
+func (tp *ThreadProcessor) AnalyzeThread(
+	ctx context.Context,
+	threadContext models.ThreadContext,
+) (models.HeuristicAnalysisResult, error) {
 	prompt, err := tp.heuristicBuilder.Build(threadContext)
 	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to build heuristic prompt: %w", err)
+		return models.HeuristicAnalysisResult{}, errors.ErrBuildHeuristicPromptFailed(err)
 	}
 
 	rawOutput, err := tp.client.ExecutePromptWithSystem(ctx, "", prompt, "sonnet", tp.modeFactory.GetThinkMode())
 	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("AI client execution failed: %w", err)
+		return models.HeuristicAnalysisResult{}, errors.ErrAIClientExecutionFailed(err)
 	}
 
 	if strings.TrimSpace(rawOutput) == "" {
@@ -52,7 +54,7 @@ func (tp *ThreadProcessor) AnalyzeThread(ctx context.Context, threadContext mode
 
 	result, err := tp.yamlParser.ParseHeuristicResult(rawOutput)
 	if err != nil {
-		return models.HeuristicAnalysisResult{}, fmt.Errorf("failed to parse %s output: %w", tp.client.Name(), err)
+		return models.HeuristicAnalysisResult{}, errors.ErrParseAIOutputFailed(tp.client.Name(), err)
 	}
 
 	return result, nil
@@ -61,24 +63,26 @@ func (tp *ThreadProcessor) AnalyzeThread(ctx context.Context, threadContext mode
 func (tp *ThreadProcessor) ImplementChanges(ctx context.Context, threadContext models.ThreadContext) (string, error) {
 	prompt, err := tp.implementationBuilder.Build(threadContext)
 	if err != nil {
-		return "", fmt.Errorf("failed to build implementation prompt: %w", err)
+		return "", errors.ErrBuildImplementationPromptFailed(err)
 	}
 
 	slog.Debug("Implementation prompt", "client", tp.client.Name(), "prompt", prompt)
 
 	rawOutput, err := tp.client.ExecutePromptWithSystem(ctx, "", prompt, "sonnet", tp.modeFactory.GetThinkMode())
 	if err != nil {
-		return "", fmt.Errorf("AI client implementation failed: %w", err)
+		return "", errors.ErrAIClientImplementationFailed(err)
 	}
 
 	slog.Debug("Implementation output", "client", tp.client.Name(), "output", rawOutput)
 
 	// Extract first line as summary
 	lines := strings.Split(rawOutput, "\n")
+
 	summary := ""
 	if len(lines) > 0 {
 		summary = strings.TrimSpace(lines[0])
 	}
+
 	if summary == "" {
 		summary = "Applied changes as requested"
 	}

@@ -1,8 +1,8 @@
 package story
 
 type Task struct {
-	Name               string   `yaml:"name" json:"name"`
-	AcceptanceCriteria []string `yaml:"acceptance_criteria" json:"acceptance_criteria"`
-	Subtasks           []string `yaml:"subtasks" json:"subtasks"`
-	Status             string   `yaml:"status" json:"status"`
+	Name               string   `json:"name"                yaml:"name"`
+	AcceptanceCriteria []string `json:"acceptance_criteria" yaml:"acceptance_criteria"`
+	Subtasks           []string `json:"subtasks"            yaml:"subtasks"`
+	Status             string   `json:"status"              yaml:"status"`
 }

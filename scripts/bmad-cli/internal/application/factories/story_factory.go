@@ -2,7 +2,6 @@ package factories
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -14,24 +13,25 @@ import (
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
-// TaskGenerator interface for generating tasks
+// TaskGenerator interface for generating tasks.
 type TaskGenerator interface {
 	GenerateTasks(ctx context.Context, storyDoc *story.StoryDocument) ([]story.Task, error)
 }
 
-// DevNotesGenerator interface for generating dev notes
+// DevNotesGenerator interface for generating dev notes.
 type DevNotesGenerator interface {
 	GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument) (story.DevNotes, error)
 }
 
-// QAResultsGenerator interface for generating QA results
+// QAResultsGenerator interface for generating QA results.
 type QAResultsGenerator interface {
 	GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument) (story.QAResults, error)
 }
 
-// TestingRequirementsGenerator interface for generating testing requirements
+// TestingRequirementsGenerator interface for generating testing requirements.
 type TestingRequirementsGenerator interface {
 	GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument) (story.Testing, error)
 }
@@ -44,7 +44,13 @@ type StoryFactory struct {
 	runDirectory       *fs.RunDirectory
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDirectory *fs.RunDirectory) *StoryFactory {
+func NewStoryFactory(
+	epicLoader *epic.EpicLoader,
+	aiClient ports.AIPort,
+	config *config.ViperConfig,
+	architectureLoader *docs.ArchitectureLoader,
+	runDirectory *fs.RunDirectory,
+) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,
@@ -58,13 +64,13 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Load story from epic file - fail if not found
 	loadedStory, err := f.epicLoader.LoadStoryFromEpic(storyNumber)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load story from epic file: %w", err)
+		return nil, pkgerrors.ErrLoadStoryFromEpicFailed(err)
 	}
 
 	// Load architecture documents once for all generators
 	architectureDocs, err := f.architectureLoader.LoadAllArchitectureDocsStruct()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture documents: %w", err)
+		return nil, pkgerrors.ErrLoadArchitectureDocsFailed(err)
 	}
 
 	// Create initial story document with all required data
@@ -100,36 +106,41 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	// Generate tasks using AI - fail on any error
 	tasks, err := taskGenerator.GenerateTasks(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate tasks: %w", err)
+		return nil, pkgerrors.ErrGenerateTasksFailed(err)
 	}
+
 	storyDoc.Tasks = tasks
 
 	// Generate dev_notes using AI - fail on any error
 	devNotes, err := devNotesGenerator.GenerateDevNotes(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate dev_notes: %w", err)
+		return nil, pkgerrors.ErrGenerateDevNotesFailed(err)
 	}
+
 	storyDoc.DevNotes = devNotes
 
 	// Generate testing requirements using AI - fail on any error
 	testing, err := testingGenerator.GenerateTesting(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate testing requirements: %w", err)
+		return nil, pkgerrors.ErrGenerateTestingReqsFailed(err)
 	}
+
 	storyDoc.Testing = testing
 
 	// Generate test scenarios using AI - fail on any error
 	scenarios, err := scenariosGenerator.GenerateScenarios(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate test scenarios: %w", err)
+		return nil, pkgerrors.ErrGenerateTestScenariosFailed(err)
 	}
+
 	storyDoc.Scenarios = scenarios
 
 	// Generate QA results using AI - fail on any error
 	qaResults, err := qaResultsGenerator.GenerateQAResults(ctx, storyDoc, runDirPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate QA results: %w", err)
+		return nil, pkgerrors.ErrGenerateQAFailed(err)
 	}
+
 	storyDoc.QAResults = &qaResults
 
 	return storyDoc, nil
@@ -141,10 +152,11 @@ func (f *StoryFactory) SlugifyTitle(title string) string {
 	slug = regexp.MustCompile(`[^\w\s-]`).ReplaceAllString(slug, "")
 	slug = regexp.MustCompile(`[\s_-]+`).ReplaceAllString(slug, "-")
 	slug = strings.Trim(slug, "-")
+
 	return slug
 }
 
-// GetTmpDirPath returns the run-specific directory path for this execution
+// GetTmpDirPath returns the run-specific directory path for this execution.
 func (f *StoryFactory) GetTmpDirPath() string {
 	if f.runDirectory != nil {
 		return f.runDirectory.GetTmpOutPath()
@@ -153,7 +165,7 @@ func (f *StoryFactory) GetTmpDirPath() string {
 	return f.config.GetString("paths.tmp_dir")
 }
 
-// GetStoriesDir returns the configured stories output directory path
+// GetStoriesDir returns the configured stories output directory path.
 func (f *StoryFactory) GetStoriesDir() string {
 	return f.config.GetString("paths.stories_dir")
 }

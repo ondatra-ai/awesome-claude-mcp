@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"bmad-cli/internal/domain/models"
+	"bmad-cli/internal/pkg/errors"
 )
 
 type TemplateEngine struct {
@@ -15,6 +16,7 @@ type TemplateEngine struct {
 
 func NewTemplateEngine() *TemplateEngine {
 	loader := NewPromptFileLoader("")
+
 	return &TemplateEngine{loader: loader}
 }
 
@@ -26,7 +28,10 @@ type TemplateData struct {
 	ChecklistMD      string
 }
 
-func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templatePath, checklistPath string) (string, error) {
+func (e *TemplateEngine) BuildFromTemplate(
+	threadCtx models.ThreadContext,
+	templatePath, checklistPath string,
+) (string, error) {
 	templateContent, err := e.loader.LoadTemplate(templatePath)
 	if err != nil {
 		return "", err
@@ -42,7 +47,7 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 
 	tmpl, err := template.New("prompt").Parse(templateContent)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
+		return "", errors.ErrParseTemplateFailed(err)
 	}
 
 	data := TemplateData{
@@ -54,9 +59,10 @@ func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templ
 	}
 
 	var buf bytes.Buffer
+
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
+		return "", errors.ErrExecuteTemplateFailed(err)
 	}
 
 	return buf.String(), nil
@@ -69,6 +75,7 @@ func (e *TemplateEngine) joinAllComments(thread models.Thread) string {
 		if i > 0 {
 			builder.WriteString("\n---\n")
 		}
+
 		builder.WriteString(comment.Body)
 	}
 

@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/application/commands"
@@ -13,6 +11,7 @@ import (
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 type Container struct {
@@ -26,7 +25,7 @@ type Container struct {
 func NewContainer() (*Container, error) {
 	cfg, err := config.NewViperConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize config: %w", err)
+		return nil, pkgerrors.ErrInitializeConfigFailed(err)
 	}
 
 	configureLogging()
@@ -34,7 +33,7 @@ func NewContainer() (*Container, error) {
 	// Create run directory once for entire CLI execution
 	runDir, err := fs.NewRunDirectory(cfg.GetString("paths.tmp_dir"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create run directory: %w", err)
+		return nil, pkgerrors.ErrCreateRunDirectoryFailed(err)
 	}
 
 	shellExec := shell.NewCommandRunner()
@@ -50,7 +49,7 @@ func NewContainer() (*Container, error) {
 	// Setup AI task generation - required for operation
 	claudeClient, err := ai.NewClaudeClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AI client: %w", err)
+		return nil, pkgerrors.ErrCreateAIClientFailed(err)
 	}
 
 	// Setup user story creation command - required for operation

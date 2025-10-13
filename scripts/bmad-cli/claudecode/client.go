@@ -2,12 +2,13 @@ package claudecode
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"sync"
 
 	"bmad-cli/claudecode/internal/cli"
 	"bmad-cli/claudecode/internal/subprocess"
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 const defaultSessionID = "default"
@@ -41,12 +42,14 @@ func NewClient(opts ...Option) Client {
 	client := &ClientImpl{
 		options: options,
 	}
+
 	return client
 }
 
 // NewClientWithTransport creates a new Client with a custom transport (for testing).
 func NewClientWithTransport(transport Transport, opts ...Option) Client {
 	options := NewOptions(opts...)
+
 	return &ClientImpl{
 		customTransport: transport,
 		options:         options,
@@ -86,39 +89,41 @@ func NewClientWithTransport(transport Transport, opts ...Option) Client {
 //	}, claudecode.WithSystemPrompt("You are a helpful math tutor"),
 //	   claudecode.WithAllowedTools("Read", "Write"))
 //
-// The client will be automatically connected before fn is called and disconnected after fn returns,
-// even if fn returns an error or panics. This provides 100% functional parity with Python SDK's
+// The client will be automatically connected before callback is called and disconnected after callback returns,
+// even if callback returns an error or panics. This provides 100% functional parity with Python SDK's
 // 'async with ClaudeSDKClient()' pattern while using idiomatic Go resource management.
 //
 // Parameters:
 //   - ctx: Context for connection management and cancellation
-//   - fn: Function to execute with the connected client
+//   - callback: Function to execute with the connected client
 //   - opts: Optional client configuration options
 //
-// Returns an error if connection fails or if fn returns an error.
-// Disconnect errors are handled gracefully without overriding the original error from fn.
-func WithClient(ctx context.Context, fn func(Client) error, opts ...Option) error {
+// Returns an error if connection fails or if callback returns an error.
+// Disconnect errors are handled gracefully without overriding the original error from callback.
+func WithClient(ctx context.Context, callback func(Client) error, opts ...Option) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
 	client := NewClient(opts...)
 
-	if err := client.Connect(ctx); err != nil {
-		return fmt.Errorf("failed to connect client: %w", err)
+	err := client.Connect(ctx)
+	if err != nil {
+		return pkgerrors.ErrConnectClientFailed(err)
 	}
 
 	defer func() {
 		// Following Go idiom: cleanup errors don't override the original error
 		// This matches patterns in database/sql, os.File, and other stdlib packages
-		if disconnectErr := client.Disconnect(); disconnectErr != nil {
+		disconnectErr := client.Disconnect()
+		if disconnectErr != nil {
 			// Log cleanup errors but don't return them to preserve the original error
 			// This follows the standard Go pattern for resource cleanup
 			_ = disconnectErr // Explicitly acknowledge we're ignoring this error
 		}
 	}()
 
-	return fn(client)
+	return callback(client)
 }
 
 // WithClientTransport provides Go-idiomatic resource management with a custom transport for testing.
@@ -134,65 +139,33 @@ func WithClient(ctx context.Context, fn func(Client) error, opts ...Option) erro
 // Parameters:
 //   - ctx: Context for connection management and cancellation
 //   - transport: Custom transport to use (typically a mock for testing)
-//   - fn: Function to execute with the connected client
+//   - callback: Function to execute with the connected client
 //   - opts: Optional client configuration options
 //
-// Returns an error if connection fails or if fn returns an error.
-// Disconnect errors are handled gracefully without overriding the original error from fn.
-func WithClientTransport(ctx context.Context, transport Transport, fn func(Client) error, opts ...Option) error {
+// Returns an error if connection fails or if callback returns an error.
+// Disconnect errors are handled gracefully without overriding the original error from callback.
+func WithClientTransport(ctx context.Context, transport Transport, callback func(Client) error, opts ...Option) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
 
 	client := NewClientWithTransport(transport, opts...)
 
-	if err := client.Connect(ctx); err != nil {
-		return fmt.Errorf("failed to connect client: %w", err)
+	err := client.Connect(ctx)
+	if err != nil {
+		return pkgerrors.ErrConnectClientFailed(err)
 	}
 
 	defer func() {
 		// Following Go idiom: cleanup errors don't override the original error
-		if disconnectErr := client.Disconnect(); disconnectErr != nil {
+		disconnectErr := client.Disconnect()
+		if disconnectErr != nil {
 			// Log cleanup errors but don't return them to preserve the original error
 			_ = disconnectErr // Explicitly acknowledge we're ignoring this error
 		}
 	}()
 
-	return fn(client)
-}
-
-// validateOptions validates the client configuration options
-func (c *ClientImpl) validateOptions() error {
-	if c.options == nil {
-		return nil // Nil options are acceptable (use defaults)
-	}
-
-	// Validate working directory
-	if c.options.Cwd != nil {
-		if _, err := os.Stat(*c.options.Cwd); os.IsNotExist(err) {
-			return fmt.Errorf("working directory does not exist: %s", *c.options.Cwd)
-		}
-	}
-
-	// Validate max turns
-	if c.options.MaxTurns < 0 {
-		return fmt.Errorf("max_turns must be non-negative, got: %d", c.options.MaxTurns)
-	}
-
-	// Validate permission mode
-	if c.options.PermissionMode != nil {
-		validModes := map[PermissionMode]bool{
-			PermissionModeDefault:           true,
-			PermissionModeAcceptEdits:       true,
-			PermissionModePlan:              true,
-			PermissionModeBypassPermissions: true,
-		}
-		if !validModes[*c.options.PermissionMode] {
-			return fmt.Errorf("invalid permission mode: %s", string(*c.options.PermissionMode))
-		}
-	}
-
-	return nil
+	return callback(client)
 }
 
 // Connect establishes a connection to the Claude Code CLI.
@@ -211,8 +184,9 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	}
 
 	// Validate configuration before connecting
-	if err := c.validateOptions(); err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
+	err := c.validateOptions()
+	if err != nil {
+		return pkgerrors.ErrInvalidConfigurationError(err)
 	}
 
 	// Use custom transport if provided, otherwise create default
@@ -222,7 +196,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 		// Create default subprocess transport directly (like Python SDK)
 		cliPath, err := cli.FindCLI()
 		if err != nil {
-			return fmt.Errorf("claude CLI not found: %w", err)
+			return pkgerrors.ErrCLINotFoundError(err)
 		}
 
 		// Create subprocess transport for streaming mode (closeStdin=false)
@@ -230,14 +204,16 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	}
 
 	// Connect the transport
-	if err := c.transport.Connect(ctx); err != nil {
-		return fmt.Errorf("failed to connect transport: %w", err)
+	err = c.transport.Connect(ctx)
+	if err != nil {
+		return pkgerrors.ErrConnectTransportFailed(err)
 	}
 
 	// Get message channels
 	c.msgChan, c.errChan = c.transport.ReceiveMessages(ctx)
 
 	c.connected = true
+
 	return nil
 }
 
@@ -247,14 +223,17 @@ func (c *ClientImpl) Disconnect() error {
 	defer c.mu.Unlock()
 
 	if c.transport != nil && c.connected {
-		if err := c.transport.Close(); err != nil {
-			return fmt.Errorf("failed to close transport: %w", err)
+		err := c.transport.Close()
+		if err != nil {
+			return pkgerrors.ErrCloseTransportFailed(err)
 		}
 	}
+
 	c.connected = false
 	c.transport = nil
 	c.msgChan = nil
 	c.errChan = nil
+
 	return nil
 }
 
@@ -284,44 +263,8 @@ func (c *ClientImpl) QueryWithSession(ctx context.Context, prompt string, sessio
 	if sessionID == "" {
 		sessionID = defaultSessionID
 	}
+
 	return c.queryWithSession(ctx, prompt, sessionID)
-}
-
-// queryWithSession is the internal implementation for sending queries with session management.
-func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessionID string) error {
-	// Check context before proceeding
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	// Check connection status with read lock
-	c.mu.RLock()
-	connected := c.connected
-	transport := c.transport
-	c.mu.RUnlock()
-
-	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
-	}
-
-	// Check context again after acquiring connection info
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	// Create user message in Python SDK compatible format
-	streamMsg := StreamMessage{
-		Type: "user",
-		Message: map[string]interface{}{
-			"role":    "user",
-			"content": prompt,
-		},
-		ParentToolUseID: nil,
-		SessionID:       sessionID,
-	}
-
-	// Send message via transport (without holding mutex to avoid blocking other operations)
-	return transport.SendMessage(ctx, streamMsg)
 }
 
 // QueryStream sends a stream of messages.
@@ -333,7 +276,7 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
+		return errors.New("client not connected")
 	}
 
 	// Send messages from channel in a goroutine
@@ -344,7 +287,9 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 				if !ok {
 					return // Channel closed
 				}
-				if err := transport.SendMessage(ctx, msg); err != nil {
+
+				err := transport.SendMessage(ctx, msg)
+				if err != nil {
 					// Log error but continue processing
 					return
 				}
@@ -369,6 +314,7 @@ func (c *ClientImpl) ReceiveMessages(_ context.Context) <-chan Message {
 		// Return closed channel if not connected
 		closedChan := make(chan Message)
 		close(closedChan)
+
 		return closedChan
 	}
 
@@ -410,13 +356,85 @@ func (c *ClientImpl) Interrupt(ctx context.Context) error {
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return fmt.Errorf("client not connected")
+		return errors.New("client not connected")
 	}
 
 	return transport.Interrupt(ctx)
 }
 
-// clientIterator implements MessageIterator for client message reception
+// validateOptions validates the client configuration options.
+func (c *ClientImpl) validateOptions() error {
+	if c.options == nil {
+		return nil // Nil options are acceptable (use defaults)
+	}
+
+	// Validate working directory
+	if c.options.Cwd != nil {
+		_, err := os.Stat(*c.options.Cwd)
+		if os.IsNotExist(err) {
+			return pkgerrors.ErrWorkingDirectoryDoesNotExist(*c.options.Cwd)
+		}
+	}
+
+	// Validate max turns
+	if c.options.MaxTurns < 0 {
+		return pkgerrors.ErrMaxTurnsMustBeNonNegative(c.options.MaxTurns)
+	}
+
+	// Validate permission mode
+	if c.options.PermissionMode != nil {
+		validModes := map[PermissionMode]bool{
+			PermissionModeDefault:           true,
+			PermissionModeAcceptEdits:       true,
+			PermissionModePlan:              true,
+			PermissionModeBypassPermissions: true,
+		}
+		if !validModes[*c.options.PermissionMode] {
+			return pkgerrors.ErrInvalidPermissionModeValue(string(*c.options.PermissionMode))
+		}
+	}
+
+	return nil
+}
+
+// queryWithSession sends a query message with an explicit session ID.
+func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessionID string) error {
+	// Check context before proceeding
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	// Check connection status with read lock
+	c.mu.RLock()
+	connected := c.connected
+	transport := c.transport
+	c.mu.RUnlock()
+
+	if !connected || transport == nil {
+		return errors.New("client not connected")
+	}
+
+	// Check context again after acquiring connection info
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	// Create user message in Python SDK compatible format
+	streamMsg := StreamMessage{
+		Type: "user",
+		Message: map[string]interface{}{
+			"role":    "user",
+			"content": prompt,
+		},
+		ParentToolUseID: nil,
+		SessionID:       sessionID,
+	}
+
+	// Send message via transport (without holding mutex to avoid blocking other operations)
+	return transport.SendMessage(ctx, streamMsg)
+}
+
+// clientIterator implements MessageIterator for client message reception.
 type clientIterator struct {
 	msgChan <-chan Message
 	errChan <-chan error
@@ -432,19 +450,24 @@ func (ci *clientIterator) Next(ctx context.Context) (Message, error) {
 	case msg, ok := <-ci.msgChan:
 		if !ok {
 			ci.closed = true
+
 			return nil, ErrNoMoreMessages
 		}
+
 		return msg, nil
 	case err := <-ci.errChan:
 		ci.closed = true
+
 		return nil, err
 	case <-ctx.Done():
 		ci.closed = true
+
 		return nil, ctx.Err()
 	}
 }
 
 func (ci *clientIterator) Close() error {
 	ci.closed = true
+
 	return nil
 }

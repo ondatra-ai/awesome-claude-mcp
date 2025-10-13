@@ -17,6 +17,7 @@ func NewHeuristicPromptBuilder(engine *TemplateEngine, config *config.ViperConfi
 func (b *HeuristicPromptBuilder) Build(threadCtx models.ThreadContext) (string, error) {
 	templatePath := b.config.GetString("templates.prompts.heuristic")
 	checklistPath := b.config.GetString("templates.checklists.triage_heuristic")
+
 	return b.engine.BuildFromTemplate(
 		threadCtx,
 		templatePath,

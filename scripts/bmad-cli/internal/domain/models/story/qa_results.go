@@ -1,9 +1,9 @@
 package story
 
 type QAResults struct {
-	ReviewDate    string     `yaml:"review_date" json:"review_date"`
-	ReviewedBy    string     `yaml:"reviewed_by" json:"reviewed_by"`
-	Assessment    Assessment `yaml:"assessment" json:"assessment"`
-	GateStatus    string     `yaml:"gate_status" json:"gate_status"`
-	GateReference string     `yaml:"gate_reference" json:"gate_reference"`
+	ReviewDate    string     `json:"review_date"    yaml:"review_date"`
+	ReviewedBy    string     `json:"reviewed_by"    yaml:"reviewed_by"`
+	Assessment    Assessment `json:"assessment"     yaml:"assessment"`
+	GateStatus    string     `json:"gate_status"    yaml:"gate_status"`
+	GateReference string     `json:"gate_reference" yaml:"gate_reference"`
 }

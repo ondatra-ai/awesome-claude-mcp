@@ -1,19 +1,19 @@
 package docs
 
 import (
-	"fmt"
 	"os"
 
 	"bmad-cli/internal/infrastructure/config"
+	"bmad-cli/internal/pkg/errors"
 )
 
-// ArchitectureDoc represents an architecture document with content and file path
+// ArchitectureDoc represents an architecture document with content and file path.
 type ArchitectureDoc struct {
 	Content  string
 	FilePath string
 }
 
-// ArchitectureDocs represents all loaded architecture documents
+// ArchitectureDocs represents all loaded architecture documents.
 type ArchitectureDocs struct {
 	Architecture         ArchitectureDoc
 	FrontendArchitecture ArchitectureDoc
@@ -22,19 +22,19 @@ type ArchitectureDocs struct {
 	TechStack            ArchitectureDoc
 }
 
-// ArchitectureLoader loads architecture documents using configured paths
+// ArchitectureLoader loads architecture documents using configured paths.
 type ArchitectureLoader struct {
 	config *config.ViperConfig
 }
 
-// NewArchitectureLoader creates a new ArchitectureLoader instance
+// NewArchitectureLoader creates a new ArchitectureLoader instance.
 func NewArchitectureLoader(config *config.ViperConfig) *ArchitectureLoader {
 	return &ArchitectureLoader{
 		config: config,
 	}
 }
 
-// LoadAllArchitectureDocs loads all architecture documents and returns them as a map
+// LoadAllArchitectureDocs loads all architecture documents and returns them as a map.
 func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureDoc, error) {
 	docs := make(map[string]ArchitectureDoc)
 
@@ -51,13 +51,14 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 	for key, configKey := range docConfigKeys {
 		filepath := l.config.GetString(configKey)
 		if filepath == "" {
-			return nil, fmt.Errorf("document path not configured for key: %s", configKey)
+			return nil, errors.ErrDocumentPathNotConfigured(configKey)
 		}
 
 		content, err := l.loadDocument(filepath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to load required architecture document %s (from %s): %w", configKey, filepath, err)
+			return nil, errors.ErrLoadDocumentFailed(configKey, filepath, err)
 		}
+
 		docs[key] = ArchitectureDoc{
 			Content:  content,
 			FilePath: filepath,
@@ -67,36 +68,36 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocs() (map[string]ArchitectureD
 	return docs, nil
 }
 
-// LoadAllArchitectureDocsStruct loads all architecture documents and returns them as a struct
+// LoadAllArchitectureDocsStruct loads all architecture documents and returns them as a struct.
 func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs, error) {
 	// Load architecture document
 	archContent, err := l.loadDocumentWithPath("documents.architecture")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load architecture document: %w", err)
+		return nil, errors.ErrLoadArchitectureFailed(err)
 	}
 
 	// Load frontend architecture document
 	frontendContent, err := l.loadDocumentWithPath("documents.frontend_architecture")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load frontend architecture document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("frontend_architecture", "documents.frontend_architecture", err)
 	}
 
 	// Load coding standards document
 	codingContent, err := l.loadDocumentWithPath("documents.coding_standards")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load coding standards document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("coding_standards", "documents.coding_standards", err)
 	}
 
 	// Load source tree document
 	sourceContent, err := l.loadDocumentWithPath("documents.source_tree")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load source tree document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("source_tree", "documents.source_tree", err)
 	}
 
 	// Load tech stack document
 	techContent, err := l.loadDocumentWithPath("documents.tech_stack")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load tech stack document: %w", err)
+		return nil, errors.ErrLoadDocumentFailed("tech_stack", "documents.tech_stack", err)
 	}
 
 	return &ArchitectureDocs{
@@ -108,16 +109,16 @@ func (l *ArchitectureLoader) LoadAllArchitectureDocsStruct() (*ArchitectureDocs,
 	}, nil
 }
 
-// loadDocumentWithPath loads a document given its config key path
+// loadDocumentWithPath loads a document given its config key path.
 func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (ArchitectureDoc, error) {
 	filepath := l.config.GetString(configKey)
 	if filepath == "" {
-		return ArchitectureDoc{}, fmt.Errorf("document path not configured for key: %s", configKey)
+		return ArchitectureDoc{}, errors.ErrDocumentPathNotConfigured(configKey)
 	}
 
 	content, err := l.loadDocument(filepath)
 	if err != nil {
-		return ArchitectureDoc{}, fmt.Errorf("failed to load document %s (from %s): %w", configKey, filepath, err)
+		return ArchitectureDoc{}, errors.ErrLoadDocumentFailed(configKey, filepath, err)
 	}
 
 	return ArchitectureDoc{
@@ -126,18 +127,18 @@ func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (Architectur
 	}, nil
 }
 
-// loadDocument loads a single document from the specified path
+// loadDocument loads a single document from the specified path.
 func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
-
 	// Check if file exists
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return "", fmt.Errorf("document not found: %s", filepath)
+	_, err := os.Stat(filepath)
+	if os.IsNotExist(err) {
+		return "", errors.ErrDocumentNotFound(filepath)
 	}
 
 	// Read the file
 	content, err := os.ReadFile(filepath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read document %s: %w", filepath, err)
+		return "", errors.ErrReadDocumentFailed(filepath, err)
 	}
 
 	return string(content), nil

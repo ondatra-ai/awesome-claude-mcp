@@ -55,5 +55,6 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 
 	usCmd.AddCommand(createCmd)
 	usCmd.AddCommand(implementCmd)
+
 	return usCmd
 }
