@@ -3,7 +3,6 @@ package ai
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -134,7 +133,7 @@ func (c *ClaudeClient) streamMessages(ctx context.Context, client claudecode.Cli
 			if message == nil {
 				slog.Error("Received nil message from Claude stream")
 
-				return "", errors.New("claude stream returned nil message")
+				return "", pkgerrors.ErrClaudeStreamNilMessage
 			}
 
 			done, err := c.processMessage(message, &result)

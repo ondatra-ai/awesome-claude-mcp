@@ -3,7 +3,6 @@ package generators
 import (
 	"bmad-cli/internal/domain/ports"
 	"context"
-	"errors"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -129,19 +128,19 @@ func (g *AITestingGenerator) loadTestingPrompt(data TestingData) (string, error)
 // validateTesting validates the generated testing requirements.
 func (g *AITestingGenerator) validateTesting(testing story.Testing) error {
 	if testing.TestLocation == "" {
-		return errors.New("test location cannot be empty")
+		return pkgerrors.ErrEmptyTestLocation
 	}
 
 	if len(testing.Frameworks) == 0 {
-		return errors.New("at least one testing framework must be specified")
+		return pkgerrors.ErrNoTestingFrameworks
 	}
 
 	if len(testing.Requirements) == 0 {
-		return errors.New("at least one testing requirement must be specified")
+		return pkgerrors.ErrNoTestingRequirements
 	}
 
 	if len(testing.Coverage) == 0 {
-		return errors.New("coverage targets must be specified")
+		return pkgerrors.ErrNoCoverageTargets
 	}
 
 	// Validate coverage values are percentages

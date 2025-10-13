@@ -38,7 +38,7 @@ func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
 	// Handle object with and/but key
 	if node.Kind == yaml.MappingNode {
 		if len(node.Content) != yamlMappingNodeContentSize {
-			return errors.New("modifier must have exactly one key")
+			return pkgerrors.ErrModifierMustHaveOneKey
 		}
 
 		key := node.Content[0].Value

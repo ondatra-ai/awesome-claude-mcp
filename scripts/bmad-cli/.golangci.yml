@@ -24,7 +24,7 @@ linters:
     - dupword
     - durationcheck
     - embeddedstructfieldcheck
-    # - err113  # TODO: Convert dynamic errors to wrapped static errors
+    - err113
     - errcheck
     - errchkjson
     - errname
@@ -110,7 +110,7 @@ linters:
     - varnamelen
     - wastedassign
     - whitespace
-    # - wrapcheck  # TODO: Add proper error wrapping for external package errors
+    - wrapcheck
     - wsl_v5
     - zerologlint
   # Disable specific linters.
@@ -148,3 +148,72 @@ linters:
       - path: internal/domain/models/thread\.go
         linters:
           - tagliatelle
+      # claudecode is third-party code - exclude from err113 and wrapcheck
+      - path: claudecode/.*\.go
+        linters:
+          - err113
+          - wrapcheck
+      # Custom error package defines errors - exclude from err113
+      - path: internal/pkg/errors/errors\.go
+        linters:
+          - err113
+      # Our custom error constructors are already wrapped - exclude from wrapcheck
+      - path: .*\.go
+        text: "error returned from external package is unwrapped.*bmad-cli/internal/pkg/errors"
+        linters:
+          - wrapcheck
+      # Test files can use dynamic errors for testing
+      - path: .*_test\.go
+        linters:
+          - err113
+      # Git handlers use descriptive dynamic errors for user-facing messages
+      - path: internal/infrastructure/git/handlers/.*\.go
+        linters:
+          - err113
+      # Story loader validation uses descriptive dynamic errors
+      - path: internal/infrastructure/story/story_loader\.go
+        linters:
+          - err113
+      # Yamale validator wraps external tool errors
+      - path: internal/infrastructure/validation/yamale_validator\.go
+        linters:
+          - err113
+      # Test scenario parsing uses dynamic errors
+      - path: internal/domain/models/story/test_scenario\.go
+        linters:
+          - err113
+      # Interface method errors don't need wrapping within our codebase
+      - path: .*\.go
+        text: "error returned from interface method should be wrapped"
+        linters:
+          - wrapcheck
+      # Shell command runner errors are wrapped at higher levels
+      - path: .*\.go
+        text: "error returned from external package is unwrapped.*CommandRunner.*Run"
+        linters:
+          - wrapcheck
+      # Context errors are standard library and don't need wrapping
+      - path: .*\.go
+        text: "error returned from interface method should be wrapped.*context.Context.*Err"
+        linters:
+          - wrapcheck
+      # os/exec.LookPath errors can be returned directly
+      - path: .*\.go
+        text: "error returned from external package is unwrapped.*os/exec.LookPath"
+        linters:
+          - wrapcheck
+      # AIGenerator is internal package - errors already wrapped
+      - path: .*\.go
+        text: "error returned from external package is unwrapped.*AIGenerator.*Generate"
+        linters:
+          - wrapcheck
+      # ThreadProcessor is internal package - errors already wrapped
+      - path: .*\.go
+        text: "error returned from external package is unwrapped.*ThreadProcessor.*AnalyzeThread"
+        linters:
+          - wrapcheck
+      # Command Execute methods - errors already wrapped at source
+      - path: cmd/.*\.go
+        text: "error returned from external package is unwrapped.*Command.*Execute"
+        linters:
+          - wrapcheck

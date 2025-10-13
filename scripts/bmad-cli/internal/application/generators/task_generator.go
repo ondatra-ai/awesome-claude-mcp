@@ -4,7 +4,6 @@ import (
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/pkg/ai"
 	"context"
-	"errors"
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/config"
@@ -88,7 +87,7 @@ func (g *AITaskGenerator) GenerateTasks(
 		)).
 		WithValidator(func(tasks []story.Task) error {
 			if len(tasks) == 0 {
-				return errors.New("AI generated no tasks")
+				return pkgerrors.ErrAIGeneratedNoTasks
 			}
 
 			return nil

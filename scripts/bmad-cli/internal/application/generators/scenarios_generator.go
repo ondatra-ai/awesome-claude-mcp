@@ -5,7 +5,6 @@ import (
 	"bmad-cli/internal/pkg/ai"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 	"context"
-	"errors"
 	"strings"
 
 	"bmad-cli/internal/domain/models/story"
@@ -120,7 +119,7 @@ func (g *AIScenariosGenerator) validateScenarios(
 ) func(story.Scenarios) error {
 	return func(scenarios story.Scenarios) error {
 		if len(scenarios.TestScenarios) == 0 {
-			return errors.New("at least one test scenario must be specified")
+			return pkgerrors.ErrNoTestScenarios
 		}
 
 		coveredACs := make(map[string]bool)
