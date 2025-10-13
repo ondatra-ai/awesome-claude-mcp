@@ -130,7 +130,8 @@ func (l *ArchitectureLoader) loadDocumentWithPath(configKey string) (Architectur
 // loadDocument loads a single document from the specified path.
 func (l *ArchitectureLoader) loadDocument(filepath string) (string, error) {
 	// Check if file exists
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+	_, err := os.Stat(filepath)
+	if os.IsNotExist(err) {
 		return "", errors.ErrDocumentNotFound(filepath)
 	}
 

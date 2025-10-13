@@ -28,7 +28,10 @@ type TemplateData struct {
 	ChecklistMD      string
 }
 
-func (e *TemplateEngine) BuildFromTemplate(threadCtx models.ThreadContext, templatePath, checklistPath string) (string, error) {
+func (e *TemplateEngine) BuildFromTemplate(
+	threadCtx models.ThreadContext,
+	templatePath, checklistPath string,
+) (string, error) {
 	templateContent, err := e.loader.LoadTemplate(templatePath)
 	if err != nil {
 		return "", err

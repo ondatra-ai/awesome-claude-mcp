@@ -63,7 +63,9 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 
 	// Clone requirements.yml to run directory for safe testing
 	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
-	if err := c.cloneRequirements(outputFile); err != nil {
+
+	err = c.cloneRequirements(outputFile)
+	if err != nil {
 		return pkgerrors.ErrCloneRequirementsFileFailed(err)
 	}
 
@@ -74,19 +76,26 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	}
 
 	// Merge scenarios from story into requirements-merged.yml (test file)
-	if err := c.mergeScenarios(ctx, storyNumber, storyDoc, outputFile); err != nil {
+	err = c.mergeScenarios(ctx, storyNumber, storyDoc, outputFile)
+	if err != nil {
 		return pkgerrors.ErrMergeScenariosFailed(err)
 	}
 
-	slog.Info("✅ Scenario merge completed successfully", "scenarios", len(storyDoc.Scenarios.TestScenarios), "story", storyNumber)
+	slog.Info(
+		"✅ Scenario merge completed successfully",
+		"scenarios", len(storyDoc.Scenarios.TestScenarios),
+		"story", storyNumber,
+	)
 
 	// Replace original requirements.yml with merged version
-	if err := c.replaceRequirements(outputFile); err != nil {
+	err = c.replaceRequirements(outputFile)
+	if err != nil {
 		return pkgerrors.ErrReplaceRequirementsFailed(err)
 	}
 
 	// Implement tests for pending scenarios
-	if err := c.implementTests(ctx, "docs/requirements.yml"); err != nil {
+	err = c.implementTests(ctx, "docs/requirements.yml")
+	if err != nil {
 		return pkgerrors.ErrImplementTestsFailed(err)
 	}
 
@@ -100,7 +109,9 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 
 	// Ensure tmp directory exists
 	outputDir := filepath.Dir(outputFile)
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+
+	err := os.MkdirAll(outputDir, fileModeDirectory)
+	if err != nil {
 		return pkgerrors.ErrCreateOutputDirectoryFailed(outputDir, err)
 	}
 
@@ -111,7 +122,8 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 	}
 
 	// Write to output file
-	if err := os.WriteFile(outputFile, data, 0644); err != nil {
+	err = os.WriteFile(outputFile, data, fileModeReadWrite)
+	if err != nil {
 		return pkgerrors.ErrWriteOutputFileFailed(outputFile, err)
 	}
 
@@ -134,7 +146,8 @@ func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 		return pkgerrors.ErrReadOriginalFileFailed(err)
 	}
 
-	if err := os.WriteFile(backupPath, originalData, 0644); err != nil {
+	err = os.WriteFile(backupPath, originalData, fileModeReadWrite)
+	if err != nil {
 		return pkgerrors.ErrCreateBackupFileFailed(err)
 	}
 
@@ -147,8 +160,9 @@ func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 	}
 
 	// Replace original
-	if err := os.WriteFile(requirementsPath, mergedData, 0644); err != nil {
-		_ = os.WriteFile(requirementsPath, originalData, 0644) // Restore
+	err = os.WriteFile(requirementsPath, mergedData, fileModeReadWrite)
+	if err != nil {
+		_ = os.WriteFile(requirementsPath, originalData, fileModeReadWrite) // Restore
 
 		return pkgerrors.ErrReplaceFileFailed(err)
 	}
@@ -158,20 +172,39 @@ func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 	return nil
 }
 
-func (c *USImplementCommand) mergeScenarios(ctx context.Context, storyNumber string, storyDoc *storyModels.StoryDocument, outputFile string) error {
-	slog.Info("Starting scenario merge", "story_id", storyNumber, "scenario_count", len(storyDoc.Scenarios.TestScenarios), "output_file", outputFile)
+func (c *USImplementCommand) mergeScenarios(
+	ctx context.Context,
+	storyNumber string,
+	storyDoc *storyModels.StoryDocument,
+	outputFile string,
+) error {
+	slog.Info(
+		"Starting scenario merge",
+		"story_id", storyNumber,
+		"scenario_count", len(storyDoc.Scenarios.TestScenarios),
+		"output_file", outputFile,
+	)
 
 	// Create template loaders
 	userPromptPath := c.config.GetString("templates.prompts.merge_scenarios")
 	systemPromptPath := c.config.GetString("templates.prompts.merge_scenarios_system")
-	userPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](userPromptPath)
-	systemPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](systemPromptPath)
+	userPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](
+		userPromptPath,
+	)
+	systemPromptLoader := template.NewTemplateLoader[*template.ScenarioMergeData](
+		systemPromptPath,
+	)
 
 	// Process each scenario individually
 	for i, scenario := range storyDoc.Scenarios.TestScenarios {
 		startTime := time.Now()
 
-		slog.Info("Processing scenario", "index", i+1, "total", len(storyDoc.Scenarios.TestScenarios), "scenario_id", scenario.ID)
+		slog.Info(
+			"Processing scenario",
+			"index", i+1,
+			"total", len(storyDoc.Scenarios.TestScenarios),
+			"scenario_id", scenario.ID,
+		)
 
 		// Create merge data adapter
 		mergeData := template.NewScenarioMergeData(storyNumber, scenario, outputFile)
@@ -227,71 +260,125 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		return nil
 	}
 
-	slog.Info("Found pending scenarios to implement", "count", len(pendingScenarios))
+	slog.Info(
+		"Found pending scenarios to implement",
+		"count", len(pendingScenarios),
+	)
 
 	// Create template loaders
+	userPromptLoader, systemPromptLoader := c.createTestTemplateLoaders()
+
+	// Process each pending scenario
+	implementedCount := c.processTestScenarios(ctx, pendingScenarios, userPromptLoader, systemPromptLoader)
+
+	slog.Info(
+		"✅ Test implementation completed",
+		"implemented_count", implementedCount,
+		"total_pending", len(pendingScenarios),
+	)
+
+	return nil
+}
+
+func (c *USImplementCommand) createTestTemplateLoaders() (
+	*template.TemplateLoader[*template.TestImplementationData],
+	*template.TemplateLoader[*template.TestImplementationData],
+) {
 	userPromptPath := c.config.GetString("templates.prompts.implement_tests")
 	systemPromptPath := c.config.GetString("templates.prompts.implement_tests_system")
 	userPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](userPromptPath)
 	systemPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](systemPromptPath)
 
-	// Process each pending scenario
-	implementedCount := 0
-
-	for i, scenario := range pendingScenarios {
-		startTime := time.Now()
-
-		slog.Info("Implementing test scenario", "progress", i+1, "total", len(pendingScenarios), "scenario_id", scenario.ScenarioID)
-
-		// Create test implementation data
-		testData := scenario
-
-		// Load templates
-		userPrompt, err := userPromptLoader.LoadTemplate(testData)
-		if err != nil {
-			slog.Warn("⚠️  Skipping scenario: failed to load user prompt", "scenario_id", scenario.ScenarioID, "error", err)
-
-			continue
-		}
-
-		systemPrompt, err := systemPromptLoader.LoadTemplate(testData)
-		if err != nil {
-			slog.Warn("⚠️  Skipping scenario: failed to load system prompt", "scenario_id", scenario.ScenarioID, "error", err)
-
-			continue
-		}
-
-		// Call Claude Code API to generate test
-		slog.Debug("Calling Claude Code for test implementation", "scenario_id", scenario.ScenarioID)
-
-		_, err = c.claudeClient.ExecutePromptWithSystem(
-			ctx,
-			systemPrompt,
-			userPrompt,
-			"sonnet",
-			ai.ExecutionMode{
-				AllowedTools: []string{"Read", "Write", "Edit"},
-			},
-		)
-		if err != nil {
-			slog.Warn("⚠️  Failed to implement test scenario", "scenario_id", scenario.ScenarioID, "error", err)
-
-			continue
-		}
-
-		duration := time.Since(startTime)
-		implementedCount++
-
-		slog.Info("✓ Test implemented successfully", "scenario_id", scenario.ScenarioID, "duration", duration.Round(time.Second))
-	}
-
-	slog.Info("✅ Test implementation completed", "implemented_count", implementedCount, "total_pending", len(pendingScenarios))
-
-	return nil
+	return userPromptLoader, systemPromptLoader
 }
 
-// parsePendingScenarios reads requirements file and extracts scenarios with status: "pending".
-func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*template.TestImplementationData, error) {
+func (c *USImplementCommand) processTestScenarios(
+	ctx context.Context,
+	scenarios []*template.TestImplementationData,
+	userLoader *template.TemplateLoader[*template.TestImplementationData],
+	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+) int {
+	implementedCount := 0
+
+	for i, scenario := range scenarios {
+		startTime := time.Now()
+
+		slog.Info(
+			"Implementing test scenario",
+			"progress", i+1,
+			"total", len(scenarios),
+			"scenario_id", scenario.ScenarioID,
+		)
+
+		if c.implementSingleTest(ctx, scenario, userLoader, systemLoader) {
+			implementedCount++
+
+			slog.Info(
+				"✓ Test implemented successfully",
+				"scenario_id", scenario.ScenarioID,
+				"duration", time.Since(startTime).Round(time.Second),
+			)
+		}
+	}
+
+	return implementedCount
+}
+
+func (c *USImplementCommand) implementSingleTest(
+	ctx context.Context,
+	scenario *template.TestImplementationData,
+	userLoader *template.TemplateLoader[*template.TestImplementationData],
+	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+) bool {
+	userPrompt, err := userLoader.LoadTemplate(scenario)
+	if err != nil {
+		slog.Warn(
+			"⚠️  Skipping scenario: failed to load user prompt",
+			"scenario_id", scenario.ScenarioID,
+			"error", err,
+		)
+
+		return false
+	}
+
+	systemPrompt, err := systemLoader.LoadTemplate(scenario)
+	if err != nil {
+		slog.Warn(
+			"⚠️  Skipping scenario: failed to load system prompt",
+			"scenario_id", scenario.ScenarioID,
+			"error", err,
+		)
+
+		return false
+	}
+
+	slog.Debug("Calling Claude Code for test implementation", "scenario_id", scenario.ScenarioID)
+
+	_, err = c.claudeClient.ExecutePromptWithSystem(
+		ctx,
+		systemPrompt,
+		userPrompt,
+		"sonnet",
+		ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit"}},
+	)
+	if err != nil {
+		slog.Warn(
+			"⚠️  Failed to implement test scenario",
+			"scenario_id", scenario.ScenarioID,
+			"error", err,
+		)
+
+		return false
+	}
+
+	return true
+}
+
+// parsePendingScenarios reads requirements file and extracts scenarios with
+// status: "pending".
+func (c *USImplementCommand) parsePendingScenarios(
+	requirementsFile string,
+) ([]*template.TestImplementationData, error) {
 	slog.Debug("Parsing requirements file", "file", requirementsFile)
 
 	// Read requirements file
@@ -319,17 +406,22 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 		} `yaml:"scenarios"`
 	}
 
-	if err := yaml.Unmarshal(data, &requirements); err != nil {
+	err = yaml.Unmarshal(data, &requirements)
+	if err != nil {
 		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
 	}
 
 	// Filter pending scenarios and convert to TestImplementationData
-	var pendingScenarios []*template.TestImplementationData
+	pendingScenarios := make([]*template.TestImplementationData, 0, len(requirements.Scenarios))
 
 	for scenarioID, scenario := range requirements.Scenarios {
 		// Only process scenarios with status "pending"
 		if scenario.ImplementationStatus.Status != "pending" {
-			slog.Debug("Skipping non-pending scenario", "scenario_id", scenarioID, "status", scenario.ImplementationStatus.Status)
+			slog.Debug(
+				"Skipping non-pending scenario",
+				"scenario_id", scenarioID,
+				"status", scenario.ImplementationStatus.Status,
+			)
 
 			continue
 		}
@@ -357,7 +449,11 @@ func (c *USImplementCommand) parsePendingScenarios(requirementsFile string) ([]*
 		slog.Debug("Found pending scenario", "scenario_id", scenarioID)
 	}
 
-	slog.Info("Parsed requirements file", "total_scenarios", len(requirements.Scenarios), "pending_count", len(pendingScenarios))
+	slog.Info(
+		"Parsed requirements file",
+		"total_scenarios", len(requirements.Scenarios),
+		"pending_count", len(pendingScenarios),
+	)
 
 	return pendingScenarios, nil
 }

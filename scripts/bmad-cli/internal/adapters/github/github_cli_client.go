@@ -67,7 +67,11 @@ func (c *GitHubCLIClient) GetRepoOwnerAndName(ctx context.Context) (string, stri
 	return parts[0], parts[1], nil
 }
 
-func (c *GitHubCLIClient) ExecuteGraphQL(ctx context.Context, query string, variables map[string]string) (string, error) {
+func (c *GitHubCLIClient) ExecuteGraphQL(
+	ctx context.Context,
+	query string,
+	variables map[string]string,
+) (string, error) {
 	args := []string{"api", "graphql", "-f", "query=" + query}
 	for key, value := range variables {
 		args = append(args, "-F", key+"="+value)

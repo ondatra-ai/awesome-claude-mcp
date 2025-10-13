@@ -1,7 +1,9 @@
-package utils
+package utils_test
 
 import (
 	"testing"
+
+	"bmad-cli/internal/pkg/utils"
 )
 
 func TestMarshalToYAML(t *testing.T) {
@@ -31,17 +33,17 @@ func TestMarshalToYAML(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := MarshalToYAML(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MarshalToYAML() error = %v, wantErr %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := utils.MarshalToYAML(testCase.input)
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("MarshalToYAML() error = %v, wantErr %v", err, testCase.wantErr)
 
 				return
 			}
 
-			if result != tt.expected {
-				t.Errorf("MarshalToYAML() = %v, want %v", result, tt.expected)
+			if result != testCase.expected {
+				t.Errorf("MarshalToYAML() = %v, want %v", result, testCase.expected)
 			}
 		})
 	}
@@ -72,17 +74,17 @@ func TestUnmarshalFromYAML(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := UnmarshalFromYAML[testStruct](tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalFromYAML() error = %v, wantErr %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := utils.UnmarshalFromYAML[testStruct](testCase.input)
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("UnmarshalFromYAML() error = %v, wantErr %v", err, testCase.wantErr)
 
 				return
 			}
 
-			if !tt.wantErr && result != tt.expected {
-				t.Errorf("UnmarshalFromYAML() = %v, want %v", result, tt.expected)
+			if !testCase.wantErr && result != testCase.expected {
+				t.Errorf("UnmarshalFromYAML() = %v, want %v", result, testCase.expected)
 			}
 		})
 	}
@@ -112,17 +114,17 @@ func TestMarshalWithWrapper(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := MarshalWithWrapper(tt.input, tt.key)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MarshalWithWrapper() error = %v, wantErr %v", err, tt.wantErr)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := utils.MarshalWithWrapper(testCase.input, testCase.key)
+			if (err != nil) != testCase.wantErr {
+				t.Errorf("MarshalWithWrapper() error = %v, wantErr %v", err, testCase.wantErr)
 
 				return
 			}
 
-			if result != tt.expected {
-				t.Errorf("MarshalWithWrapper() = %v, want %v", result, tt.expected)
+			if result != testCase.expected {
+				t.Errorf("MarshalWithWrapper() = %v, want %v", result, testCase.expected)
 			}
 		})
 	}

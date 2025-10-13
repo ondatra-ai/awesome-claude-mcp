@@ -53,8 +53,8 @@ var (
 	ErrReadChecklistFile         = errors.New("failed to read checklist file")
 	ErrParseTemplate             = errors.New("failed to parse template")
 	ErrSendQuery                 = errors.New("failed to send query")
-	ErrClaudeReturnedError       = errors.New("Claude returned error")
-	ErrResponseTooLarge          = errors.New("Claude response too large for buffer")
+	ErrClaudeReturnedError       = errors.New("claude returned error")
+	ErrResponseTooLarge          = errors.New("claude response too large for buffer")
 	ErrBuildHeuristicPrompt      = errors.New("failed to build heuristic prompt")
 	ErrAIClientExecution         = errors.New("AI client execution failed")
 	ErrParseAIOutput             = errors.New("failed to parse AI output")
@@ -1296,8 +1296,13 @@ func ErrStoryFileNotFoundError(storyNumber, storiesDir, format string) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
 		Code:     "STORY_FILE_NOT_FOUND",
-		Message:  fmt.Sprintf("no story file found for story %s in %s (expected format: %s-<slug>.yaml)", storyNumber, storiesDir, format),
-		Cause:    ErrStoryFileNotFound,
+		Message: fmt.Sprintf(
+			"no story file found for story %s in %s (expected format: %s-<slug>.yaml)",
+			storyNumber,
+			storiesDir,
+			format,
+		),
+		Cause: ErrStoryFileNotFound,
 	}
 }
 
@@ -1756,8 +1761,12 @@ func ErrUnrelatedBranchError(currentBranch, storyNumber string) error {
 	return &AppError{
 		Category: CategoryGitHub,
 		Code:     "UNRELATED_BRANCH",
-		Message:  fmt.Sprintf("currently on branch '%s' which is not related to story %s - please switch to main first", currentBranch, storyNumber),
-		Cause:    ErrUnrelatedBranch,
+		Message: fmt.Sprintf(
+			"currently on branch '%s' which is not related to story %s - please switch to main first",
+			currentBranch,
+			storyNumber,
+		),
+		Cause: ErrUnrelatedBranch,
 	}
 }
 
@@ -1847,8 +1856,11 @@ func ErrInvalidLevelError(scenarioID string) error {
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "INVALID_LEVEL",
-		Message:  fmt.Sprintf("scenario %s: level must be integration or e2e (unit scenarios are not allowed in BDD)", scenarioID),
-		Cause:    ErrInvalidLevel,
+		Message: fmt.Sprintf(
+			"scenario %s: level must be integration or e2e (unit scenarios are not allowed in BDD)",
+			scenarioID,
+		),
+		Cause: ErrInvalidLevel,
 	}
 }
 
@@ -1874,35 +1886,71 @@ func ErrNoStatementsError(scenarioID string, stepIdx int, keyword string) error 
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "NO_STATEMENTS",
-		Message:  fmt.Sprintf("scenario %s, step %d: %s must have at least one statement", scenarioID, stepIdx, keyword),
-		Cause:    ErrNoStatements,
+		Message: fmt.Sprintf(
+			"scenario %s, step %d: %s must have at least one statement",
+			scenarioID,
+			stepIdx,
+			keyword,
+		),
+		Cause: ErrNoStatements,
 	}
 }
 
-func ErrEmptyStatementError(scenarioID string, stepIdx int, keyword string, stmtIdx int) error {
+func ErrEmptyStatementError(
+	scenarioID string,
+	stepIdx int,
+	keyword string,
+	stmtIdx int,
+) error {
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "EMPTY_STATEMENT",
-		Message:  fmt.Sprintf("scenario %s, step %d: %s statement[%d] cannot be empty", scenarioID, stepIdx, keyword, stmtIdx),
-		Cause:    ErrEmptyStatement,
+		Message: fmt.Sprintf(
+			"scenario %s, step %d: %s statement[%d] cannot be empty",
+			scenarioID,
+			stepIdx,
+			keyword,
+			stmtIdx,
+		),
+		Cause: ErrEmptyStatement,
 	}
 }
 
-func ErrInvalidFirstStmtError(scenarioID string, stepIdx int, keyword string) error {
+func ErrInvalidFirstStmtError(
+	scenarioID string,
+	stepIdx int,
+	keyword string,
+) error {
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "INVALID_FIRST_STMT",
-		Message:  fmt.Sprintf("scenario %s, step %d: %s first statement must be main (not 'and' or 'but')", scenarioID, stepIdx, keyword),
-		Cause:    ErrInvalidFirstStmt,
+		Message: fmt.Sprintf(
+			"scenario %s, step %d: %s first statement must be main (not 'and' or 'but')",
+			scenarioID,
+			stepIdx,
+			keyword,
+		),
+		Cause: ErrInvalidFirstStmt,
 	}
 }
 
-func ErrInvalidFollowingStmtError(scenarioID string, stepIdx int, keyword string, stmtIdx int) error {
+func ErrInvalidFollowingStmtError(
+	scenarioID string,
+	stepIdx int,
+	keyword string,
+	stmtIdx int,
+) error {
 	return &AppError{
 		Category: CategoryParsing,
 		Code:     "INVALID_FOLLOWING_STMT",
-		Message:  fmt.Sprintf("scenario %s, step %d: %s statement[%d] must be 'and' or 'but'", scenarioID, stepIdx, keyword, stmtIdx),
-		Cause:    ErrInvalidFollowingStmt,
+		Message: fmt.Sprintf(
+			"scenario %s, step %d: %s statement[%d] must be 'and' or 'but'",
+			scenarioID,
+			stepIdx,
+			keyword,
+			stmtIdx,
+		),
+		Cause: ErrInvalidFollowingStmt,
 	}
 }
 

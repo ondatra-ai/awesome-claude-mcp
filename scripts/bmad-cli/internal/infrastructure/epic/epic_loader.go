@@ -84,7 +84,9 @@ func (el *EpicLoader) loadEpicFile(epicNum int) (*models.EpicDocument, error) {
 	}
 
 	var epicDoc models.EpicDocument
-	if err := yaml.Unmarshal(data, &epicDoc); err != nil {
+
+	err = yaml.Unmarshal(data, &epicDoc)
+	if err != nil {
 		return nil, pkgerrors.ErrParseEpicYAMLFailed(epicFilePath, err)
 	}
 

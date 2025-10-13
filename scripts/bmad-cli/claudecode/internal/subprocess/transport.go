@@ -60,7 +60,7 @@ type Transport struct {
 	errChan chan error
 
 	// Control and cleanup
-	ctx    context.Context
+	done   chan struct{}
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
@@ -96,15 +96,8 @@ func (t *Transport) IsConnected() bool {
 	return t.connected && t.cmd != nil && t.cmd.Process != nil
 }
 
-// Connect starts the Claude CLI subprocess.
-func (t *Transport) Connect(ctx context.Context) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if t.connected {
-		return errors.New("transport already connected")
-	}
-
+// setupCommand builds and configures the command with arguments and environment.
+func (t *Transport) setupCommand(ctx context.Context) {
 	// Build command with all options
 	var args []string
 	if t.promptArg != nil {
@@ -123,14 +116,14 @@ func (t *Transport) Connect(ctx context.Context) error {
 	// Set working directory if specified
 	if t.options != nil && t.options.Cwd != nil {
 		err := cli.ValidateWorkingDirectory(*t.options.Cwd)
-		if err != nil {
-			return err
+		if err == nil {
+			t.cmd.Dir = *t.options.Cwd
 		}
-
-		t.cmd.Dir = *t.options.Cwd
 	}
+}
 
-	// Set up I/O pipes
+// setupIOPipes sets up stdin, stdout, and stderr pipes for the command.
+func (t *Transport) setupIOPipes() error {
 	var err error
 	if t.promptArg == nil {
 		// Only create stdin pipe if we need to send messages via stdin
@@ -154,8 +147,30 @@ func (t *Transport) Connect(ctx context.Context) error {
 
 	t.cmd.Stderr = t.stderr
 
+	return nil
+}
+
+// Connect starts the Claude CLI subprocess.
+func (t *Transport) Connect(ctx context.Context) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.connected {
+		return errors.New("transport already connected")
+	}
+
+	// Set up command and working directory
+	t.setupCommand(ctx)
+
+	// Set up I/O pipes
+	err := t.setupIOPipes()
+	if err != nil {
+		return err
+	}
+
 	// Start the process
-	if err := t.cmd.Start(); err != nil {
+	err = t.cmd.Start()
+	if err != nil {
 		t.cleanup()
 
 		return shared.NewConnectionError(
@@ -165,11 +180,19 @@ func (t *Transport) Connect(ctx context.Context) error {
 	}
 
 	// Set up context for goroutine management
-	t.ctx, t.cancel = context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	t.cancel = cancel
+	t.done = make(chan struct{})
 
 	// Initialize channels
 	t.msgChan = make(chan shared.Message, channelBufferSize)
 	t.errChan = make(chan error, channelBufferSize)
+
+	// Close done channel when context is cancelled
+	go func() {
+		<-ctx.Done()
+		close(t.done)
+	}()
 
 	// Start I/O handling goroutines
 	t.wg.Add(1)
@@ -329,7 +352,7 @@ func (t *Transport) handleStdout() {
 
 	for scanner.Scan() {
 		select {
-		case <-t.ctx.Done():
+		case <-t.done:
 			return
 		default:
 		}
@@ -344,7 +367,7 @@ func (t *Transport) handleStdout() {
 		if err != nil {
 			select {
 			case t.errChan <- err:
-			case <-t.ctx.Done():
+			case <-t.done:
 				return
 			}
 
@@ -356,7 +379,7 @@ func (t *Transport) handleStdout() {
 			if msg != nil {
 				select {
 				case t.msgChan <- msg:
-				case <-t.ctx.Done():
+				case <-t.done:
 					return
 				}
 			}
@@ -367,7 +390,7 @@ func (t *Transport) handleStdout() {
 	if err != nil {
 		select {
 		case t.errChan <- pkgerrors.ErrStdoutScannerFailed(err):
-		case <-t.ctx.Done():
+		case <-t.done:
 		}
 	}
 }
@@ -387,13 +410,8 @@ func isProcessAlreadyFinishedError(err error) bool {
 		strings.Contains(errStr, "signal: killed")
 }
 
-// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence.
-func (t *Transport) terminateProcess() error {
-	if t.cmd == nil || t.cmd.Process == nil {
-		return nil
-	}
-
-	// Send SIGTERM
+// sendTerminationSignal sends SIGTERM to the process and handles failures.
+func (t *Transport) sendTerminationSignal() error {
 	err := t.cmd.Process.Signal(syscall.SIGTERM)
 	if err != nil {
 		// If process is already finished, that's success
@@ -407,6 +425,21 @@ func (t *Transport) terminateProcess() error {
 		}
 
 		return nil // Don't return error for expected termination
+	}
+
+	return nil
+}
+
+// terminateProcess implements the 5-second SIGTERM → SIGKILL sequence.
+func (t *Transport) terminateProcess() error {
+	if t.cmd == nil || t.cmd.Process == nil {
+		return nil
+	}
+
+	// Send SIGTERM
+	err := t.sendTerminationSignal()
+	if err != nil {
+		return err
 	}
 
 	// Wait exactly 5 seconds
@@ -439,7 +472,7 @@ func (t *Transport) terminateProcess() error {
 		<-done
 
 		return nil
-	case <-t.ctx.Done():
+	case <-t.done:
 		// Context canceled - force kill immediately
 		killErr := t.cmd.Process.Kill()
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {

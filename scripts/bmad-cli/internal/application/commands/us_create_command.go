@@ -14,13 +14,23 @@ import (
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
+const (
+	// File permission constants.
+	fileModeReadWrite = 0644 // Standard file permission for read/write files
+	fileModeDirectory = 0755 // Standard directory permission
+)
+
 type USCreateCommand struct {
 	factory   *factories.StoryFactory
 	loader    *template.TemplateLoader[*template.FlattenedStoryData]
 	validator *validation.YamaleValidator
 }
 
-func NewUSCreateCommand(factory *factories.StoryFactory, loader *template.TemplateLoader[*template.FlattenedStoryData], validator *validation.YamaleValidator) *USCreateCommand {
+func NewUSCreateCommand(
+	factory *factories.StoryFactory,
+	loader *template.TemplateLoader[*template.FlattenedStoryData],
+	validator *validation.YamaleValidator,
+) *USCreateCommand {
 	return &USCreateCommand{
 		factory:   factory,
 		loader:    loader,
@@ -30,7 +40,8 @@ func NewUSCreateCommand(factory *factories.StoryFactory, loader *template.Templa
 
 func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error {
 	// Validate story number format
-	if err := c.validateStoryNumber(storyNumber); err != nil {
+	err := c.validateStoryNumber(storyNumber)
+	if err != nil {
 		return pkgerrors.ErrInvalidStoryNumberFormatError(storyNumber)
 	}
 
@@ -57,7 +68,9 @@ func (c *USCreateCommand) Execute(ctx context.Context, storyNumber string) error
 
 	// 4. Generate filename and save to file
 	filename := c.generateFilename(storyNumber, storyDoc.Story.Title)
-	if err := os.WriteFile(filename, []byte(yamlContent), 0644); err != nil {
+
+	err = os.WriteFile(filename, []byte(yamlContent), fileModeReadWrite)
+	if err != nil {
 		return pkgerrors.ErrSaveStoryFileFailed(err)
 	}
 

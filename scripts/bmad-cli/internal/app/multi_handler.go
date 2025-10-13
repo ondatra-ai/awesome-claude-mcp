@@ -17,10 +17,8 @@ func (h *MultiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 
 func (h *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
 	// Always write to file
-	err := h.fileHandler.Handle(ctx, record)
-	if err != nil {
-		// Don't fail if file write fails, continue to console
-	}
+	_ = h.fileHandler.Handle(ctx, record)
+	// Don't fail if file write fails, continue to console
 
 	// Write to console only for info and above
 	if record.Level >= slog.LevelInfo {

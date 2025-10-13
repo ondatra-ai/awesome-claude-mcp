@@ -124,14 +124,14 @@ func WithCLIPath(path string) Option {
 // WithTransport sets a custom transport for testing.
 // Since Transport is not part of Options struct, this is handled in client creation.
 func WithTransport(_ Transport) Option {
-	return func(o *Options) {
+	return func(opts *Options) {
 		// This will be handled in client implementation
 		// For now, we'll use a special marker in ExtraArgs
-		if o.ExtraArgs == nil {
-			o.ExtraArgs = make(map[string]*string)
+		if opts.ExtraArgs == nil {
+			opts.ExtraArgs = make(map[string]*string)
 		}
 
 		marker := customTransportMarker
-		o.ExtraArgs["__transport_marker__"] = &marker
+		opts.ExtraArgs["__transport_marker__"] = &marker
 	}
 }

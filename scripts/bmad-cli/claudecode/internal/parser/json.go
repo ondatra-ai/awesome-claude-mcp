@@ -106,16 +106,8 @@ func (p *Parser) BufferSize() int {
 	return p.buffer.Len()
 }
 
-// processJSONLine attempts to parse accumulated buffer as JSON using speculative parsing.
+// processJSONLineUnlocked attempts to parse accumulated buffer as JSON using speculative parsing.
 // This is the core of the speculative parsing strategy from the Python SDK.
-func (p *Parser) processJSONLine(jsonLine string) (shared.Message, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	return p.processJSONLineUnlocked(jsonLine)
-}
-
-// processJSONLineUnlocked is the unlocked version of processJSONLine.
 // Must be called with mutex already held.
 func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error) {
 	p.buffer.WriteString(jsonLine)
@@ -141,7 +133,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 	if err != nil {
 		// JSON is incomplete - continue accumulating
 		// This is NOT an error condition in speculative parsing!
-		return nil, nil
+		return nil, err
 	}
 
 	// Successfully parsed complete JSON - reset buffer and parse message
@@ -163,22 +155,22 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 	}
 
 	// Handle both string content and array of content blocks
-	switch c := content.(type) {
+	switch contentValue := content.(type) {
 	case string:
 		// String content - create directly
 		return &shared.UserMessage{
-			Content: c,
+			Content: contentValue,
 		}, nil
 	case []any:
 		// Array of content blocks
-		blocks := make([]shared.ContentBlock, len(c))
-		for i, blockData := range c {
+		blocks := make([]shared.ContentBlock, len(contentValue))
+		for index, blockData := range contentValue {
 			block, err := p.parseContentBlock(blockData)
 			if err != nil {
-				return nil, pkgerrors.ErrParseContentBlockFailed(i, err)
+				return nil, pkgerrors.ErrParseContentBlockFailed(index, err)
 			}
 
-			blocks[i] = block
+			blocks[index] = block
 		}
 
 		return &shared.UserMessage{
@@ -191,29 +183,29 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 
 // parseAssistantMessage parses an assistant message from raw JSON data.
 func (p *Parser) parseAssistantMessage(data map[string]any) (*shared.AssistantMessage, error) {
-	messageData, ok := data["message"].(map[string]any)
-	if !ok {
+	messageData, found := data["message"].(map[string]any)
+	if !found {
 		return nil, shared.NewMessageParseError("assistant message missing message field", data)
 	}
 
-	contentArray, ok := messageData["content"].([]any)
-	if !ok {
+	contentArray, found := messageData["content"].([]any)
+	if !found {
 		return nil, shared.NewMessageParseError("assistant message content must be array", data)
 	}
 
-	model, ok := messageData["model"].(string)
-	if !ok {
+	model, found := messageData["model"].(string)
+	if !found {
 		return nil, shared.NewMessageParseError("assistant message missing model field", data)
 	}
 
 	blocks := make([]shared.ContentBlock, len(contentArray))
-	for i, blockData := range contentArray {
+	for index, blockData := range contentArray {
 		block, err := p.parseContentBlock(blockData)
 		if err != nil {
-			return nil, pkgerrors.ErrParseContentBlockFailed(i, err)
+			return nil, pkgerrors.ErrParseContentBlockFailed(index, err)
 		}
 
-		blocks[i] = block
+		blocks[index] = block
 	}
 
 	return &shared.AssistantMessage{
@@ -296,8 +288,8 @@ func (p *Parser) parseResultMessage(data map[string]any) (*shared.ResultMessage,
 
 // parseContentBlock parses a content block based on its type field.
 func (p *Parser) parseContentBlock(blockData any) (shared.ContentBlock, error) {
-	data, ok := blockData.(map[string]any)
-	if !ok {
+	data, valid := blockData.(map[string]any)
+	if !valid {
 		return nil, shared.NewMessageParseError("content block must be an object", blockData)
 	}
 
@@ -347,13 +339,13 @@ func (p *Parser) parseThinkingBlock(data map[string]any) (shared.ContentBlock, e
 }
 
 func (p *Parser) parseToolUseBlock(data map[string]any) (shared.ContentBlock, error) {
-	id, ok := data["id"].(string)
-	if !ok {
+	identifier, found := data["id"].(string)
+	if !found {
 		return nil, shared.NewMessageParseError("tool_use block missing id field", data)
 	}
 
-	name, ok := data["name"].(string)
-	if !ok {
+	name, found := data["name"].(string)
+	if !found {
 		return nil, shared.NewMessageParseError("tool_use block missing name field", data)
 	}
 
@@ -363,7 +355,7 @@ func (p *Parser) parseToolUseBlock(data map[string]any) (shared.ContentBlock, er
 	}
 
 	return &shared.ToolUseBlock{
-		ToolUseID: id,
+		ToolUseID: identifier,
 		Name:      name,
 		Input:     input,
 	}, nil

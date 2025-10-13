@@ -58,18 +58,18 @@ func queryWithTransportAndOptions(
 
 	// Create iterator that manages the transport lifecycle
 	return &queryIterator{
+		ctx:       ctx,
 		transport: transport,
 		prompt:    prompt,
-		ctx:       ctx,
 		options:   options,
 	}, nil
 }
 
 // queryIterator implements MessageIterator for simple queries.
 type queryIterator struct {
+	ctx       context.Context
 	transport Transport
 	prompt    string
-	ctx       context.Context
 	options   *Options
 	started   bool
 	msgChan   <-chan Message
@@ -79,7 +79,7 @@ type queryIterator struct {
 	closeOnce sync.Once
 }
 
-func (qi *queryIterator) Next(_ context.Context) (Message, error) {
+func (qi *queryIterator) Next(ctx context.Context) (Message, error) {
 	qi.mu.Lock()
 
 	if qi.closed {
@@ -90,7 +90,7 @@ func (qi *queryIterator) Next(_ context.Context) (Message, error) {
 
 	// Initialize on first call
 	if !qi.started {
-		err := qi.start()
+		err := qi.start(qi.ctx)
 		if err != nil {
 			qi.mu.Unlock()
 
@@ -120,12 +120,12 @@ func (qi *queryIterator) Next(_ context.Context) (Message, error) {
 		qi.mu.Unlock()
 
 		return nil, err
-	case <-qi.ctx.Done():
+	case <-ctx.Done():
 		qi.mu.Lock()
 		qi.closed = true
 		qi.mu.Unlock()
 
-		return nil, qi.ctx.Err()
+		return nil, ctx.Err()
 	}
 }
 
@@ -145,15 +145,15 @@ func (qi *queryIterator) Close() error {
 	return err
 }
 
-func (qi *queryIterator) start() error {
+func (qi *queryIterator) start(ctx context.Context) error {
 	// Connect to transport
-	err := qi.transport.Connect(qi.ctx)
+	err := qi.transport.Connect(ctx)
 	if err != nil {
 		return pkgerrors.ErrConnectTransportFailed(err)
 	}
 
 	// Get message channels
-	msgChan, errChan := qi.transport.ReceiveMessages(qi.ctx)
+	msgChan, errChan := qi.transport.ReceiveMessages(ctx)
 	qi.msgChan = msgChan
 	qi.errChan = errChan
 
@@ -164,7 +164,7 @@ func (qi *queryIterator) start() error {
 		Message: userMsg,
 	}
 
-	err = qi.transport.SendMessage(qi.ctx, streamMsg)
+	err = qi.transport.SendMessage(ctx, streamMsg)
 	if err != nil {
 		return pkgerrors.ErrSendMessageFailed(err)
 	}

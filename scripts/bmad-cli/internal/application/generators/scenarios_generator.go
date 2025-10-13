@@ -38,10 +38,21 @@ func NewAIScenariosGenerator(aiClient ports.AIPort, config *config.ViperConfig) 
 	}
 }
 
-// GenerateScenarios generates comprehensive test scenarios in Given-When-Then format.
-func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Scenarios, error) {
+// GenerateScenarios generates comprehensive test scenarios in Given-When-Then
+// format.
+func (g *AIScenariosGenerator) GenerateScenarios(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) (story.Scenarios, error) {
 	// Create AI generator for test scenarios
-	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](ctx, g.aiClient, g.config, storyDoc.Story.ID, "scenarios").
+	generator := ai.NewAIGenerator[ScenariosData, story.Scenarios](
+		ctx,
+		g.aiClient,
+		g.config,
+		storyDoc.Story.ID,
+		"scenarios",
+	).
 		WithTmpDir(tmpDir).
 		WithData(func() (ScenariosData, error) {
 			return ScenariosData{
@@ -53,29 +64,35 @@ func (g *AIScenariosGenerator) GenerateScenarios(ctx context.Context, storyDoc *
 				TmpDir:           tmpDir,
 			}, nil
 		}).
-		WithPrompt(func(data ScenariosData) (systemPrompt string, userPrompt string, err error) {
+		WithPrompt(func(data ScenariosData) (string, string, error) {
 			// Load system prompt (doesn't need data)
 			systemTemplatePath := g.config.GetString("templates.prompts.scenarios_system")
 			systemLoader := template.NewTemplateLoader[ScenariosData](systemTemplatePath)
 
-			systemPrompt, err = systemLoader.LoadTemplate(ScenariosData{})
+			systemPrompt, err := systemLoader.LoadTemplate(ScenariosData{})
 			if err != nil {
 				return "", "", pkgerrors.ErrLoadScenariosSystemPromptFailed(err)
 			}
 
 			// Load user prompt
-			userPrompt, err = g.loadScenariosPrompt(data)
+			userPrompt, err := g.loadScenariosPrompt(data)
 			if err != nil {
 				return "", "", pkgerrors.ErrLoadScenariosUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](g.config, storyDoc.Story.ID, "scenarios", "scenarios", tmpDir)).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Scenarios](
+			g.config,
+			storyDoc.Story.ID,
+			"scenarios",
+			"scenarios",
+			tmpDir,
+		)).
 		WithValidator(g.validateScenarios(storyDoc.Story.AcceptanceCriteria))
 
 	// Generate test scenarios
-	scenarios, err := generator.Generate()
+	scenarios, err := generator.Generate(ctx)
 	if err != nil {
 		return story.Scenarios{}, pkgerrors.ErrGenerateTestScenariosFailed(err)
 	}
@@ -98,126 +115,205 @@ func (g *AIScenariosGenerator) loadScenariosPrompt(data ScenariosData) (string, 
 }
 
 // validateScenarios validates the generated test scenarios.
-func (g *AIScenariosGenerator) validateScenarios(acceptanceCriteria []story.AcceptanceCriterion) func(story.Scenarios) error {
+func (g *AIScenariosGenerator) validateScenarios(
+	acceptanceCriteria []story.AcceptanceCriterion,
+) func(story.Scenarios) error {
 	return func(scenarios story.Scenarios) error {
 		if len(scenarios.TestScenarios) == 0 {
 			return errors.New("at least one test scenario must be specified")
 		}
 
-		// Track which ACs are covered
 		coveredACs := make(map[string]bool)
 
-		// Validate each scenario
 		for i, scenario := range scenarios.TestScenarios {
-			// Validate required fields
-			if scenario.ID == "" {
-				return pkgerrors.ErrEmptyScenarioIDError(i)
-			}
-
-			if len(scenario.AcceptanceCriteria) == 0 {
-				return pkgerrors.ErrNoCriteriaError(scenario.ID)
-			}
-
-			// Validate steps array
-			if len(scenario.Steps) == 0 {
-				return pkgerrors.ErrNoStepsError(scenario.ID)
-			}
-
-			// Validate each step has exactly one keyword set and statements are valid
-			hasGiven, hasWhen, hasThen := false, false, false
-
-			for stepIdx, step := range scenario.Steps {
-				nonEmptyCount := 0
-
-				// Validate Given
-				if len(step.Given) > 0 {
-					nonEmptyCount++
-					hasGiven = true
-
-					err := validateStepStatements(scenario.ID, stepIdx, "Given", step.Given)
-					if err != nil {
-						return err
-					}
-				}
-
-				// Validate When
-				if len(step.When) > 0 {
-					nonEmptyCount++
-					hasWhen = true
-
-					err := validateStepStatements(scenario.ID, stepIdx, "When", step.When)
-					if err != nil {
-						return err
-					}
-				}
-
-				// Validate Then
-				if len(step.Then) > 0 {
-					nonEmptyCount++
-					hasThen = true
-
-					err := validateStepStatements(scenario.ID, stepIdx, "Then", step.Then)
-					if err != nil {
-						return err
-					}
-				}
-
-				if nonEmptyCount == 0 {
-					return pkgerrors.ErrNoKeywordSetError(scenario.ID, stepIdx)
-				}
-
-				if nonEmptyCount > 1 {
-					return pkgerrors.ErrMultipleKeywordsError(scenario.ID, stepIdx)
-				}
-			}
-
-			// Ensure scenario has at least Given, When, and Then
-			if !hasGiven {
-				return pkgerrors.ErrNoGivenStepError(scenario.ID)
-			}
-
-			if !hasWhen {
-				return pkgerrors.ErrNoWhenStepError(scenario.ID)
-			}
-
-			if !hasThen {
-				return pkgerrors.ErrNoThenStepError(scenario.ID)
-			}
-
-			// Validate scenario outline has examples
-			if scenario.ScenarioOutline {
-				if len(scenario.Examples) == 0 {
-					return pkgerrors.ErrNoExamplesError(scenario.ID)
-				}
-			}
-
-			// Validate level (only integration and e2e allowed)
-			validLevels := map[string]bool{"integration": true, "e2e": true}
-			if !validLevels[scenario.Level] {
-				return pkgerrors.ErrInvalidLevelError(scenario.ID)
-			}
-
-			// Validate priority
-			validPriorities := map[string]bool{"P0": true, "P1": true, "P2": true, "P3": true}
-			if !validPriorities[scenario.Priority] {
-				return pkgerrors.ErrInvalidPriorityError(scenario.ID)
-			}
-
-			// Track covered ACs
-			for _, ac := range scenario.AcceptanceCriteria {
-				coveredACs[ac] = true
+			err := g.validateSingleScenario(i, scenario, coveredACs)
+			if err != nil {
+				return err
 			}
 		}
 
-		// Verify all ACs are covered by at least one scenario
-		for _, ac := range acceptanceCriteria {
-			if !coveredACs[ac.ID] {
-				return pkgerrors.ErrUncoveredCriterionError(ac.ID)
-			}
+		err := g.verifyACCoverage(acceptanceCriteria, coveredACs)
+		if err != nil {
+			return err
 		}
 
 		return nil
 	}
+}
+
+// validateSingleScenario validates a single test scenario.
+func (g *AIScenariosGenerator) validateSingleScenario(
+	index int,
+	scenario story.TestScenario,
+	coveredACs map[string]bool,
+) error {
+	err := g.validateScenarioBasicFields(index, scenario)
+	if err != nil {
+		return err
+	}
+
+	err = g.validateScenarioSteps(scenario)
+	if err != nil {
+		return err
+	}
+
+	err = g.validateScenarioMetadata(scenario)
+	if err != nil {
+		return err
+	}
+
+	for _, ac := range scenario.AcceptanceCriteria {
+		coveredACs[ac] = true
+	}
+
+	return nil
+}
+
+// validateScenarioBasicFields validates basic scenario fields.
+func (g *AIScenariosGenerator) validateScenarioBasicFields(
+	index int,
+	scenario story.TestScenario,
+) error {
+	if scenario.ID == "" {
+		return pkgerrors.ErrEmptyScenarioIDError(index)
+	}
+
+	if len(scenario.AcceptanceCriteria) == 0 {
+		return pkgerrors.ErrNoCriteriaError(scenario.ID)
+	}
+
+	if len(scenario.Steps) == 0 {
+		return pkgerrors.ErrNoStepsError(scenario.ID)
+	}
+
+	return nil
+}
+
+// validateScenarioSteps validates all steps in a scenario.
+func (g *AIScenariosGenerator) validateScenarioSteps(scenario story.TestScenario) error {
+	hasGiven, hasWhen, hasThen := false, false, false
+
+	for stepIdx, step := range scenario.Steps {
+		givenPresent, whenPresent, thenPresent, err := g.validateStep(scenario.ID, stepIdx, step)
+		if err != nil {
+			return err
+		}
+
+		hasGiven = hasGiven || givenPresent
+		hasWhen = hasWhen || whenPresent
+		hasThen = hasThen || thenPresent
+	}
+
+	return g.validateScenarioHasAllKeywords(scenario.ID, hasGiven, hasWhen, hasThen)
+}
+
+// validateStep validates a single step and returns which keywords are present.
+func (g *AIScenariosGenerator) validateStep(
+	scenarioID string,
+	stepIdx int,
+	step story.ScenarioStep,
+) (bool, bool, bool, error) {
+	nonEmptyCount := 0
+	hasGiven := false
+	hasWhen := false
+	hasThen := false
+
+	if len(step.Given) > 0 {
+		nonEmptyCount++
+		hasGiven = true
+
+		err := validateStepStatements(scenarioID, stepIdx, "Given", step.Given)
+		if err != nil {
+			return false, false, false, err
+		}
+	}
+
+	if len(step.When) > 0 {
+		nonEmptyCount++
+		hasWhen = true
+
+		err := validateStepStatements(scenarioID, stepIdx, "When", step.When)
+		if err != nil {
+			return false, false, false, err
+		}
+	}
+
+	if len(step.Then) > 0 {
+		nonEmptyCount++
+		hasThen = true
+
+		err := validateStepStatements(scenarioID, stepIdx, "Then", step.Then)
+		if err != nil {
+			return false, false, false, err
+		}
+	}
+
+	if nonEmptyCount == 0 {
+		return false, false, false, pkgerrors.ErrNoKeywordSetError(scenarioID, stepIdx)
+	}
+
+	if nonEmptyCount > 1 {
+		return false, false, false, pkgerrors.ErrMultipleKeywordsError(scenarioID, stepIdx)
+	}
+
+	return hasGiven, hasWhen, hasThen, nil
+}
+
+// validateScenarioHasAllKeywords ensures scenario has Given, When, and Then.
+func (g *AIScenariosGenerator) validateScenarioHasAllKeywords(
+	scenarioID string,
+	hasGiven bool,
+	hasWhen bool,
+	hasThen bool,
+) error {
+	if !hasGiven {
+		return pkgerrors.ErrNoGivenStepError(scenarioID)
+	}
+
+	if !hasWhen {
+		return pkgerrors.ErrNoWhenStepError(scenarioID)
+	}
+
+	if !hasThen {
+		return pkgerrors.ErrNoThenStepError(scenarioID)
+	}
+
+	return nil
+}
+
+// validateScenarioMetadata validates scenario metadata fields.
+func (g *AIScenariosGenerator) validateScenarioMetadata(scenario story.TestScenario) error {
+	if scenario.ScenarioOutline {
+		if len(scenario.Examples) == 0 {
+			return pkgerrors.ErrNoExamplesError(scenario.ID)
+		}
+	}
+
+	validLevels := map[string]bool{"integration": true, "e2e": true}
+	if !validLevels[scenario.Level] {
+		return pkgerrors.ErrInvalidLevelError(scenario.ID)
+	}
+
+	validPriorities := map[string]bool{"P0": true, "P1": true, "P2": true, "P3": true}
+	if !validPriorities[scenario.Priority] {
+		return pkgerrors.ErrInvalidPriorityError(scenario.ID)
+	}
+
+	return nil
+}
+
+// verifyACCoverage verifies all acceptance criteria are covered.
+func (g *AIScenariosGenerator) verifyACCoverage(
+	acceptanceCriteria []story.AcceptanceCriterion,
+	coveredACs map[string]bool,
+) error {
+	for _, ac := range acceptanceCriteria {
+		if !coveredACs[ac.ID] {
+			return pkgerrors.ErrUncoveredCriterionError(ac.ID)
+		}
+	}
+
+	return nil
 }
 
 // validateStepStatements validates an array of step statements.
@@ -243,21 +339,6 @@ func validateStepStatements(scenarioID string, stepIdx int, keyword string, stat
 				return pkgerrors.ErrInvalidFollowingStmtError(scenarioID, stepIdx, keyword, stmtIdx)
 			}
 		}
-	}
-
-	return nil
-}
-
-// validateScenarioID validates scenario ID format (e.g., "3.1-INT-001").
-func validateScenarioID(id string) error {
-	parts := strings.Split(id, "-")
-	if len(parts) != 3 {
-		return errors.New("scenario ID must be in format {epic}.{story}-{LEVEL}-{SEQ}")
-	}
-
-	level := strings.ToUpper(parts[1])
-	if level != "INT" && level != "E2E" {
-		return errors.New("scenario ID level must be INT or E2E (UNIT is not allowed in BDD scenarios)")
 	}
 
 	return nil

@@ -41,42 +41,16 @@ func NewAIQAAssessmentGenerator(aiClient ports.AIPort, config *config.ViperConfi
 }
 
 // GenerateQAResults generates comprehensive QA results following Quinn persona.
-func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.QAResults, error) {
+func (g *AIQAAssessmentGenerator) GenerateQAResults(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) (story.QAResults, error) {
 	// Create AI generator for QA assessment
-	generator := ai.NewAIGenerator[QAAssessmentData, story.QAResults](ctx, g.aiClient, g.config, storyDoc.Story.ID, "qa-assessment").
-		WithTmpDir(tmpDir).
-		WithData(func() (QAAssessmentData, error) {
-			return QAAssessmentData{
-				Story:            &storyDoc.Story,
-				Tasks:            storyDoc.Tasks,
-				DevNotes:         storyDoc.DevNotes,
-				ArchitectureDocs: storyDoc.ArchitectureDocs,
-				TmpDir:           tmpDir,
-			}, nil
-		}).
-		WithPrompt(func(data QAAssessmentData) (systemPrompt string, userPrompt string, err error) {
-			// Load system prompt (doesn't need data)
-			systemTemplatePath := g.config.GetString("templates.prompts.qa_system")
-			systemLoader := template.NewTemplateLoader[QAAssessmentData](systemTemplatePath)
-
-			systemPrompt, err = systemLoader.LoadTemplate(QAAssessmentData{})
-			if err != nil {
-				return "", "", pkgerrors.ErrLoadQASystemPromptFailed(err)
-			}
-
-			// Load user prompt
-			userPrompt, err = g.loadQAPrompt(data)
-			if err != nil {
-				return "", "", pkgerrors.ErrLoadQAUserPromptFailed(err)
-			}
-
-			return systemPrompt, userPrompt, nil
-		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.QAResults](g.config, storyDoc.Story.ID, "qa-assessment", "qa_results", tmpDir)).
-		WithValidator(g.validateQAResults)
+	generator := g.createQAGenerator(ctx, storyDoc, tmpDir)
 
 	// Generate QA results
-	qaResults, err := generator.Generate()
+	qaResults, err := generator.Generate(ctx)
 	if err != nil {
 		return story.QAResults{}, pkgerrors.ErrGenerateQAResultsFailed(err)
 	}
@@ -91,6 +65,62 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(ctx context.Context, storyDo
 	qaResults.GateReference = fmt.Sprintf("%s/%s-%s.yml", qaGatesPath, storyDoc.Story.ID, slug)
 
 	return qaResults, nil
+}
+
+// loadPrompts loads system and user prompts for QA assessment.
+func (g *AIQAAssessmentGenerator) loadPrompts(
+	data QAAssessmentData,
+) (string, string, error) {
+	// Load system prompt (doesn't need data)
+	systemTemplatePath := g.config.GetString("templates.prompts.qa_system")
+	systemLoader := template.NewTemplateLoader[QAAssessmentData](systemTemplatePath)
+
+	systemPrompt, err := systemLoader.LoadTemplate(QAAssessmentData{})
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadQASystemPromptFailed(err)
+	}
+
+	// Load user prompt
+	userPrompt, err := g.loadQAPrompt(data)
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadQAUserPromptFailed(err)
+	}
+
+	return systemPrompt, userPrompt, nil
+}
+
+// createQAGenerator creates and configures the AI generator for QA assessment.
+func (g *AIQAAssessmentGenerator) createQAGenerator(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) *ai.AIGenerator[QAAssessmentData, story.QAResults] {
+	return ai.NewAIGenerator[QAAssessmentData, story.QAResults](
+		ctx,
+		g.aiClient,
+		g.config,
+		storyDoc.Story.ID,
+		"qa-assessment",
+	).
+		WithTmpDir(tmpDir).
+		WithData(func() (QAAssessmentData, error) {
+			return QAAssessmentData{
+				Story:            &storyDoc.Story,
+				Tasks:            storyDoc.Tasks,
+				DevNotes:         storyDoc.DevNotes,
+				ArchitectureDocs: storyDoc.ArchitectureDocs,
+				TmpDir:           tmpDir,
+			}, nil
+		}).
+		WithPrompt(g.loadPrompts).
+		WithResponseParser(ai.CreateYAMLFileParser[story.QAResults](
+			g.config,
+			storyDoc.Story.ID,
+			"qa-assessment",
+			"qa_results",
+			tmpDir,
+		)).
+		WithValidator(g.validateQAResults)
 }
 
 // loadQAPrompt loads the QA assessment prompt template.

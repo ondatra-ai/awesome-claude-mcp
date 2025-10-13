@@ -27,7 +27,7 @@ func (s *GitService) IsGitRepository(ctx context.Context) (bool, error) {
 
 	_, err := s.shellExec.Run(ctx, "git", "rev-parse", "--git-dir")
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	return true, nil
@@ -84,7 +84,7 @@ func (s *GitService) LocalBranchExists(ctx context.Context, branch string) (bool
 
 	_, err := s.shellExec.Run(ctx, "git", "rev-parse", "--verify", branch)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	slog.Debug("Local branch exists", "branch", branch)
@@ -98,7 +98,7 @@ func (s *GitService) RemoteBranchExists(ctx context.Context, branch string) (boo
 
 	output, err := s.shellExec.Run(ctx, "git", "ls-remote", "--heads", "origin", branch)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	exists := strings.TrimSpace(output) != ""
@@ -169,7 +169,8 @@ func (s *GitService) CreateBranch(ctx context.Context, branch string) error {
 	slog.Info("Successfully created branch", "branch", branch)
 
 	// Push to remote immediately
-	if err := s.PushBranch(ctx, branch); err != nil {
+	err = s.PushBranch(ctx, branch)
+	if err != nil {
 		return err
 	}
 
@@ -195,7 +196,8 @@ func (s *GitService) ForceRecreateBranch(ctx context.Context, branch string) err
 	slog.Info("Force recreating branch", "branch", branch)
 
 	// Switch to main first
-	if err := s.SwitchBranch(ctx, "main"); err != nil {
+	err := s.SwitchBranch(ctx, "main")
+	if err != nil {
 		return pkgerrors.ErrSwitchToMainFailed(err)
 	}
 
@@ -230,7 +232,8 @@ func (s *GitService) ForceRecreateBranch(ctx context.Context, branch string) err
 	}
 
 	// Create new branch
-	if err := s.CreateBranch(ctx, branch); err != nil {
+	err = s.CreateBranch(ctx, branch)
+	if err != nil {
 		return err
 	}
 

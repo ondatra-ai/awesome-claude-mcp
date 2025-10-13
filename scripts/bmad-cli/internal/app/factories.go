@@ -14,15 +14,29 @@ import (
 	"bmad-cli/internal/infrastructure/validation"
 )
 
-func createUSCreateCommand(epicLoader *epic.EpicLoader, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDir *fs.RunDirectory) *commands.USCreateCommand {
-	storyFactory := factories.NewStoryFactory(epicLoader, claudeClient, cfg, architectureLoader, runDir)
-	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](cfg.GetString("templates.story.template"))
+func createUSCreateCommand(
+	epicLoader *epic.EpicLoader,
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+	architectureLoader *docs.ArchitectureLoader,
+	runDir *fs.RunDirectory,
+) *commands.USCreateCommand {
+	storyFactory := factories.NewStoryFactory(
+		epicLoader, claudeClient, cfg, architectureLoader, runDir,
+	)
+	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](
+		cfg.GetString("templates.story.template"),
+	)
 	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
 
 	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
 }
 
-func createPRTriageCommand(githubService *github.GitHubService, claudeClient *ai.ClaudeClient, cfg *config.ViperConfig) *commands.PRTriageCommand {
+func createPRTriageCommand(
+	githubService *github.GitHubService,
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+) *commands.PRTriageCommand {
 	// Create prompt dependencies
 	templateEngine := prompt_builders.NewTemplateEngine()
 	yamlParser := prompt_builders.NewYAMLParser()

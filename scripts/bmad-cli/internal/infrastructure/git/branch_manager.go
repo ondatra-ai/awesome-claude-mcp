@@ -16,25 +16,29 @@ type BranchManager struct {
 // HandlerFactory creates a handler instance.
 type HandlerFactory func(*GitService) handlers.BranchHandler
 
-// handlerFactories defines the handler chain order.
-var handlerFactories = []HandlerFactory{
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewGitRepoCheckHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewDirtyWorkingTreeHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewDetachedHeadHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewForceRecreateHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewAlreadyOnStoryBranchHandler() },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewUnrelatedBranchHandler() },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewMainBehindOriginHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewLocalBranchExistsHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewRemoteBranchExistsHandler(gs) },
-	func(gs *GitService) handlers.BranchHandler { return handlers.NewCreateBranchHandler(gs) },
+// getHandlerFactories returns the handler chain order.
+func getHandlerFactories() []HandlerFactory {
+	return []HandlerFactory{
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewGitRepoCheckHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewDirtyWorkingTreeHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewDetachedHeadHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewForceRecreateHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewAlreadyOnStoryBranchHandler() },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewUnrelatedBranchHandler() },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewMainBehindOriginHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewLocalBranchExistsHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewRemoteBranchExistsHandler(gs) },
+		func(gs *GitService) handlers.BranchHandler { return handlers.NewCreateBranchHandler(gs) },
+	}
 }
 
 // NewBranchManager creates a new branch manager with the complete handler chain.
 func NewBranchManager(gitService *GitService) *BranchManager {
 	// Create handlers from factories
-	var handlerList []handlers.BranchHandler
-	for _, factory := range handlerFactories {
+	factories := getHandlerFactories()
+	handlerList := make([]handlers.BranchHandler, 0, len(factories))
+
+	for _, factory := range factories {
 		handlerList = append(handlerList, factory(gitService))
 	}
 

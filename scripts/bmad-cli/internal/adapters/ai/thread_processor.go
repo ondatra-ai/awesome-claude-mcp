@@ -34,7 +34,10 @@ func NewThreadProcessor(
 	}
 }
 
-func (tp *ThreadProcessor) AnalyzeThread(ctx context.Context, threadContext models.ThreadContext) (models.HeuristicAnalysisResult, error) {
+func (tp *ThreadProcessor) AnalyzeThread(
+	ctx context.Context,
+	threadContext models.ThreadContext,
+) (models.HeuristicAnalysisResult, error) {
 	prompt, err := tp.heuristicBuilder.Build(threadContext)
 	if err != nil {
 		return models.HeuristicAnalysisResult{}, errors.ErrBuildHeuristicPromptFailed(err)

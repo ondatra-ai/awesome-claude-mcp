@@ -14,49 +14,56 @@ import (
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
+const filenamePartsCount = 2 // Story filename has 2 parts: story-number and slug
+
 // ValidationRule represents a validation check.
 type ValidationRule struct {
 	Name      string
 	Validator func(nameWithoutExt, slug string) error
 }
 
-// filenameValidations defines all validation rules.
-var filenameValidations = []ValidationRule{
-	{
-		Name: "DashSeparator",
-		Validator: func(nameWithoutExt, slug string) error {
-			if !strings.Contains(nameWithoutExt, "-") {
-				return errors.New("invalid story filename: must have format '<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')")
-			}
+// getFilenameValidations returns all validation rules.
+func getFilenameValidations() []ValidationRule {
+	return []ValidationRule{
+		{
+			Name: "DashSeparator",
+			Validator: func(nameWithoutExt, slug string) error {
+				if !strings.Contains(nameWithoutExt, "-") {
+					return errors.New(
+						"invalid story filename: must have format " +
+							"'<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')",
+					)
+				}
 
-			return nil
+				return nil
+			},
 		},
-	},
-	{
-		Name: "EmptySlug",
-		Validator: func(nameWithoutExt, slug string) error {
-			if slug == "" {
-				return errors.New("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
-			}
+		{
+			Name: "EmptySlug",
+			Validator: func(nameWithoutExt, slug string) error {
+				if slug == "" {
+					return errors.New("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
+				}
 
-			return nil
+				return nil
+			},
 		},
-	},
-	{
-		Name: "NoSpaces",
-		Validator: func(nameWithoutExt, slug string) error {
-			if strings.Contains(slug, " ") {
-				return pkgerrors.ErrInvalidStorySlugError(slug)
-			}
+		{
+			Name: "NoSpaces",
+			Validator: func(nameWithoutExt, slug string) error {
+				if strings.Contains(slug, " ") {
+					return pkgerrors.ErrInvalidStorySlugError(slug)
+				}
 
-			return nil
+				return nil
+			},
 		},
-	},
+	}
 }
 
 // validateFilename executes all validation rules.
 func validateFilename(filename, nameWithoutExt, slug string) error {
-	for _, rule := range filenameValidations {
+	for _, rule := range getFilenameValidations() {
 		err := rule.Validator(nameWithoutExt, slug)
 		if err != nil {
 			slog.Error("Validation failed", "rule", rule.Name, "filename", filename, "error", err)
@@ -107,7 +114,9 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 
 	// Verify file exists and is readable
 	storyFile := matches[0]
-	if _, err := os.Stat(storyFile); err != nil {
+
+	_, err = os.Stat(storyFile)
+	if err != nil {
 		slog.Error("Story file not accessible", "file", storyFile, "error", err)
 
 		return "", pkgerrors.ErrStoryFileNotAccessibleError(storyFile, err)
@@ -118,15 +127,16 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	nameWithoutExt := strings.TrimSuffix(filename, ".yaml")
 
 	// Parse slug from filename
-	parts := strings.SplitN(nameWithoutExt, "-", 2)
+	parts := strings.SplitN(nameWithoutExt, "-", filenamePartsCount)
 
 	slug := ""
-	if len(parts) == 2 {
+	if len(parts) == filenamePartsCount {
 		slug = parts[1]
 	}
 
 	// Execute all validation rules
-	if err := validateFilename(filename, nameWithoutExt, slug); err != nil {
+	err = validateFilename(filename, nameWithoutExt, slug)
+	if err != nil {
 		return "", err
 	}
 
@@ -173,13 +183,20 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 
 	// Unmarshal YAML
 	var storyDoc story.StoryDocument
-	if err := yaml.Unmarshal(data, &storyDoc); err != nil {
+
+	err = yaml.Unmarshal(data, &storyDoc)
+	if err != nil {
 		slog.Error("Failed to unmarshal story YAML", "file", storyFile, "error", err)
 
 		return nil, pkgerrors.ErrParseStoryYAMLFailed(storyFile, err)
 	}
 
-	slog.Debug("Story document loaded successfully", "story_number", storyNumber, "file", storyFile, "scenario_count", len(storyDoc.Scenarios.TestScenarios))
+	slog.Debug(
+		"Story document loaded successfully",
+		"story_number", storyNumber,
+		"file", storyFile,
+		"scenario_count", len(storyDoc.Scenarios.TestScenarios),
+	)
 
 	return &storyDoc, nil
 }

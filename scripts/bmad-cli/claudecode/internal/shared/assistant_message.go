@@ -21,11 +21,12 @@ func (m *AssistantMessage) MarshalJSON() ([]byte, error) {
 	type assistantMessage AssistantMessage
 
 	temp := struct {
-		Type string `json:"type"`
 		*assistantMessage
+
+		Type string `json:"type"`
 	}{
-		Type:             MessageTypeAssistant,
 		assistantMessage: (*assistantMessage)(m),
+		Type:             MessageTypeAssistant,
 	}
 
 	return json.Marshal(temp)

@@ -16,15 +16,11 @@ import (
 
 const windowsOS = "windows"
 
-// DiscoveryPaths defines the standard search paths for Claude CLI.
-var DiscoveryPaths = []string{
-	// Will be populated with dynamic paths in FindCLI()
-}
-
 // FindCLI searches for the Claude CLI binary in standard locations.
 func FindCLI() (string, error) {
 	// 1. Check PATH first - most common case
-	if path, err := exec.LookPath("claude"); err == nil {
+	path, err := exec.LookPath("claude")
+	if err == nil {
 		return path, nil
 	}
 
@@ -32,7 +28,8 @@ func FindCLI() (string, error) {
 	locations := getCommonCLILocations()
 
 	for _, location := range locations {
-		if info, err := os.Stat(location); err == nil && !info.IsDir() {
+		info, statErr := os.Stat(location)
+		if statErr == nil && !info.IsDir() {
 			// Verify it's executable (Unix-like systems)
 			if runtime.GOOS != windowsOS {
 				if info.Mode()&0o111 == 0 {
@@ -45,7 +42,8 @@ func FindCLI() (string, error) {
 	}
 
 	// 3. Check Node.js dependency
-	if _, err := exec.LookPath("node"); err != nil {
+	_, nodeErr := exec.LookPath("node")
+	if nodeErr != nil {
 		return "", shared.NewCLINotFoundError("",
 			"Claude Code requires Node.js, which is not installed.\n\n"+
 				"Install Node.js from: https://nodejs.org/\n\n"+
@@ -223,8 +221,8 @@ func addFileSystemFlags(cmd []string, options *shared.Options) []string {
 }
 
 func addMCPFlags(cmd []string, _ *shared.Options) []string {
-	// TODO: Implement MCP configuration file generation when len(options.McpServers) > 0
-	// For now, skip MCP servers - this will be added in a subsequent commit
+	// Note: MCP configuration file generation is not yet implemented
+	// This will be added in a subsequent commit when len(options.McpServers) > 0
 	return cmd
 }
 
@@ -244,7 +242,8 @@ func addExtraFlags(cmd []string, options *shared.Options) []string {
 
 // ValidateNodeJS checks if Node.js is available.
 func ValidateNodeJS() error {
-	if _, err := exec.LookPath("node"); err != nil {
+	_, err := exec.LookPath("node")
+	if err != nil {
 		return shared.NewCLINotFoundError("node",
 			"Node.js is required for Claude CLI but was not found.\n\n"+
 				"Install Node.js from: https://nodejs.org/\n\n"+

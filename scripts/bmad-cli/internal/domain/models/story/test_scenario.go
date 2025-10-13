@@ -13,6 +13,8 @@ type ModifierType string
 const (
 	ModifierTypeAnd ModifierType = "and"
 	ModifierTypeBut ModifierType = "but"
+
+	yamlMappingNodeContentSize = 2 // YAML mapping nodes have 2 elements: key + value
 )
 
 // StepStatement represents a single statement in a Gherkin step
@@ -35,7 +37,7 @@ func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
 
 	// Handle object with and/but key
 	if node.Kind == yaml.MappingNode {
-		if len(node.Content) != 2 {
+		if len(node.Content) != yamlMappingNodeContentSize {
 			return errors.New("modifier must have exactly one key")
 		}
 

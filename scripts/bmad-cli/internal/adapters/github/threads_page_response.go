@@ -1,5 +1,7 @@
 package github
 
+// threadsPageResponse represents GitHub GraphQL API response for PR review threads.
+// Uses camelCase to match GitHub's API contract.
 type threadsPageResponse struct {
 	Data struct {
 		Repository struct {

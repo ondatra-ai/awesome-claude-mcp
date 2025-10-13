@@ -129,6 +129,11 @@ linters:
       forbid:
         - pattern: '^fmt\.(Print(f|ln)?|Sprintf|Errorf)$'
           msg: 'use slog for logging and proper error wrapping'
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
 
   exclusions:
     generated: lax
@@ -143,9 +148,6 @@ linters:
           - funlen
           - cyclop
           - exhaustruct
-      - path: internal/ai/openrouter/client\.go
-        linters:
-          - tagliatelle
       - paths:
           - tests/e2e/testutil/coverage\.go
           - tests/e2e/testutil/runner\.go
@@ -159,7 +161,6 @@ linters:
           - err113
           - nlreturn
           - noctx
-          - noinlineerr
           - mnd
           - gosec
           - godot

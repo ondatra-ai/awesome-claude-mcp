@@ -9,6 +9,8 @@ import (
 	"bmad-cli/internal/pkg/errors"
 )
 
+const fileModeDirectory = 0755 // Standard directory permission
+
 // RunDirectory manages timestamped run directories for organizing tmp files.
 type RunDirectory struct {
 	runPath string
@@ -22,7 +24,7 @@ func NewRunDirectory(basePath string) (*RunDirectory, error) {
 	dirName := timestamp
 	runPath := filepath.Join(basePath, dirName)
 
-	err := os.MkdirAll(runPath, 0755)
+	err := os.MkdirAll(runPath, fileModeDirectory)
 	if err != nil {
 		slog.Error("Failed to create run directory", "path", runPath, "error", err)
 

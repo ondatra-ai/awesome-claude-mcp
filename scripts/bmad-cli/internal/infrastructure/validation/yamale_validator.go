@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"os"
@@ -29,7 +30,8 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	}
 
 	// Verify schema file exists
-	if _, err := os.Stat(absSchemaPath); os.IsNotExist(err) {
+	_, err = os.Stat(absSchemaPath)
+	if os.IsNotExist(err) {
 		slog.Error("schema file does not exist", "path", absSchemaPath)
 
 		return errors.New("schema file does not exist: " + absSchemaPath)
@@ -42,16 +44,24 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 
 		return errors.Join(errors.New("failed to create temporary file"), err)
 	}
-	defer os.Remove(tmpFile.Name())
+
+	defer func() {
+		err := os.Remove(tmpFile.Name())
+		if err != nil {
+			slog.Warn("failed to remove temporary file", "path", tmpFile.Name(), "error", err)
+		}
+	}()
 
 	// Write YAML content to temp file
-	if _, err := tmpFile.WriteString(yamlContent); err != nil {
+	_, err = tmpFile.WriteString(yamlContent)
+	if err != nil {
 		slog.Error("failed to write YAML content", "error", err)
 
 		return errors.Join(errors.New("failed to write YAML content"), err)
 	}
 
-	if err := tmpFile.Close(); err != nil {
+	err = tmpFile.Close()
+	if err != nil {
 		slog.Error("failed to close temporary file", "error", err)
 
 		return errors.Join(errors.New("failed to close temporary file"), err)
@@ -59,49 +69,6 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 
 	// Use yamale CLI tool
 	return v.validateWithYamaleCLI(absSchemaPath, tmpFile.Name())
-}
-
-func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) error {
-	// Check if yamale command is available first
-	if _, err := exec.LookPath("yamale"); err != nil {
-		slog.Warn("yamale command not found - skipping validation")
-
-		return nil
-	}
-
-	// Run yamale validation
-	cmd := exec.Command("yamale", "-s", schemaPath, dataPath)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		slog.Error("yamale validation failed", "error", err, "output", string(output))
-
-		return errors.Join(errors.New("yamale validation failed"), err)
-	}
-
-	slog.Info("✅ YAML validation passed")
-
-	return nil
-}
-
-func (v *YamaleValidator) validateWithPythonModule(schemaPath, dataPath string) error {
-	// Try python -m yamale
-	cmd := exec.Command("python", "-m", "yamale", "--schema", schemaPath, dataPath)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		// Try python3 if python failed
-		cmd = exec.Command("python3", "-m", "yamale", "--schema", schemaPath, dataPath)
-
-		output, err = cmd.CombinedOutput()
-		if err != nil {
-			slog.Error("python yamale validation failed", "error", err, "output", string(output))
-
-			return errors.Join(errors.New("python yamale validation failed"), err)
-		}
-	}
-
-	return nil
 }
 
 func (v *YamaleValidator) ValidateFromStdin(yamlContent string) error {
@@ -114,22 +81,48 @@ func (v *YamaleValidator) ValidateFromStdin(yamlContent string) error {
 	}
 
 	// Try yamale with stdin
-	cmd := exec.Command("yamale", "--schema", absSchemaPath, "-")
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "yamale", "--schema", absSchemaPath, "-")
 	cmd.Stdin = strings.NewReader(yamlContent)
 
-	output, err := cmd.CombinedOutput()
+	_, err = cmd.CombinedOutput()
 	if err != nil {
 		// Try with python module if CLI fails
-		cmd = exec.Command("python", "-m", "yamale", "--schema", absSchemaPath, "-")
+		cmd = exec.CommandContext(ctx, "python", "-m", "yamale", "--schema", absSchemaPath, "-")
 		cmd.Stdin = strings.NewReader(yamlContent)
 
-		output, err = cmd.CombinedOutput()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
 			slog.Error("yamale validation failed", "error", err, "output", string(output))
 
 			return errors.Join(errors.New("yamale validation failed"), err)
 		}
 	}
+
+	return nil
+}
+
+func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) error {
+	// Check if yamale command is available first
+	_, err := exec.LookPath("yamale")
+	if err != nil {
+		slog.Warn("yamale command not found - skipping validation")
+
+		return err
+	}
+
+	// Run yamale validation
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "yamale", "-s", schemaPath, dataPath)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		slog.Error("yamale validation failed", "error", err, "output", string(output))
+
+		return errors.Join(errors.New("yamale validation failed"), err)
+	}
+
+	slog.Info("✅ YAML validation passed")
 
 	return nil
 }

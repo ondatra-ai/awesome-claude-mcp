@@ -44,7 +44,13 @@ type StoryFactory struct {
 	runDirectory       *fs.RunDirectory
 }
 
-func NewStoryFactory(epicLoader *epic.EpicLoader, aiClient ports.AIPort, config *config.ViperConfig, architectureLoader *docs.ArchitectureLoader, runDirectory *fs.RunDirectory) *StoryFactory {
+func NewStoryFactory(
+	epicLoader *epic.EpicLoader,
+	aiClient ports.AIPort,
+	config *config.ViperConfig,
+	architectureLoader *docs.ArchitectureLoader,
+	runDirectory *fs.RunDirectory,
+) *StoryFactory {
 	return &StoryFactory{
 		epicLoader:         epicLoader,
 		aiClient:           aiClient,

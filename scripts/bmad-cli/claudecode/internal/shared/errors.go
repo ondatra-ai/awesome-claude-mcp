@@ -37,11 +37,6 @@ type ConnectionError struct {
 	BaseError
 }
 
-// Type returns the error type for ConnectionError.
-func (e *ConnectionError) Type() string {
-	return "connection_error"
-}
-
 // NewConnectionError creates a new ConnectionError.
 func NewConnectionError(message string, cause error) *ConnectionError {
 	return &ConnectionError{
@@ -49,16 +44,16 @@ func NewConnectionError(message string, cause error) *ConnectionError {
 	}
 }
 
+// Type returns the error type for ConnectionError.
+func (e *ConnectionError) Type() string {
+	return "connection_error"
+}
+
 // CLINotFoundError indicates the Claude CLI was not found.
 type CLINotFoundError struct {
 	BaseError
 
 	Path string
-}
-
-// Type returns the error type for CLINotFoundError.
-func (e *CLINotFoundError) Type() string {
-	return "cli_not_found_error"
 }
 
 // NewCLINotFoundError creates a new CLINotFoundError.
@@ -74,12 +69,26 @@ func NewCLINotFoundError(path, message string) *CLINotFoundError {
 	}
 }
 
+// Type returns the error type for CLINotFoundError.
+func (e *CLINotFoundError) Type() string {
+	return "cli_not_found_error"
+}
+
 // ProcessError represents subprocess execution failures.
 type ProcessError struct {
 	BaseError
 
 	ExitCode int
 	Stderr   string
+}
+
+// NewProcessError creates a new ProcessError.
+func NewProcessError(message string, exitCode int, stderr string) *ProcessError {
+	return &ProcessError{
+		BaseError: BaseError{message: message},
+		ExitCode:  exitCode,
+		Stderr:    stderr,
+	}
 }
 
 // Type returns the error type for ProcessError.
@@ -100,15 +109,6 @@ func (e *ProcessError) Error() string {
 	return message
 }
 
-// NewProcessError creates a new ProcessError.
-func NewProcessError(message string, exitCode int, stderr string) *ProcessError {
-	return &ProcessError{
-		BaseError: BaseError{message: message},
-		ExitCode:  exitCode,
-		Stderr:    stderr,
-	}
-}
-
 // JSONDecodeError represents JSON parsing failures.
 type JSONDecodeError struct {
 	BaseError
@@ -116,11 +116,6 @@ type JSONDecodeError struct {
 	Line          string
 	Position      int
 	OriginalError error
-}
-
-// Type returns the error type for JSONDecodeError.
-func (e *JSONDecodeError) Type() string {
-	return "json_decode_error"
 }
 
 const maxLineDisplayLength = 100
@@ -143,6 +138,11 @@ func NewJSONDecodeError(line string, position int, cause error) *JSONDecodeError
 	}
 }
 
+// Type returns the error type for JSONDecodeError.
+func (e *JSONDecodeError) Type() string {
+	return "json_decode_error"
+}
+
 func (e *JSONDecodeError) Unwrap() error {
 	return e.OriginalError
 }
@@ -154,15 +154,15 @@ type MessageParseError struct {
 	Data any
 }
 
-// Type returns the error type for MessageParseError.
-func (e *MessageParseError) Type() string {
-	return "message_parse_error"
-}
-
 // NewMessageParseError creates a new MessageParseError.
 func NewMessageParseError(message string, data any) *MessageParseError {
 	return &MessageParseError{
 		BaseError: BaseError{message: message},
 		Data:      data,
 	}
+}
+
+// Type returns the error type for MessageParseError.
+func (e *MessageParseError) Type() string {
+	return "message_parse_error"
 }

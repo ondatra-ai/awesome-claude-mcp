@@ -37,10 +37,60 @@ func NewAITestingGenerator(aiClient ports.AIPort, config *config.ViperConfig) *A
 	}
 }
 
-// GenerateTesting generates comprehensive testing requirements based on story analysis.
-func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.Testing, error) {
+// GenerateTesting generates comprehensive testing requirements based on story
+// analysis.
+func (g *AITestingGenerator) GenerateTesting(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) (story.Testing, error) {
 	// Create AI generator for testing requirements
-	generator := ai.NewAIGenerator[TestingData, story.Testing](ctx, g.aiClient, g.config, storyDoc.Story.ID, "testing").
+	generator := g.createTestingGenerator(ctx, storyDoc, tmpDir)
+
+	// Generate testing requirements
+	testing, err := generator.Generate(ctx)
+	if err != nil {
+		return story.Testing{}, pkgerrors.ErrGenerateTestingFailed(err)
+	}
+
+	return testing, nil
+}
+
+// loadPrompts loads system and user prompts for testing requirements.
+func (g *AITestingGenerator) loadPrompts(
+	data TestingData,
+) (string, string, error) {
+	// Load system prompt (doesn't need data)
+	systemTemplatePath := g.config.GetString("templates.prompts.testing_system")
+	systemLoader := template.NewTemplateLoader[TestingData](systemTemplatePath)
+
+	sysPrompt, err := systemLoader.LoadTemplate(TestingData{})
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadTestingSystemPromptFailed(err)
+	}
+
+	// Load user prompt
+	usrPrompt, err := g.loadTestingPrompt(data)
+	if err != nil {
+		return "", "", pkgerrors.ErrLoadTestingUserPromptFailed(err)
+	}
+
+	return sysPrompt, usrPrompt, nil
+}
+
+// createTestingGenerator creates and configures the AI generator for testing requirements.
+func (g *AITestingGenerator) createTestingGenerator(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) *ai.AIGenerator[TestingData, story.Testing] {
+	return ai.NewAIGenerator[TestingData, story.Testing](
+		ctx,
+		g.aiClient,
+		g.config,
+		storyDoc.Story.ID,
+		"testing",
+	).
 		WithTmpDir(tmpDir).
 		WithData(func() (TestingData, error) {
 			return TestingData{
@@ -51,34 +101,15 @@ func (g *AITestingGenerator) GenerateTesting(ctx context.Context, storyDoc *stor
 				TmpDir:           tmpDir,
 			}, nil
 		}).
-		WithPrompt(func(data TestingData) (systemPrompt string, userPrompt string, err error) {
-			// Load system prompt (doesn't need data)
-			systemTemplatePath := g.config.GetString("templates.prompts.testing_system")
-			systemLoader := template.NewTemplateLoader[TestingData](systemTemplatePath)
-
-			systemPrompt, err = systemLoader.LoadTemplate(TestingData{})
-			if err != nil {
-				return "", "", pkgerrors.ErrLoadTestingSystemPromptFailed(err)
-			}
-
-			// Load user prompt
-			userPrompt, err = g.loadTestingPrompt(data)
-			if err != nil {
-				return "", "", pkgerrors.ErrLoadTestingUserPromptFailed(err)
-			}
-
-			return systemPrompt, userPrompt, nil
-		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](g.config, storyDoc.Story.ID, "testing", "testing", tmpDir)).
+		WithPrompt(g.loadPrompts).
+		WithResponseParser(ai.CreateYAMLFileParser[story.Testing](
+			g.config,
+			storyDoc.Story.ID,
+			"testing",
+			"testing",
+			tmpDir,
+		)).
 		WithValidator(g.validateTesting)
-
-	// Generate testing requirements
-	testing, err := generator.Generate()
-	if err != nil {
-		return story.Testing{}, pkgerrors.ErrGenerateTestingFailed(err)
-	}
-
-	return testing, nil
 }
 
 // loadTestingPrompt loads the testing requirements prompt template.

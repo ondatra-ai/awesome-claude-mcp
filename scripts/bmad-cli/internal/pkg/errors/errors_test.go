@@ -1,20 +1,22 @@
-package errors
+package errors_test
 
 import (
 	"errors"
 	"testing"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 func TestAppError_Error(t *testing.T) {
 	tests := []struct {
 		name string
-		err  *AppError
+		err  *pkgerrors.AppError
 		want string
 	}{
 		{
 			name: "error with cause",
-			err: &AppError{
-				Category: CategoryAI,
+			err: &pkgerrors.AppError{
+				Category: pkgerrors.CategoryAI,
 				Code:     "TEST_ERROR",
 				Message:  "test message",
 				Cause:    errors.New("underlying error"),
@@ -23,8 +25,8 @@ func TestAppError_Error(t *testing.T) {
 		},
 		{
 			name: "error without cause",
-			err: &AppError{
-				Category: CategoryGitHub,
+			err: &pkgerrors.AppError{
+				Category: pkgerrors.CategoryGitHub,
 				Code:     "TEST_ERROR",
 				Message:  "test message",
 				Cause:    nil,
@@ -33,10 +35,10 @@ func TestAppError_Error(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.err.Error(); got != tt.want {
-				t.Errorf("AppError.Error() = %v, want %v", got, tt.want)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := testCase.err.Error(); got != testCase.want {
+				t.Errorf("AppError.Error() = %v, want %v", got, testCase.want)
 			}
 		})
 	}
@@ -44,8 +46,8 @@ func TestAppError_Error(t *testing.T) {
 
 func TestAppError_Unwrap(t *testing.T) {
 	cause := errors.New("underlying error")
-	err := &AppError{
-		Category: CategoryAI,
+	err := &pkgerrors.AppError{
+		Category: pkgerrors.CategoryAI,
 		Code:     "TEST_ERROR",
 		Message:  "test message",
 		Cause:    cause,
@@ -58,86 +60,86 @@ func TestAppError_Unwrap(t *testing.T) {
 }
 
 func TestIsCategory(t *testing.T) {
-	aiErr := &AppError{Category: CategoryAI, Code: "TEST", Message: "test"}
-	githubErr := &AppError{Category: CategoryGitHub, Code: "TEST", Message: "test"}
+	aiErr := &pkgerrors.AppError{Category: pkgerrors.CategoryAI, Code: "TEST", Message: "test"}
+	githubErr := &pkgerrors.AppError{Category: pkgerrors.CategoryGitHub, Code: "TEST", Message: "test"}
 	regularErr := errors.New("regular error")
 
 	tests := []struct {
 		name     string
 		err      error
-		category Category
+		category pkgerrors.Category
 		want     bool
 	}{
 		{
 			name:     "ai error matches ai category",
 			err:      aiErr,
-			category: CategoryAI,
+			category: pkgerrors.CategoryAI,
 			want:     true,
 		},
 		{
 			name:     "ai error doesn't match github category",
 			err:      aiErr,
-			category: CategoryGitHub,
+			category: pkgerrors.CategoryGitHub,
 			want:     false,
 		},
 		{
 			name:     "github error matches github category",
 			err:      githubErr,
-			category: CategoryGitHub,
+			category: pkgerrors.CategoryGitHub,
 			want:     true,
 		},
 		{
 			name:     "regular error doesn't match any category",
 			err:      regularErr,
-			category: CategoryAI,
+			category: pkgerrors.CategoryAI,
 			want:     false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsCategory(tt.err, tt.category); got != tt.want {
-				t.Errorf("IsCategory() = %v, want %v", got, tt.want)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := pkgerrors.IsCategory(testCase.err, testCase.category); got != testCase.want {
+				t.Errorf("IsCategory() = %v, want %v", got, testCase.want)
 			}
 		})
 	}
 }
 
 func TestIsAIError(t *testing.T) {
-	aiErr := &AppError{Category: CategoryAI, Code: "TEST", Message: "test"}
-	githubErr := &AppError{Category: CategoryGitHub, Code: "TEST", Message: "test"}
+	aiErr := &pkgerrors.AppError{Category: pkgerrors.CategoryAI, Code: "TEST", Message: "test"}
+	githubErr := &pkgerrors.AppError{Category: pkgerrors.CategoryGitHub, Code: "TEST", Message: "test"}
 
-	if !IsAIError(aiErr) {
+	if !pkgerrors.IsAIError(aiErr) {
 		t.Errorf("IsAIError() should return true for AI error")
 	}
 
-	if IsAIError(githubErr) {
+	if pkgerrors.IsAIError(githubErr) {
 		t.Errorf("IsAIError() should return false for non-AI error")
 	}
 }
 
 func TestIsGitHubError(t *testing.T) {
-	aiErr := &AppError{Category: CategoryAI, Code: "TEST", Message: "test"}
-	githubErr := &AppError{Category: CategoryGitHub, Code: "TEST", Message: "test"}
+	aiErr := &pkgerrors.AppError{Category: pkgerrors.CategoryAI, Code: "TEST", Message: "test"}
+	githubErr := &pkgerrors.AppError{Category: pkgerrors.CategoryGitHub, Code: "TEST", Message: "test"}
 
-	if !IsGitHubError(githubErr) {
+	if !pkgerrors.IsGitHubError(githubErr) {
 		t.Errorf("IsGitHubError() should return true for GitHub error")
 	}
 
-	if IsGitHubError(aiErr) {
+	if pkgerrors.IsGitHubError(aiErr) {
 		t.Errorf("IsGitHubError() should return false for non-GitHub error")
 	}
 }
 
 func TestIsParsingError(t *testing.T) {
-	parsingErr := &AppError{Category: CategoryParsing, Code: "TEST", Message: "test"}
-	aiErr := &AppError{Category: CategoryAI, Code: "TEST", Message: "test"}
+	parsingErr := &pkgerrors.AppError{Category: pkgerrors.CategoryParsing, Code: "TEST", Message: "test"}
+	aiErr := &pkgerrors.AppError{Category: pkgerrors.CategoryAI, Code: "TEST", Message: "test"}
 
-	if !IsParsingError(parsingErr) {
+	if !pkgerrors.IsParsingError(parsingErr) {
 		t.Errorf("IsParsingError() should return true for parsing error")
 	}
 
-	if IsParsingError(aiErr) {
+	if pkgerrors.IsParsingError(aiErr) {
 		t.Errorf("IsParsingError() should return false for non-parsing error")
 	}
 }
@@ -147,44 +149,44 @@ func TestErrorConstructors(t *testing.T) {
 	tests := []struct {
 		name     string
 		err      error
-		category Category
+		category pkgerrors.Category
 	}{
 		{
 			name:     "ErrEmptyClientOutput",
-			err:      ErrEmptyClientOutput("TestClient"),
-			category: CategoryAI,
+			err:      pkgerrors.ErrEmptyClientOutput("TestClient"),
+			category: pkgerrors.CategoryAI,
 		},
 		{
 			name:     "ErrNoPRFoundForBranch",
-			err:      ErrNoPRFoundForBranch("main"),
-			category: CategoryGitHub,
+			err:      pkgerrors.ErrNoPRFoundForBranch("main"),
+			category: pkgerrors.CategoryGitHub,
 		},
 		{
 			name:     "ErrInvalidRiskScore",
-			err:      ErrInvalidRiskScore(15),
-			category: CategoryParsing,
+			err:      pkgerrors.ErrInvalidRiskScore(15),
+			category: pkgerrors.CategoryParsing,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var appErr *AppError
-			if !errors.As(tt.err, &appErr) {
-				t.Errorf("%s should return AppError type", tt.name)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			var appErr *pkgerrors.AppError
+			if !errors.As(testCase.err, &appErr) {
+				t.Errorf("%s should return AppError type", testCase.name)
 
 				return
 			}
 
-			if appErr.Category != tt.category {
-				t.Errorf("%s category = %v, want %v", tt.name, appErr.Category, tt.category)
+			if appErr.Category != testCase.category {
+				t.Errorf("%s category = %v, want %v", testCase.name, appErr.Category, testCase.category)
 			}
 
 			if appErr.Code == "" {
-				t.Errorf("%s should have non-empty code", tt.name)
+				t.Errorf("%s should have non-empty code", testCase.name)
 			}
 
 			if appErr.Message == "" {
-				t.Errorf("%s should have non-empty message", tt.name)
+				t.Errorf("%s should have non-empty message", testCase.name)
 			}
 		})
 	}

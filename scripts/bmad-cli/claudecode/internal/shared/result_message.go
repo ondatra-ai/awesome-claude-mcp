@@ -28,11 +28,12 @@ func (m *ResultMessage) MarshalJSON() ([]byte, error) {
 	type resultMessage ResultMessage
 
 	temp := struct {
-		Type string `json:"type"`
 		*resultMessage
+
+		Type string `json:"type"`
 	}{
-		Type:          MessageTypeResult,
 		resultMessage: (*resultMessage)(m),
+		Type:          MessageTypeResult,
 	}
 
 	return json.Marshal(temp)

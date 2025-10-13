@@ -110,7 +110,9 @@ func (l *TemplateLoader[T]) executeTemplate(templateContent string, data T) (str
 
 	// Execute the template with data
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+
+	err = tmpl.Execute(&buf, data)
+	if err != nil {
 		return "", errors.ErrExecuteTemplateFailed(err)
 	}
 

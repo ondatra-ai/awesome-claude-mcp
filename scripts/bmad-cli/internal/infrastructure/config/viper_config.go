@@ -12,19 +12,19 @@ type ViperConfig struct {
 }
 
 func NewViperConfig() (*ViperConfig, error) {
-	v := viper.New()
+	viperInstance := viper.New()
 
-	v.SetConfigFile("./bmad-cli.yml")
-	v.SetConfigType("yaml")
+	viperInstance.SetConfigFile("./bmad-cli.yml")
+	viperInstance.SetConfigType("yaml")
 
-	err := v.ReadInConfig()
+	err := viperInstance.ReadInConfig()
 	if err != nil {
 		slog.Error("Failed to read config file", "error", err)
 
 		return nil, errors.ErrReadConfigFailed(err)
 	}
 
-	return &ViperConfig{viper: v}, nil
+	return &ViperConfig{viper: viperInstance}, nil
 }
 
 func (c *ViperConfig) GetString(key string) string {

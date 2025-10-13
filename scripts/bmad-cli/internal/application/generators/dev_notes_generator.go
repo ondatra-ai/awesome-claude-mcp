@@ -34,9 +34,22 @@ func NewDevNotesGenerator(aiClient ports.AIPort, config *config.ViperConfig) *AI
 	}
 }
 
-// GenerateDevNotes generates story dev_notes using AI based on the story, tasks, and architecture documents.
-func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *story.StoryDocument, tmpDir string) (story.DevNotes, error) {
-	return ai.NewAIGenerator[DevNotesPromptData, story.DevNotes](ctx, g.aiClient, g.config, storyDoc.Story.ID, "devnotes").
+// GenerateDevNotes generates story dev_notes using AI based on the story,
+// tasks, and architecture documents.
+func (g *AIDevNotesGenerator) GenerateDevNotes(
+	ctx context.Context,
+	storyDoc *story.StoryDocument,
+	tmpDir string,
+) (story.DevNotes, error) {
+	generator := ai.NewAIGenerator[DevNotesPromptData, story.DevNotes](
+		ctx,
+		g.aiClient,
+		g.config,
+		storyDoc.Story.ID,
+		"devnotes",
+	)
+
+	return generator.
 		WithTmpDir(tmpDir).
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
@@ -46,12 +59,12 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 				TmpDir: tmpDir,
 			}, nil
 		}).
-		WithPrompt(func(data DevNotesPromptData) (systemPrompt string, userPrompt string, err error) {
+		WithPrompt(func(data DevNotesPromptData) (string, string, error) {
 			// Load system prompt (doesn't need data)
 			systemTemplatePath := g.config.GetString("templates.prompts.devnotes_system")
 			systemLoader := template.NewTemplateLoader[DevNotesPromptData](systemTemplatePath)
 
-			systemPrompt, err = systemLoader.LoadTemplate(DevNotesPromptData{})
+			systemPrompt, err := systemLoader.LoadTemplate(DevNotesPromptData{})
 			if err != nil {
 				return "", "", errors.ErrLoadDevNotesPromptFailed(err)
 			}
@@ -60,16 +73,22 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(ctx context.Context, storyDoc *st
 			templatePath := g.config.GetString("templates.prompts.devnotes")
 			userLoader := template.NewTemplateLoader[DevNotesPromptData](templatePath)
 
-			userPrompt, err = userLoader.LoadTemplate(data)
+			userPrompt, err := userLoader.LoadTemplate(data)
 			if err != nil {
 				return "", "", errors.ErrLoadDevNotesUserPromptFailed(err)
 			}
 
 			return systemPrompt, userPrompt, nil
 		}).
-		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](g.config, storyDoc.Story.ID, "devnotes", "dev_notes", tmpDir)).
+		WithResponseParser(ai.CreateYAMLFileParser[story.DevNotes](
+			g.config,
+			storyDoc.Story.ID,
+			"devnotes",
+			"dev_notes",
+			tmpDir,
+		)).
 		WithValidator(g.validateDevNotes).
-		Generate()
+		Generate(ctx)
 }
 
 // validateDevNotes validates that mandatory entities have required source and description fields.

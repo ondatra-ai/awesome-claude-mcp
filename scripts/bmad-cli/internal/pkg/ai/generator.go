@@ -14,9 +14,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// File permission constants.
+	fileModeReadWrite = 0644 // Standard file permission for read/write files
+	fileModeDirectory = 0755 // Standard directory permission
+)
+
 // AIGenerator is a generic AI content generator with builder pattern.
 type AIGenerator[T1 any, T2 any] struct {
-	ctx            context.Context
 	aiClient       ports.AIPort
 	config         *config.ViperConfig
 	storyID        string
@@ -31,11 +36,16 @@ type AIGenerator[T1 any, T2 any] struct {
 }
 
 // NewAIGenerator creates a new generator instance.
-func NewAIGenerator[T1 any, T2 any](ctx context.Context, aiClient ports.AIPort, config *config.ViperConfig, storyID string, filePrefix string) *AIGenerator[T1, T2] {
+func NewAIGenerator[T1 any, T2 any](
+	_ context.Context,
+	aiClient ports.AIPort,
+	config *config.ViperConfig,
+	storyID string,
+	filePrefix string,
+) *AIGenerator[T1, T2] {
 	modeFactory := ai.NewModeFactory(config)
 
 	return &AIGenerator[T1, T2]{
-		ctx:        ctx,
 		aiClient:   aiClient,
 		config:     config,
 		storyID:    storyID,
@@ -54,17 +64,17 @@ func (g *AIGenerator[T1, T2]) WithData(loader func() (T1, error)) *AIGenerator[T
 
 // WithPrompt sets the prompt loader functor - can return either single prompt or dual prompts (system, user).
 func (g *AIGenerator[T1, T2]) WithPrompt(loader interface{}) *AIGenerator[T1, T2] {
-	switch l := loader.(type) {
+	switch loaderFunc := loader.(type) {
 	case func(T1) (string, error):
 		// Convert single prompt to dual prompt format with empty system prompt
 		g.promptLoader = func(data T1) (string, string, error) {
-			userPrompt, err := l(data)
+			userPrompt, err := loaderFunc(data)
 
 			return "", userPrompt, err
 		}
 	case func(T1) (string, string, error):
 		// Use dual prompt directly
-		g.promptLoader = l
+		g.promptLoader = loaderFunc
 	}
 
 	return g
@@ -106,94 +116,41 @@ func (g *AIGenerator[T1, T2]) WithTmpDir(tmpDir string) *AIGenerator[T1, T2] {
 }
 
 // Generate executes the generation pipeline.
-func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
+func (g *AIGenerator[T1, T2]) Generate(ctx context.Context) (T2, error) {
 	var zero T2
 
-	// 0. Get or fallback to default tmp directory
-	tmpDir := g.tmpDir
-	if tmpDir == "" {
-		tmpDir = g.config.GetString("paths.tmp_dir")
-	}
-	// Ensure tmp directory exists
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return zero, pkgerrors.ErrCreateTmpDirectoryFailed(err)
+	tmpDir, err := g.prepareTmpDirectory()
+	if err != nil {
+		return zero, err
 	}
 
-	// 1. Load input data
 	data, err := g.dataLoader()
 	if err != nil {
 		return zero, pkgerrors.ErrLoadDataFailed(err)
 	}
 
-	// 2. Generate prompts and call AI
 	systemPrompt, userPrompt, err := g.promptLoader(data)
 	if err != nil {
 		return zero, pkgerrors.ErrLoadPromptsFailed(err)
 	}
 
-	var response string
-
-	if systemPrompt != "" {
-		// Dual prompt mode - save both prompts for debugging
-		systemPromptFile := fmt.Sprintf("%s/%s-%s-system-prompt.txt", tmpDir, g.storyID, g.filePrefix)
-
-		err := os.WriteFile(systemPromptFile, []byte(systemPrompt), 0644)
-		if err != nil {
-			slog.Warn("Failed to save system prompt file", "error", err)
-		} else {
-			slog.Info("💾 System prompt saved", "file", systemPromptFile)
-		}
-
-		userPromptFile := fmt.Sprintf("%s/%s-%s-user-prompt.txt", tmpDir, g.storyID, g.filePrefix)
-
-		err = os.WriteFile(userPromptFile, []byte(userPrompt), 0644)
-		if err != nil {
-			slog.Warn("Failed to save user prompt file", "error", err)
-		} else {
-			slog.Info("💾 User prompt saved", "file", userPromptFile)
-		}
-
-		// Use system + user prompt
-		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, systemPrompt, userPrompt, g.model, g.mode)
-		if err != nil {
-			return zero, pkgerrors.ErrGenerateContentWithSystemPromptFailed(err)
-		}
-	} else {
-		// Single prompt mode - save single prompt for debugging
-		promptFile := fmt.Sprintf("%s/%s-%s-prompt.txt", tmpDir, g.storyID, g.filePrefix)
-
-		err := os.WriteFile(promptFile, []byte(userPrompt), 0644)
-		if err != nil {
-			slog.Warn("Failed to save prompt file", "error", err)
-		} else {
-			slog.Info("💾 Prompt saved", "file", promptFile)
-		}
-
-		// Use single prompt (empty system prompt)
-		response, err = g.aiClient.ExecutePromptWithSystem(g.ctx, "", userPrompt, g.model, g.mode)
-		if err != nil {
-			return zero, pkgerrors.ErrGenerateContentFailed(err)
-		}
+	response, err := g.executeAIPrompt(ctx, tmpDir, systemPrompt, userPrompt)
+	if err != nil {
+		return zero, err
 	}
 
-	// 4. Save AI response for debugging
-	responseFile := fmt.Sprintf("%s/%s-%s-full-response.txt", tmpDir, g.storyID, g.filePrefix)
-	if err := os.WriteFile(responseFile, []byte(response), 0644); err != nil {
-		return zero, pkgerrors.ErrWriteResponseFileFailed(err)
+	err = g.saveResponseFile(tmpDir, response)
+	if err != nil {
+		return zero, err
 	}
 
-	slog.Info("💾 AI response saved", "file", responseFile)
-
-	// 5. Parse response
 	result, err := g.responseParser(response)
 	if err != nil {
 		return zero, pkgerrors.ErrParseResponseFailed(err)
 	}
 
-	// 6. Log success
 	slog.Info("Content generated successfully", "type", g.filePrefix)
 
-	// 7. Validate if validator is set
 	if g.validator != nil {
 		err := g.validator(result)
 		if err != nil {
@@ -204,9 +161,87 @@ func (g *AIGenerator[T1, T2]) Generate() (T2, error) {
 	return result, nil
 }
 
+func (g *AIGenerator[T1, T2]) prepareTmpDirectory() (string, error) {
+	tmpDir := g.tmpDir
+	if tmpDir == "" {
+		tmpDir = g.config.GetString("paths.tmp_dir")
+	}
+
+	err := os.MkdirAll(tmpDir, fileModeDirectory)
+	if err != nil {
+		return "", pkgerrors.ErrCreateTmpDirectoryFailed(err)
+	}
+
+	return tmpDir, nil
+}
+
+func (g *AIGenerator[T1, T2]) executeAIPrompt(
+	ctx context.Context, tmpDir, systemPrompt, userPrompt string,
+) (string, error) {
+	if systemPrompt != "" {
+		return g.executeDualPrompt(ctx, tmpDir, systemPrompt, userPrompt)
+	}
+
+	return g.executeSinglePrompt(ctx, tmpDir, userPrompt)
+}
+
+func (g *AIGenerator[T1, T2]) executeDualPrompt(
+	ctx context.Context, tmpDir, systemPrompt, userPrompt string,
+) (string, error) {
+	g.savePromptFile(tmpDir, "system-prompt", systemPrompt)
+	g.savePromptFile(tmpDir, "user-prompt", userPrompt)
+
+	response, err := g.aiClient.ExecutePromptWithSystem(ctx, systemPrompt, userPrompt, g.model, g.mode)
+	if err != nil {
+		return "", pkgerrors.ErrGenerateContentWithSystemPromptFailed(err)
+	}
+
+	return response, nil
+}
+
+func (g *AIGenerator[T1, T2]) executeSinglePrompt(ctx context.Context, tmpDir, userPrompt string) (string, error) {
+	g.savePromptFile(tmpDir, "prompt", userPrompt)
+
+	response, err := g.aiClient.ExecutePromptWithSystem(ctx, "", userPrompt, g.model, g.mode)
+	if err != nil {
+		return "", pkgerrors.ErrGenerateContentFailed(err)
+	}
+
+	return response, nil
+}
+
+func (g *AIGenerator[T1, T2]) savePromptFile(tmpDir, suffix, content string) {
+	filePath := fmt.Sprintf("%s/%s-%s-%s.txt", tmpDir, g.storyID, g.filePrefix, suffix)
+
+	err := os.WriteFile(filePath, []byte(content), fileModeReadWrite)
+	if err != nil {
+		slog.Warn("Failed to save prompt file", "error", err)
+	} else {
+		slog.Info("💾 Prompt saved", "file", filePath)
+	}
+}
+
+func (g *AIGenerator[T1, T2]) saveResponseFile(tmpDir, response string) error {
+	responseFile := fmt.Sprintf("%s/%s-%s-full-response.txt", tmpDir, g.storyID, g.filePrefix)
+
+	err := os.WriteFile(responseFile, []byte(response), fileModeReadWrite)
+	if err != nil {
+		return pkgerrors.ErrWriteResponseFileFailed(err)
+	}
+
+	slog.Info("💾 AI response saved", "file", responseFile)
+
+	return nil
+}
+
 // CreateYAMLFileParser creates a parser function for reading YAML files
-// This is a higher-order function that returns a closure configured with the given parameters.
-func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix, yamlKey string, tmpDir string) func(string) (T, error) {
+// This is a higher-order function that returns a closure configured with the
+// given parameters.
+func CreateYAMLFileParser[T any](
+	config *config.ViperConfig,
+	storyID, filePrefix, yamlKey string,
+	tmpDir string,
+) func(string) (T, error) {
 	return func(aiResponse string) (T, error) {
 		var zero T
 
@@ -226,7 +261,9 @@ func CreateYAMLFileParser[T any](config *config.ViperConfig, storyID, filePrefix
 
 		// Parse YAML based on key
 		data := make(map[string]T)
-		if err := yaml.Unmarshal(content, &data); err != nil {
+
+		err = yaml.Unmarshal(content, &data)
+		if err != nil {
 			return zero, pkgerrors.ErrParseYAMLFailed(filePrefix, err)
 		}
 
