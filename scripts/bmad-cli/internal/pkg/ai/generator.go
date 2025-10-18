@@ -126,12 +126,12 @@ func (g *AIGenerator[T1, T2]) Generate(ctx context.Context) (T2, error) {
 
 	data, err := g.dataLoader()
 	if err != nil {
-		return zero, pkgerrors.ErrLoadDataFailed(err)
+		return zero, fmt.Errorf("load data failed: %w", pkgerrors.ErrLoadDataFailed(err))
 	}
 
 	systemPrompt, userPrompt, err := g.promptLoader(data)
 	if err != nil {
-		return zero, pkgerrors.ErrLoadPromptsFailed(err)
+		return zero, fmt.Errorf("load prompts failed: %w", pkgerrors.ErrLoadPromptsFailed(err))
 	}
 
 	response, err := g.executeAIPrompt(ctx, tmpDir, systemPrompt, userPrompt)
@@ -146,7 +146,7 @@ func (g *AIGenerator[T1, T2]) Generate(ctx context.Context) (T2, error) {
 
 	result, err := g.responseParser(response)
 	if err != nil {
-		return zero, pkgerrors.ErrParseResponseFailed(err)
+		return zero, fmt.Errorf("parse response failed: %w", pkgerrors.ErrParseResponseFailed(err))
 	}
 
 	slog.Info("Content generated successfully", "type", g.filePrefix)
@@ -154,7 +154,7 @@ func (g *AIGenerator[T1, T2]) Generate(ctx context.Context) (T2, error) {
 	if g.validator != nil {
 		err := g.validator(result)
 		if err != nil {
-			return zero, pkgerrors.ErrValidationFailed(err)
+			return zero, fmt.Errorf("validation failed: %w", pkgerrors.ErrValidationFailed(err))
 		}
 	}
 
@@ -169,7 +169,7 @@ func (g *AIGenerator[T1, T2]) prepareTmpDirectory() (string, error) {
 
 	err := os.MkdirAll(tmpDir, fileModeDirectory)
 	if err != nil {
-		return "", pkgerrors.ErrCreateTmpDirectoryFailed(err)
+		return "", fmt.Errorf("create tmp directory failed: %w", pkgerrors.ErrCreateTmpDirectoryFailed(err))
 	}
 
 	return tmpDir, nil
@@ -193,7 +193,10 @@ func (g *AIGenerator[T1, T2]) executeDualPrompt(
 
 	response, err := g.aiClient.ExecutePromptWithSystem(ctx, systemPrompt, userPrompt, g.model, g.mode)
 	if err != nil {
-		return "", pkgerrors.ErrGenerateContentWithSystemPromptFailed(err)
+		return "", fmt.Errorf(
+			"generate content with system prompt failed: %w",
+			pkgerrors.ErrGenerateContentWithSystemPromptFailed(err),
+		)
 	}
 
 	return response, nil
@@ -204,7 +207,7 @@ func (g *AIGenerator[T1, T2]) executeSinglePrompt(ctx context.Context, tmpDir, u
 
 	response, err := g.aiClient.ExecutePromptWithSystem(ctx, "", userPrompt, g.model, g.mode)
 	if err != nil {
-		return "", pkgerrors.ErrGenerateContentFailed(err)
+		return "", fmt.Errorf("generate content failed: %w", pkgerrors.ErrGenerateContentFailed(err))
 	}
 
 	return response, nil
@@ -226,7 +229,7 @@ func (g *AIGenerator[T1, T2]) saveResponseFile(tmpDir, response string) error {
 
 	err := os.WriteFile(responseFile, []byte(response), fileModeReadWrite)
 	if err != nil {
-		return pkgerrors.ErrWriteResponseFileFailed(err)
+		return fmt.Errorf("write response file failed: %w", pkgerrors.ErrWriteResponseFileFailed(err))
 	}
 
 	slog.Info("💾 AI response saved", "file", responseFile)
@@ -256,7 +259,7 @@ func CreateYAMLFileParser[T any](
 		// Read file
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return zero, pkgerrors.ErrYAMLFileNotFound(filePrefix, filePath)
+			return zero, fmt.Errorf("YAML file not found: %w", pkgerrors.ErrYAMLFileNotFound(filePrefix, filePath))
 		}
 
 		// Parse YAML based on key
@@ -264,12 +267,12 @@ func CreateYAMLFileParser[T any](
 
 		err = yaml.Unmarshal(content, &data)
 		if err != nil {
-			return zero, pkgerrors.ErrParseYAMLFailed(filePrefix, err)
+			return zero, fmt.Errorf("parse YAML failed: %w", pkgerrors.ErrParseYAMLFailed(filePrefix, err))
 		}
 
 		result, exists := data[yamlKey]
 		if !exists {
-			return zero, pkgerrors.ErrYAMLKeyNotFound(yamlKey)
+			return zero, fmt.Errorf("YAML key not found: %w", pkgerrors.ErrYAMLKeyNotFound(yamlKey))
 		}
 
 		return result, nil

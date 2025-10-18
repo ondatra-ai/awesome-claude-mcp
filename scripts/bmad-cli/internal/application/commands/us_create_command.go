@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -87,7 +86,7 @@ func (c *USCreateCommand) validateStoryNumber(storyNumber string) error {
 	}
 
 	if !matched {
-		return errors.New("story number must be in format X.Y (e.g., 3.1, 3.2)")
+		return pkgerrors.ErrInvalidStoryNumberFormat
 	}
 
 	return nil

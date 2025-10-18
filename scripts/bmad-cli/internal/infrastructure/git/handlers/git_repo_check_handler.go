@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
-	"errors"
 	"log/slog"
 
+	"bmad-cli/internal/domain/ports"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
@@ -37,7 +36,7 @@ func (h *GitRepoCheckHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if !isRepo {
 		slog.Error("Current directory is not a git repository")
 
-		return errors.New("current directory is not a git repository")
+		return pkgerrors.ErrNotGitRepository
 	}
 
 	slog.Debug("Git repository check passed")

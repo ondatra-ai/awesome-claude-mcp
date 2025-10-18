@@ -3,11 +3,14 @@ package validation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
 type YamaleValidator struct {
@@ -26,7 +29,7 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	if err != nil {
 		slog.Error("failed to get absolute schema path", "error", err, "path", v.schemaPath)
 
-		return errors.Join(errors.New("failed to get absolute schema path"), err)
+		return errors.Join(pkgerrors.ErrSchemaAbsPathFailed, err)
 	}
 
 	// Verify schema file exists
@@ -34,7 +37,7 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	if os.IsNotExist(err) {
 		slog.Error("schema file does not exist", "path", absSchemaPath)
 
-		return errors.New("schema file does not exist: " + absSchemaPath)
+		return pkgerrors.ErrSchemaFileNotExist
 	}
 
 	// Create temporary file for YAML content
@@ -42,7 +45,7 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	if err != nil {
 		slog.Error("failed to create temporary file", "error", err)
 
-		return errors.Join(errors.New("failed to create temporary file"), err)
+		return errors.Join(pkgerrors.ErrCreateTempFileFailed, err)
 	}
 
 	defer func() {
@@ -57,14 +60,14 @@ func (v *YamaleValidator) Validate(yamlContent string) error {
 	if err != nil {
 		slog.Error("failed to write YAML content", "error", err)
 
-		return errors.Join(errors.New("failed to write YAML content"), err)
+		return errors.Join(pkgerrors.ErrWriteYAMLContentFailed, err)
 	}
 
 	err = tmpFile.Close()
 	if err != nil {
 		slog.Error("failed to close temporary file", "error", err)
 
-		return errors.Join(errors.New("failed to close temporary file"), err)
+		return errors.Join(pkgerrors.ErrCloseTempFileFailed, err)
 	}
 
 	// Use yamale CLI tool
@@ -77,7 +80,7 @@ func (v *YamaleValidator) ValidateFromStdin(yamlContent string) error {
 	if err != nil {
 		slog.Error("failed to get absolute schema path", "error", err, "path", v.schemaPath)
 
-		return errors.Join(errors.New("failed to get absolute schema path"), err)
+		return errors.Join(pkgerrors.ErrSchemaAbsPathFailed, err)
 	}
 
 	// Try yamale with stdin
@@ -95,7 +98,7 @@ func (v *YamaleValidator) ValidateFromStdin(yamlContent string) error {
 		if err != nil {
 			slog.Error("yamale validation failed", "error", err, "output", string(output))
 
-			return errors.Join(errors.New("yamale validation failed"), err)
+			return errors.Join(pkgerrors.ErrYamaleValidationFailed, err)
 		}
 	}
 
@@ -108,7 +111,7 @@ func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) err
 	if err != nil {
 		slog.Warn("yamale command not found - skipping validation")
 
-		return err
+		return fmt.Errorf("yamale command not found: %w", err)
 	}
 
 	// Run yamale validation
@@ -119,7 +122,7 @@ func (v *YamaleValidator) validateWithYamaleCLI(schemaPath, dataPath string) err
 	if err != nil {
 		slog.Error("yamale validation failed", "error", err, "output", string(output))
 
-		return errors.Join(errors.New("yamale validation failed"), err)
+		return errors.Join(pkgerrors.ErrYamaleValidationFailed, err)
 	}
 
 	slog.Info("✅ YAML validation passed")

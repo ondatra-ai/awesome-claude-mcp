@@ -2,6 +2,7 @@ package generators
 
 import (
 	"context"
+	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
@@ -49,7 +50,7 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(
 		"devnotes",
 	)
 
-	return generator.
+	result, err := generator.
 		WithTmpDir(tmpDir).
 		WithData(func() (DevNotesPromptData, error) {
 			return DevNotesPromptData{
@@ -89,6 +90,11 @@ func (g *AIDevNotesGenerator) GenerateDevNotes(
 		)).
 		WithValidator(g.validateDevNotes).
 		Generate(ctx)
+	if err != nil {
+		return story.DevNotes{}, fmt.Errorf("generate dev notes: %w", err)
+	}
+
+	return result, nil
 }
 
 // validateDevNotes validates that mandatory entities have required source and description fields.

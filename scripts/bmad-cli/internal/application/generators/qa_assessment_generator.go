@@ -2,7 +2,6 @@ package generators
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -140,15 +139,15 @@ func (g *AIQAAssessmentGenerator) loadQAPrompt(data QAAssessmentData) (string, e
 // validateQAResults validates the generated QA results.
 func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) error {
 	if qaResults.Assessment.Summary == "" {
-		return errors.New("assessment summary cannot be empty")
+		return pkgerrors.ErrAssessmentSummaryEmpty
 	}
 
 	if len(qaResults.Assessment.Strengths) == 0 {
-		return errors.New("at least one strength must be identified")
+		return pkgerrors.ErrAtLeastOneStrength
 	}
 
 	if qaResults.Assessment.RiskLevel == "" {
-		return errors.New("risk level must be specified")
+		return pkgerrors.ErrRiskLevelMustBeSpecified
 	}
 
 	validRiskLevels := map[string]bool{
@@ -161,11 +160,11 @@ func (g *AIQAAssessmentGenerator) validateQAResults(qaResults story.QAResults) e
 	}
 
 	if qaResults.Assessment.TestabilityScore < 1 || qaResults.Assessment.TestabilityScore > 10 {
-		return errors.New("testability score must be between 1 and 10")
+		return pkgerrors.ErrTestabilityScoreRange
 	}
 
 	if qaResults.Assessment.ImplementationReadiness < 1 || qaResults.Assessment.ImplementationReadiness > 10 {
-		return errors.New("implementation readiness must be between 1 and 10")
+		return pkgerrors.ErrImplementationReadinessRange
 	}
 
 	validGateStatuses := map[string]bool{

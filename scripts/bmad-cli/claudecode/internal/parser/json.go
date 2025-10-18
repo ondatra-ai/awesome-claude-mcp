@@ -3,6 +3,7 @@ package parser
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -133,7 +134,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 	if err != nil {
 		// JSON is incomplete - continue accumulating
 		// This is NOT an error condition in speculative parsing!
-		return nil, err
+		return nil, fmt.Errorf("unmarshal JSON buffer: %w", err)
 	}
 
 	// Successfully parsed complete JSON - reset buffer and parse message
@@ -167,7 +168,7 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 		for index, blockData := range contentValue {
 			block, err := p.parseContentBlock(blockData)
 			if err != nil {
-				return nil, pkgerrors.ErrParseContentBlockFailed(index, err)
+				return nil, fmt.Errorf("parse content block failed: %w", pkgerrors.ErrParseContentBlockFailed(index, err))
 			}
 
 			blocks[index] = block
@@ -202,7 +203,7 @@ func (p *Parser) parseAssistantMessage(data map[string]any) (*shared.AssistantMe
 	for index, blockData := range contentArray {
 		block, err := p.parseContentBlock(blockData)
 		if err != nil {
-			return nil, pkgerrors.ErrParseContentBlockFailed(index, err)
+			return nil, fmt.Errorf("parse content block failed: %w", pkgerrors.ErrParseContentBlockFailed(index, err))
 		}
 
 		blocks[index] = block
@@ -390,7 +391,7 @@ func ParseMessages(lines []string) ([]shared.Message, error) {
 	for i, line := range lines {
 		messages, err := parser.ProcessLine(line)
 		if err != nil {
-			return allMessages, pkgerrors.ErrParseLineFailed(i, err)
+			return allMessages, fmt.Errorf("parse line failed: %w", pkgerrors.ErrParseLineFailed(i, err))
 		}
 
 		allMessages = append(allMessages, messages...)

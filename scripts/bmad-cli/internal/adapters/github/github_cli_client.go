@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"strings"
 
@@ -22,7 +23,12 @@ func NewGitHubCLIClient(shell *shell.CommandRunner) *GitHubCLIClient {
 }
 
 func (c *GitHubCLIClient) GetCurrentCheckoutPR(ctx context.Context) (string, error) {
-	return c.shell.Run(ctx, "gh", "pr", "view", "--json", "number", "-q", ".number")
+	out, err := c.shell.Run(ctx, "gh", "pr", "view", "--json", "number", "-q", ".number")
+	if err != nil {
+		return "", fmt.Errorf("get current PR number: %w", err)
+	}
+
+	return out, nil
 }
 
 func (c *GitHubCLIClient) GetCurrentBranch(ctx context.Context) (string, error) {
@@ -30,7 +36,7 @@ func (c *GitHubCLIClient) GetCurrentBranch(ctx context.Context) (string, error) 
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.ErrGitBranchFailed(err)
+		return "", fmt.Errorf("git branch failed: %w", errors.ErrGitBranchFailed(err))
 	}
 
 	return strings.TrimSpace(string(out)), nil
@@ -40,14 +46,14 @@ func (c *GitHubCLIClient) ListPRsForBranch(ctx context.Context, branch string) (
 	out, err := c.shell.Run(ctx, "gh", "pr", "list", "--head", branch,
 		"--json", "number,title,state,url", "--limit", "1")
 	if err != nil {
-		return nil, errors.ErrGHPRListFailed(err, out)
+		return nil, fmt.Errorf("gh pr list failed: %w", errors.ErrGHPRListFailed(err, out))
 	}
 
 	var prs []models.PullRequest
 
 	err = json.Unmarshal([]byte(out), &prs)
 	if err != nil {
-		return nil, errors.ErrParsePRListFailed(err)
+		return nil, fmt.Errorf("parse PR list failed: %w", errors.ErrParsePRListFailed(err))
 	}
 
 	return prs, nil
@@ -56,12 +62,12 @@ func (c *GitHubCLIClient) ListPRsForBranch(ctx context.Context, branch string) (
 func (c *GitHubCLIClient) GetRepoOwnerAndName(ctx context.Context) (string, string, error) {
 	out, err := c.shell.Run(ctx, "gh", "repo", "view", "--json", "owner,name", "-q", ".owner.login + \" \" + .name")
 	if err != nil {
-		return "", "", errors.ErrRepoViewFailed(err)
+		return "", "", fmt.Errorf("repo view failed: %w", errors.ErrRepoViewFailed(err))
 	}
 
 	parts := strings.Split(strings.TrimSpace(out), " ")
 	if len(parts) != expectedParts {
-		return "", "", errors.ErrUnexpectedRepoOutputWithDetails(out)
+		return "", "", fmt.Errorf("unexpected repo output: %w", errors.ErrUnexpectedRepoOutputWithDetails(out))
 	}
 
 	return parts[0], parts[1], nil
@@ -77,5 +83,10 @@ func (c *GitHubCLIClient) ExecuteGraphQL(
 		args = append(args, "-F", key+"="+value)
 	}
 
-	return c.shell.Run(ctx, "gh", args...)
+	out, err := c.shell.Run(ctx, "gh", args...)
+	if err != nil {
+		return "", fmt.Errorf("execute GraphQL query: %w", err)
+	}
+
+	return out, nil
 }

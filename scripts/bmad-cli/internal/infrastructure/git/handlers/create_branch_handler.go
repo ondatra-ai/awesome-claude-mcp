@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"bmad-cli/internal/domain/ports"
@@ -29,7 +30,7 @@ func (h *CreateBranchHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if err != nil {
 		slog.Error("Failed to create branch", "error", err)
 
-		return err
+		return fmt.Errorf("create branch %s: %w", branchCtx.ExpectedBranch, err)
 	}
 
 	branchCtx.Action = ActionCreate

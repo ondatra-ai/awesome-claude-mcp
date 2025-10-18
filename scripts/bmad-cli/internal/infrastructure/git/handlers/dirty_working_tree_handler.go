@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
-	"errors"
 	"log/slog"
 
+	"bmad-cli/internal/domain/ports"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
@@ -37,7 +36,7 @@ func (h *DirtyWorkingTreeHandler) Handle(ctx context.Context, branchCtx *BranchC
 	if !isClean {
 		slog.Error("Working tree has uncommitted changes")
 
-		return errors.New("working tree has uncommitted changes - please commit or stash them first")
+		return pkgerrors.ErrWorkingTreeDirty
 	}
 
 	slog.Debug("Working tree is clean")

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 )
 
@@ -24,7 +25,7 @@ func (h *MultiHandler) Handle(ctx context.Context, record slog.Record) error {
 	if record.Level >= slog.LevelInfo {
 		err := h.consoleHandler.Handle(ctx, record)
 		if err != nil {
-			return err
+			return fmt.Errorf("console handler failed: %w", err)
 		}
 	}
 

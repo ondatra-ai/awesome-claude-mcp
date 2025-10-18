@@ -37,12 +37,12 @@ func NewPRTriageCommand(
 func (c *PRTriageCommand) Execute(ctx context.Context) error {
 	prNum, err := c.github.GetPRNumber(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("get PR number: %w", err)
 	}
 
 	threads, err := c.github.FetchThreads(ctx, prNum)
 	if err != nil {
-		return err
+		return fmt.Errorf("fetch threads for PR %d: %w", prNum, err)
 	}
 
 	for _, thread := range threads {
@@ -69,7 +69,7 @@ func (c *PRTriageCommand) Execute(ctx context.Context) error {
 
 		result, err := c.threadProcessor.AnalyzeThread(ctx, threadCtx)
 		if err != nil {
-			return err
+			return fmt.Errorf("analyze thread %s: %w", thread.ID, err)
 		}
 
 		c.printHeuristic(result)
