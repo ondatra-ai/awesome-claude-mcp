@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 )
 
@@ -23,7 +24,12 @@ func (h *BaseBranchHandler) callNext(ctx context.Context, branchCtx *BranchConte
 		return nil
 	}
 
-	return h.next.Handle(ctx, branchCtx)
+	err := h.next.Handle(ctx, branchCtx)
+	if err != nil {
+		return fmt.Errorf("next handler failed: %w", err)
+	}
+
+	return nil
 }
 
 // handleBranchExistence provides common logic for checking branch existence and taking action.

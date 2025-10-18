@@ -69,7 +69,7 @@ func (m *BranchManager) EnsureBranch(ctx context.Context, storyNumber, storySlug
 	if err != nil {
 		slog.Error("Failed to ensure branch", "error", err)
 
-		return err
+		return fmt.Errorf("handle branch chain for %s: %w", expectedBranch, err)
 	}
 
 	slog.Info("Branch operation completed successfully",

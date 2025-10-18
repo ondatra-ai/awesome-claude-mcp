@@ -1,15 +1,15 @@
 package generators
 
 import (
-	"bmad-cli/internal/domain/ports"
-	"bmad-cli/internal/pkg/ai"
 	"context"
-	"errors"
+	"fmt"
 
 	"bmad-cli/internal/domain/models/story"
+	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/template"
+	"bmad-cli/internal/pkg/ai"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
@@ -49,7 +49,7 @@ func (g *AITaskGenerator) GenerateTasks(
 		"tasks",
 	)
 
-	return generator.
+	tasks, err := generator.
 		WithTmpDir(tmpDir).
 		WithData(func() (TaskPromptData, error) {
 			return TaskPromptData{
@@ -88,10 +88,15 @@ func (g *AITaskGenerator) GenerateTasks(
 		)).
 		WithValidator(func(tasks []story.Task) error {
 			if len(tasks) == 0 {
-				return errors.New("AI generated no tasks")
+				return pkgerrors.ErrAIGeneratedNoTasks
 			}
 
 			return nil
 		}).
 		Generate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("generate tasks: %w", err)
+	}
+
+	return tasks, nil
 }

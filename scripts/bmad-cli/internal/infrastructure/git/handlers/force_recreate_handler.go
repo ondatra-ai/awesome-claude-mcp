@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
+	"fmt"
 	"log/slog"
+
+	"bmad-cli/internal/domain/ports"
 )
 
 // ForceRecreateHandler handles the --force flag to recreate branches.
@@ -34,7 +36,7 @@ func (h *ForceRecreateHandler) Handle(ctx context.Context, branchCtx *BranchCont
 	if err != nil {
 		slog.Error("Failed to force recreate branch", "error", err)
 
-		return err
+		return fmt.Errorf("force recreate branch %s: %w", branchCtx.ExpectedBranch, err)
 	}
 
 	branchCtx.Action = ActionForceRecreate

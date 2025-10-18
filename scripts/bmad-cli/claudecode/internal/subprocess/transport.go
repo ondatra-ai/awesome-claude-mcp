@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -129,20 +128,20 @@ func (t *Transport) setupIOPipes() error {
 		// Only create stdin pipe if we need to send messages via stdin
 		t.stdin, err = t.cmd.StdinPipe()
 		if err != nil {
-			return pkgerrors.ErrCreateStdinPipeFailed(err)
+			return fmt.Errorf("create stdin pipe failed: %w", pkgerrors.ErrCreateStdinPipeFailed(err))
 		}
 	}
 
 	t.stdout, err = t.cmd.StdoutPipe()
 	if err != nil {
-		return pkgerrors.ErrCreateStdoutPipeFailed(err)
+		return fmt.Errorf("create stdout pipe failed: %w", pkgerrors.ErrCreateStdoutPipeFailed(err))
 	}
 
 	// Isolate stderr using temporary file to prevent deadlocks
 	// This matches Python SDK pattern to avoid subprocess pipe deadlocks
 	t.stderr, err = os.CreateTemp("", "claude_stderr_*.log")
 	if err != nil {
-		return pkgerrors.ErrCreateStderrFileFailed(err)
+		return fmt.Errorf("create stderr file failed: %w", pkgerrors.ErrCreateStderrFileFailed(err))
 	}
 
 	t.cmd.Stderr = t.stderr
@@ -156,7 +155,7 @@ func (t *Transport) Connect(ctx context.Context) error {
 	defer t.mu.Unlock()
 
 	if t.connected {
-		return errors.New("transport already connected")
+		return fmt.Errorf("transport already connected: %w", pkgerrors.ErrTransportAlreadyConnected)
 	}
 
 	// Set up command and working directory
@@ -220,26 +219,26 @@ func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessag
 	}
 
 	if !t.connected || t.stdin == nil {
-		return errors.New("transport not connected or stdin closed")
+		return fmt.Errorf("transport not connected: %w", pkgerrors.ErrTransportNotConnected)
 	}
 
 	// Check context cancellation
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("context cancelled during send: %w", ctx.Err())
 	default:
 	}
 
 	// Serialize message to JSON
 	data, err := json.Marshal(message)
 	if err != nil {
-		return pkgerrors.ErrMarshalMessageFailed(err)
+		return fmt.Errorf("marshal message failed: %w", pkgerrors.ErrMarshalMessageFailed(err))
 	}
 
 	// Send with newline
 	_, err = t.stdin.Write(append(data, '\n'))
 	if err != nil {
-		return pkgerrors.ErrWriteMessageFailed(err)
+		return fmt.Errorf("write message failed: %w", pkgerrors.ErrWriteMessageFailed(err))
 	}
 
 	// For one-shot mode, close stdin after sending the message
@@ -276,16 +275,21 @@ func (t *Transport) Interrupt(_ context.Context) error {
 	defer t.mu.RUnlock()
 
 	if !t.connected || t.cmd == nil || t.cmd.Process == nil {
-		return errors.New("process not running")
+		return fmt.Errorf("process not running: %w", pkgerrors.ErrProcessNotRunning)
 	}
 
 	// Windows doesn't support os.Interrupt signal
 	if runtime.GOOS == windowsOS {
-		return errors.New("interrupt not supported by windows")
+		return fmt.Errorf("interrupt not supported on Windows: %w", pkgerrors.ErrInterruptNotSupported)
 	}
 
 	// Send interrupt signal (Unix/Linux/macOS)
-	return t.cmd.Process.Signal(os.Interrupt)
+	err := t.cmd.Process.Signal(os.Interrupt)
+	if err != nil {
+		return fmt.Errorf("send interrupt signal: %w", err)
+	}
+
+	return nil
 }
 
 // Close terminates the subprocess connection.
@@ -421,7 +425,7 @@ func (t *Transport) sendTerminationSignal() error {
 		// If SIGTERM fails for other reasons, try SIGKILL immediately
 		killErr := t.cmd.Process.Kill()
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-			return killErr
+			return fmt.Errorf("kill process after SIGTERM failure: %w", killErr)
 		}
 
 		return nil // Don't return error for expected termination
@@ -466,7 +470,7 @@ func (t *Transport) terminateProcess() error {
 		// Force kill after 5 seconds
 		killErr := t.cmd.Process.Kill()
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-			return killErr
+			return fmt.Errorf("kill process after timeout: %w", killErr)
 		}
 		// Wait for process to exit after kill
 		<-done
@@ -476,7 +480,7 @@ func (t *Transport) terminateProcess() error {
 		// Context canceled - force kill immediately
 		killErr := t.cmd.Process.Kill()
 		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-			return killErr
+			return fmt.Errorf("kill process after context cancellation: %w", killErr)
 		}
 		// Wait for process to exit after kill, but don't return context error
 		// since this is normal cleanup behavior

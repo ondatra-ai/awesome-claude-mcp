@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -27,7 +28,7 @@ func (s *GitService) IsGitRepository(ctx context.Context) (bool, error) {
 
 	_, err := s.shellExec.Run(ctx, "git", "rev-parse", "--git-dir")
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("check git repository: %w", err)
 	}
 
 	return true, nil
@@ -84,7 +85,7 @@ func (s *GitService) LocalBranchExists(ctx context.Context, branch string) (bool
 
 	_, err := s.shellExec.Run(ctx, "git", "rev-parse", "--verify", branch)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("check local branch exists: %w", err)
 	}
 
 	slog.Debug("Local branch exists", "branch", branch)
@@ -98,7 +99,7 @@ func (s *GitService) RemoteBranchExists(ctx context.Context, branch string) (boo
 
 	output, err := s.shellExec.Run(ctx, "git", "ls-remote", "--heads", "origin", branch)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("check remote branch exists: %w", err)
 	}
 
 	exists := strings.TrimSpace(output) != ""

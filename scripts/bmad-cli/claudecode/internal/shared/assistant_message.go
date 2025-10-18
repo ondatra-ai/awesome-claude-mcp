@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // AssistantMessage represents a message from the assistant.
@@ -29,5 +30,10 @@ func (m *AssistantMessage) MarshalJSON() ([]byte, error) {
 		Type:             MessageTypeAssistant,
 	}
 
-	return json.Marshal(temp)
+	data, err := json.Marshal(temp)
+	if err != nil {
+		return nil, fmt.Errorf("marshal assistant message: %w", err)
+	}
+
+	return data, nil
 }

@@ -1,7 +1,8 @@
 package story
 
 import (
-	"errors"
+	"fmt"
+
 	"gopkg.in/yaml.v3"
 
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -38,7 +39,7 @@ func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
 	// Handle object with and/but key
 	if node.Kind == yaml.MappingNode {
 		if len(node.Content) != yamlMappingNodeContentSize {
-			return errors.New("modifier must have exactly one key")
+			return fmt.Errorf("modifier validation error: %w", pkgerrors.ErrModifierMustHaveOneKey)
 		}
 
 		key := node.Content[0].Value
@@ -52,13 +53,13 @@ func (s *StepStatement) UnmarshalYAML(node *yaml.Node) error {
 			s.Type = ModifierTypeBut
 			s.Statement = value
 		default:
-			return pkgerrors.ErrInvalidModifierError(key)
+			return fmt.Errorf("invalid modifier: %w", pkgerrors.ErrInvalidModifierError(key))
 		}
 
 		return nil
 	}
 
-	return errors.New("invalid step statement format")
+	return fmt.Errorf("invalid step statement format: %w", pkgerrors.ErrInvalidStepStatementFormat)
 }
 
 // MarshalYAML implements custom YAML marshaling

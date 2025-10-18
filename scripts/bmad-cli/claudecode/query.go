@@ -3,6 +3,7 @@ package claudecode
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"bmad-cli/claudecode/internal/cli"
@@ -37,7 +38,7 @@ func QueryWithTransport(
 	opts ...Option,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, errors.New("transport is required")
+		return nil, pkgerrors.ErrTransportRequired
 	}
 
 	options := NewOptions(opts...)
@@ -53,7 +54,7 @@ func queryWithTransportAndOptions(
 	options *Options,
 ) (MessageIterator, error) {
 	if transport == nil {
-		return nil, errors.New("transport is required")
+		return nil, pkgerrors.ErrTransportRequired
 	}
 
 	// Create iterator that manages the transport lifecycle
@@ -125,7 +126,7 @@ func (qi *queryIterator) Next(ctx context.Context) (Message, error) {
 		qi.closed = true
 		qi.mu.Unlock()
 
-		return nil, ctx.Err()
+		return nil, fmt.Errorf("context cancelled during query iteration: %w", ctx.Err())
 	}
 }
 
@@ -138,7 +139,10 @@ func (qi *queryIterator) Close() error {
 		qi.mu.Unlock()
 
 		if qi.transport != nil {
-			err = qi.transport.Close()
+			closeErr := qi.transport.Close()
+			if closeErr != nil {
+				err = fmt.Errorf("close transport: %w", closeErr)
+			}
 		}
 	})
 
@@ -178,7 +182,7 @@ func createQueryTransport(prompt string, options *Options) (Transport, error) {
 	// Find Claude CLI binary
 	cliPath, err := cli.FindCLI()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("find Claude CLI: %w", err)
 	}
 
 	// Create subprocess transport with prompt as CLI argument

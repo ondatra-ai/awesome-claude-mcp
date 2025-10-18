@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
-	"errors"
 	"log/slog"
 
+	"bmad-cli/internal/domain/ports"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
@@ -44,7 +43,7 @@ func (h *MainBehindOriginHandler) Handle(ctx context.Context, branchCtx *BranchC
 	if isBehind {
 		slog.Error("Main branch is behind origin/main")
 
-		return errors.New("main branch is behind origin/main - please pull the latest changes first")
+		return pkgerrors.ErrMainBehindOrigin
 	}
 
 	slog.Debug("Main branch is up to date with origin")

@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // SystemMessage represents a system message.
@@ -26,5 +27,10 @@ func (m *SystemMessage) MarshalJSON() ([]byte, error) {
 	data["type"] = MessageTypeSystem
 	data["subtype"] = m.Subtype
 
-	return json.Marshal(data)
+	result, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("marshal system message: %w", err)
+	}
+
+	return result, nil
 }

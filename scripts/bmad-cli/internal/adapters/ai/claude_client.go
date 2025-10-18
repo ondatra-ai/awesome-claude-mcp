@@ -3,7 +3,6 @@ package ai
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -109,7 +108,7 @@ func (c *ClaudeClient) executeQuery(ctx context.Context, client claudecode.Clien
 	if err != nil {
 		slog.Error("Query failed", "error", err)
 
-		return "", pkgerrors.ErrSendQueryFailed(err)
+		return "", fmt.Errorf("failed to send query: %w", pkgerrors.ErrSendQueryFailed(err))
 	}
 
 	slog.Debug("Query sent successfully")
@@ -134,7 +133,7 @@ func (c *ClaudeClient) streamMessages(ctx context.Context, client claudecode.Cli
 			if message == nil {
 				slog.Error("Received nil message from Claude stream")
 
-				return "", errors.New("claude stream returned nil message")
+				return "", pkgerrors.ErrClaudeStreamNilMessage
 			}
 
 			done, err := c.processMessage(message, &result)
@@ -148,7 +147,7 @@ func (c *ClaudeClient) streamMessages(ctx context.Context, client claudecode.Cli
 		case <-ctx.Done():
 			slog.Warn("Timeout reached", "error", ctx.Err())
 
-			return "", ctx.Err()
+			return "", fmt.Errorf("context cancelled: %w", ctx.Err())
 		}
 	}
 }
@@ -221,7 +220,7 @@ func (c *ClaudeClient) processResultMessage(msg *claudecode.ResultMessage) (bool
 	slog.Debug("ResultMessage received", "is_error", msg.IsError, "result", msg.Result)
 
 	if msg.IsError {
-		return false, pkgerrors.ErrClaudeError(fmt.Sprintf("%v", msg.Result))
+		return false, fmt.Errorf("claude returned error: %w", pkgerrors.ErrClaudeError(fmt.Sprintf("%v", msg.Result)))
 	}
 
 	return true, nil
@@ -233,10 +232,10 @@ func (c *ClaudeClient) handleExecutionResult(resultStr string, err error) (strin
 
 		errStr := err.Error()
 		if strings.Contains(errStr, "token too long") || strings.Contains(errStr, "bufio.Scanner") {
-			return "", pkgerrors.ErrResponseTooLargeForBuffer(err)
+			return "", fmt.Errorf("response too large: %w", pkgerrors.ErrResponseTooLargeForBuffer(err))
 		}
 
-		return "", pkgerrors.ErrClaudeExecutionFailed(err)
+		return "", fmt.Errorf("claude execution failed: %w", pkgerrors.ErrClaudeExecutionFailed(err))
 	}
 
 	slog.Info("Claude returned result", "length", len(resultStr))

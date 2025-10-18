@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"bmad-cli/internal/domain/ports"
 	"context"
-	"errors"
 	"log/slog"
 
+	"bmad-cli/internal/domain/ports"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
@@ -37,7 +36,7 @@ func (h *DetachedHeadHandler) Handle(ctx context.Context, branchCtx *BranchConte
 	if isDetached {
 		slog.Error("HEAD is in detached state")
 
-		return errors.New("HEAD is detached - please checkout a branch first")
+		return pkgerrors.ErrHEADDetached
 	}
 
 	// Get current branch for context

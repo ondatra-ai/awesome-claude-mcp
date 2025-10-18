@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -29,7 +30,11 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 
 			stop()
 
-			return err
+			if err != nil {
+				return fmt.Errorf("us create command failed: %w", err)
+			}
+
+			return nil
 		},
 	}
 
@@ -47,7 +52,11 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 
 			stop()
 
-			return err
+			if err != nil {
+				return fmt.Errorf("us implement command failed: %w", err)
+			}
+
+			return nil
 		},
 	}
 

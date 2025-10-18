@@ -3,6 +3,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -269,7 +270,7 @@ func ValidateWorkingDirectory(cwd string) error {
 	}
 
 	if err != nil {
-		return pkgerrors.ErrCheckWorkingDirectoryFailed(err)
+		return fmt.Errorf("working directory check failed: %w", pkgerrors.ErrCheckWorkingDirectoryFailed(err))
 	}
 
 	if !info.IsDir() {
@@ -288,14 +289,14 @@ func DetectCLIVersion(ctx context.Context, cliPath string) (string, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return "", pkgerrors.ErrGetCLIVersionFailed(err)
+		return "", fmt.Errorf("get CLI version failed: %w", pkgerrors.ErrGetCLIVersionFailed(err))
 	}
 
 	version := strings.TrimSpace(string(output))
 
 	// Basic version format validation
 	if !strings.Contains(version, ".") {
-		return "", pkgerrors.ErrInvalidVersionFormat(version)
+		return "", fmt.Errorf("invalid version format: %w", pkgerrors.ErrInvalidVersionFormat(version))
 	}
 
 	return version, nil

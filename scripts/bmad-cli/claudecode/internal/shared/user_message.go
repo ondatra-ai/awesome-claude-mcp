@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // UserMessage represents a message from the user.
@@ -28,5 +29,10 @@ func (m *UserMessage) MarshalJSON() ([]byte, error) {
 		Type:        MessageTypeUser,
 	}
 
-	return json.Marshal(temp)
+	data, err := json.Marshal(temp)
+	if err != nil {
+		return nil, fmt.Errorf("marshal user message: %w", err)
+	}
+
+	return data, nil
 }

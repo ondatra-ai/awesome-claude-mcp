@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // ResultMessage represents the final result of a conversation turn.
@@ -36,5 +37,10 @@ func (m *ResultMessage) MarshalJSON() ([]byte, error) {
 		Type:          MessageTypeResult,
 	}
 
-	return json.Marshal(temp)
+	data, err := json.Marshal(temp)
+	if err != nil {
+		return nil, fmt.Errorf("marshal result message: %w", err)
+	}
+
+	return data, nil
 }

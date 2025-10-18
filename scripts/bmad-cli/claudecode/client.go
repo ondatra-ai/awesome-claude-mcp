@@ -2,7 +2,7 @@ package claudecode
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"sync"
 
@@ -102,7 +102,7 @@ func NewClientWithTransport(transport Transport, opts ...Option) Client {
 // Disconnect errors are handled gracefully without overriding the original error from callback.
 func WithClient(ctx context.Context, callback func(Client) error, opts ...Option) error {
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context error before client connect: %w", ctx.Err())
 	}
 
 	client := NewClient(opts...)
@@ -146,7 +146,7 @@ func WithClient(ctx context.Context, callback func(Client) error, opts ...Option
 // Disconnect errors are handled gracefully without overriding the original error from callback.
 func WithClientTransport(ctx context.Context, transport Transport, callback func(Client) error, opts ...Option) error {
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context error before client connect with transport: %w", ctx.Err())
 	}
 
 	client := NewClientWithTransport(transport, opts...)
@@ -172,7 +172,7 @@ func WithClientTransport(ctx context.Context, transport Transport, callback func
 func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	// Check context before acquiring lock
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context error before connect: %w", ctx.Err())
 	}
 
 	c.mu.Lock()
@@ -180,7 +180,7 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 
 	// Check context again after acquiring lock
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context error after lock: %w", ctx.Err())
 	}
 
 	// Validate configuration before connecting
@@ -276,7 +276,7 @@ func (c *ClientImpl) QueryStream(ctx context.Context, messages <-chan StreamMess
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return errors.New("client not connected")
+		return pkgerrors.ErrClientNotConnected
 	}
 
 	// Send messages from channel in a goroutine
@@ -346,7 +346,7 @@ func (c *ClientImpl) ReceiveResponse(_ context.Context) MessageIterator {
 func (c *ClientImpl) Interrupt(ctx context.Context) error {
 	// Check context before proceeding
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context error before interrupt: %w", ctx.Err())
 	}
 
 	// Check connection status with read lock
@@ -356,10 +356,15 @@ func (c *ClientImpl) Interrupt(ctx context.Context) error {
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return errors.New("client not connected")
+		return pkgerrors.ErrClientNotConnected
 	}
 
-	return transport.Interrupt(ctx)
+	err := transport.Interrupt(ctx)
+	if err != nil {
+		return fmt.Errorf("interrupt transport: %w", err)
+	}
+
+	return nil
 }
 
 // validateOptions validates the client configuration options.
@@ -401,7 +406,7 @@ func (c *ClientImpl) validateOptions() error {
 func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessionID string) error {
 	// Check context before proceeding
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context cancelled before query: %w", ctx.Err())
 	}
 
 	// Check connection status with read lock
@@ -411,12 +416,12 @@ func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessio
 	c.mu.RUnlock()
 
 	if !connected || transport == nil {
-		return errors.New("client not connected")
+		return pkgerrors.ErrClientNotConnected
 	}
 
 	// Check context again after acquiring connection info
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return fmt.Errorf("context cancelled after connection check: %w", ctx.Err())
 	}
 
 	// Create user message in Python SDK compatible format
@@ -431,7 +436,12 @@ func (c *ClientImpl) queryWithSession(ctx context.Context, prompt string, sessio
 	}
 
 	// Send message via transport (without holding mutex to avoid blocking other operations)
-	return transport.SendMessage(ctx, streamMsg)
+	err := transport.SendMessage(ctx, streamMsg)
+	if err != nil {
+		return fmt.Errorf("send message via transport: %w", err)
+	}
+
+	return nil
 }
 
 // clientIterator implements MessageIterator for client message reception.
@@ -462,7 +472,7 @@ func (ci *clientIterator) Next(ctx context.Context) (Message, error) {
 	case <-ctx.Done():
 		ci.closed = true
 
-		return nil, ctx.Err()
+		return nil, fmt.Errorf("context cancelled during message iteration: %w", ctx.Err())
 	}
 }
 

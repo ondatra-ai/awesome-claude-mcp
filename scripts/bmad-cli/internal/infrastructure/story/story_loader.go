@@ -1,7 +1,7 @@
 package story
 
 import (
-	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -29,10 +29,7 @@ func getFilenameValidations() []ValidationRule {
 			Name: "DashSeparator",
 			Validator: func(nameWithoutExt, slug string) error {
 				if !strings.Contains(nameWithoutExt, "-") {
-					return errors.New(
-						"invalid story filename: must have format " +
-							"'<story-number>-<slug>.yaml' (e.g., '3.1-my-feature.yaml')",
-					)
+					return fmt.Errorf("invalid story filename: %w", pkgerrors.ErrInvalidStoryFilename)
 				}
 
 				return nil
@@ -42,7 +39,7 @@ func getFilenameValidations() []ValidationRule {
 			Name: "EmptySlug",
 			Validator: func(nameWithoutExt, slug string) error {
 				if slug == "" {
-					return errors.New("invalid story filename: slug cannot be empty (format: '<story-number>-<slug>.yaml')")
+					return fmt.Errorf("empty slug: %w", pkgerrors.ErrInvalidStoryFilenameSlug)
 				}
 
 				return nil
@@ -52,7 +49,7 @@ func getFilenameValidations() []ValidationRule {
 			Name: "NoSpaces",
 			Validator: func(nameWithoutExt, slug string) error {
 				if strings.Contains(slug, " ") {
-					return pkgerrors.ErrInvalidStorySlugError(slug)
+					return fmt.Errorf("invalid slug: %w", pkgerrors.ErrInvalidStorySlugError(slug))
 				}
 
 				return nil
@@ -97,19 +94,22 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
 
-		return "", pkgerrors.ErrFindStoryFileFailed(err)
+		return "", fmt.Errorf("find story file failed: %w", pkgerrors.ErrFindStoryFileFailed(err))
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
 
-		return "", pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber)
+		return "", fmt.Errorf(
+			"story file not found: %w",
+			pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber),
+		)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
 
-		return "", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches)
+		return "", fmt.Errorf("multiple story files: %w", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches))
 	}
 
 	// Verify file exists and is readable
@@ -119,7 +119,7 @@ func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
 	if err != nil {
 		slog.Error("Story file not accessible", "file", storyFile, "error", err)
 
-		return "", pkgerrors.ErrStoryFileNotAccessibleError(storyFile, err)
+		return "", fmt.Errorf("story file not accessible: %w", pkgerrors.ErrStoryFileNotAccessibleError(storyFile, err))
 	}
 
 	// Extract slug from filename: "3.1-mcp-server-implementation.yaml" -> "mcp-server-implementation"
@@ -156,19 +156,22 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err != nil {
 		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
 
-		return nil, pkgerrors.ErrFindStoryFileFailed(err)
+		return nil, fmt.Errorf("find story file failed: %w", pkgerrors.ErrFindStoryFileFailed(err))
 	}
 
 	if len(matches) == 0 {
 		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
 
-		return nil, pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber)
+		return nil, fmt.Errorf(
+			"story file not found: %w",
+			pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber),
+		)
 	}
 
 	if len(matches) > 1 {
 		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
 
-		return nil, pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches)
+		return nil, fmt.Errorf("multiple story files: %w", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches))
 	}
 
 	// Read story file
@@ -178,7 +181,7 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err != nil {
 		slog.Error("Failed to read story file", "file", storyFile, "error", err)
 
-		return nil, pkgerrors.ErrReadStoryFileFailed(storyFile, err)
+		return nil, fmt.Errorf("read story file failed: %w", pkgerrors.ErrReadStoryFileFailed(storyFile, err))
 	}
 
 	// Unmarshal YAML
@@ -188,7 +191,7 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	if err != nil {
 		slog.Error("Failed to unmarshal story YAML", "file", storyFile, "error", err)
 
-		return nil, pkgerrors.ErrParseStoryYAMLFailed(storyFile, err)
+		return nil, fmt.Errorf("parse story YAML failed: %w", pkgerrors.ErrParseStoryYAMLFailed(storyFile, err))
 	}
 
 	slog.Debug(

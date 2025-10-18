@@ -53,7 +53,7 @@ func (el *EpicLoader) parseStoryNumber(storyNumber string) (int, int, error) {
 
 	n, err := fmt.Sscanf(storyNumber, "%d.%d", &epicNum, &storyNum)
 	if n != 2 || err != nil {
-		return 0, 0, pkgerrors.ErrInvalidStoryNumberFormatError(storyNumber)
+		return 0, 0, fmt.Errorf("invalid story number format: %w", pkgerrors.ErrInvalidStoryNumberFormatError(storyNumber))
 	}
 
 	return epicNum, storyNum, nil
@@ -65,29 +65,29 @@ func (el *EpicLoader) loadEpicFile(epicNum int) (*models.EpicDocument, error) {
 
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, pkgerrors.ErrSearchEpicFilesFailed(err)
+		return nil, fmt.Errorf("search epic files failed: %w", pkgerrors.ErrSearchEpicFilesFailed(err))
 	}
 
 	if len(matches) == 0 {
-		return nil, pkgerrors.ErrNoEpicFileError(pattern)
+		return nil, fmt.Errorf("no epic file found: %w", pkgerrors.ErrNoEpicFileError(pattern))
 	}
 
 	if len(matches) > 1 {
-		return nil, pkgerrors.ErrMultipleEpicFilesError(pattern, matches)
+		return nil, fmt.Errorf("multiple epic files found: %w", pkgerrors.ErrMultipleEpicFilesError(pattern, matches))
 	}
 
 	epicFilePath := matches[0]
 
 	data, err := os.ReadFile(epicFilePath)
 	if err != nil {
-		return nil, pkgerrors.ErrReadEpicFileFailed(epicFilePath, err)
+		return nil, fmt.Errorf("read epic file failed: %w", pkgerrors.ErrReadEpicFileFailed(epicFilePath, err))
 	}
 
 	var epicDoc models.EpicDocument
 
 	err = yaml.Unmarshal(data, &epicDoc)
 	if err != nil {
-		return nil, pkgerrors.ErrParseEpicYAMLFailed(epicFilePath, err)
+		return nil, fmt.Errorf("parse epic YAML failed: %w", pkgerrors.ErrParseEpicYAMLFailed(epicFilePath, err))
 	}
 
 	return &epicDoc, nil
