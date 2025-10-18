@@ -95,60 +95,6 @@ func (t *Transport) IsConnected() bool {
 	return t.connected && t.cmd != nil && t.cmd.Process != nil
 }
 
-// setupCommand builds and configures the command with arguments and environment.
-func (t *Transport) setupCommand(ctx context.Context) {
-	// Build command with all options
-	var args []string
-	if t.promptArg != nil {
-		// One-shot query with prompt as CLI argument
-		args = cli.BuildCommandWithPrompt(t.cliPath, t.options, *t.promptArg)
-	} else {
-		// Streaming mode or regular one-shot
-		args = cli.BuildCommand(t.cliPath, t.options, t.closeStdin)
-	}
-	// Create command context - subprocess execution required for Claude CLI SDK
-	t.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
-
-	// Set up environment
-	t.cmd.Env = append(os.Environ(), "CLAUDE_CODE_ENTRYPOINT="+t.entrypoint)
-
-	// Set working directory if specified
-	if t.options != nil && t.options.Cwd != nil {
-		err := cli.ValidateWorkingDirectory(*t.options.Cwd)
-		if err == nil {
-			t.cmd.Dir = *t.options.Cwd
-		}
-	}
-}
-
-// setupIOPipes sets up stdin, stdout, and stderr pipes for the command.
-func (t *Transport) setupIOPipes() error {
-	var err error
-	if t.promptArg == nil {
-		// Only create stdin pipe if we need to send messages via stdin
-		t.stdin, err = t.cmd.StdinPipe()
-		if err != nil {
-			return fmt.Errorf("create stdin pipe failed: %w", pkgerrors.ErrCreateStdinPipeFailed(err))
-		}
-	}
-
-	t.stdout, err = t.cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("create stdout pipe failed: %w", pkgerrors.ErrCreateStdoutPipeFailed(err))
-	}
-
-	// Isolate stderr using temporary file to prevent deadlocks
-	// This matches Python SDK pattern to avoid subprocess pipe deadlocks
-	t.stderr, err = os.CreateTemp("", "claude_stderr_*.log")
-	if err != nil {
-		return fmt.Errorf("create stderr file failed: %w", pkgerrors.ErrCreateStderrFileFailed(err))
-	}
-
-	t.cmd.Stderr = t.stderr
-
-	return nil
-}
-
 // Connect starts the Claude CLI subprocess.
 func (t *Transport) Connect(ctx context.Context) error {
 	t.mu.Lock()
@@ -488,6 +434,60 @@ func (t *Transport) terminateProcess() error {
 
 		return nil
 	}
+}
+
+// setupCommand builds and configures the command with arguments and environment.
+func (t *Transport) setupCommand(ctx context.Context) {
+	// Build command with all options
+	var args []string
+	if t.promptArg != nil {
+		// One-shot query with prompt as CLI argument
+		args = cli.BuildCommandWithPrompt(t.cliPath, t.options, *t.promptArg)
+	} else {
+		// Streaming mode or regular one-shot
+		args = cli.BuildCommand(t.cliPath, t.options, t.closeStdin)
+	}
+	// Create command context - subprocess execution required for Claude CLI SDK
+	t.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
+
+	// Set up environment
+	t.cmd.Env = append(os.Environ(), "CLAUDE_CODE_ENTRYPOINT="+t.entrypoint)
+
+	// Set working directory if specified
+	if t.options != nil && t.options.Cwd != nil {
+		err := cli.ValidateWorkingDirectory(*t.options.Cwd)
+		if err == nil {
+			t.cmd.Dir = *t.options.Cwd
+		}
+	}
+}
+
+// setupIOPipes sets up stdin, stdout, and stderr pipes for the command.
+func (t *Transport) setupIOPipes() error {
+	var err error
+	if t.promptArg == nil {
+		// Only create stdin pipe if we need to send messages via stdin
+		t.stdin, err = t.cmd.StdinPipe()
+		if err != nil {
+			return fmt.Errorf("create stdin pipe failed: %w", pkgerrors.ErrCreateStdinPipeFailed(err))
+		}
+	}
+
+	t.stdout, err = t.cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("create stdout pipe failed: %w", pkgerrors.ErrCreateStdoutPipeFailed(err))
+	}
+
+	// Isolate stderr using temporary file to prevent deadlocks
+	// This matches Python SDK pattern to avoid subprocess pipe deadlocks
+	t.stderr, err = os.CreateTemp("", "claude_stderr_*.log")
+	if err != nil {
+		return fmt.Errorf("create stderr file failed: %w", pkgerrors.ErrCreateStderrFileFailed(err))
+	}
+
+	t.cmd.Stderr = t.stderr
+
+	return nil
 }
 
 // cleanup cleans up all resources.
