@@ -232,44 +232,61 @@ func (p *Parser) parseSystemMessage(data map[string]any) (*shared.SystemMessage,
 func (p *Parser) parseResultMessage(data map[string]any) (*shared.ResultMessage, error) {
 	result := &shared.ResultMessage{}
 
-	// Required fields with validation
+	// Parse required fields
+	err := p.parseResultRequiredFields(data, result)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse optional fields
+	p.parseResultOptionalFields(data, result)
+
+	return result, nil
+}
+
+// parseResultRequiredFields parses and validates required fields for result message.
+func (p *Parser) parseResultRequiredFields(data map[string]any, result *shared.ResultMessage) error {
 	if subtype, ok := data["subtype"].(string); ok {
 		result.Subtype = subtype
 	} else {
-		return nil, shared.NewMessageParseError("result message missing subtype field", data)
+		return shared.NewMessageParseError("result message missing subtype field", data)
 	}
 
 	if durationMS, ok := data["duration_ms"].(float64); ok {
 		result.DurationMs = int(durationMS)
 	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid duration_ms field", data)
+		return shared.NewMessageParseError("result message missing or invalid duration_ms field", data)
 	}
 
 	if durationAPIMS, ok := data["duration_api_ms"].(float64); ok {
 		result.DurationAPIMs = int(durationAPIMS)
 	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid duration_api_ms field", data)
+		return shared.NewMessageParseError("result message missing or invalid duration_api_ms field", data)
 	}
 
 	if isError, ok := data["is_error"].(bool); ok {
 		result.IsError = isError
 	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid is_error field", data)
+		return shared.NewMessageParseError("result message missing or invalid is_error field", data)
 	}
 
 	if numTurns, ok := data["num_turns"].(float64); ok {
 		result.NumTurns = int(numTurns)
 	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid num_turns field", data)
+		return shared.NewMessageParseError("result message missing or invalid num_turns field", data)
 	}
 
 	if sessionID, ok := data["session_id"].(string); ok {
 		result.SessionID = sessionID
 	} else {
-		return nil, shared.NewMessageParseError("result message missing session_id field", data)
+		return shared.NewMessageParseError("result message missing session_id field", data)
 	}
 
-	// Optional fields (no validation errors if missing)
+	return nil
+}
+
+// parseResultOptionalFields parses optional fields for result message.
+func (p *Parser) parseResultOptionalFields(data map[string]any, result *shared.ResultMessage) {
 	if totalCostUSD, ok := data["total_cost_usd"].(float64); ok {
 		result.TotalCostUSD = &totalCostUSD
 	}
@@ -283,8 +300,6 @@ func (p *Parser) parseResultMessage(data map[string]any) (*shared.ResultMessage,
 			result.Result = &resultMap
 		}
 	}
-
-	return result, nil
 }
 
 // parseContentBlock parses a content block based on its type field.
