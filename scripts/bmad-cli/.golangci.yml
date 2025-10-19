@@ -170,3 +170,8 @@ linters:
       - path: _test\.go
         linters:
           - err113
+      # Allow stdout_handler_transport_test.go to be in subprocess package
+      # to access unexported Transport fields for channel testing
+      - path: claudecode/internal/subprocess/stdout_handler_transport_test\.go
+        linters:
+          - testpackage

@@ -148,17 +148,17 @@ func (m *mockHandler) Handle(_ *subprocess.ProcessContext, _ *subprocess.Transpo
 	return m.shouldReturn
 }
 
-// Note on Transport Integration Testing:
+// Note on Transport Channel Testing:
 //
-// ErrorSender and MessageSender call unexported methods (sendError, sendMessages)
-// on Transport, which cannot be mocked from outside the subprocess package.
+// Tests that verify ErrorSender and MessageSender correctly interact with
+// Transport channels are in stdout_handler_transport_test.go (in the subprocess
+// package, not subprocess_test). Those tests have access to Transport's unexported
+// fields (errChan, msgChan) and assert that:
 //
-// The Chain of Responsibility pattern's interaction with Transport is verified
-// through integration tests that use real Transport instances with actual channels.
-// These integration tests ensure that:
-// 1. ErrorSender correctly sends errors to Transport.errChan
-// 2. MessageSender correctly sends messages to Transport.msgChan
-// 3. The handler chain maintains all delivery guarantees
+// 1. ErrorSender sends errors to Transport.errChan
+// 2. MessageSender sends messages to Transport.msgChan
+// 3. Both handlers respect the done channel
+// 4. Multiple messages are all delivered
 //
-// Unit tests here focus on handler logic and chain behavior, while integration
-// tests verify the complete stdout processing pipeline including channel delivery.
+// This separation allows subprocess_test to focus on handler logic while
+// subprocess (internal) tests verify the complete channel delivery guarantees.
