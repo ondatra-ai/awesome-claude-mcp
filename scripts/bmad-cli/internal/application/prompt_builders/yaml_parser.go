@@ -11,7 +11,6 @@ import (
 
 const (
 	minRegexMatchGroups = 2
-	keyValueSplitLimit  = 2
 )
 
 type YAMLParser struct{}
@@ -133,97 +132,10 @@ func (p *YAMLParser) parseSummaryFromYAML(yaml string) (string, error) {
 }
 
 func (p *YAMLParser) parseItemsFromYAML(yaml string) (map[string]bool, error) {
-	items, err := p.extractItemsMap(yaml)
-	if err != nil {
-		return nil, err
-	}
-
-	err = p.validateRequiredItems(items)
-	if err != nil {
-		return nil, err
-	}
-
-	return items, nil
-}
-
-// extractItemsMap extracts the items map from YAML content.
-func (p *YAMLParser) extractItemsMap(yaml string) (map[string]bool, error) {
-	items := map[string]bool{}
-	inItems := false
-
-	for _, raw := range strings.Split(yaml, "\n") {
-		line := strings.TrimRight(raw, "\r")
-		trimmedLine := strings.TrimSpace(line)
-
-		if strings.HasPrefix(trimmedLine, "items:") {
-			inItems = true
-
-			continue
-		}
-
-		if inItems {
-			if p.shouldStopParsing(line, trimmedLine) {
-				break
-			}
-
-			err := p.parseItemLine(trimmedLine, items)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if len(items) == 0 {
-		return nil, errors.ErrItemsBlockNotFound
-	}
-
-	return items, nil
-}
-
-// shouldStopParsing checks if we should stop parsing the items block.
-func (p *YAMLParser) shouldStopParsing(line, trimmedLine string) bool {
-	isEmpty := trimmedLine == ""
-	hasNoColon := !strings.Contains(trimmedLine, ":")
-	isNotIndented := !strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "\t")
-
-	return isEmpty || hasNoColon || isNotIndented
-}
-
-// parseItemLine parses a single item line and adds it to the items map.
-func (p *YAMLParser) parseItemLine(trimmedLine string, items map[string]bool) error {
-	parts := strings.SplitN(strings.TrimSpace(trimmedLine), ":", keyValueSplitLimit)
-	if len(parts) != keyValueSplitLimit {
-		return nil
-	}
-
-	key := strings.TrimSpace(parts[0])
-	val := strings.TrimSpace(parts[1])
-	val = strings.Trim(val, "\"'")
-
-	lv := strings.ToLower(val)
-	if lv != "true" && lv != "false" {
-		return errors.ErrItemsMustBeBoolean(key, val)
-	}
-
-	items[key] = lv == "true"
-
-	return nil
-}
-
-// validateRequiredItems checks that all required items are present.
-func (p *YAMLParser) validateRequiredItems(items map[string]bool) error {
-	required := []string{
-		"tools_present", "pr_detected", "conversations_fetched",
-		"auto_resolved_outdated", "relevance_classified", "human_approval_needed",
-	}
-
-	for _, k := range required {
-		if _, ok := items[k]; !ok {
-			return errors.ErrMissingItems(k)
-		}
-	}
-
-	return nil
+	return NewItemsParser(yaml).
+		Extract().
+		Validate().
+		Build()
 }
 
 func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string {

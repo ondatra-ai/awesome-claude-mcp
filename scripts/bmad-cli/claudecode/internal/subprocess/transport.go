@@ -295,6 +295,8 @@ func (t *Transport) handleStdout() {
 	defer close(t.msgChan)
 	defer close(t.errChan)
 
+	// Build handler chain
+	chain := t.buildStdoutHandlerChain()
 	scanner := t.createStdoutScanner()
 
 	for scanner.Scan() {
@@ -302,12 +304,25 @@ func (t *Transport) handleStdout() {
 			return
 		}
 
-		if !t.processStdoutLine(scanner.Text()) {
+		ctx := &ProcessContext{Line: scanner.Text()}
+		if !chain.Handle(ctx, t) {
 			return
 		}
 	}
 
 	t.handleScannerError(scanner.Err())
+}
+
+// buildStdoutHandlerChain creates the chain of responsibility for processing stdout.
+func (t *Transport) buildStdoutHandlerChain() StdoutHandler {
+	emptyFilter := &EmptyLineFilter{}
+	lineParser := NewLineParser(t.parser)
+	errorSender := &ErrorSender{}
+	messageSender := &MessageSender{}
+
+	emptyFilter.SetNext(lineParser).SetNext(errorSender).SetNext(messageSender)
+
+	return emptyFilter
 }
 
 // createStdoutScanner creates a scanner with larger buffer to handle large responses.
@@ -327,20 +342,6 @@ func (t *Transport) isDone() bool {
 	default:
 		return false
 	}
-}
-
-// processStdoutLine processes a single line from stdout.
-func (t *Transport) processStdoutLine(line string) bool {
-	if line == "" {
-		return true
-	}
-
-	messages, err := t.parser.ProcessLine(line)
-	if err != nil {
-		return t.sendError(err)
-	}
-
-	return t.sendMessages(messages)
 }
 
 // sendError sends an error to the error channel.
@@ -436,13 +437,16 @@ func (t *Transport) waitForProcessTermination() error {
 		done <- cmd.Wait()
 	}()
 
+	timeoutTerm := &TimeoutTerminator{}
+	cancelTerm := &CancellationTerminator{}
+
 	select {
 	case err := <-done:
 		return t.handleProcessExit(err)
 	case <-time.After(terminationTimeoutSeconds * time.Second):
-		return t.forceKillAfterTimeout(done)
+		return timeoutTerm.Kill(cmd, done)
 	case <-t.done:
-		return t.forceKillAfterCancellation(done)
+		return cancelTerm.Kill(cmd, done)
 	}
 }
 
@@ -453,30 +457,6 @@ func (t *Transport) handleProcessExit(err error) error {
 	}
 
 	return err
-}
-
-// forceKillAfterTimeout force kills the process after timeout.
-func (t *Transport) forceKillAfterTimeout(done chan error) error {
-	killErr := t.cmd.Process.Kill()
-	if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-		return fmt.Errorf("kill process after timeout: %w", killErr)
-	}
-
-	<-done
-
-	return nil
-}
-
-// forceKillAfterCancellation force kills the process after context cancellation.
-func (t *Transport) forceKillAfterCancellation(done chan error) error {
-	killErr := t.cmd.Process.Kill()
-	if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-		return fmt.Errorf("kill process after context cancellation: %w", killErr)
-	}
-
-	<-done
-
-	return nil
 }
 
 // setupCommand builds and configures the command with arguments and environment.
