@@ -19,15 +19,28 @@ const (
 // Parser handles JSON message parsing with speculative parsing and buffer management.
 // It implements the same speculative parsing strategy as the Python SDK.
 type Parser struct {
-	buffer        strings.Builder
-	maxBufferSize int
-	mu            sync.Mutex // Thread safety
+	buffer           strings.Builder
+	maxBufferSize    int
+	mu               sync.Mutex // Thread safety
+	requiredStrategy FieldParsingStrategy
+	optionalStrategy FieldParsingStrategy
 }
 
-// New creates a new JSON parser with default buffer size.
+// New creates a new JSON parser with default buffer size and strategies.
 func New() *Parser {
 	return &Parser{
-		maxBufferSize: MaxBufferSize,
+		maxBufferSize:    MaxBufferSize,
+		requiredStrategy: &RequiredFieldsStrategy{},
+		optionalStrategy: &OptionalFieldsStrategy{},
+	}
+}
+
+// NewWithStrategies creates a parser with custom field parsing strategies.
+func NewWithStrategies(required, optional FieldParsingStrategy) *Parser {
+	return &Parser{
+		maxBufferSize:    MaxBufferSize,
+		requiredStrategy: required,
+		optionalStrategy: optional,
 	}
 }
 
@@ -232,20 +245,16 @@ func (p *Parser) parseSystemMessage(data map[string]any) (*shared.SystemMessage,
 func (p *Parser) parseResultMessage(data map[string]any) (*shared.ResultMessage, error) {
 	result := &shared.ResultMessage{}
 
-	// Use strategies for parsing
-	requiredStrategy := &RequiredFieldsStrategy{}
-	optionalStrategy := &OptionalFieldsStrategy{}
-
-	// Parse required fields
-	err := requiredStrategy.ParseFields(data, result)
+	// Parse required fields using injected strategy
+	err := p.requiredStrategy.ParseFields(data, result)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse required fields: %w", err)
 	}
 
-	// Parse optional fields
-	err = optionalStrategy.ParseFields(data, result)
+	// Parse optional fields using injected strategy
+	err = p.optionalStrategy.ParseFields(data, result)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parse optional fields: %w", err)
 	}
 
 	return result, nil

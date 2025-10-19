@@ -144,3 +144,23 @@ func TestOptionalFieldsStrategyPartialFields(t *testing.T) {
 		t.Error("expected Result to be nil")
 	}
 }
+func TestStrategyInjection(t *testing.T) {
+	// Test that parser accepts custom strategies (Dependency Inversion)
+	customRequired := &parser.RequiredFieldsStrategy{}
+	customOptional := &parser.OptionalFieldsStrategy{}
+
+	parserWithStrategies := parser.NewWithStrategies(customRequired, customOptional)
+
+	// Verify parser can parse with injected strategies
+	line := `{"type":"result","subtype":"test","duration_ms":100,` +
+		`"duration_api_ms":50,"is_error":false,"num_turns":1,"session_id":"session123"}`
+
+	messages, err := parserWithStrategies.ProcessLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error with custom strategies: %v", err)
+	}
+
+	if len(messages) != 1 {
+		t.Errorf("expected 1 message, got %d", len(messages))
+	}
+}

@@ -437,16 +437,13 @@ func (t *Transport) waitForProcessTermination() error {
 		done <- cmd.Wait()
 	}()
 
-	timeoutTerm := &TimeoutTerminator{}
-	cancelTerm := &CancellationTerminator{}
-
 	select {
 	case err := <-done:
 		return t.handleProcessExit(err)
 	case <-time.After(terminationTimeoutSeconds * time.Second):
-		return timeoutTerm.Kill(cmd, done)
+		return terminateProcess(cmd, done, "timeout")
 	case <-t.done:
-		return cancelTerm.Kill(cmd, done)
+		return terminateProcess(cmd, done, "context cancellation")
 	}
 }
 
