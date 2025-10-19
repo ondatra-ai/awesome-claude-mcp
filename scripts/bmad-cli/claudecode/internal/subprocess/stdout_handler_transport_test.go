@@ -1,29 +1,24 @@
-package subprocess
+package subprocess_test
 
 import (
 	"errors"
 	"testing"
 
 	"bmad-cli/claudecode/internal/shared"
+	"bmad-cli/claudecode/internal/subprocess"
 )
 
 // TestErrorSenderWithRealChannels tests ErrorSender with actual Transport channels.
-// This test is in the subprocess package (not subprocess_test) to access unexported fields.
+// This test uses export_test.go helpers to verify channel behavior without accessing unexported fields.
 func TestErrorSenderWithRealChannels(t *testing.T) {
 	t.Run("error is sent to transport error channel", func(t *testing.T) {
-		// Create a minimal Transport with channels
-		transport := &Transport{
-			errChan: make(chan error, 1),
-			msgChan: make(chan shared.Message, 10),
-			done:    make(chan struct{}),
-		}
-		defer close(transport.done)
-		defer close(transport.errChan)
-		defer close(transport.msgChan)
+		// Create a minimal Transport with channels via helper
+		transport := subprocess.NewTestTransportWithChannels()
+		defer subprocess.CloseTestTransport(transport)
 
-		sender := &ErrorSender{}
+		sender := &subprocess.ErrorSender{}
 		testErr := errors.New("test error from handler")
-		ctx := &ProcessContext{Error: testErr}
+		ctx := &subprocess.ProcessContext{Error: testErr}
 
 		// ErrorSender should send the error to the transport
 		result := sender.Handle(ctx, transport)
@@ -34,8 +29,9 @@ func TestErrorSenderWithRealChannels(t *testing.T) {
 		}
 
 		// Verify error was actually sent to channel
+		errChan := subprocess.GetTestTransportErrChan(transport)
 		select {
-		case receivedErr := <-transport.errChan:
+		case receivedErr := <-errChan:
 			if receivedErr.Error() != testErr.Error() {
 				t.Errorf("expected error %q, got %q", testErr, receivedErr)
 			}
@@ -45,20 +41,14 @@ func TestErrorSenderWithRealChannels(t *testing.T) {
 	})
 
 	t.Run("no error continues to next handler", func(t *testing.T) {
-		transport := &Transport{
-			errChan: make(chan error, 1),
-			msgChan: make(chan shared.Message, 10),
-			done:    make(chan struct{}),
-		}
-		defer close(transport.done)
-		defer close(transport.errChan)
-		defer close(transport.msgChan)
+		transport := subprocess.NewTestTransportWithChannels()
+		defer subprocess.CloseTestTransport(transport)
 
-		sender := &ErrorSender{}
+		sender := &subprocess.ErrorSender{}
 		mockNext := &mockTransportHandler{shouldReturn: true}
 		sender.SetNext(mockNext)
 
-		ctx := &ProcessContext{Error: nil}
+		ctx := &subprocess.ProcessContext{Error: nil}
 
 		sender.Handle(ctx, transport)
 
@@ -67,8 +57,9 @@ func TestErrorSenderWithRealChannels(t *testing.T) {
 		}
 
 		// Verify no error was sent
+		errChan := subprocess.GetTestTransportErrChan(transport)
 		select {
-		case err := <-transport.errChan:
+		case err := <-errChan:
 			t.Errorf("unexpected error in channel: %v", err)
 		default:
 			// Expected: no error sent
@@ -78,18 +69,12 @@ func TestErrorSenderWithRealChannels(t *testing.T) {
 
 // TestMessageSenderSingleMessage tests MessageSender sends one message correctly.
 func TestMessageSenderSingleMessage(t *testing.T) {
-	transport := &Transport{
-		errChan: make(chan error, 1),
-		msgChan: make(chan shared.Message, 10),
-		done:    make(chan struct{}),
-	}
-	defer close(transport.done)
-	defer close(transport.errChan)
-	defer close(transport.msgChan)
+	transport := subprocess.NewTestTransportWithChannels()
+	defer subprocess.CloseTestTransport(transport)
 
 	mockMsg := &shared.SystemMessage{Subtype: "test"}
-	sender := &MessageSender{}
-	ctx := &ProcessContext{
+	sender := &subprocess.MessageSender{}
+	ctx := &subprocess.ProcessContext{
 		Messages: []shared.Message{mockMsg},
 		Error:    nil,
 	}
@@ -101,8 +86,9 @@ func TestMessageSenderSingleMessage(t *testing.T) {
 	}
 
 	// Verify message was sent
+	msgChan := subprocess.GetTestTransportMsgChan(transport)
 	select {
-	case receivedMsg := <-transport.msgChan:
+	case receivedMsg := <-msgChan:
 		if receivedMsg == nil {
 			t.Error("expected message in channel, got nil")
 		}
@@ -120,18 +106,12 @@ func TestMessageSenderSingleMessage(t *testing.T) {
 
 // TestMessageSenderWithError tests that errors skip message sending.
 func TestMessageSenderWithError(t *testing.T) {
-	transport := &Transport{
-		errChan: make(chan error, 1),
-		msgChan: make(chan shared.Message, 10),
-		done:    make(chan struct{}),
-	}
-	defer close(transport.done)
-	defer close(transport.errChan)
-	defer close(transport.msgChan)
+	transport := subprocess.NewTestTransportWithChannels()
+	defer subprocess.CloseTestTransport(transport)
 
 	mockMsg := &shared.SystemMessage{Subtype: "test"}
-	sender := &MessageSender{}
-	ctx := &ProcessContext{
+	sender := &subprocess.MessageSender{}
+	ctx := &subprocess.ProcessContext{
 		Messages: []shared.Message{mockMsg},
 		Error:    errors.New("context has error"),
 	}
@@ -143,8 +123,9 @@ func TestMessageSenderWithError(t *testing.T) {
 	}
 
 	// Verify no message was sent
+	msgChan := subprocess.GetTestTransportMsgChan(transport)
 	select {
-	case msg := <-transport.msgChan:
+	case msg := <-msgChan:
 		t.Errorf("unexpected message in channel: %v", msg)
 	default:
 		// Expected: no message sent
@@ -153,20 +134,14 @@ func TestMessageSenderWithError(t *testing.T) {
 
 // TestMessageSenderMultipleMessages tests sending multiple messages.
 func TestMessageSenderMultipleMessages(t *testing.T) {
-	transport := &Transport{
-		errChan: make(chan error, 1),
-		msgChan: make(chan shared.Message, 10),
-		done:    make(chan struct{}),
-	}
-	defer close(transport.done)
-	defer close(transport.errChan)
-	defer close(transport.msgChan)
+	transport := subprocess.NewTestTransportWithChannels()
+	defer subprocess.CloseTestTransport(transport)
 
 	msg1 := &shared.SystemMessage{Subtype: "msg1"}
 	msg2 := &shared.SystemMessage{Subtype: "msg2"}
 
-	sender := &MessageSender{}
-	ctx := &ProcessContext{
+	sender := &subprocess.MessageSender{}
+	ctx := &subprocess.ProcessContext{
 		Messages: []shared.Message{msg1, msg2},
 		Error:    nil,
 	}
@@ -174,11 +149,12 @@ func TestMessageSenderMultipleMessages(t *testing.T) {
 	sender.Handle(ctx, transport)
 
 	// Count messages received
+	msgChan := subprocess.GetTestTransportMsgChan(transport)
 	count := 0
 
 	for range 2 {
 		select {
-		case <-transport.msgChan:
+		case <-msgChan:
 			count++
 		default:
 			// Channel empty
@@ -192,13 +168,13 @@ func TestMessageSenderMultipleMessages(t *testing.T) {
 
 // mockTransportHandler is used for testing handler chaining with Transport.
 type mockTransportHandler struct {
-	BaseStdoutHandler
+	subprocess.BaseStdoutHandler
 
 	wasCalled    bool
 	shouldReturn bool
 }
 
-func (m *mockTransportHandler) Handle(_ *ProcessContext, _ *Transport) bool {
+func (m *mockTransportHandler) Handle(_ *subprocess.ProcessContext, _ *subprocess.Transport) bool {
 	m.wasCalled = true
 
 	return m.shouldReturn
