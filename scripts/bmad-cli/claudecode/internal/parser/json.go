@@ -19,15 +19,28 @@ const (
 // Parser handles JSON message parsing with speculative parsing and buffer management.
 // It implements the same speculative parsing strategy as the Python SDK.
 type Parser struct {
-	buffer        strings.Builder
-	maxBufferSize int
-	mu            sync.Mutex // Thread safety
+	buffer           strings.Builder
+	maxBufferSize    int
+	mu               sync.Mutex // Thread safety
+	requiredStrategy FieldParsingStrategy
+	optionalStrategy FieldParsingStrategy
 }
 
-// New creates a new JSON parser with default buffer size.
+// New creates a new JSON parser with default buffer size and strategies.
 func New() *Parser {
 	return &Parser{
-		maxBufferSize: MaxBufferSize,
+		maxBufferSize:    MaxBufferSize,
+		requiredStrategy: &RequiredFieldsStrategy{},
+		optionalStrategy: &OptionalFieldsStrategy{},
+	}
+}
+
+// NewWithStrategies creates a parser with custom field parsing strategies.
+func NewWithStrategies(required, optional FieldParsingStrategy) *Parser {
+	return &Parser{
+		maxBufferSize:    MaxBufferSize,
+		requiredStrategy: required,
+		optionalStrategy: optional,
 	}
 }
 
@@ -232,56 +245,16 @@ func (p *Parser) parseSystemMessage(data map[string]any) (*shared.SystemMessage,
 func (p *Parser) parseResultMessage(data map[string]any) (*shared.ResultMessage, error) {
 	result := &shared.ResultMessage{}
 
-	// Required fields with validation
-	if subtype, ok := data["subtype"].(string); ok {
-		result.Subtype = subtype
-	} else {
-		return nil, shared.NewMessageParseError("result message missing subtype field", data)
+	// Parse required fields using injected strategy
+	err := p.requiredStrategy.ParseFields(data, result)
+	if err != nil {
+		return nil, fmt.Errorf("parse required fields: %w", err)
 	}
 
-	if durationMS, ok := data["duration_ms"].(float64); ok {
-		result.DurationMs = int(durationMS)
-	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid duration_ms field", data)
-	}
-
-	if durationAPIMS, ok := data["duration_api_ms"].(float64); ok {
-		result.DurationAPIMs = int(durationAPIMS)
-	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid duration_api_ms field", data)
-	}
-
-	if isError, ok := data["is_error"].(bool); ok {
-		result.IsError = isError
-	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid is_error field", data)
-	}
-
-	if numTurns, ok := data["num_turns"].(float64); ok {
-		result.NumTurns = int(numTurns)
-	} else {
-		return nil, shared.NewMessageParseError("result message missing or invalid num_turns field", data)
-	}
-
-	if sessionID, ok := data["session_id"].(string); ok {
-		result.SessionID = sessionID
-	} else {
-		return nil, shared.NewMessageParseError("result message missing session_id field", data)
-	}
-
-	// Optional fields (no validation errors if missing)
-	if totalCostUSD, ok := data["total_cost_usd"].(float64); ok {
-		result.TotalCostUSD = &totalCostUSD
-	}
-
-	if usage, ok := data["usage"].(map[string]any); ok {
-		result.Usage = &usage
-	}
-
-	if resultData, ok := data["result"]; ok {
-		if resultMap, ok := resultData.(map[string]any); ok {
-			result.Result = &resultMap
-		}
+	// Parse optional fields using injected strategy
+	err = p.optionalStrategy.ParseFields(data, result)
+	if err != nil {
+		return nil, fmt.Errorf("parse optional fields: %w", err)
 	}
 
 	return result, nil

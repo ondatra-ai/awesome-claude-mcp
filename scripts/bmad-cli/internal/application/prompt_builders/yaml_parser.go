@@ -11,7 +11,6 @@ import (
 
 const (
 	minRegexMatchGroups = 2
-	keyValueSplitLimit  = 2
 )
 
 type YAMLParser struct{}
@@ -133,59 +132,10 @@ func (p *YAMLParser) parseSummaryFromYAML(yaml string) (string, error) {
 }
 
 func (p *YAMLParser) parseItemsFromYAML(yaml string) (map[string]bool, error) {
-	items := map[string]bool{}
-	inItems := false
-
-	for _, raw := range strings.Split(yaml, "\n") {
-		line := strings.TrimRight(raw, "\r")
-		trimmedLine := strings.TrimSpace(line)
-
-		if strings.HasPrefix(trimmedLine, "items:") {
-			inItems = true
-
-			continue
-		}
-
-		if inItems {
-			isEmpty := trimmedLine == ""
-			hasNoColon := !strings.Contains(trimmedLine, ":")
-			isNotIndented := !strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "\t")
-
-			if isEmpty || hasNoColon || isNotIndented {
-				break
-			}
-
-			parts := strings.SplitN(strings.TrimSpace(trimmedLine), ":", keyValueSplitLimit)
-			if len(parts) == keyValueSplitLimit {
-				key := strings.TrimSpace(parts[0])
-				val := strings.TrimSpace(parts[1])
-				val = strings.Trim(val, "\"'")
-
-				lv := strings.ToLower(val)
-				if lv != "true" && lv != "false" {
-					return nil, errors.ErrItemsMustBeBoolean(key, val)
-				}
-
-				items[key] = lv == "true"
-			}
-		}
-	}
-
-	if len(items) == 0 {
-		return nil, errors.ErrItemsBlockNotFound
-	}
-
-	required := []string{
-		"tools_present", "pr_detected", "conversations_fetched",
-		"auto_resolved_outdated", "relevance_classified", "human_approval_needed",
-	}
-	for _, k := range required {
-		if _, ok := items[k]; !ok {
-			return nil, errors.ErrMissingItems(k)
-		}
-	}
-
-	return items, nil
+	return NewItemsParser(yaml).
+		Extract().
+		Validate().
+		Build()
 }
 
 func (p *YAMLParser) parseAlternativesFromYAML(yaml string) []map[string]string {

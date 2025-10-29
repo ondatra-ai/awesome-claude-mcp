@@ -295,48 +295,82 @@ func (t *Transport) handleStdout() {
 	defer close(t.msgChan)
 	defer close(t.errChan)
 
-	// CRITICAL FIX: Create scanner with larger buffer to handle large responses
+	// Build handler chain
+	chain := t.buildStdoutHandlerChain()
+	scanner := t.createStdoutScanner()
+
+	for scanner.Scan() {
+		if t.isDone() {
+			return
+		}
+
+		ctx := &ProcessContext{Line: scanner.Text()}
+		if !chain.Handle(ctx, t) {
+			return
+		}
+	}
+
+	t.handleScannerError(scanner.Err())
+}
+
+// buildStdoutHandlerChain creates the chain of responsibility for processing stdout.
+func (t *Transport) buildStdoutHandlerChain() StdoutHandler {
+	emptyFilter := &EmptyLineFilter{}
+	lineParser := NewLineParser(t.parser)
+	errorSender := &ErrorSender{}
+	messageSender := &MessageSender{}
+
+	emptyFilter.SetNext(lineParser).SetNext(errorSender).SetNext(messageSender)
+
+	return emptyFilter
+}
+
+// createStdoutScanner creates a scanner with larger buffer to handle large responses.
+func (t *Transport) createStdoutScanner() *bufio.Scanner {
 	scanner := bufio.NewScanner(t.stdout)
 	buf := make([]byte, 0, maxScanTokenSize)
 	scanner.Buffer(buf, maxScanTokenSize)
 
-	for scanner.Scan() {
-		select {
-		case <-t.done:
-			return
-		default:
-		}
+	return scanner
+}
 
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
+// isDone checks if the transport is shutting down.
+func (t *Transport) isDone() bool {
+	select {
+	case <-t.done:
+		return true
+	default:
+		return false
+	}
+}
 
-		// Parse line with the parser
-		messages, err := t.parser.ProcessLine(line)
-		if err != nil {
+// sendError sends an error to the error channel.
+func (t *Transport) sendError(err error) bool {
+	select {
+	case t.errChan <- err:
+		return true
+	case <-t.done:
+		return false
+	}
+}
+
+// sendMessages sends parsed messages to the message channel.
+func (t *Transport) sendMessages(messages []shared.Message) bool {
+	for _, msg := range messages {
+		if msg != nil {
 			select {
-			case t.errChan <- err:
+			case t.msgChan <- msg:
 			case <-t.done:
-				return
-			}
-
-			continue
-		}
-
-		// Send parsed messages
-		for _, msg := range messages {
-			if msg != nil {
-				select {
-				case t.msgChan <- msg:
-				case <-t.done:
-					return
-				}
+				return false
 			}
 		}
 	}
 
-	err := scanner.Err()
+	return true
+}
+
+// handleScannerError handles scanner errors.
+func (t *Transport) handleScannerError(err error) {
 	if err != nil {
 		select {
 		case t.errChan <- pkgerrors.ErrStdoutScannerFailed(err):
@@ -386,15 +420,17 @@ func (t *Transport) terminateProcess() error {
 		return nil
 	}
 
-	// Send SIGTERM
 	err := t.sendTerminationSignal()
 	if err != nil {
 		return err
 	}
 
-	// Wait exactly 5 seconds
+	return t.waitForProcessTermination()
+}
+
+// waitForProcessTermination waits for process to exit with timeout handling.
+func (t *Transport) waitForProcessTermination() error {
 	done := make(chan error, 1)
-	// Capture cmd while we know it's valid to avoid data race
 	cmd := t.cmd
 
 	go func() {
@@ -403,37 +439,21 @@ func (t *Transport) terminateProcess() error {
 
 	select {
 	case err := <-done:
-		// Normal termination or expected signals are not errors
-		if err != nil {
-			// Check if it's an expected exit signal
-			if strings.Contains(err.Error(), "signal:") {
-				return nil // Expected signal termination
-			}
-		}
-
-		return err
+		return t.handleProcessExit(err)
 	case <-time.After(terminationTimeoutSeconds * time.Second):
-		// Force kill after 5 seconds
-		killErr := t.cmd.Process.Kill()
-		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-			return fmt.Errorf("kill process after timeout: %w", killErr)
-		}
-		// Wait for process to exit after kill
-		<-done
-
-		return nil
+		return terminateProcess(cmd, done, "timeout")
 	case <-t.done:
-		// Context canceled - force kill immediately
-		killErr := t.cmd.Process.Kill()
-		if killErr != nil && !isProcessAlreadyFinishedError(killErr) {
-			return fmt.Errorf("kill process after context cancellation: %w", killErr)
-		}
-		// Wait for process to exit after kill, but don't return context error
-		// since this is normal cleanup behavior
-		<-done
+		return terminateProcess(cmd, done, "context cancellation")
+	}
+}
 
+// handleProcessExit checks if process exit was expected.
+func (t *Transport) handleProcessExit(err error) error {
+	if err != nil && strings.Contains(err.Error(), "signal:") {
 		return nil
 	}
+
+	return err
 }
 
 // setupCommand builds and configures the command with arguments and environment.
