@@ -48,7 +48,8 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 			defer stop()
 
 			force, _ := cmd.Flags().GetBool("force")
-			err := container.USImplementCmd.Execute(ctx, args[0], force)
+			steps, _ := cmd.Flags().GetString("steps")
+			err := container.USImplementCmd.Execute(ctx, args[0], force, steps)
 
 			stop()
 
@@ -60,7 +61,10 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 		},
 	}
 
-	implementCmd.Flags().BoolP("force", "f", false, "Force recreate the story branch even if it already exists")
+	implementCmd.Flags().BoolP("force", "f", false,
+		"Force recreate the story branch even if it already exists")
+	implementCmd.Flags().StringP("steps", "s", "all",
+		"Comma-separated list of steps to execute (validate_story,create_branch,merge_scenarios,generate_tests,all)")
 
 	usCmd.AddCommand(createCmd)
 	usCmd.AddCommand(implementCmd)
