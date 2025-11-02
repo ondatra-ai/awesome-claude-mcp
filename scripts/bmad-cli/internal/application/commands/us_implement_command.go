@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"bmad-cli/internal/adapters/ai"
@@ -56,6 +57,27 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		"steps", steps.String(),
 	)
 
+	// Execute all steps
+	err = c.executeSteps(ctx, storyNumber, steps)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+
+	return nil
+}
+
+func (c *USImplementCommand) executeSteps(ctx context.Context, storyNumber string, steps *ExecutionSteps) error {
+	err := c.executePreparationSteps(storyNumber, steps)
+	if err != nil {
+		return err
+	}
+
+	return c.executeImplementationSteps(ctx, storyNumber, steps)
+}
+
+func (c *USImplementCommand) executePreparationSteps(storyNumber string, steps *ExecutionSteps) error {
 	// Step 1: Validate story
 	if steps.ValidateStory {
 		err := c.executeValidateStory(storyNumber)
@@ -72,9 +94,17 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		}
 	}
 
+	return nil
+}
+
+func (c *USImplementCommand) executeImplementationSteps(
+	ctx context.Context,
+	storyNumber string,
+	steps *ExecutionSteps,
+) error {
 	// Step 3: Merge scenarios
 	if steps.MergeScenarios {
-		_, err = c.executeMergeScenarios(ctx, storyNumber)
+		_, err := c.executeMergeScenarios(ctx, storyNumber)
 		if err != nil {
 			return err
 		}
@@ -88,7 +118,13 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		}
 	}
 
-	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+	// Step 5: Make tests pass
+	if steps.MakeTestsPass {
+		err := c.executeMakeTestsPass(ctx, storyNumber)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -551,4 +587,128 @@ func convertStepsToStrings(steps []interface{}) []string {
 	}
 
 	return result
+}
+
+// MakeTestsPassData holds the data for the make tests pass prompt.
+type MakeTestsPassData struct {
+	StoryID    string
+	StoryTitle string
+	AsA        string
+	IWant      string
+	SoThat     string
+	TestFiles  []string
+}
+
+func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumber string) error {
+	slog.Info("Step 5: Making tests pass")
+
+	// Load story to get basic context
+	storyDoc, err := c.storyLoader.Load(storyNumber)
+	if err != nil {
+		return pkgerrors.ErrLoadStoryFailed(err)
+	}
+
+	// Find test files from requirements.yml
+	testFiles, err := c.findImplementedTestFiles("docs/requirements.yml", storyNumber)
+	if err != nil {
+		return err
+	}
+
+	if len(testFiles) == 0 {
+		slog.Info("✓ No test files found to implement")
+
+		return nil
+	}
+
+	slog.Info("Found test files to implement", "count", len(testFiles))
+
+	// Create simple prompt data
+	promptData := &MakeTestsPassData{
+		StoryID:    storyNumber,
+		StoryTitle: storyDoc.Story.Title,
+		AsA:        storyDoc.Story.AsA,
+		IWant:      storyDoc.Story.IWant,
+		SoThat:     storyDoc.Story.SoThat,
+		TestFiles:  testFiles,
+	}
+
+	// Load prompt templates
+	userPromptPath := c.config.GetString("templates.prompts.make_tests_pass")
+	systemPromptPath := c.config.GetString("templates.prompts.make_tests_pass_system")
+
+	userPromptLoader := template.NewTemplateLoader[*MakeTestsPassData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*MakeTestsPassData](systemPromptPath)
+
+	userPrompt, err := userPromptLoader.LoadTemplate(promptData)
+	if err != nil {
+		return pkgerrors.ErrLoadPromptsFailed(err)
+	}
+
+	systemPrompt, err := systemPromptLoader.LoadTemplate(promptData)
+	if err != nil {
+		return pkgerrors.ErrLoadPromptsFailed(err)
+	}
+
+	slog.Info("Calling Claude Code to implement features and make tests pass")
+
+	_, err = c.claudeClient.ExecutePromptWithSystem(
+		ctx,
+		systemPrompt,
+		userPrompt,
+		"sonnet",
+		ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
+	)
+	if err != nil {
+		return pkgerrors.ErrImplementFeaturesFailed(err)
+	}
+
+	slog.Info("✓ Feature implementation completed")
+
+	return nil
+}
+
+func (c *USImplementCommand) findImplementedTestFiles(requirementsFile string, storyID string) ([]string, error) {
+	// Read requirements file
+	data, err := os.ReadFile(requirementsFile)
+	if err != nil {
+		return nil, pkgerrors.ErrReadRequirementsFailed(err)
+	}
+
+	// Parse YAML structure
+	var requirements struct {
+		Scenarios map[string]struct {
+			ImplementationStatus struct {
+				Status   string `yaml:"status"`
+				FilePath string `yaml:"file_path"`
+			} `yaml:"implementation_status"`
+		} `yaml:"scenarios"`
+	}
+
+	err = yaml.Unmarshal(data, &requirements)
+	if err != nil {
+		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
+	}
+
+	// Find unique test files for scenarios with status "implemented"
+	testFilesMap := make(map[string]bool)
+
+	for scenarioID, scenario := range requirements.Scenarios {
+		// Only include scenarios from this story
+		if !strings.HasPrefix(scenarioID, storyID+"-") {
+			continue
+		}
+
+		// Only include scenarios with status "implemented" (tests exist but code doesn't)
+		if scenario.ImplementationStatus.Status == "implemented" && scenario.ImplementationStatus.FilePath != "" {
+			testFilesMap[scenario.ImplementationStatus.FilePath] = true
+		}
+	}
+
+	// Convert map to slice
+	testFiles := make([]string, 0, len(testFilesMap))
+	for filePath := range testFilesMap {
+		testFiles = append(testFiles, filePath)
+	}
+
+	return testFiles, nil
 }

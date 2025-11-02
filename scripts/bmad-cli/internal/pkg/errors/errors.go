@@ -374,6 +374,9 @@ var (
 	ErrMergeScenarios                 = errors.New("failed to merge scenarios")
 	ErrReplaceRequirements            = errors.New("failed to replace requirements")
 	ErrImplementTests                 = errors.New("failed to implement tests")
+	ErrImplementFeatures              = errors.New("failed to implement features")
+	ErrLoadUserPromptFailed           = errors.New("failed to load user prompt")
+	ErrLoadSystemPromptFailed         = errors.New("failed to load system prompt")
 	ErrCreateOutputDirectory          = errors.New("failed to create directory")
 	ErrReadRequirementsFile           = errors.New("failed to read requirements.yml")
 	ErrWriteOutputFile                = errors.New("failed to write output file")
@@ -1573,6 +1576,15 @@ func ErrImplementTestsFailed(cause error) error {
 		Code:     "IMPLEMENT_TESTS_FAILED",
 		Message:  "failed to implement tests",
 		Cause:    errors.Join(ErrImplementTests, cause),
+	}
+}
+
+func ErrImplementFeaturesFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FEATURES_FAILED",
+		Message:  "failed to implement features",
+		Cause:    errors.Join(ErrImplementFeatures, cause),
 	}
 }
 

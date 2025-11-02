@@ -14,6 +14,7 @@ const (
 	StepCreateBranch   = "create_branch"
 	StepMergeScenarios = "merge_scenarios"
 	StepGenerateTests  = "generate_tests"
+	StepMakeTestsPass  = "make_tests_pass"
 	StepAll            = "all"
 )
 
@@ -23,6 +24,7 @@ type ExecutionSteps struct {
 	CreateBranch   bool
 	MergeScenarios bool
 	GenerateTests  bool
+	MakeTestsPass  bool
 }
 
 // ParseSteps parses the steps string and returns ExecutionSteps.
@@ -46,6 +48,7 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.ValidateStory = true
 			steps.MergeScenarios = true
 			steps.GenerateTests = true
+			steps.MakeTestsPass = true
 		case StepValidateStory:
 			steps.ValidateStory = true
 		case StepCreateBranch:
@@ -54,14 +57,17 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.MergeScenarios = true
 		case StepGenerateTests:
 			steps.GenerateTests = true
+		case StepMakeTestsPass:
+			steps.MakeTestsPass = true
 		default:
-			return nil, fmt.Errorf("%w: %s (valid steps: %s, %s, %s, %s, %s)",
+			return nil, fmt.Errorf("%w: %s (valid steps: %s, %s, %s, %s, %s, %s)",
 				ErrInvalidStep,
 				step,
 				StepValidateStory,
 				StepCreateBranch,
 				StepMergeScenarios,
 				StepGenerateTests,
+				StepMakeTestsPass,
 				StepAll,
 			)
 		}
@@ -88,6 +94,10 @@ func (e *ExecutionSteps) String() string {
 
 	if e.GenerateTests {
 		enabled = append(enabled, StepGenerateTests)
+	}
+
+	if e.MakeTestsPass {
+		enabled = append(enabled, StepMakeTestsPass)
 	}
 
 	if len(enabled) == 0 {
