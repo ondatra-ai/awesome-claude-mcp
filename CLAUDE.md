@@ -70,11 +70,37 @@ make lint-docs    # Validate YAML documentation
 
 ### BMAD CLI Usage
 **CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
+
+#### Command Timeouts
+Different commands require different timeout values based on their complexity:
+
+**User Story Commands:**
 ```bash
+# Create user story - 10 minutes (600 seconds)
 go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli us create 3.1
+
+# Implement user story - 30 minutes (1800 seconds)
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 1800 scripts/bmad-cli/bmad-cli us implement 3.1
+
+# Implement with force flag - 30 minutes (1800 seconds)
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 1800 scripts/bmad-cli/bmad-cli us implement 3.1 --force
 ```
-- Use 10-minute timeout (600 seconds) for story generation commands that involve AI processing
-- This ensures proper path resolution for config files and tmp directories
+
+**Pull Request Commands:**
+```bash
+# PR triage - 5 minutes (300 seconds)
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 300 scripts/bmad-cli/bmad-cli pr triage
+```
+
+**Timeout Guidelines:**
+- `us create`: 10 minutes (600s) - Story generation with AI processing
+- `us implement`: 30 minutes (1800s) - Full implementation with code generation
+- `pr triage`: 5 minutes (300s) - PR analysis and triage
+
+**Important Notes:**
+- Always run from repository root for proper path resolution
+- Timeouts ensure commands don't hang indefinitely during AI processing
+- Commands respect configured engine type (see config files)
 
 ## Project Structure
 
