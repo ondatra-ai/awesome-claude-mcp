@@ -342,6 +342,7 @@ func (p *Parser) parseToolResultBlock(data map[string]any) (shared.ContentBlock,
 	}
 
 	var isError *bool
+
 	if isErrorValue, exists := data["is_error"]; exists {
 		if b, ok := isErrorValue.(bool); ok {
 			isError = &b

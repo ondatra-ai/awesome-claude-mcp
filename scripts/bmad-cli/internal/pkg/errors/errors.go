@@ -2016,3 +2016,12 @@ func ErrInvalidCoverageError(key string) error {
 		Cause:    ErrInvalidCoverage,
 	}
 }
+
+func ErrInvalidSteps(cause error) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "INVALID_STEPS",
+		Message:  "invalid steps parameter",
+		Cause:    cause,
+	}
+}

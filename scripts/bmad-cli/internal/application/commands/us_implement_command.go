@@ -43,42 +43,112 @@ func NewUSImplementCommand(
 	}
 }
 
-func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, force bool) error {
-	slog.Info("Starting user story implementation", "story_number", storyNumber, "force", force)
+func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, force bool, stepsStr string) error {
+	// Parse steps
+	steps, err := ParseSteps(stepsStr)
+	if err != nil {
+		return pkgerrors.ErrInvalidSteps(err)
+	}
 
-	// Get story slug from file
-	_, err := c.storyLoader.GetStorySlug(storyNumber)
+	slog.Info("Starting user story implementation",
+		"story_number", storyNumber,
+		"force", force,
+		"steps", steps.String(),
+	)
+
+	// Step 1: Validate story
+	if steps.ValidateStory {
+		err := c.executeValidateStory(storyNumber)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Step 2: Create branch
+	if steps.CreateBranch {
+		err := c.executeCreateBranch(storyNumber)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Step 3: Merge scenarios
+	if steps.MergeScenarios {
+		_, err = c.executeMergeScenarios(ctx, storyNumber)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Step 4: Generate tests
+	if steps.GenerateTests {
+		err := c.executeGenerateTests(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+
+	return nil
+}
+
+func (c *USImplementCommand) executeValidateStory(storyNumber string) error {
+	slog.Info("Step 1: Validating story file")
+
+	storySlug, err := c.storyLoader.GetStorySlug(storyNumber)
+	if err != nil {
+		return pkgerrors.ErrGetStorySlugFailed(err)
+	}
+
+	slog.Info("✓ Story validated successfully", "slug", storySlug)
+
+	return nil
+}
+
+func (c *USImplementCommand) executeCreateBranch(storyNumber string) error {
+	slog.Info("Step 2: Creating story branch")
+
+	storySlug, err := c.storyLoader.GetStorySlug(storyNumber)
 	if err != nil {
 		return pkgerrors.ErrGetStorySlugFailed(err)
 	}
 
 	// TEMPORARILY COMMENTED OUT FOR TESTING
-	// Ensure correct branch is checked out
 	// if err := c.branchManager.EnsureBranch(ctx, storyNumber, storySlug, force); err != nil {
 	// 	return fmt.Errorf("failed to ensure branch: %w", err)
 	// }
-	// slog.Info("Branch setup completed successfully")
+	_ = storySlug
 
-	slog.Warn("Branch management temporarily disabled for testing")
+	slog.Warn("⚠️  Branch management temporarily disabled for testing")
+
+	return nil
+}
+
+func (c *USImplementCommand) executeMergeScenarios(
+	ctx context.Context,
+	storyNumber string,
+) (*storyModels.StoryDocument, error) {
+	slog.Info("Step 3: Merging scenarios into requirements")
 
 	// Clone requirements.yml to run directory for safe testing
 	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
 
-	err = c.cloneRequirements(outputFile)
+	err := c.cloneRequirements(outputFile)
 	if err != nil {
-		return pkgerrors.ErrCloneRequirementsFileFailed(err)
+		return nil, pkgerrors.ErrCloneRequirementsFileFailed(err)
 	}
 
 	// Load story document
 	storyDoc, err := c.storyLoader.Load(storyNumber)
 	if err != nil {
-		return pkgerrors.ErrLoadStoryFailed(err)
+		return nil, pkgerrors.ErrLoadStoryFailed(err)
 	}
 
-	// Merge scenarios from story into requirements-merged.yml (test file)
+	// Merge scenarios from story into requirements-merged.yml
 	err = c.mergeScenarios(ctx, storyNumber, storyDoc, outputFile)
 	if err != nil {
-		return pkgerrors.ErrMergeScenariosFailed(err)
+		return nil, pkgerrors.ErrMergeScenariosFailed(err)
 	}
 
 	slog.Info(
@@ -90,16 +160,19 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 	// Replace original requirements.yml with merged version
 	err = c.replaceRequirements(outputFile)
 	if err != nil {
-		return pkgerrors.ErrReplaceRequirementsFailed(err)
+		return nil, pkgerrors.ErrReplaceRequirementsFailed(err)
 	}
 
-	// Implement tests for pending scenarios
-	err = c.implementTests(ctx, "docs/requirements.yml")
+	return storyDoc, nil
+}
+
+func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
+	slog.Info("Step 4: Generating test code")
+
+	err := c.implementTests(ctx, "docs/requirements.yml")
 	if err != nil {
 		return pkgerrors.ErrImplementTestsFailed(err)
 	}
-
-	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
 
 	return nil
 }
