@@ -2037,3 +2037,37 @@ func ErrInvalidSteps(cause error) error {
 		Cause:    cause,
 	}
 }
+
+// Test Execution Errors.
+var (
+	ErrBaselineTestsFailed = errors.New("baseline tests failed")
+	ErrGeneratedTestsPass  = errors.New("generated tests should fail but passed")
+	ErrRunTests            = errors.New("failed to run tests")
+)
+
+func ErrBaselineTestsFailedError(output string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "BASELINE_TESTS_FAILED",
+		Message:  "baseline tests must pass before test generation - tests are failing. Output: " + output,
+		Cause:    ErrBaselineTestsFailed,
+	}
+}
+
+func ErrGeneratedTestsPassError(output string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "GENERATED_TESTS_PASS",
+		Message:  "generated tests should fail (TDD red phase) but all tests passed. Output: " + output,
+		Cause:    ErrGeneratedTestsPass,
+	}
+}
+
+func ErrRunTestsFailed(phase string, cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "RUN_TESTS_FAILED",
+		Message:  "failed to run tests during " + phase + " phase",
+		Cause:    errors.Join(ErrRunTests, cause),
+	}
+}

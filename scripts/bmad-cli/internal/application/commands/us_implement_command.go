@@ -13,6 +13,7 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
+	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -26,6 +27,7 @@ type USImplementCommand struct {
 	claudeClient  *ai.ClaudeClient
 	config        *config.ViperConfig
 	runDir        *fs.RunDirectory
+	shellExec     *shell.CommandRunner
 }
 
 func NewUSImplementCommand(
@@ -34,6 +36,7 @@ func NewUSImplementCommand(
 	claudeClient *ai.ClaudeClient,
 	cfg *config.ViperConfig,
 	runDir *fs.RunDirectory,
+	shellExec *shell.CommandRunner,
 ) *USImplementCommand {
 	return &USImplementCommand{
 		branchManager: branchManager,
@@ -41,6 +44,7 @@ func NewUSImplementCommand(
 		claudeClient:  claudeClient,
 		config:        cfg,
 		runDir:        runDir,
+		shellExec:     shellExec,
 	}
 }
 
@@ -357,6 +361,12 @@ func (c *USImplementCommand) mergeScenarios(
 func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFile string) error {
 	slog.Info("⚙️  Starting test implementation", "requirements_file", requirementsFile)
 
+	// Step 1: Validate baseline tests (must pass)
+	err := c.validateBaselineTests(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Parse requirements file to find pending scenarios
 	pendingScenarios, err := c.parsePendingScenarios(requirementsFile)
 	if err != nil {
@@ -386,6 +396,12 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 		"total_pending", len(pendingScenarios),
 	)
 
+	// Step 2: Validate generated tests (must fail - TDD red phase)
+	err = c.validateGeneratedTests(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -399,6 +415,86 @@ func (c *USImplementCommand) createTestTemplateLoaders() (
 	systemPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](systemPromptPath)
 
 	return userPromptLoader, systemPromptLoader
+}
+
+// runTests executes the test command and saves output to tmp directory.
+func (c *USImplementCommand) runTests(ctx context.Context, phase string) (string, error) {
+	slog.Info("🧪 Running tests", "phase", phase)
+
+	// Get test command from config
+	testCommand := c.config.GetString("testing.command")
+	if testCommand == "" {
+		testCommand = "make test-e2e" // Default fallback
+	}
+
+	slog.Debug("Executing test command", "command", testCommand)
+
+	// Execute test command
+	output, err := c.shellExec.Run(ctx, "sh", "-c", testCommand)
+	if err != nil {
+		return output, pkgerrors.ErrRunTestsFailed(phase, err)
+	}
+
+	// Save output to tmp directory
+	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "test-output-"+phase+".txt")
+
+	const filePermission = 0o644
+
+	writeErr := os.WriteFile(outputFile, []byte(output), filePermission)
+	if writeErr != nil {
+		slog.Warn("Failed to write test output", "file", outputFile, "error", writeErr)
+	} else {
+		slog.Debug("Test output saved", "file", outputFile)
+	}
+
+	return output, nil
+}
+
+// validateBaselineTests runs tests before test generation and ensures they pass.
+func (c *USImplementCommand) validateBaselineTests(ctx context.Context) error {
+	slog.Info("📋 Validating baseline tests (must pass)")
+
+	output, err := c.runTests(ctx, "before")
+	if err != nil {
+		// Tests failed - this is an error for baseline
+		slog.Error(
+			"❌ Baseline tests failed",
+			"error", err,
+			"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-before.txt"),
+		)
+
+		return pkgerrors.ErrBaselineTestsFailedError(output)
+	}
+
+	slog.Info("✅ Baseline tests passed - ready for test generation")
+
+	return nil
+}
+
+// validateGeneratedTests runs tests after test generation and ensures they fail (TDD red phase).
+func (c *USImplementCommand) validateGeneratedTests(ctx context.Context) error {
+	slog.Info("🔴 Validating generated tests (must fail - TDD red phase)")
+
+	output, err := c.runTests(ctx, "after")
+
+	// Check if tests passed (err == nil means success, which is bad for TDD red phase)
+	if err == nil {
+		// Tests passed - this is an error (they should be failing)
+		slog.Error(
+			"❌ Generated tests are passing but should fail (TDD red phase)",
+			"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-after.txt"),
+		)
+
+		return pkgerrors.ErrGeneratedTestsPassError(output)
+	}
+
+	// Tests failed - this is expected (TDD red phase)
+	slog.Info(
+		"✅ Generated tests are failing as expected (TDD red phase)",
+		"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-after.txt"),
+	)
+
+	return nil
 }
 
 func (c *USImplementCommand) processTestScenarios(

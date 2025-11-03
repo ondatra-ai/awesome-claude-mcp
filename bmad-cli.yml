@@ -36,6 +36,9 @@ paths:
   qa_gates: "docs/qa/gates"
   stories_dir: "docs/stories"
 
+testing:
+  command: "make test-e2e"
+
 documents:
   architecture: "./docs/architecture.md"
   frontend_architecture: "./docs/frontend-architecture.md"
