@@ -687,12 +687,13 @@ func convertStepsToStrings(steps []interface{}) []string {
 
 // MakeTestsPassData holds the data for the make tests pass prompt.
 type MakeTestsPassData struct {
-	StoryID    string
-	StoryTitle string
-	AsA        string
-	IWant      string
-	SoThat     string
-	TestFiles  []string
+	StoryID     string
+	StoryTitle  string
+	AsA         string
+	IWant       string
+	SoThat      string
+	TestFiles   []string
+	TestCommand string
 }
 
 func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumber string) error {
@@ -718,14 +719,21 @@ func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumb
 
 	slog.Info("Found test files to implement", "count", len(testFiles))
 
+	// Read test command from config
+	testCommand := c.config.GetString("testing.command")
+	if testCommand == "" {
+		testCommand = "make test-e2e" // Default fallback
+	}
+
 	// Create simple prompt data
 	promptData := &MakeTestsPassData{
-		StoryID:    storyNumber,
-		StoryTitle: storyDoc.Story.Title,
-		AsA:        storyDoc.Story.AsA,
-		IWant:      storyDoc.Story.IWant,
-		SoThat:     storyDoc.Story.SoThat,
-		TestFiles:  testFiles,
+		StoryID:     storyNumber,
+		StoryTitle:  storyDoc.Story.Title,
+		AsA:         storyDoc.Story.AsA,
+		IWant:       storyDoc.Story.IWant,
+		SoThat:      storyDoc.Story.SoThat,
+		TestFiles:   testFiles,
+		TestCommand: testCommand,
 	}
 
 	// Load prompt templates

@@ -23,7 +23,7 @@ The following test files have been created and are currently failing:
 
 1. **Run the tests first** to see what's failing:
    ```bash
-   make test-e2e
+   {{.TestCommand}}
    ```
 
 2. **Read the failing tests** to understand what needs to be implemented
