@@ -23,7 +23,7 @@ The following test files have been created and are currently failing:
 
 1. **Run the tests first** to see what's failing:
    ```bash
-   make test-integration  # or make test-e2e
+   make test-e2e
    ```
 
 2. **Read the failing tests** to understand what needs to be implemented
@@ -36,7 +36,7 @@ The following test files have been created and are currently failing:
 
 4. **Run tests again** to verify they pass
 
-5. **Iterate** until all tests pass
+5. **Iterate** until all tests pass - keep running tests and fixing issues until everything is green
 
 ## Success Criteria
 
