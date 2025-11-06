@@ -122,9 +122,9 @@ func (c *USImplementCommand) executeImplementationSteps(
 		}
 	}
 
-	// Step 5: Make tests pass
-	if steps.MakeTestsPass {
-		err := c.executeMakeTestsPass(ctx, storyNumber)
+	// Step 5: Implement feature
+	if steps.ImplementFeature {
+		err := c.executeImplementFeature(ctx, storyNumber)
 		if err != nil {
 			return err
 		}
@@ -685,8 +685,8 @@ func convertStepsToStrings(steps []interface{}) []string {
 	return result
 }
 
-// MakeTestsPassData holds the data for the make tests pass prompt.
-type MakeTestsPassData struct {
+// ImplementFeatureData holds the data for the implement feature prompt.
+type ImplementFeatureData struct {
 	StoryID     string
 	StoryTitle  string
 	AsA         string
@@ -696,8 +696,8 @@ type MakeTestsPassData struct {
 	TestCommand string
 }
 
-func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumber string) error {
-	slog.Info("Step 5: Making tests pass")
+func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyNumber string) error {
+	slog.Info("Step 5: Implementing feature")
 
 	// Load story to get basic context
 	storyDoc, err := c.storyLoader.Load(storyNumber)
@@ -726,7 +726,7 @@ func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumb
 	}
 
 	// Create simple prompt data
-	promptData := &MakeTestsPassData{
+	promptData := &ImplementFeatureData{
 		StoryID:     storyNumber,
 		StoryTitle:  storyDoc.Story.Title,
 		AsA:         storyDoc.Story.AsA,
@@ -737,11 +737,11 @@ func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumb
 	}
 
 	// Load prompt templates
-	userPromptPath := c.config.GetString("templates.prompts.make_tests_pass")
-	systemPromptPath := c.config.GetString("templates.prompts.make_tests_pass_system")
+	userPromptPath := c.config.GetString("templates.prompts.implement_feature")
+	systemPromptPath := c.config.GetString("templates.prompts.implement_feature_system")
 
-	userPromptLoader := template.NewTemplateLoader[*MakeTestsPassData](userPromptPath)
-	systemPromptLoader := template.NewTemplateLoader[*MakeTestsPassData](systemPromptPath)
+	userPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](systemPromptPath)
 
 	userPrompt, err := userPromptLoader.LoadTemplate(promptData)
 	if err != nil {
@@ -753,7 +753,7 @@ func (c *USImplementCommand) executeMakeTestsPass(ctx context.Context, storyNumb
 		return pkgerrors.ErrLoadPromptsFailed(err)
 	}
 
-	slog.Info("Calling Claude Code to implement features and make tests pass")
+	slog.Info("Calling Claude Code to implement feature")
 
 	_, err = c.claudeClient.ExecutePromptWithSystem(
 		ctx,

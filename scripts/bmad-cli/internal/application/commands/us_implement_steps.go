@@ -10,21 +10,21 @@ var ErrInvalidStep = errors.New("invalid step")
 
 // Step constants define available implementation steps.
 const (
-	StepValidateStory  = "validate_story"
-	StepCreateBranch   = "create_branch"
-	StepMergeScenarios = "merge_scenarios"
-	StepGenerateTests  = "generate_tests"
-	StepMakeTestsPass  = "make_tests_pass"
-	StepAll            = "all"
+	StepValidateStory    = "validate_story"
+	StepCreateBranch     = "create_branch"
+	StepMergeScenarios   = "merge_scenarios"
+	StepGenerateTests    = "generate_tests"
+	StepImplementFeature = "implement_feature"
+	StepAll              = "all"
 )
 
 // ExecutionSteps represents which steps should be executed.
 type ExecutionSteps struct {
-	ValidateStory  bool
-	CreateBranch   bool
-	MergeScenarios bool
-	GenerateTests  bool
-	MakeTestsPass  bool
+	ValidateStory    bool
+	CreateBranch     bool
+	MergeScenarios   bool
+	GenerateTests    bool
+	ImplementFeature bool
 }
 
 // ParseSteps parses the steps string and returns ExecutionSteps.
@@ -48,7 +48,7 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.ValidateStory = true
 			steps.MergeScenarios = true
 			steps.GenerateTests = true
-			steps.MakeTestsPass = true
+			steps.ImplementFeature = true
 		case StepValidateStory:
 			steps.ValidateStory = true
 		case StepCreateBranch:
@@ -57,8 +57,8 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.MergeScenarios = true
 		case StepGenerateTests:
 			steps.GenerateTests = true
-		case StepMakeTestsPass:
-			steps.MakeTestsPass = true
+		case StepImplementFeature:
+			steps.ImplementFeature = true
 		default:
 			return nil, fmt.Errorf("%w: %s (valid steps: %s, %s, %s, %s, %s, %s)",
 				ErrInvalidStep,
@@ -67,7 +67,7 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 				StepCreateBranch,
 				StepMergeScenarios,
 				StepGenerateTests,
-				StepMakeTestsPass,
+				StepImplementFeature,
 				StepAll,
 			)
 		}
@@ -96,8 +96,8 @@ func (e *ExecutionSteps) String() string {
 		enabled = append(enabled, StepGenerateTests)
 	}
 
-	if e.MakeTestsPass {
-		enabled = append(enabled, StepMakeTestsPass)
+	if e.ImplementFeature {
+		enabled = append(enabled, StepImplementFeature)
 	}
 
 	if len(enabled) == 0 {

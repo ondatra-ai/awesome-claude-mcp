@@ -22,8 +22,8 @@ templates:
     merge_scenarios_system: "./scripts/bmad-cli/templates/6-us-implement.merge-scenarios.system.prompt.tpl"
     implement_tests: "./scripts/bmad-cli/templates/7-us-implement.test-implementation.prompt.tpl"
     implement_tests_system: "./scripts/bmad-cli/templates/7-us-implement.test-implementation.system.prompt.tpl"
-    make_tests_pass: "./scripts/bmad-cli/templates/8-us-implement.make-tests-pass.prompt.tpl"
-    make_tests_pass_system: "./scripts/bmad-cli/templates/8-us-implement.make-tests-pass.system.prompt.tpl"
+    implement_feature: "./scripts/bmad-cli/templates/8-us-implement.implement-feature.prompt.tpl"
+    implement_feature_system: "./scripts/bmad-cli/templates/8-us-implement.implement-feature.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:

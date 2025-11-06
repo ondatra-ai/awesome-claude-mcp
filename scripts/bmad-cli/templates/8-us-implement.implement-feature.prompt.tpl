@@ -1,6 +1,6 @@
-# Make Failing Tests Pass
+# Implement Feature
 
-Your task is to implement the production code needed to make all failing tests for user story **{{.StoryID}}** pass.
+Your task is to implement the production code for user story **{{.StoryID}}** to make all failing tests pass.
 
 ## Story Context
 
