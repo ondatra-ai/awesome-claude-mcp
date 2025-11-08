@@ -1,6 +1,6 @@
 <!-- Powered by BMAD™ Core -->
 
-# Implement Playwright Test from BDD Scenario
+# Generate Playwright Test from BDD Scenario
 
 ## Your Task
 
@@ -165,10 +165,10 @@ Use the Edit tool to update only the `implementation_status` section.
 
 ## Output Requirements
 
-After completing the implementation, provide:
+After completing the generation, provide:
 
 ```
-Test Implementation Summary:
+Test Generation Summary:
 - Test ID: {{.ScenarioID}}
 - Description: {{.Description}}
 - File: tests/{{.Level}}/{{.Category}}.spec.ts

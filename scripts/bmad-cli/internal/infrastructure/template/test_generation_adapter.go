@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// TestImplementationData represents data needed for test implementation template processing.
-type TestImplementationData struct {
+// TestGenerationData represents data needed for test generation template processing.
+type TestGenerationData struct {
 	ScenarioID       string      // e.g., "INT-011"
 	Description      string      // Short description of test
 	Level            string      // "integration" or "e2e"
@@ -23,8 +23,8 @@ type MergedSteps struct {
 	Then  []string
 }
 
-// NewTestImplementationData creates a new TestImplementationData instance from requirements.yml entry.
-func NewTestImplementationData(
+// NewTestGenerationData creates a new TestGenerationData instance from requirements.yml entry.
+func NewTestGenerationData(
 	scenarioID string,
 	description string,
 	level string,
@@ -34,8 +34,8 @@ func NewTestImplementationData(
 	when []string,
 	then []string,
 	requirementsFile string,
-) *TestImplementationData {
-	return &TestImplementationData{
+) *TestGenerationData {
+	return &TestGenerationData{
 		ScenarioID:  scenarioID,
 		Description: description,
 		Level:       level,
@@ -51,7 +51,7 @@ func NewTestImplementationData(
 }
 
 // FormatSteps formats the Given-When-Then steps for display in template.
-func (d *TestImplementationData) FormatSteps() string {
+func (d *TestGenerationData) FormatSteps() string {
 	var result strings.Builder
 
 	if len(d.MergedSteps.Given) > 0 {

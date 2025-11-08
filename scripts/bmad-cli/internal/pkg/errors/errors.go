@@ -373,7 +373,7 @@ var (
 	ErrLoadStory                      = errors.New("failed to load story")
 	ErrMergeScenarios                 = errors.New("failed to merge scenarios")
 	ErrReplaceRequirements            = errors.New("failed to replace requirements")
-	ErrImplementTests                 = errors.New("failed to implement tests")
+	ErrGenerateTests                  = errors.New("failed to generate tests")
 	ErrImplementFeatures              = errors.New("failed to implement features")
 	ErrLoadUserPromptFailed           = errors.New("failed to load user prompt")
 	ErrLoadSystemPromptFailed         = errors.New("failed to load system prompt")
@@ -1570,12 +1570,12 @@ func ErrReplaceRequirementsFailed(cause error) error {
 	}
 }
 
-func ErrImplementTestsFailed(cause error) error {
+func ErrGenerateTestsFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
-		Code:     "IMPLEMENT_TESTS_FAILED",
-		Message:  "failed to implement tests",
-		Cause:    errors.Join(ErrImplementTests, cause),
+		Code:     "GENERATE_TESTS_FAILED",
+		Message:  "failed to generate tests",
+		Cause:    errors.Join(ErrGenerateTests, cause),
 	}
 }
 

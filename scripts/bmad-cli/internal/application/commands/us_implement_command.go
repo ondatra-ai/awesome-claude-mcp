@@ -209,9 +209,9 @@ func (c *USImplementCommand) executeMergeScenarios(
 func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
 	slog.Info("Step 4: Generating test code")
 
-	err := c.implementTests(ctx, "docs/requirements.yml")
+	err := c.generateTests(ctx, "docs/requirements.yml")
 	if err != nil {
-		return pkgerrors.ErrImplementTestsFailed(err)
+		return pkgerrors.ErrGenerateTestsFailed(err)
 	}
 
 	return nil
@@ -358,8 +358,8 @@ func (c *USImplementCommand) mergeScenarios(
 	return nil
 }
 
-func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFile string) error {
-	slog.Info("⚙️  Starting test implementation", "requirements_file", requirementsFile)
+func (c *USImplementCommand) generateTests(ctx context.Context, requirementsFile string) error {
+	slog.Info("⚙️  Starting test generation", "requirements_file", requirementsFile)
 
 	// Step 1: Validate baseline tests (must pass)
 	err := c.validateBaselineTests(ctx)
@@ -391,7 +391,7 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 	implementedCount := c.processTestScenarios(ctx, pendingScenarios, userPromptLoader, systemPromptLoader)
 
 	slog.Info(
-		"✅ Test implementation completed",
+		"✅ Test generation completed",
 		"implemented_count", implementedCount,
 		"total_pending", len(pendingScenarios),
 	)
@@ -406,13 +406,13 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 }
 
 func (c *USImplementCommand) createTestTemplateLoaders() (
-	*template.TemplateLoader[*template.TestImplementationData],
-	*template.TemplateLoader[*template.TestImplementationData],
+	*template.TemplateLoader[*template.TestGenerationData],
+	*template.TemplateLoader[*template.TestGenerationData],
 ) {
-	userPromptPath := c.config.GetString("templates.prompts.implement_tests")
-	systemPromptPath := c.config.GetString("templates.prompts.implement_tests_system")
-	userPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](userPromptPath)
-	systemPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](systemPromptPath)
+	userPromptPath := c.config.GetString("templates.prompts.generate_tests")
+	systemPromptPath := c.config.GetString("templates.prompts.generate_tests_system")
+	userPromptLoader := template.NewTemplateLoader[*template.TestGenerationData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*template.TestGenerationData](systemPromptPath)
 
 	return userPromptLoader, systemPromptLoader
 }
@@ -499,9 +499,9 @@ func (c *USImplementCommand) validateGeneratedTests(ctx context.Context) error {
 
 func (c *USImplementCommand) processTestScenarios(
 	ctx context.Context,
-	scenarios []*template.TestImplementationData,
-	userLoader *template.TemplateLoader[*template.TestImplementationData],
-	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+	scenarios []*template.TestGenerationData,
+	userLoader *template.TemplateLoader[*template.TestGenerationData],
+	systemLoader *template.TemplateLoader[*template.TestGenerationData],
 ) int {
 	implementedCount := 0
 
@@ -531,9 +531,9 @@ func (c *USImplementCommand) processTestScenarios(
 
 func (c *USImplementCommand) implementSingleTest(
 	ctx context.Context,
-	scenario *template.TestImplementationData,
-	userLoader *template.TemplateLoader[*template.TestImplementationData],
-	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+	scenario *template.TestGenerationData,
+	userLoader *template.TemplateLoader[*template.TestGenerationData],
+	systemLoader *template.TemplateLoader[*template.TestGenerationData],
 ) bool {
 	userPrompt, err := userLoader.LoadTemplate(scenario)
 	if err != nil {
@@ -557,7 +557,7 @@ func (c *USImplementCommand) implementSingleTest(
 		return false
 	}
 
-	slog.Debug("Calling Claude Code for test implementation", "scenario_id", scenario.ScenarioID)
+	slog.Debug("Calling Claude Code for test generation", "scenario_id", scenario.ScenarioID)
 
 	_, err = c.claudeClient.ExecutePromptWithSystem(
 		ctx,
@@ -583,7 +583,7 @@ func (c *USImplementCommand) implementSingleTest(
 // status: "pending".
 func (c *USImplementCommand) parsePendingScenarios(
 	requirementsFile string,
-) ([]*template.TestImplementationData, error) {
+) ([]*template.TestGenerationData, error) {
 	slog.Debug("Parsing requirements file", "file", requirementsFile)
 
 	// Read requirements file
@@ -616,8 +616,8 @@ func (c *USImplementCommand) parsePendingScenarios(
 		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
 	}
 
-	// Filter pending scenarios and convert to TestImplementationData
-	pendingScenarios := make([]*template.TestImplementationData, 0, len(requirements.Scenarios))
+	// Filter pending scenarios and convert to TestGenerationData
+	pendingScenarios := make([]*template.TestGenerationData, 0, len(requirements.Scenarios))
 
 	for scenarioID, scenario := range requirements.Scenarios {
 		// Only process scenarios with status "pending"
@@ -636,8 +636,8 @@ func (c *USImplementCommand) parsePendingScenarios(
 		whenSteps := convertStepsToStrings(scenario.MergedSteps.When)
 		thenSteps := convertStepsToStrings(scenario.MergedSteps.Then)
 
-		// Create TestImplementationData
-		testData := template.NewTestImplementationData(
+		// Create TestGenerationData
+		testData := template.NewTestGenerationData(
 			scenarioID,
 			scenario.Description,
 			scenario.Level,
