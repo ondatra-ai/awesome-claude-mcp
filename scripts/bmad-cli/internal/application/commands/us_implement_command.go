@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"bmad-cli/internal/adapters/ai"
@@ -692,7 +691,6 @@ type ImplementFeatureData struct {
 	AsA         string
 	IWant       string
 	SoThat      string
-	TestFiles   []string
 	TestCommand string
 }
 
@@ -704,20 +702,6 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 	if err != nil {
 		return pkgerrors.ErrLoadStoryFailed(err)
 	}
-
-	// Find test files from requirements.yml
-	testFiles, err := c.findImplementedTestFiles("docs/requirements.yml", storyNumber)
-	if err != nil {
-		return err
-	}
-
-	if len(testFiles) == 0 {
-		slog.Info("✓ No test files found to implement")
-
-		return nil
-	}
-
-	slog.Info("Found test files to implement", "count", len(testFiles))
 
 	// Read test command from config
 	testCommand := c.config.GetString("testing.command")
@@ -732,7 +716,6 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 		AsA:         storyDoc.Story.AsA,
 		IWant:       storyDoc.Story.IWant,
 		SoThat:      storyDoc.Story.SoThat,
-		TestFiles:   testFiles,
 		TestCommand: testCommand,
 	}
 
@@ -769,50 +752,4 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 	slog.Info("✓ Feature implementation completed")
 
 	return nil
-}
-
-func (c *USImplementCommand) findImplementedTestFiles(requirementsFile string, storyID string) ([]string, error) {
-	// Read requirements file
-	data, err := os.ReadFile(requirementsFile)
-	if err != nil {
-		return nil, pkgerrors.ErrReadRequirementsFailed(err)
-	}
-
-	// Parse YAML structure
-	var requirements struct {
-		Scenarios map[string]struct {
-			ImplementationStatus struct {
-				Status   string `yaml:"status"`
-				FilePath string `yaml:"file_path"`
-			} `yaml:"implementation_status"`
-		} `yaml:"scenarios"`
-	}
-
-	err = yaml.Unmarshal(data, &requirements)
-	if err != nil {
-		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
-	}
-
-	// Find unique test files for scenarios with status "implemented"
-	testFilesMap := make(map[string]bool)
-
-	for scenarioID, scenario := range requirements.Scenarios {
-		// Only include scenarios from this story
-		if !strings.HasPrefix(scenarioID, storyID+"-") {
-			continue
-		}
-
-		// Only include scenarios with status "implemented" (tests exist but code doesn't)
-		if scenario.ImplementationStatus.Status == "implemented" && scenario.ImplementationStatus.FilePath != "" {
-			testFilesMap[scenario.ImplementationStatus.FilePath] = true
-		}
-	}
-
-	// Convert map to slice
-	testFiles := make([]string, 0, len(testFilesMap))
-	for filePath := range testFilesMap {
-		testFiles = append(testFiles, filePath)
-	}
-
-	return testFiles, nil
 }
