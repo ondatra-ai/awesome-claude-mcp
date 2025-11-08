@@ -1588,6 +1588,15 @@ func ErrImplementFeaturesFailed(cause error) error {
 	}
 }
 
+func ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts int) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FEATURES_MAX_ATTEMPTS_EXCEEDED",
+		Message:  fmt.Sprintf("failed to make tests pass after %d attempts", maxAttempts),
+		Cause:    ErrImplementFeatures,
+	}
+}
+
 func ErrCreateOutputDirectoryFailed(outputDir string, cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,

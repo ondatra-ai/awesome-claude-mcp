@@ -692,6 +692,9 @@ type ImplementFeatureData struct {
 	IWant       string
 	SoThat      string
 	TestCommand string
+	TestOutput  string
+	Attempt     int
+	MaxAttempts int
 }
 
 func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyNumber string) error {
@@ -709,47 +712,72 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 		testCommand = "make test-e2e" // Default fallback
 	}
 
-	// Create simple prompt data
-	promptData := &ImplementFeatureData{
-		StoryID:     storyNumber,
-		StoryTitle:  storyDoc.Story.Title,
-		AsA:         storyDoc.Story.AsA,
-		IWant:       storyDoc.Story.IWant,
-		SoThat:      storyDoc.Story.SoThat,
-		TestCommand: testCommand,
-	}
-
-	// Load prompt templates
+	// Load prompt templates once
 	userPromptPath := c.config.GetString("templates.prompts.implement_feature")
 	systemPromptPath := c.config.GetString("templates.prompts.implement_feature_system")
 
 	userPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](userPromptPath)
 	systemPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](systemPromptPath)
 
-	userPrompt, err := userPromptLoader.LoadTemplate(promptData)
-	if err != nil {
-		return pkgerrors.ErrLoadPromptsFailed(err)
+	// Iteration loop: try up to 5 times to make tests pass
+	const maxAttempts = 5
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		slog.Info("🔄 Implementation attempt", "attempt", attempt, "max", maxAttempts)
+
+		// Run tests to get current state
+		testOutput, testErr := c.runTests(ctx, "implement-feature")
+
+		// Check if tests are passing
+		if testErr == nil {
+			slog.Info("✅ All tests passing - feature implementation complete!", "attempts_used", attempt)
+
+			return nil
+		}
+
+		// Tests are failing - need to implement/fix code
+		slog.Info("❌ Tests failing - calling Claude to fix", "attempt", attempt)
+
+		// Create prompt data with test output
+		promptData := &ImplementFeatureData{
+			StoryID:     storyNumber,
+			StoryTitle:  storyDoc.Story.Title,
+			AsA:         storyDoc.Story.AsA,
+			IWant:       storyDoc.Story.IWant,
+			SoThat:      storyDoc.Story.SoThat,
+			TestCommand: testCommand,
+			TestOutput:  testOutput,
+			Attempt:     attempt,
+			MaxAttempts: maxAttempts,
+		}
+
+		userPrompt, err := userPromptLoader.LoadTemplate(promptData)
+		if err != nil {
+			return pkgerrors.ErrLoadPromptsFailed(err)
+		}
+
+		systemPrompt, err := systemPromptLoader.LoadTemplate(promptData)
+		if err != nil {
+			return pkgerrors.ErrLoadPromptsFailed(err)
+		}
+
+		// Call Claude to fix the code
+		_, err = c.claudeClient.ExecutePromptWithSystem(
+			ctx,
+			systemPrompt,
+			userPrompt,
+			"sonnet",
+			ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
+		)
+		if err != nil {
+			return pkgerrors.ErrImplementFeaturesFailed(err)
+		}
+
+		slog.Info("✓ Claude finished attempt", "attempt", attempt)
 	}
 
-	systemPrompt, err := systemPromptLoader.LoadTemplate(promptData)
-	if err != nil {
-		return pkgerrors.ErrLoadPromptsFailed(err)
-	}
+	// If we get here, we've exhausted all attempts and tests are still failing
+	slog.Error("❌ Failed to make tests pass after maximum attempts", "max_attempts", maxAttempts)
 
-	slog.Info("Calling Claude Code to implement feature")
-
-	_, err = c.claudeClient.ExecutePromptWithSystem(
-		ctx,
-		systemPrompt,
-		userPrompt,
-		"sonnet",
-		ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
-	)
-	if err != nil {
-		return pkgerrors.ErrImplementFeaturesFailed(err)
-	}
-
-	slog.Info("✓ Feature implementation completed")
-
-	return nil
+	return pkgerrors.ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts)
 }
