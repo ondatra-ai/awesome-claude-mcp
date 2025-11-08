@@ -12,6 +12,7 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
+	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/infrastructure/template"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -25,6 +26,7 @@ type USImplementCommand struct {
 	claudeClient  *ai.ClaudeClient
 	config        *config.ViperConfig
 	runDir        *fs.RunDirectory
+	shellExec     *shell.CommandRunner
 }
 
 func NewUSImplementCommand(
@@ -33,6 +35,7 @@ func NewUSImplementCommand(
 	claudeClient *ai.ClaudeClient,
 	cfg *config.ViperConfig,
 	runDir *fs.RunDirectory,
+	shellExec *shell.CommandRunner,
 ) *USImplementCommand {
 	return &USImplementCommand{
 		branchManager: branchManager,
@@ -40,6 +43,7 @@ func NewUSImplementCommand(
 		claudeClient:  claudeClient,
 		config:        cfg,
 		runDir:        runDir,
+		shellExec:     shellExec,
 	}
 }
 
@@ -56,6 +60,27 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		"steps", steps.String(),
 	)
 
+	// Execute all steps
+	err = c.executeSteps(ctx, storyNumber, steps)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+
+	return nil
+}
+
+func (c *USImplementCommand) executeSteps(ctx context.Context, storyNumber string, steps *ExecutionSteps) error {
+	err := c.executePreparationSteps(storyNumber, steps)
+	if err != nil {
+		return err
+	}
+
+	return c.executeImplementationSteps(ctx, storyNumber, steps)
+}
+
+func (c *USImplementCommand) executePreparationSteps(storyNumber string, steps *ExecutionSteps) error {
 	// Step 1: Validate story
 	if steps.ValidateStory {
 		err := c.executeValidateStory(storyNumber)
@@ -72,9 +97,17 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		}
 	}
 
+	return nil
+}
+
+func (c *USImplementCommand) executeImplementationSteps(
+	ctx context.Context,
+	storyNumber string,
+	steps *ExecutionSteps,
+) error {
 	// Step 3: Merge scenarios
 	if steps.MergeScenarios {
-		_, err = c.executeMergeScenarios(ctx, storyNumber)
+		_, err := c.executeMergeScenarios(ctx, storyNumber)
 		if err != nil {
 			return err
 		}
@@ -88,7 +121,13 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		}
 	}
 
-	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+	// Step 5: Implement feature
+	if steps.ImplementFeature {
+		err := c.executeImplementFeature(ctx, storyNumber)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -169,9 +208,9 @@ func (c *USImplementCommand) executeMergeScenarios(
 func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
 	slog.Info("Step 4: Generating test code")
 
-	err := c.implementTests(ctx, "docs/requirements.yml")
+	err := c.generateTests(ctx, "docs/requirements.yml")
 	if err != nil {
-		return pkgerrors.ErrImplementTestsFailed(err)
+		return pkgerrors.ErrGenerateTestsFailed(err)
 	}
 
 	return nil
@@ -318,8 +357,14 @@ func (c *USImplementCommand) mergeScenarios(
 	return nil
 }
 
-func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFile string) error {
-	slog.Info("⚙️  Starting test implementation", "requirements_file", requirementsFile)
+func (c *USImplementCommand) generateTests(ctx context.Context, requirementsFile string) error {
+	slog.Info("⚙️  Starting test generation", "requirements_file", requirementsFile)
+
+	// Step 1: Validate baseline tests (must pass)
+	err := c.validateBaselineTests(ctx)
+	if err != nil {
+		return err
+	}
 
 	// Parse requirements file to find pending scenarios
 	pendingScenarios, err := c.parsePendingScenarios(requirementsFile)
@@ -345,31 +390,117 @@ func (c *USImplementCommand) implementTests(ctx context.Context, requirementsFil
 	implementedCount := c.processTestScenarios(ctx, pendingScenarios, userPromptLoader, systemPromptLoader)
 
 	slog.Info(
-		"✅ Test implementation completed",
+		"✅ Test generation completed",
 		"implemented_count", implementedCount,
 		"total_pending", len(pendingScenarios),
 	)
+
+	// Step 2: Validate generated tests (must fail - TDD red phase)
+	err = c.validateGeneratedTests(ctx)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (c *USImplementCommand) createTestTemplateLoaders() (
-	*template.TemplateLoader[*template.TestImplementationData],
-	*template.TemplateLoader[*template.TestImplementationData],
+	*template.TemplateLoader[*template.TestGenerationData],
+	*template.TemplateLoader[*template.TestGenerationData],
 ) {
-	userPromptPath := c.config.GetString("templates.prompts.implement_tests")
-	systemPromptPath := c.config.GetString("templates.prompts.implement_tests_system")
-	userPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](userPromptPath)
-	systemPromptLoader := template.NewTemplateLoader[*template.TestImplementationData](systemPromptPath)
+	userPromptPath := c.config.GetString("templates.prompts.generate_tests")
+	systemPromptPath := c.config.GetString("templates.prompts.generate_tests_system")
+	userPromptLoader := template.NewTemplateLoader[*template.TestGenerationData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*template.TestGenerationData](systemPromptPath)
 
 	return userPromptLoader, systemPromptLoader
 }
 
+// runTests executes the test command and saves output to tmp directory.
+func (c *USImplementCommand) runTests(ctx context.Context, phase string) (string, error) {
+	slog.Info("🧪 Running tests", "phase", phase)
+
+	// Get test command from config
+	testCommand := c.config.GetString("testing.command")
+	if testCommand == "" {
+		testCommand = "make test-e2e" // Default fallback
+	}
+
+	slog.Debug("Executing test command", "command", testCommand)
+
+	// Execute test command
+	output, err := c.shellExec.Run(ctx, "sh", "-c", testCommand)
+	if err != nil {
+		return output, pkgerrors.ErrRunTestsFailed(phase, err)
+	}
+
+	// Save output to tmp directory
+	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "test-output-"+phase+".txt")
+
+	const filePermission = 0o644
+
+	writeErr := os.WriteFile(outputFile, []byte(output), filePermission)
+	if writeErr != nil {
+		slog.Warn("Failed to write test output", "file", outputFile, "error", writeErr)
+	} else {
+		slog.Debug("Test output saved", "file", outputFile)
+	}
+
+	return output, nil
+}
+
+// validateBaselineTests runs tests before test generation and ensures they pass.
+func (c *USImplementCommand) validateBaselineTests(ctx context.Context) error {
+	slog.Info("📋 Validating baseline tests (must pass)")
+
+	output, err := c.runTests(ctx, "before")
+	if err != nil {
+		// Tests failed - this is an error for baseline
+		slog.Error(
+			"❌ Baseline tests failed",
+			"error", err,
+			"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-before.txt"),
+		)
+
+		return pkgerrors.ErrBaselineTestsFailedError(output)
+	}
+
+	slog.Info("✅ Baseline tests passed - ready for test generation")
+
+	return nil
+}
+
+// validateGeneratedTests runs tests after test generation and ensures they fail (TDD red phase).
+func (c *USImplementCommand) validateGeneratedTests(ctx context.Context) error {
+	slog.Info("🔴 Validating generated tests (must fail - TDD red phase)")
+
+	output, err := c.runTests(ctx, "after")
+
+	// Check if tests passed (err == nil means success, which is bad for TDD red phase)
+	if err == nil {
+		// Tests passed - this is an error (they should be failing)
+		slog.Error(
+			"❌ Generated tests are passing but should fail (TDD red phase)",
+			"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-after.txt"),
+		)
+
+		return pkgerrors.ErrGeneratedTestsPassError(output)
+	}
+
+	// Tests failed - this is expected (TDD red phase)
+	slog.Info(
+		"✅ Generated tests are failing as expected (TDD red phase)",
+		"output_file", filepath.Join(c.runDir.GetTmpOutPath(), "test-output-after.txt"),
+	)
+
+	return nil
+}
+
 func (c *USImplementCommand) processTestScenarios(
 	ctx context.Context,
-	scenarios []*template.TestImplementationData,
-	userLoader *template.TemplateLoader[*template.TestImplementationData],
-	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+	scenarios []*template.TestGenerationData,
+	userLoader *template.TemplateLoader[*template.TestGenerationData],
+	systemLoader *template.TemplateLoader[*template.TestGenerationData],
 ) int {
 	implementedCount := 0
 
@@ -399,9 +530,9 @@ func (c *USImplementCommand) processTestScenarios(
 
 func (c *USImplementCommand) implementSingleTest(
 	ctx context.Context,
-	scenario *template.TestImplementationData,
-	userLoader *template.TemplateLoader[*template.TestImplementationData],
-	systemLoader *template.TemplateLoader[*template.TestImplementationData],
+	scenario *template.TestGenerationData,
+	userLoader *template.TemplateLoader[*template.TestGenerationData],
+	systemLoader *template.TemplateLoader[*template.TestGenerationData],
 ) bool {
 	userPrompt, err := userLoader.LoadTemplate(scenario)
 	if err != nil {
@@ -425,7 +556,7 @@ func (c *USImplementCommand) implementSingleTest(
 		return false
 	}
 
-	slog.Debug("Calling Claude Code for test implementation", "scenario_id", scenario.ScenarioID)
+	slog.Debug("Calling Claude Code for test generation", "scenario_id", scenario.ScenarioID)
 
 	_, err = c.claudeClient.ExecutePromptWithSystem(
 		ctx,
@@ -451,7 +582,7 @@ func (c *USImplementCommand) implementSingleTest(
 // status: "pending".
 func (c *USImplementCommand) parsePendingScenarios(
 	requirementsFile string,
-) ([]*template.TestImplementationData, error) {
+) ([]*template.TestGenerationData, error) {
 	slog.Debug("Parsing requirements file", "file", requirementsFile)
 
 	// Read requirements file
@@ -484,8 +615,8 @@ func (c *USImplementCommand) parsePendingScenarios(
 		return nil, pkgerrors.ErrUnmarshalRequirementsFailed(err)
 	}
 
-	// Filter pending scenarios and convert to TestImplementationData
-	pendingScenarios := make([]*template.TestImplementationData, 0, len(requirements.Scenarios))
+	// Filter pending scenarios and convert to TestGenerationData
+	pendingScenarios := make([]*template.TestGenerationData, 0, len(requirements.Scenarios))
 
 	for scenarioID, scenario := range requirements.Scenarios {
 		// Only process scenarios with status "pending"
@@ -504,8 +635,8 @@ func (c *USImplementCommand) parsePendingScenarios(
 		whenSteps := convertStepsToStrings(scenario.MergedSteps.When)
 		thenSteps := convertStepsToStrings(scenario.MergedSteps.Then)
 
-		// Create TestImplementationData
-		testData := template.NewTestImplementationData(
+		// Create TestGenerationData
+		testData := template.NewTestGenerationData(
 			scenarioID,
 			scenario.Description,
 			scenario.Level,
@@ -551,4 +682,102 @@ func convertStepsToStrings(steps []interface{}) []string {
 	}
 
 	return result
+}
+
+// ImplementFeatureData holds the data for the implement feature prompt.
+type ImplementFeatureData struct {
+	StoryID     string
+	StoryTitle  string
+	AsA         string
+	IWant       string
+	SoThat      string
+	TestCommand string
+	TestOutput  string
+	Attempt     int
+	MaxAttempts int
+}
+
+func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyNumber string) error {
+	slog.Info("Step 5: Implementing feature")
+
+	// Load story to get basic context
+	storyDoc, err := c.storyLoader.Load(storyNumber)
+	if err != nil {
+		return pkgerrors.ErrLoadStoryFailed(err)
+	}
+
+	// Read test command from config
+	testCommand := c.config.GetString("testing.command")
+	if testCommand == "" {
+		testCommand = "make test-e2e" // Default fallback
+	}
+
+	// Load prompt templates once
+	userPromptPath := c.config.GetString("templates.prompts.implement_feature")
+	systemPromptPath := c.config.GetString("templates.prompts.implement_feature_system")
+
+	userPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*ImplementFeatureData](systemPromptPath)
+
+	// Iteration loop: try up to 5 times to make tests pass
+	const maxAttempts = 5
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		slog.Info("🔄 Implementation attempt", "attempt", attempt, "max", maxAttempts)
+
+		// Run tests to get current state
+		testOutput, testErr := c.runTests(ctx, "implement-feature")
+
+		// Check if tests are passing
+		if testErr == nil {
+			slog.Info("✅ All tests passing - feature implementation complete!", "attempts_used", attempt)
+
+			return nil
+		}
+
+		// Tests are failing - need to implement/fix code
+		slog.Info("❌ Tests failing - calling Claude to fix", "attempt", attempt)
+
+		// Create prompt data with test output
+		promptData := &ImplementFeatureData{
+			StoryID:     storyNumber,
+			StoryTitle:  storyDoc.Story.Title,
+			AsA:         storyDoc.Story.AsA,
+			IWant:       storyDoc.Story.IWant,
+			SoThat:      storyDoc.Story.SoThat,
+			TestCommand: testCommand,
+			TestOutput:  testOutput,
+			Attempt:     attempt,
+			MaxAttempts: maxAttempts,
+		}
+
+		userPrompt, err := userPromptLoader.LoadTemplate(promptData)
+		if err != nil {
+			return pkgerrors.ErrLoadPromptsFailed(err)
+		}
+
+		systemPrompt, err := systemPromptLoader.LoadTemplate(promptData)
+		if err != nil {
+			return pkgerrors.ErrLoadPromptsFailed(err)
+		}
+
+		// Call Claude to fix the code
+		_, err = c.claudeClient.ExecutePromptWithSystem(
+			ctx,
+			systemPrompt,
+			userPrompt,
+			"sonnet",
+			ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
+		)
+		if err != nil {
+			return pkgerrors.ErrImplementFeaturesFailed(err)
+		}
+
+		slog.Info("✓ Claude finished attempt", "attempt", attempt)
+	}
+
+	// If we get here, we've exhausted all attempts and tests are still failing
+	slog.Error("❌ Failed to make tests pass after maximum attempts", "max_attempts", maxAttempts)
+
+	return pkgerrors.ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts)
 }

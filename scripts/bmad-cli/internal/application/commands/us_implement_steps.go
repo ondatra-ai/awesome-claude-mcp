@@ -10,19 +10,21 @@ var ErrInvalidStep = errors.New("invalid step")
 
 // Step constants define available implementation steps.
 const (
-	StepValidateStory  = "validate_story"
-	StepCreateBranch   = "create_branch"
-	StepMergeScenarios = "merge_scenarios"
-	StepGenerateTests  = "generate_tests"
-	StepAll            = "all"
+	StepValidateStory    = "validate_story"
+	StepCreateBranch     = "create_branch"
+	StepMergeScenarios   = "merge_scenarios"
+	StepGenerateTests    = "generate_tests"
+	StepImplementFeature = "implement_feature"
+	StepAll              = "all"
 )
 
 // ExecutionSteps represents which steps should be executed.
 type ExecutionSteps struct {
-	ValidateStory  bool
-	CreateBranch   bool
-	MergeScenarios bool
-	GenerateTests  bool
+	ValidateStory    bool
+	CreateBranch     bool
+	MergeScenarios   bool
+	GenerateTests    bool
+	ImplementFeature bool
 }
 
 // ParseSteps parses the steps string and returns ExecutionSteps.
@@ -46,6 +48,7 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.ValidateStory = true
 			steps.MergeScenarios = true
 			steps.GenerateTests = true
+			steps.ImplementFeature = true
 		case StepValidateStory:
 			steps.ValidateStory = true
 		case StepCreateBranch:
@@ -54,14 +57,17 @@ func ParseSteps(stepsStr string) (*ExecutionSteps, error) {
 			steps.MergeScenarios = true
 		case StepGenerateTests:
 			steps.GenerateTests = true
+		case StepImplementFeature:
+			steps.ImplementFeature = true
 		default:
-			return nil, fmt.Errorf("%w: %s (valid steps: %s, %s, %s, %s, %s)",
+			return nil, fmt.Errorf("%w: %s (valid steps: %s, %s, %s, %s, %s, %s)",
 				ErrInvalidStep,
 				step,
 				StepValidateStory,
 				StepCreateBranch,
 				StepMergeScenarios,
 				StepGenerateTests,
+				StepImplementFeature,
 				StepAll,
 			)
 		}
@@ -88,6 +94,10 @@ func (e *ExecutionSteps) String() string {
 
 	if e.GenerateTests {
 		enabled = append(enabled, StepGenerateTests)
+	}
+
+	if e.ImplementFeature {
+		enabled = append(enabled, StepImplementFeature)
 	}
 
 	if len(enabled) == 0 {

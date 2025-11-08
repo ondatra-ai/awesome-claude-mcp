@@ -373,7 +373,10 @@ var (
 	ErrLoadStory                      = errors.New("failed to load story")
 	ErrMergeScenarios                 = errors.New("failed to merge scenarios")
 	ErrReplaceRequirements            = errors.New("failed to replace requirements")
-	ErrImplementTests                 = errors.New("failed to implement tests")
+	ErrGenerateTests                  = errors.New("failed to generate tests")
+	ErrImplementFeatures              = errors.New("failed to implement features")
+	ErrLoadUserPromptFailed           = errors.New("failed to load user prompt")
+	ErrLoadSystemPromptFailed         = errors.New("failed to load system prompt")
 	ErrCreateOutputDirectory          = errors.New("failed to create directory")
 	ErrReadRequirementsFile           = errors.New("failed to read requirements.yml")
 	ErrWriteOutputFile                = errors.New("failed to write output file")
@@ -1567,12 +1570,30 @@ func ErrReplaceRequirementsFailed(cause error) error {
 	}
 }
 
-func ErrImplementTestsFailed(cause error) error {
+func ErrGenerateTestsFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
-		Code:     "IMPLEMENT_TESTS_FAILED",
-		Message:  "failed to implement tests",
-		Cause:    errors.Join(ErrImplementTests, cause),
+		Code:     "GENERATE_TESTS_FAILED",
+		Message:  "failed to generate tests",
+		Cause:    errors.Join(ErrGenerateTests, cause),
+	}
+}
+
+func ErrImplementFeaturesFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FEATURES_FAILED",
+		Message:  "failed to implement features",
+		Cause:    errors.Join(ErrImplementFeatures, cause),
+	}
+}
+
+func ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts int) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FEATURES_MAX_ATTEMPTS_EXCEEDED",
+		Message:  fmt.Sprintf("failed to make tests pass after %d attempts", maxAttempts),
+		Cause:    ErrImplementFeatures,
 	}
 }
 
@@ -2023,5 +2044,39 @@ func ErrInvalidSteps(cause error) error {
 		Code:     "INVALID_STEPS",
 		Message:  "invalid steps parameter",
 		Cause:    cause,
+	}
+}
+
+// Test Execution Errors.
+var (
+	ErrBaselineTestsFailed = errors.New("baseline tests failed")
+	ErrGeneratedTestsPass  = errors.New("generated tests should fail but passed")
+	ErrRunTests            = errors.New("failed to run tests")
+)
+
+func ErrBaselineTestsFailedError(output string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "BASELINE_TESTS_FAILED",
+		Message:  "baseline tests must pass before test generation - tests are failing. Output: " + output,
+		Cause:    ErrBaselineTestsFailed,
+	}
+}
+
+func ErrGeneratedTestsPassError(output string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "GENERATED_TESTS_PASS",
+		Message:  "generated tests should fail (TDD red phase) but all tests passed. Output: " + output,
+		Cause:    ErrGeneratedTestsPass,
+	}
+}
+
+func ErrRunTestsFailed(phase string, cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "RUN_TESTS_FAILED",
+		Message:  "failed to run tests during " + phase + " phase",
+		Cause:    errors.Join(ErrRunTests, cause),
 	}
 }
