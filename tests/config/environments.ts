@@ -4,6 +4,7 @@ export interface EnvironmentConfig {
   name: EnvironmentName;
   frontendUrl: string;
   backendUrl: string;
+  mcpServiceUrl: string;
   /** Optional human friendly description for logging. */
   description?: string;
 }
@@ -15,12 +16,14 @@ const environments: Record<EnvironmentName, EnvironmentConfig> = {
     name: 'local',
     frontendUrl: 'http://localhost:3000',
     backendUrl: 'http://localhost:8080',
+    mcpServiceUrl: 'http://localhost:8081',
     description: 'Local docker-compose stack',
   },
   dev: {
     name: 'dev',
     frontendUrl: 'https://dev.ondatra-ai.xyz',
     backendUrl: 'https://api.dev.ondatra-ai.xyz',
+    mcpServiceUrl: 'https://mcp.dev.ondatra-ai.xyz',
     description: 'Remote dev environment (frontend/backend hosted on Ondatra)',
   },
 };

@@ -412,3 +412,798 @@ scenarios:
       then:
         - "page fully loads in under 2000ms"
         - and: "browser loads all critical resources within time limit"
+
+  INT-008:
+    description: "WebSocket connection establishment succeeds"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-001"
+        merge_date: "2025-10-09"
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-002"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server runs WebSocket service on configured port"
+      when:
+        - "Client connects to ws://localhost:8081/mcp"
+      then:
+        - "Server establishes WebSocket connection"
+        - "Server assigns unique connection identifier"
+
+  INT-009:
+    description: "HTTP endpoint initiates WebSocket protocol upgrade"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-003"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server exposes HTTP endpoint at /mcp"
+      when:
+        - "Client sends GET request to /mcp"
+      then:
+        - "Server initiates WebSocket protocol upgrade"
+
+  INT-010:
+    description: "Health check returns service status with dependencies"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-004"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server provides health check endpoint"
+      when:
+        - "Client sends GET request to /health"
+      then:
+        - "Server returns status 200"
+        - "Response includes service version"
+        - "Response includes dependency status for Redis and Google API"
+
+  INT-011:
+    description: "Server rejects unauthorized domain CORS preflight request"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-005"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server enforces CORS policy for Claude domains"
+      when:
+        - "Client from unauthorized domain sends preflight OPTIONS request"
+      then:
+        - "Server rejects request with CORS error"
+
+  INT-012:
+    description: "Server accepts CORS preflight from authorized Claude domain"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-006"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server enforces CORS policy for Claude domains"
+      when:
+        - "Client from claude.ai domain sends preflight OPTIONS request"
+      then:
+        - "Server accepts request with CORS headers"
+
+  INT-013:
+    description: "MCP protocol message parsing succeeds"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-007"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends valid MCP protocol message"
+      then:
+        - "Server parses message successfully"
+        - "Server extracts message type and protocol version"
+
+  INT-014:
+    description: "Server rejects invalid JSON with parsing error"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-008"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends message with invalid JSON format"
+      then:
+        - "Server returns parsing error immediately"
+        - "Error message specifies invalid JSON"
+
+  INT-015:
+    description: "Server validates required MCP protocol fields"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-009"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends MCP message missing required protocol_version field"
+      then:
+        - "Server returns validation error immediately"
+        - "Error message specifies missing required field"
+
+  INT-016:
+    description: "Server rejects message with invalid field values"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-010"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends message with field containing invalid value"
+      then:
+        - "Server returns validation error"
+        - "Error message specifies error detail"
+
+  INT-017:
+    description: "Server accepts well-formed message with valid schema"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-011"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server validates messages against MCP protocol schema"
+      when:
+        - "Client sends message with correct schema and all required fields"
+      then:
+        - "Server accepts message without validation errors"
+
+  INT-018:
+    description: "Server returns complete MCP response with required fields"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-012"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client sends valid MCP request"
+      when:
+        - "Server processes request successfully"
+      then:
+        - "Server returns response in MCP protocol format"
+        - "Response includes protocol_version field"
+        - "Response includes message_id matching request"
+
+  INT-019:
+    description: "Server returns formatted error for invalid MCP request"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-013"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client sends invalid MCP request"
+      when:
+        - "Server detects validation error"
+      then:
+        - "Server returns error response in MCP format"
+        - "Error response includes error code"
+        - "Error response includes descriptive error message"
+
+  INT-020:
+    description: "Server response includes JSON structure with metadata fields"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-014"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server processes client requests"
+      when:
+        - "Server generates response"
+      then:
+        - "Response contains valid JSON structure"
+        - "Response includes timestamp field"
+        - "Response includes correlation ID for tracing"
+
+  INT-021:
+    description: "Server returns MCP protocol-compliant response"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-015"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client sends request of any type"
+      when:
+        - "Server completes operation"
+      then:
+        - "Server returns response of appropriate type"
+        - "Response conforms to MCP protocol specification"
+
+  INT-022:
+    description: "Server tracks connection state and message activity"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-016"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client establishes WebSocket connection"
+      when:
+        - "Client sends messages over connection"
+      then:
+        - "Server maintains connection state"
+        - "Server tracks message count for connection"
+        - "Server records last activity timestamp"
+
+  INT-023:
+    description: "Server responds to WebSocket ping with pong frame"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-017"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends ping frame"
+      then:
+        - "Server responds with pong frame immediately"
+
+  INT-024:
+    description: "Server closes idle connection after timeout period"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-018"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server enforces connection timeout of 30 seconds"
+        - "Client maintains idle connection"
+      when:
+        - "30 seconds elapse without client activity"
+      then:
+        - "Server closes connection automatically"
+
+  INT-025:
+    description: "Server handles client-initiated connection closure gracefully"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-019"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active WebSocket connection"
+      when:
+        - "Client sends close frame"
+      then:
+        - "Server acknowledges close frame"
+        - "Server removes connection from active pool"
+        - "Server releases connection resources"
+
+  INT-026:
+    description: "Server performs graceful shutdown on SIGTERM signal"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-020"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server manages multiple active connections"
+      when:
+        - "Server receives SIGTERM signal"
+      then:
+        - "Server closes all active connections gracefully"
+        - "Server waits for in-flight requests to complete"
+        - "Server shuts down within 10 seconds"
+
+  INT-027:
+    description: "Server performs periodic heartbeat check on all connections"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-021"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server monitors connection health with 30-second interval"
+      when:
+        - "Server performs heartbeat check"
+      then:
+        - "Server sends ping to all active connections"
+        - "Server marks unresponsive connections for cleanup"
+
+  INT-028:
+    description: "Metrics endpoint returns connection statistics"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P2"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-022"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server tracks connection metrics"
+      when:
+        - "Client requests metrics endpoint GET /metrics"
+      then:
+        - "Server returns active connection count"
+        - "Server returns total connections handled"
+        - "Server returns connection error count"
+
+  INT-029:
+    description: "Server handles concurrent client connections successfully"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-023"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server supports concurrent connections"
+      when:
+        - "10 clients connect simultaneously"
+      then:
+        - "Server accepts all 10 connections"
+        - "Each connection receives unique identifier"
+
+  INT-030:
+    description: "Server rejects connection when limit reached"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-024"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server enforces maximum 100 concurrent connections"
+      when:
+        - "101st client attempts to connect"
+      then:
+        - "Server rejects connection"
+        - "Server returns error indicating connection limit reached"
+
+  INT-031:
+    description: "Server processes concurrent messages from multiple clients"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-025"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server handles 10 concurrent client connections"
+      when:
+        - "All clients send messages simultaneously"
+      then:
+        - "Server processes all messages without errors"
+        - "Each client receives corresponding response"
+
+  INT-032:
+    description: "Server enforces rate limit and rejects excess requests"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-026"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server enforces rate limit of 100 requests per minute per client"
+      when:
+        - "Client sends 101 requests within one minute"
+      then:
+        - "Server rejects 101st request"
+        - "Server returns rate limit exceeded error"
+        - "Server keeps connection open"
+
+  INT-033:
+    description: "Server handles rapid connection churn without race conditions"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-027"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server provides thread-safe connection pool"
+      when:
+        - "50 clients connect and disconnect rapidly"
+      then:
+        - "Server handles all connections without race conditions"
+        - "Connection count remains accurate"
+
+  INT-034:
+    description: "Server maintains stable performance under concurrent connection load"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-028"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server operates under normal conditions"
+      when:
+        - "Load test establishes 50 concurrent connections"
+      then:
+        - "Server maintains stable performance"
+        - "Response latency stays below 100ms at p95"
+
+  INT-035:
+    description: "Server survives connection storm and recovers to normal operation"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-029"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server handles connections normally"
+      when:
+        - "100 clients connect and disconnect within 5 seconds"
+      then:
+        - "Server processes connection storm without crashes"
+        - "Server recovers normal operation after storm"
+
+  INT-036:
+    description: "Server achieves target message throughput under concurrent load"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-INT-030"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server manages 30 concurrent connections"
+      when:
+        - "All clients send 10 messages each within 1 second"
+      then:
+        - "Server processes 300 total messages successfully"
+        - "Message throughput exceeds 200 messages per second"
+
+  E2E-011:
+    description: "MCP client completes handshake with server successfully"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-E2E-001"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server runs on configured endpoint"
+      when:
+        - "Client completes MCP handshake from connection to first message"
+      then:
+        - "Client establishes WebSocket connection successfully"
+        - "Client sends initialize request in MCP format"
+        - "Server returns initialize response in MCP format"
+
+  E2E-012:
+    description: "Server processes complete MCP request-response cycle with validation"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-E2E-002"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active MCP connection"
+      when:
+        - "Client executes complete request-response cycle"
+      then:
+        - "Server validates request against MCP schema"
+        - "Server processes request according to MCP specification"
+        - "Server returns response conforming to MCP protocol"
+
+  E2E-013:
+    description: "Server handles invalid requests with fail-fast error response"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-E2E-003"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Client maintains active MCP connection"
+      when:
+        - "Client sends invalid request triggering error flow"
+      then:
+        - "Server detects error immediately per fail-fast principle"
+        - "Server returns MCP-formatted error response"
+        - "Server keeps connection open for subsequent requests"
+
+  E2E-014:
+    description: "Server isolates concurrent client sessions without cross-contamination"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-E2E-004"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Multiple clients maintain active connections"
+      when:
+        - "Clients execute concurrent operations"
+      then:
+        - "Server isolates each client session correctly"
+        - "Responses reach correct clients without cross-contamination"
+        - "Server maintains consistent connection state per client"
+
+  E2E-015:
+    description: "Health check returns status with connection and dependency metrics"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P2"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.1"
+        story_file: "docs/stories/3.1-*.yaml"
+        scenario_id: "3.1-E2E-005"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Server accepts health check requests"
+      when:
+        - "Monitoring system queries health endpoint during active connections"
+      then:
+        - "Server reports healthy status"
+        - "Server includes connection pool metrics"
+        - "Server includes dependency health for Redis and Google API"
