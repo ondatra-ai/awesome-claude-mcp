@@ -226,3 +226,4 @@ type DataCache struct { /* caching complexity */ }
 - The .gitignore is configured for Go projects
 - Environment variables should be stored in .env files (excluded from git)
 - Never Update @services/frontend/.eslintrc.json and @.golangci.yml without my permission
+- **CRITICAL**: NEVER merge pull requests without explicit user command to merge
