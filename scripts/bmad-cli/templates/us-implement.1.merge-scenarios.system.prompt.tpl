@@ -121,10 +121,10 @@ Then: "Server returns error"  # ← CONFLICT!
    - Example: "WebSocket connection establishment succeeds"
    - Active voice, declarative style
 
-2. **category**:
-   - Extract from story context
-   - Values: `backend`, `frontend`, `performance`, `integration`
-   - For MCP server story: Use `"backend"`
+2. **service**:
+   - Extract from scenario's service field
+   - Values: `backend`, `frontend`, `mcp-service`
+   - Use value from scenario's service field
 
 3. **level**:
    - From scenario: `integration` or `e2e`

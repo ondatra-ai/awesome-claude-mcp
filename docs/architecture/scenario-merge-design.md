@@ -81,7 +81,7 @@ scenarios:
     - id: "3.1-INT-001"              # Story-centric, sequential
       requirement_id: null            # Populated after merge → "FR-00015"
       description: "..."              # Human-readable summary
-      category: "backend"             # backend/frontend/performance/integration
+      service: "backend"             # backend/frontend/performance/integration
       level: "integration"            # unit/integration/e2e
       priority: "P0"                  # P0/P1/P2
       acceptance_criteria: ["AC-1"]   # Links to story ACs
@@ -104,7 +104,7 @@ scenarios:
 scenarios:
   INT-015:
     description: "WebSocket connection establishment"
-    category: "backend"
+    service: "backend"
     requirement: "Server accepts WebSocket connections"
     level: "integration"
     priority: "P0"
@@ -142,7 +142,7 @@ scenarios:
 ```yaml
 - id: "3.1-INT-001"
   description: "WebSocket connection establishment"
-  category: "backend"
+  service: "backend"
   level: "integration"
 ```
 
@@ -404,7 +404,7 @@ requirements:
     title: "..."
     story_id: "1.1-E2E-001"
     story_reference: "Story 1.1"
-    category: "backend"
+    service: "backend"
     scenarios:
       UT_00001_01:
         description: "..."
@@ -449,7 +449,7 @@ scenarios:
     - id: "3.1-INT-001"                    # Story-centric ID
       requirement_id: null                 # Populated after merge
       description: "WebSocket connection establishment succeeds"  # NEW
-      category: "backend"                  # NEW (or keep just level?)
+      service: "backend"                  # NEW (or keep just level?)
       level: "integration"                 # KEEP
       priority: "P0"                       # KEEP
       acceptance_criteria: ["AC-1"]        # KEEP
@@ -480,7 +480,7 @@ requirements:
       - story_id: "3.1"
         scenario_id: "3.1-INT-001"
         merged_date: "2025-10-06"
-    category: "backend"
+    service: "backend"
     priority: "P0"
     acceptance_criteria: ["AC-1"]        # NEW
     scenarios:
@@ -1047,7 +1047,7 @@ def assign_file_path(scenario, config):
 ```yaml
 # ADD these fields:
 - description: string (human-readable)
-- category: string (backend/frontend/performance)
+- service: string (backend/frontend/performance)
 - requirement_id: string | null (populated after merge)
 ```
 

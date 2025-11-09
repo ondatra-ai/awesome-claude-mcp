@@ -595,7 +595,7 @@ func (c *USImplementCommand) parsePendingScenarios(
 	var requirements struct {
 		Scenarios map[string]struct {
 			Description          string `yaml:"description"`
-			Category             string `yaml:"category"`
+			Service              string `yaml:"service"`
 			Level                string `yaml:"level"`
 			Priority             string `yaml:"priority"`
 			ImplementationStatus struct {
@@ -640,7 +640,7 @@ func (c *USImplementCommand) parsePendingScenarios(
 			scenarioID,
 			scenario.Description,
 			scenario.Level,
-			scenario.Category,
+			scenario.Service,
 			scenario.Priority,
 			givenSteps,
 			whenSteps,
