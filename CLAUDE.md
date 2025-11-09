@@ -79,11 +79,11 @@ Different commands require different timeout values based on their complexity:
 # Create user story - 10 minutes (600 seconds)
 go build -C scripts/bmad-cli -o ./bmad-cli && timeout 600 scripts/bmad-cli/bmad-cli us create 3.1
 
-# Implement user story - 30 minutes (1800 seconds)
-go build -C scripts/bmad-cli -o ./bmad-cli && timeout 1800 scripts/bmad-cli/bmad-cli us implement 3.1
+# Implement user story - 1 hour (3600 seconds)
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 3600 scripts/bmad-cli/bmad-cli us implement 3.1
 
-# Implement with force flag - 30 minutes (1800 seconds)
-go build -C scripts/bmad-cli -o ./bmad-cli && timeout 1800 scripts/bmad-cli/bmad-cli us implement 3.1 --force
+# Implement with force flag - 1 hour (3600 seconds)
+go build -C scripts/bmad-cli -o ./bmad-cli && timeout 3600 scripts/bmad-cli/bmad-cli us implement 3.1 --force
 ```
 
 **Pull Request Commands:**
@@ -94,7 +94,7 @@ go build -C scripts/bmad-cli -o ./bmad-cli && timeout 300 scripts/bmad-cli/bmad-
 
 **Timeout Guidelines:**
 - `us create`: 10 minutes (600s) - Story generation with AI processing
-- `us implement`: 30 minutes (1800s) - Full implementation with code generation
+- `us implement`: 1 hour (3600s) - Full implementation with code generation
 - `pr triage`: 5 minutes (300s) - PR analysis and triage
 
 **Important Notes:**
