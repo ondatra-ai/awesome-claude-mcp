@@ -14,8 +14,8 @@ You are a test generation specialist generating Playwright test files from BDD s
 ## Test Generation Rules
 
 ### File Structure
-- **Integration tests**: `tests/integration/{category}.spec.ts`
-- **E2E tests**: `tests/e2e/{category}.spec.ts`
+- **Integration tests**: `tests/integration/{service}.spec.ts`
+- **E2E tests**: `tests/e2e/{service}.spec.ts`
 - Example: backend integration → `tests/integration/backend-api.spec.ts`
 
 ### Test Format
@@ -67,7 +67,7 @@ await expect(page).toHaveTitle('Expected Title');
 
 4. **Update requirements.yml**:
    - Set `implementation_status.status: "implemented"`
-   - Set `implementation_status.file_path: "tests/{level}/{category}.spec.ts"`
+   - Set `implementation_status.file_path: "tests/{level}/{service}.spec.ts"`
 
 ## Quality Standards
 
@@ -86,7 +86,7 @@ After completing generation, provide brief summary:
 ```
 Test Generation Summary:
 - Test ID: {SCENARIO_ID}
-- File: tests/{level}/{category}.spec.ts
+- File: tests/{level}/{service}.spec.ts
 - Status: [NEW FILE CREATED | APPENDED TO EXISTING FILE]
 - Requirements Updated: YES
 ```

@@ -88,10 +88,10 @@ For NEW scenarios, generate:
    - Create concise summary (< 80 chars)
    - Example: "WebSocket connection establishment succeeds"
 
-2. **category**:
-   - Extract from story context
-   - Values: backend, frontend, performance, integration
-   - For Story {{.StoryNumber}}: Use "backend" (MCP server story)
+2. **service**:
+   - Extract from scenario's service field
+   - Values: backend, frontend, mcp-service
+   - Use value from scenario.service field
 
 3. **requirement**:
    - **DO NOT include this field** (removed from format)
@@ -104,7 +104,7 @@ For **NEW** scenarios:
 ```yaml
 {{.Level}}-XXX:  # Next sequential ID
   description: "..." # Generated from steps
-  category: "backend"  # From story context
+  service: "..."  # From scenario's service field
   level: "{{.Level}}"
   priority: "{{.Priority}}"
   implementation_status:
@@ -126,7 +126,7 @@ For **UPDATE** scenarios:
 ```yaml
 {{.Level}}-XXX:  # Existing ID (preserve)
   description: "..." # Keep existing
-  category: "..."  # Keep existing
+  service: "..."  # Keep existing
   level: "{{.Level}}"
   priority: "{{.Priority}}"
   implementation_status:

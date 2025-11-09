@@ -17,7 +17,7 @@ scenarios: map(key=regex(r'^(?:INT|E2E)-\d{3}$'), val=include('scenario'))
 
 scenario:
   description: str()
-  category: enum('backend', 'frontend', 'performance', 'integration')
+  service: enum('backend', 'frontend', 'mcp-service')
   requirement: str()
   level: enum('integration', 'e2e')
   priority: enum('P0', 'P1', 'P2')

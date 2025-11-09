@@ -15,7 +15,7 @@ metadata:
 scenarios:
   INT-001:
     description: "server responds with correct status"
-    category: "backend"
+    service: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
     level: "integration"
     priority: "P0"
@@ -38,7 +38,7 @@ scenarios:
 
   INT-002:
     description: "version endpoint rejects invalid methods"
-    category: "backend"
+    service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
     level: "integration"
     priority: "P1"
@@ -62,7 +62,7 @@ scenarios:
 
   INT-003:
     description: "health endpoint returns healthy status"
-    category: "backend"
+    service: "backend"
     requirement: "Backend /health endpoint returns healthy status"
     level: "integration"
     priority: "P0"
@@ -85,7 +85,7 @@ scenarios:
 
   INT-004:
     description: "health endpoint rejects invalid methods"
-    category: "backend"
+    service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
     level: "integration"
     priority: "P1"
@@ -109,7 +109,7 @@ scenarios:
 
   INT-005:
     description: "non-existent endpoint returns 404"
-    category: "backend"
+    service: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
     level: "integration"
     priority: "P1"
@@ -133,7 +133,7 @@ scenarios:
 
   E2E-001:
     description: "service returns version with headers"
-    category: "backend"
+    service: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
     level: "e2e"
     priority: "P0"
@@ -156,7 +156,7 @@ scenarios:
 
   E2E-002:
     description: "health endpoint accessible via HTTP"
-    category: "backend"
+    service: "backend"
     requirement: "Backend /health endpoint returns healthy status"
     level: "e2e"
     priority: "P0"
@@ -179,7 +179,7 @@ scenarios:
 
   E2E-003:
     description: "returns 404 for non-existent endpoints"
-    category: "backend"
+    service: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
     level: "e2e"
     priority: "P1"
@@ -203,7 +203,7 @@ scenarios:
 
   E2E-004:
     description: "returns 405 for POST on version endpoint"
-    category: "backend"
+    service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
     level: "e2e"
     priority: "P1"
@@ -227,7 +227,7 @@ scenarios:
 
   E2E-005:
     description: "includes CORS headers for frontend requests"
-    category: "backend"
+    service: "backend"
     requirement: "Backend provides CORS headers for frontend"
     level: "e2e"
     priority: "P1"
@@ -251,7 +251,7 @@ scenarios:
 
   INT-006:
     description: "Next.js routes serve pages correctly"
-    category: "frontend"
+    service: "frontend"
     requirement: "Frontend single-page application loads successfully"
     level: "integration"
     priority: "P0"
@@ -274,7 +274,7 @@ scenarios:
 
   E2E-006:
     description: "SPA loads in browser"
-    category: "frontend"
+    service: "frontend"
     requirement: "Frontend single-page application loads successfully"
     level: "e2e"
     priority: "P0"
@@ -297,7 +297,7 @@ scenarios:
 
   INT-007:
     description: "frontend fetches from backend successfully"
-    category: "frontend"
+    service: "frontend"
     requirement: "Homepage displays backend version at bottom"
     level: "integration"
     priority: "P0"
@@ -320,7 +320,7 @@ scenarios:
 
   E2E-007:
     description: "version appears at bottom of page"
-    category: "frontend"
+    service: "frontend"
     requirement: "Homepage displays backend version at bottom"
     level: "e2e"
     priority: "P0"
@@ -343,7 +343,7 @@ scenarios:
 
   E2E-008:
     description: "welcome card is visible"
-    category: "frontend"
+    service: "frontend"
     requirement: "Homepage displays welcome card with features"
     level: "e2e"
     priority: "P1"
@@ -367,7 +367,7 @@ scenarios:
 
   E2E-009:
     description: "adapts to different viewport sizes"
-    category: "frontend"
+    service: "frontend"
     requirement: "Homepage has responsive design"
     level: "e2e"
     priority: "P1"
@@ -391,7 +391,7 @@ scenarios:
 
   E2E-010:
     description: "page loads under 2000ms"
-    category: "performance"
+    service: "frontend"
     requirement: "Homepage loads within 2 seconds"
     level: "e2e"
     priority: "P0"

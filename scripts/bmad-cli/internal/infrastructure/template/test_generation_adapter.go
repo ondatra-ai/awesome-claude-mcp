@@ -10,7 +10,7 @@ type TestGenerationData struct {
 	ScenarioID       string      // e.g., "INT-011"
 	Description      string      // Short description of test
 	Level            string      // "integration" or "e2e"
-	Category         string      // backend, frontend, performance
+	Service          string      // backend, frontend, mcp-service
 	Priority         string      // P0, P1, P2, P3
 	MergedSteps      MergedSteps // Given-When-Then steps
 	RequirementsFile string      // Path to requirements file to update
@@ -28,7 +28,7 @@ func NewTestGenerationData(
 	scenarioID string,
 	description string,
 	level string,
-	category string,
+	service string,
 	priority string,
 	given []string,
 	when []string,
@@ -39,7 +39,7 @@ func NewTestGenerationData(
 		ScenarioID:  scenarioID,
 		Description: description,
 		Level:       level,
-		Category:    category,
+		Service:     service,
 		Priority:    priority,
 		MergedSteps: MergedSteps{
 			Given: given,

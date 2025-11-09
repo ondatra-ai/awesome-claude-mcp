@@ -18,10 +18,10 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
   - Read(`docs/architecture/coding-standards.md`) - Coding Standards
   - Read(`docs/architecture/tech-stack.md`) - Tech Stack
 
-2. **Determine Correct Service/Category**:
+2. **Determine Correct Service**:
    - Review which service this scenario actually tests (frontend, backend, mcp-service)
-   - The scenario's category field may need adjustment based on architecture
-   - Example: If scenario tests MCP WebSocket → category should be `mcp-service` (not `backend`)
+   - The scenario's service field indicates the target service
+   - Example: If scenario tests MCP WebSocket → service should be `mcp-service`
 
 3. **Verify Test File Location**:
    - Ensure test file path aligns with service structure from source-tree.md
@@ -34,7 +34,7 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 **ID**: `{{.ScenarioID}}`
 **Description**: {{.Description}}
 **Level**: {{.Level}}
-**Category**: {{.Category}}
+**Service**: {{.Service}}
 **Priority**: {{.Priority}}
 
 **Test Steps (Given-When-Then)**:
@@ -48,16 +48,16 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 
 Based on the scenario metadata:
 - Level: `{{.Level}}`
-- Category: `{{.Category}}`
+- Service: `{{.Service}}`
 
-**Target file**: `tests/{{.Level}}/{{.Category}}.spec.ts`
+**Target file**: `tests/{{.Level}}/{{.Service}}.spec.ts`
 
 ---
 
 ## Step 2: Read Existing Test File (if exists)
 
 ```
-Read tests/{{.Level}}/{{.Category}}.spec.ts
+Read tests/{{.Level}}/{{.Service}}.spec.ts
 ```
 
 If the file exists, analyze:
@@ -124,7 +124,7 @@ import { getEnvironmentConfig } from '../config/environments';
 
 const { backendUrl } = getEnvironmentConfig(process.env.E2E_ENV);
 
-test.describe('{{.Category | title}} {{.Level | title}} Tests', () => {
+test.describe('{{.Service | title}} {{.Level | title}} Tests', () => {
 
   test('{{.ScenarioID}}: {{.Description}}', async ({ request }) => {
     // Implementation here
@@ -144,7 +144,7 @@ Update `{{.RequirementsFile}}` for scenario `{{.ScenarioID}}`:
   # ... keep existing fields ...
   implementation_status:
     status: "implemented"  # Change from "pending"
-    file_path: "tests/{{.Level}}/{{.Category}}.spec.ts"
+    file_path: "tests/{{.Level}}/{{.Service}}.spec.ts"
   # ... keep other fields unchanged ...
 ```
 
@@ -192,7 +192,7 @@ After completing the generation, provide:
 Test Generation Summary:
 - Test ID: {{.ScenarioID}}
 - Description: {{.Description}}
-- File: tests/{{.Level}}/{{.Category}}.spec.ts
+- File: tests/{{.Level}}/{{.Service}}.spec.ts
 - Status: [CREATED | APPENDED]
 - Requirements Updated: YES
 ```
