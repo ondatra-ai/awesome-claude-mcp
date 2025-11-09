@@ -121,28 +121,23 @@ Then: "Server returns error"  # ← CONFLICT!
    - Example: "WebSocket connection establishment succeeds"
    - Active voice, declarative style
 
-2. **service**:
-   - Extract from scenario's service field
-   - Values: `backend`, `frontend`, `mcp-service`
-   - Use value from scenario's service field
-
-3. **level**:
+2. **level**:
    - From scenario: `integration` or `e2e`
    - Never `unit` (not allowed in BDD)
 
-4. **priority**:
+3. **priority**:
    - From scenario: `P0`, `P1`, `P2`
 
-5. **implementation_status**:
+4. **implementation_status**:
    - New scenarios: `status: "pending"`, `file_path: null`
    - Updated scenarios: `status: "pending"`, **preserve existing `file_path`**
 
-6. **user_stories**:
+5. **user_stories**:
    - Array of story references
    - Each entry has: `story_id`, `story_file`, `scenario_id`, `merge_date`
    - Append new entry for updates
 
-7. **merged_steps**:
+6. **merged_steps**:
    - Transform scenario steps into flat structure
    - `given`: Array of strings
    - `when`: Array of strings

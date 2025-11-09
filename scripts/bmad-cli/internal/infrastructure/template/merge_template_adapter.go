@@ -13,6 +13,7 @@ type ScenarioMergeData struct {
 	ScenarioID       string
 	Level            string
 	Priority         string
+	Service          string // Service name: backend, frontend, mcp-service
 	Steps            string // Pre-formatted Gherkin steps
 	RequirementsFile string
 }
@@ -24,6 +25,7 @@ func NewScenarioMergeData(storyNumber string, scenario storyModels.TestScenario,
 		ScenarioID:       scenario.ID,
 		Level:            scenario.Level,
 		Priority:         scenario.Priority,
+		Service:          scenario.Service,
 		Steps:            formatScenarioSteps(scenario),
 		RequirementsFile: outputFile,
 	}

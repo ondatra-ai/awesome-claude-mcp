@@ -16,6 +16,7 @@ You are merging a test scenario from user story {{.StoryNumber}} into `docs/requ
 id: "{{.ScenarioID}}"
 level: "{{.Level}}"
 priority: "{{.Priority}}"
+service: "{{.Service}}"
 steps:
 {{.Steps}}
 ```
@@ -88,12 +89,7 @@ For NEW scenarios, generate:
    - Create concise summary (< 80 chars)
    - Example: "WebSocket connection establishment succeeds"
 
-2. **service**:
-   - Extract from scenario's service field
-   - Values: backend, frontend, mcp-service
-   - Use value from scenario.service field
-
-3. **requirement**:
+2. **requirement**:
    - **DO NOT include this field** (removed from format)
 
 ---
@@ -104,7 +100,7 @@ For **NEW** scenarios:
 ```yaml
 {{.Level}}-XXX:  # Next sequential ID
   description: "..." # Generated from steps
-  service: "..."  # From scenario's service field
+  service: "{{.Service}}"  # From scenario's service field
   level: "{{.Level}}"
   priority: "{{.Priority}}"
   implementation_status:
