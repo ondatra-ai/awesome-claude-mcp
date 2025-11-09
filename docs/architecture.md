@@ -887,9 +887,9 @@ mcp-google-docs-editor/
 ### Deployment Platform
 - **Provider:** Railway (managed containers, TLS, custom domains)
 - **Service Names:**
-  - Production: `frontend`, `backend`
-  - Staging: `frontend-staging`, `backend-staging`
-  - Development: `frontend-dev`, `backend-dev`
+  - Production: `frontend`, `backend`, `mcp-service`
+  - Staging: `frontend-staging`, `backend-staging`, `mcp-service-staging`
+  - Development: `frontend-dev`, `backend-dev`, `mcp-service-dev`
 - **Environments:** Railway environments mirror Git workflow (Development, Staging, Production)
 - **Custom Domains:** CNAME records map to Railway-provided hostnames (e.g., `dev.ondatra-ai.xyz → n8cwxlk7.up.railway.app`)
 
@@ -906,14 +906,14 @@ mcp-google-docs-editor/
 
 ### Environment Overview
 - **Development:**
-  - Railway services `frontend-dev`, `backend-dev`
-  - Custom domains `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`
+  - Railway services `frontend-dev`, `backend-dev`, `mcp-service-dev`
+  - Custom domains `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, `mcp.dev.ondatra-ai.xyz`
 - **Staging:**
-  - Railway services `frontend-staging`, `backend-staging`
-  - Planned custom domains `staging.ondatra-ai.xyz`, `api.staging.ondatra-ai.xyz`
+  - Railway services `frontend-staging`, `backend-staging`, `mcp-service-staging`
+  - Planned custom domains `staging.ondatra-ai.xyz`, `api.staging.ondatra-ai.xyz`, `mcp.staging.ondatra-ai.xyz`
 - **Production:**
-  - Railway services `frontend`, `backend`
-  - Planned custom domains `app.ondatra-ai.xyz`, `api.ondatra-ai.xyz`
+  - Railway services `frontend`, `backend`, `mcp-service`
+  - Planned custom domains `app.ondatra-ai.xyz`, `api.ondatra-ai.xyz`, `mcp.ondatra-ai.xyz`
 
 ### Local Development Setup
 
