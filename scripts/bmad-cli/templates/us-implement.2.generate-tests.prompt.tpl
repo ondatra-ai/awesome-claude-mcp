@@ -8,6 +8,27 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 
 ---
 
+## Step 0: Understand Project Architecture
+
+**CRITICAL**: Before generating tests, read architecture documents to understand the service structure:
+
+1. Read for references the following documents:
+  - Read(`docs/architecture.md`) - Architecture Document
+  - Read(`docs/architecture/source-tree.md`) - Source Tree Structure
+  - Read(`docs/architecture/coding-standards.md`) - Coding Standards
+  - Read(`docs/architecture/tech-stack.md`) - Tech Stack
+
+2. **Determine Correct Service/Category**:
+   - Review which service this scenario actually tests (frontend, backend, mcp-service)
+   - The scenario's category field may need adjustment based on architecture
+   - Example: If scenario tests MCP WebSocket → category should be `mcp-service` (not `backend`)
+
+3. **Verify Test File Location**:
+   - Ensure test file path aligns with service structure from source-tree.md
+   - Cross-reference with story tasks to see specified file paths
+
+---
+
 ## Scenario Details
 
 **ID**: `{{.ScenarioID}}`
