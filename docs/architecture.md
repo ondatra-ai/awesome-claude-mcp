@@ -6,7 +6,8 @@ This document outlines the full-stack architecture: Foundation & Infrastructure 
 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
-- **Backend:** Go services handling REST APIs, MCP operations, and integrations with Google Docs
+- **Backend:** Go services handling REST APIs, OAuth flows, and integrations with Google Docs
+- **MCP Service:** Separate Go service implementing MCP Protocol Handler for WebSocket communication with AI clients
 - **Communication:** REST API today with planned WebSocket support for real-time MCP protocol
 - **Infrastructure:** Railway environments (Development, Staging, Production) running Dockerized services with managed networking and TLS
 - **Deployment:** Railway CLI + GitHub Actions workflow (`deploy_to_railway.yml`) for repeatable multi-environment releases
@@ -25,21 +26,24 @@ No starter template will be used. We'll use **create-next-app** for the Next.js 
 
 ### Technical Summary
 
-The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and Go services for the backend. The frontend provides a responsive user interface for authentication, document management, and operation monitoring, while the Go backend handles REST APIs, OAuth flows, and integration points required for MCP tooling. Services are built into Docker images and deployed to Railway environments, which supply managed HTTPS endpoints, load balancing, and horizontal scaling without custom cloud infrastructure. This approach keeps the deployment footprint lightweight while satisfying the PRD's goal of reliability through automated builds, staged environments, and centralized observability.
+The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and two separate Go backend services. The frontend provides a responsive user interface for authentication, document management, and operation monitoring. The Backend Service handles REST APIs, OAuth flows, and Google Docs integrations. The MCP Service is a separate WebSocket server implementing the Model Context Protocol for AI client communication. All services are built into Docker images and deployed to Railway environments, which supply managed HTTPS endpoints, load balancing, and horizontal scaling without custom cloud infrastructure. This approach keeps the deployment footprint lightweight while satisfying the PRD's goal of reliability through automated builds, staged environments, and centralized observability.
 
 ### High Level Overview
 
 1. **Architectural Style:** Containerized services deployed to managed Railway environments
-2. **Repository Structure:** Monorepo containing the Next.js frontend and Go backend (future MCP-specific components live alongside the backend)
+2. **Repository Structure:** Monorepo containing three separate services: Next.js frontend, Go backend, and Go MCP service
 3. **Service Architecture:**
    - **Frontend Service:** Next.js container for user interface, authentication flows, and document management UI
    - **Backend Service:** Go API container for user management, OAuth token management, and document operations
-   - **MCP Extensions (future):** Implemented as additional modules within the backend service and exposed via MCP tools
-4. **Primary Data Flow:** User → Railway HTTPS endpoint → Frontend Service → Backend Service → Google APIs
+   - **MCP Service:** Separate Go container implementing MCP Protocol Handler with WebSocket server for AI client communication (Claude Desktop, Claude Code, ChatGPT)
+4. **Primary Data Flow:**
+   - **User Flow:** User → Railway HTTPS endpoint → Frontend Service → Backend Service → Google APIs
+   - **AI Client Flow:** Claude/ChatGPT → Railway WSS endpoint → MCP Service → Backend Service → Google APIs
 5. **Key Architectural Decisions:**
    - **Service Separation:** Maintain clear boundaries between UI and backend integration responsibilities
    - **Next.js 14 with App Router** to leverage modern React primitives and streaming rendering
-   - **Go with Fiber framework** for high-performance API handling and MCP tool execution
+   - **Go with Fiber framework** for high-performance Backend API handling
+   - **Go with Mark3Labs MCP-Go library** for MCP Protocol Handler implementation
    - **Railway Environments** for managed container orchestration (Development, Staging, Production)
    - **Railway CLI + GitHub Actions** to provide reproducible deployments without standalone IaC tooling
 
@@ -860,7 +864,8 @@ mcp-google-docs-editor/
 │
 ├── services/
 │   ├── frontend/                   # Next.js application
-│   └── backend/                    # Go API + MCP tooling
+│   ├── backend/                    # Go REST API service
+│   └── mcp-service/                # Go MCP Protocol Handler service
 │
 ├── docs/                           # Documentation (architecture, PRD, QA, stories)
 │   └── ...
@@ -1141,7 +1146,7 @@ For comprehensive testing documentation, see:
 
 ## Next Steps
 
-Since this project has minimal UI components (only OAuth callback page), the primary focus remains on the backend MCP server implementation. The next steps are:
+Since this project has minimal UI components (only OAuth callback page), the primary focus remains on the separate MCP Service implementation. The next steps are:
 
 1. **Development Setup:**
    - Initialize Go module and dependencies
