@@ -27,6 +27,26 @@ stories:
         description: "Concurrent connection support"
 
   - id: "3.2"
+    title: "Frontend End To End Testing"
+    as_a: "Developer/Maintainer"
+    i_want: "to verify frontend works end-to-end through the UI using AI-assisted testing"
+    so_that: "users can successfully interact with the application and tests are maintainable"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "Playwright Test Agents generate E2E tests for authentication flows"
+      - id: AC-2
+        description: "AI-generated tests verify document management UI functionality"
+      - id: AC-3
+        description: "Self-healing tests adapt to UI changes automatically"
+      - id: AC-4
+        description: "Frontend-backend integration verified through automated tests"
+      - id: AC-5
+        description: "Page performance meets requirements (load time under 2000ms)"
+      - id: AC-6
+        description: "Test coverage includes error handling and edge cases"
+
+  - id: "3.3"
     title: "Tool Registration"
     as_a: "Claude User"
     i_want: "to discover available tools"
@@ -46,7 +66,7 @@ stories:
       - id: AC-6
         description: "Dynamic or static registration (TBD after testing)"
 
-  - id: "3.3"
+  - id: "3.4"
     title: "Message Protocol Handler"
     as_a: "Developer/Maintainer"
     i_want: "to process MCP messages correctly"
@@ -66,7 +86,7 @@ stories:
       - id: AC-6
         description: "Correlation ID tracking"
 
-  - id: "3.4"
+  - id: "3.5"
     title: "MCP Error Handling"
     as_a: "Claude User"
     i_want: "standard MCP error responses"
@@ -86,7 +106,7 @@ stories:
       - id: AC-6
         description: "Rate limit errors handled"
 
-  - id: "3.5"
+  - id: "3.6"
     title: "Connection Management"
     as_a: "Developer/Maintainer"
     i_want: "robust connection handling"

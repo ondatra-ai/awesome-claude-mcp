@@ -249,29 +249,6 @@ scenarios:
         - "server includes appropriate CORS headers in response"
         - and: "Access-Control-Allow-Origin header allows frontend domain"
 
-  INT-006:
-    description: "Next.js routes serve pages correctly"
-    service: "frontend"
-    requirement: "Frontend single-page application loads successfully"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/frontend.test.ts"
-    last_updated: "2025-10-08"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-002"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "Next.js App Router configures application routes"
-      when:
-        - "client accesses application routes"
-      then:
-        - "Next.js framework serves pages correctly"
-
   E2E-006:
     description: "SPA loads in browser"
     service: "frontend"
@@ -294,29 +271,6 @@ scenarios:
         - "browser navigates to application URL"
       then:
         - "single-page application loads and renders in browser"
-
-  INT-007:
-    description: "frontend fetches from backend successfully"
-    service: "frontend"
-    requirement: "Homepage displays backend version at bottom"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/fullstack.test.ts"
-    last_updated: "2025-10-08"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-003"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "frontend and backend services run"
-      when:
-        - "frontend makes API call to backend version endpoint"
-      then:
-        - "frontend successfully retrieves and displays version \"1.0.0\""
 
   E2E-007:
     description: "version appears at bottom of page"
@@ -388,30 +342,6 @@ scenarios:
       then:
         - "homepage layout adapts responsively"
         - and: "all elements remain accessible and properly positioned"
-
-  E2E-010:
-    description: "page loads under 2000ms"
-    service: "frontend"
-    requirement: "Homepage loads within 2 seconds"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/performance.spec.ts"
-    last_updated: "2025-10-08"
-    user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
-        scenario_id: "1.1-E2E-009"
-        merge_date: "2025-09-23"
-    merged_steps:
-      given:
-        - "deployment system deploys frontend application"
-      when:
-        - "user navigates to homepage"
-      then:
-        - "page fully loads in under 2000ms"
-        - and: "browser loads all critical resources within time limit"
 
   INT-008:
     description: "WebSocket connection establishment succeeds"
