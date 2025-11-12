@@ -94,6 +94,7 @@ type TestScenario struct {
 	Examples           []map[string]interface{} `json:"examples,omitempty"         yaml:"examples,omitempty"`
 	Level              string                   `json:"level"                      yaml:"level"`
 	Priority           string                   `json:"priority"                   yaml:"priority"`
+	Service            string                   `json:"service"                    yaml:"service"`
 	MitigatesRisks     []string                 `json:"mitigates_risks,omitempty"  yaml:"mitigates_risks,omitempty"`
 }
 
