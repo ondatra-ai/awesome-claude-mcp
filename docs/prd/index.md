@@ -39,7 +39,7 @@
   - [Epic 3: MCP Server Setup](./epic-3-mcp-server-setup.md)
     - [User Stories](./epic-3-mcp-server-setup.md#user-stories)
       - [Story 3.1: MCP Server Implementation](./epic-3-mcp-server-setup.md#story-31-mcp-server-implementation)
-      - [Story 3.2: Frontend End To End Testing](./epic-3-mcp-server-setup.md#story-32-frontend-end-to-end-testing)
+      - [Story 3.2: Frontend End To End Test Infrastructure](./epic-3-mcp-server-setup.md#story-32-frontend-end-to-end-test-infrastructure)
       - [Story 3.3: Tool Registration](./epic-3-mcp-server-setup.md#story-33-tool-registration)
       - [Story 3.4: Message Protocol Handler](./epic-3-mcp-server-setup.md#story-34-message-protocol-handler)
       - [Story 3.5: MCP Error Handling](./epic-3-mcp-server-setup.md#story-35-mcp-error-handling)

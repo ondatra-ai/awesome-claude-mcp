@@ -270,24 +270,27 @@ The development will proceed through 10 distinct epics, each delivering deployab
 - Connection management handled
 - Concurrent connection support
 
-#### Story 3.2: Frontend End To End Testing
+#### Story 3.2: MCP Integration Testing with LLM Simulation
 **As a** Developer/Maintainer
-**I want** to verify frontend works end-to-end through the UI using AI-assisted testing
-**So that** users can successfully interact with the application and tests are maintainable
+**I want** to test MCP server with realistic Claude API client simulation
+**So that** MCP tool calling works correctly with real LLM behavior
 
 **Acceptance Criteria:**
-- Playwright Test Agents generate E2E tests for authentication flows
-- AI-generated tests verify document management UI functionality
-- Self-healing tests adapt to UI changes automatically
-- Frontend-backend integration verified through automated tests
-- Page performance meets requirements (load time under 2000ms)
-- Test coverage includes error handling and edge cases
+- Claude API SDK integrated in test environment with API key configuration
+- MCP TypeScript SDK client configured for E2E tests
+- E2E test simulates Claude → MCP Server → Tool Execution → Response flow
+- Tool invocation tested with realistic LLM requests and response handling
+- Test fixtures created for MCP message sequences and tool schemas
+- Example E2E tests demonstrate complete LLM↔MCP integration patterns
 
 **Technical Approach:**
-- Use Playwright Test Agents (Planner → Generator → Healer)
-- Optionally integrate Claude MCP for complex scenarios
-- Leverage AI for autonomous test generation and maintenance
-- Implement self-healing selectors for reduced maintenance overhead
+- Install and configure `@anthropic-ai/sdk` for Claude API access
+- Install and configure `@modelcontextprotocol/sdk` for MCP client
+- Create test client that connects to MCP server as Claude would
+- Simulate realistic LLM tool calling patterns (list tools → call tool → process response)
+- Build test fixtures for different tool schemas and expected responses
+- Create example tests showing complete Claude ↔ MCP Server ↔ Tool flow
+- Document LLM simulation patterns for future test development
 
 #### Story 3.3: Tool Registration
 **As a** Claude User
