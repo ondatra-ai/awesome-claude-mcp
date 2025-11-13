@@ -27,24 +27,24 @@ stories:
         description: "Concurrent connection support"
 
   - id: "3.2"
-    title: "Frontend End To End Testing"
+    title: "MCP Integration Testing with LLM Simulation"
     as_a: "Developer/Maintainer"
-    i_want: "to verify frontend works end-to-end through the UI using AI-assisted testing"
-    so_that: "users can successfully interact with the application and tests are maintainable"
+    i_want: "to test MCP server with realistic Claude API client simulation"
+    so_that: "MCP tool calling works correctly with real LLM behavior"
     status: "PLANNED"
     acceptance_criteria:
       - id: AC-1
-        description: "Playwright Test Agents generate E2E tests for authentication flows"
+        description: "Claude API SDK integrated in test environment with API key configuration"
       - id: AC-2
-        description: "AI-generated tests verify document management UI functionality"
+        description: "MCP TypeScript SDK client configured for E2E tests"
       - id: AC-3
-        description: "Self-healing tests adapt to UI changes automatically"
+        description: "E2E test simulates Claude → MCP Server → Tool Execution → Response flow"
       - id: AC-4
-        description: "Frontend-backend integration verified through automated tests"
+        description: "Tool invocation tested with realistic LLM requests and response handling"
       - id: AC-5
-        description: "Page performance meets requirements (load time under 2000ms)"
+        description: "Test fixtures created for MCP message sequences and tool schemas"
       - id: AC-6
-        description: "Test coverage includes error handling and edge cases"
+        description: "Example E2E tests demonstrate complete LLM↔MCP integration patterns"
 
   - id: "3.3"
     title: "Tool Registration"
