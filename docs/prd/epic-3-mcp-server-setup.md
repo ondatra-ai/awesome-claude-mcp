@@ -33,6 +33,7 @@
 **Technical Approach:**
 - Install and configure `@anthropic-ai/sdk` for Claude API access
 - Install and configure `@modelcontextprotocol/sdk` for MCP client
+- Use `@playwright/test` as test runner framework (no browser automation)
 - Create test client that connects to MCP server as Claude would
 - Simulate realistic LLM tool calling patterns (list tools → call tool → process response)
 - Build test fixtures for different tool schemas and expected responses

@@ -56,11 +56,13 @@ This document captures the current technology stack after migrating from the leg
 - **Example**: `tests/integration/mcp-service.spec.ts`
 
 **End-to-End Tests (E2E) - LLM Simulation:**
-- Use **@anthropic-ai/sdk** with MCP TypeScript SDK
+- Use `@playwright/test` as test runner framework (assertions, test structure)
+- Use **@anthropic-ai/sdk** with MCP TypeScript SDK for actual testing
 - Simulate real Claude API client connecting to MCP server
 - Test complete flow: Claude → MCP Server → Tool Execution → Response → Claude
 - Verify tool calling works as LLM would use it in production
 - Tests actual tool invocation and result handling
+- **NO browser automation required** - Playwright used only as test framework
 - **Example**: `tests/e2e/mcp-integration.spec.ts`
 
 **Key Difference:**
