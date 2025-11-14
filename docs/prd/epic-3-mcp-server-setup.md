@@ -23,12 +23,11 @@
 **So that** MCP tool calling works correctly with real LLM behavior
 
 **Acceptance Criteria:**
-- Claude API SDK integrated in test environment with API key configuration
-- MCP TypeScript SDK client configured for E2E tests
-- E2E test simulates Claude → MCP Server → Tool Execution → Response flow
-- Tool invocation tested with realistic LLM requests and response handling
-- Test fixtures created for MCP message sequences and tool schemas
-- Example E2E tests demonstrate complete LLM↔MCP integration patterns
+- MCP server responds correctly to tool discovery requests from Claude API client
+- MCP server processes tool invocations from Claude API client and returns valid responses
+- E2E test verifies complete Claude → MCP Server → Tool Execution → Response flow
+- MCP server tool invocation protocol tested with realistic LLM request/response patterns
+- MCP server error handling verified with invalid tool names, parameters, and message formats
 
 **Technical Approach:**
 - Install and configure `@anthropic-ai/sdk` for Claude API access

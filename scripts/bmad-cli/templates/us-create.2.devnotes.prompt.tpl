@@ -12,14 +12,16 @@ To analyze a user story and generate comprehensive `dev_notes` that provide esse
   - Read(`{{.Docs.Architecture.FilePath}}`) - Architecture Document
   - Read(`{{.Docs.FrontendArchitecture.FilePath}}`) - Frontend Architecture Document
   - Read(`{{.Docs.CodingStandards.FilePath}}`) - Coding Standards
-  - Read(`{{.Docs.SourceTree.FilePath}}`) - Source Tree
+  - Read(`{{.Docs.SourceTree.FilePath}}`) - Source Tree (CRITICAL: See "Detailed Service Structures" section)
   - Read(`{{.Docs.TechStack.FilePath}}`) - Tech Stack
   - User Story (see below)
   - Generated Tasks (see below)
+
   Extract:
+  - Which service(s) this story affects (frontend, backend, mcp-service, or multiple)
   - Specific technology stack components needed for this story
   - Relevant architecture patterns and components
-  - File paths and naming conventions for implementation
+  - File paths in the CORRECT service directory (check source-tree.md "Detailed Service Structures")
   - Performance requirements specific to the story's features
   - Configuration and environment variables needed
   - Integration points with existing systems
@@ -71,13 +73,15 @@ dev_notes:
       - "Technology 2"
 
   file_structure:
-    source: "{{.Docs.SourceTree.FilePath}}#Service Structure"
-    description: "Based on the project file structure:"
+    source: "{{.Docs.SourceTree.FilePath}}#Detailed Service Structures"
+    description: "Based on the monorepo three-service structure:"
     files:
-      - file: "specific/path/to/implementation.go"
-        description: "Main implementation file"
-      - file: "specific/path/to/tests.go"
-        description: "Test files"
+      - file: "services/[frontend|backend|mcp-service]/path/to/file.go"
+        description: "Implementation file in correct service directory"
+      - file: "services/[frontend|backend|mcp-service]/path/to/test.go"
+        description: "Test file in correct service directory"
+      - file: "tests/e2e/test.spec.ts"
+        description: "E2E test file (if applicable)"
 
   configuration:
     source: "{{.Docs.CodingStandards.FilePath}}#Environment Variables"

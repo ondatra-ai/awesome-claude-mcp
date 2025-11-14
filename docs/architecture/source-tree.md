@@ -11,8 +11,9 @@ This document summarizes the current monorepo layout after the migration to Rail
 │       └── deploy_to_railway.yml       # GitHub Actions deployment workflow
 ├── docs/                               # Product, architecture, QA documentation
 ├── services/
-│   ├── frontend/                       # Next.js App Router frontend
-│   └── backend/                        # Go API (MCP tooling co-located)
+│   ├── frontend/                       # Next.js App Router frontend (React UI)
+│   ├── backend/                        # Go REST API service (user management, OAuth)
+│   └── mcp-service/                    # Go MCP Protocol Handler (WebSocket, tool execution)
 ├── tests/                              # Playwright and other cross-service tests
 ├── scripts/                            # Utility scripts (linting, PR triage, etc.)
 ├── Makefile                            # Local tasks (lint, test, railway deploy)
@@ -56,6 +57,76 @@ This document summarizes the current monorepo layout after the migration to Rail
 | Development | `development`      | `frontend-dev`, `backend-dev`, `mcp-service-dev` | `dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, `mcp.dev.ondatra-ai.xyz` |
 | Staging     | `staging`          | `frontend-staging`, `backend-staging`, `mcp-service-staging` | `staging.ondatra-ai.xyz` (planned), `api.staging.ondatra-ai.xyz` (planned), `mcp.staging.ondatra-ai.xyz` (planned) |
 | Production  | `production`       | `frontend`, `backend`, `mcp-service` | `app.ondatra-ai.xyz` (planned), `api.ondatra-ai.xyz` (planned), `mcp.ondatra-ai.xyz` (planned) |
+
+## Detailed Service Structures
+
+### `services/frontend/` - Next.js Frontend
+```text
+services/frontend/
+├── app/                    # Next.js 14 App Router
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Home page
+│   └── api/               # API routes
+├── components/            # React components
+├── lib/                   # Utility libraries
+├── public/                # Static assets
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── .env
+```
+
+### `services/backend/` - Go REST API Service
+```text
+services/backend/
+├── cmd/
+│   └── main.go            # Entry point for REST API server
+├── internal/
+│   ├── api/               # HTTP endpoints and middleware
+│   ├── auth/              # OAuth and JWT handling
+│   ├── users/             # User management
+│   ├── cache/             # Redis client
+│   └── config/            # Configuration
+├── pkg/
+│   ├── errors/            # Custom errors
+│   └── utils/             # Utility functions
+├── go.mod
+├── go.sum
+├── Dockerfile
+└── .env
+```
+
+### `services/mcp-service/` - Go MCP Protocol Handler
+```text
+services/mcp-service/
+├── cmd/
+│   └── main.go            # Entry point for MCP WebSocket server
+├── internal/
+│   ├── server/            # MCP protocol server and WebSocket handling
+│   │   ├── mcp.go        # MCP server setup
+│   │   ├── tools.go      # Tool registration
+│   │   ├── handlers.go   # Tool handlers
+│   │   └── middleware.go # Middleware
+│   ├── operations/        # Document operations (replace, append, insert)
+│   ├── docs/              # Google Docs API integration
+│   ├── auth/              # OAuth for service accounts
+│   ├── cache/             # Redis client
+│   └── config/            # Configuration
+├── pkg/
+│   ├── types/             # MCP request/response types
+│   ├── errors/            # Custom errors
+│   └── utils/             # Utility functions
+├── go.mod                 # Includes Mark3Labs MCP-Go dependency
+├── go.sum
+├── Dockerfile
+└── .env
+```
+
+**CRITICAL: Service Separation**
+- **Frontend** (`services/frontend/`): Next.js UI only
+- **Backend** (`services/backend/`): REST API for user management and OAuth
+- **MCP Service** (`services/mcp-service/`): MCP Protocol Handler for Claude/LLM communication
+- MCP code is **NOT** in `services/backend/` - it has its own separate service
 
 ## Legacy Cloud Structure
 
