@@ -34,17 +34,15 @@ stories:
     status: "PLANNED"
     acceptance_criteria:
       - id: AC-1
-        description: "Claude API SDK integrated in test environment with API key configuration"
+        description: "MCP server responds correctly to tool discovery requests from Claude API client"
       - id: AC-2
-        description: "MCP TypeScript SDK client configured for E2E tests"
+        description: "MCP server processes tool invocations from Claude API client and returns valid responses"
       - id: AC-3
-        description: "E2E test simulates Claude → MCP Server → Tool Execution → Response flow"
+        description: "E2E test verifies complete Claude → MCP Server → Tool Execution → Response flow"
       - id: AC-4
-        description: "Tool invocation tested with realistic LLM requests and response handling"
+        description: "MCP server tool invocation protocol tested with realistic LLM request/response patterns"
       - id: AC-5
-        description: "Test fixtures created for MCP message sequences and tool schemas"
-      - id: AC-6
-        description: "Example E2E tests demonstrate complete LLM↔MCP integration patterns"
+        description: "MCP server error handling verified with invalid tool names, parameters, and message formats"
 
   - id: "3.3"
     title: "Tool Registration"
