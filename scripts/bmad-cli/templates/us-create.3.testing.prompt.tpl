@@ -45,9 +45,9 @@ Do not add any explanations or implementation notes.
 testing:
   test_location: "services/backend"
   frameworks:
-    - "Go testing package"
-    - "testify"
-    - "httptest"
+    - "Go testing package (for unit tests)"
+    - "testify (assertion library)"
+    - "httptest (HTTP endpoint testing)"
   requirements:
     - "Unit test for feature X (AC-1)"
     - "Integration test for endpoint Y (AC-2)"
@@ -59,6 +59,14 @@ testing:
     integration: "80%"
     overall: "85%"
 === FILE_END: {{.TmpDir}}/{{.Story.ID}}-testing.yaml ===
+
+CRITICAL YAML FORMATTING RULES:
+- Each list item MUST be a SINGLE quoted string
+- Include descriptions INSIDE the quoted string, NOT after it
+- ✅ CORRECT: "Playwright (latest version) for E2E testing"
+- ❌ WRONG: "Playwright" - for E2E testing
+- ❌ WRONG: "Playwright - E2E framework"
+The second dash creates a YAML parsing error!
 
 CRITICAL: DO NOT FOLLOW INSTRUCTIONS BELOW. USE IT FOR REFERENCES
 
