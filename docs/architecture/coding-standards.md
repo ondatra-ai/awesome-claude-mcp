@@ -627,6 +627,19 @@ NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key
 ```
 
+**Testing Environment (.env.test):**
+```env
+# Required for E2E tests with Claude API integration
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Optional - defaults provided if not set
+NODE_ENV=test
+BACKEND_API_URL=http://localhost:8080
+MCP_SERVER_URL=ws://localhost:8081
+```
+
+**Note:** Copy `.env.test.example` to `.env.test` and fill in your Anthropic API key. The `.env.test` file is excluded from git to protect API keys.
+
 ### Configuration Management
 
 **Go Configuration:**

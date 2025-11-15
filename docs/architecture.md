@@ -1116,6 +1116,9 @@ For comprehensive testing documentation, see:
 
 ### Secrets Management
 - **Development:** .env file (never committed)
+- **Testing:** .env.test file for E2E tests with Claude API (never committed, copy from .env.test.example)
+  - Required variable: `ANTHROPIC_API_KEY` for MCP integration testing
+  - See `.env.test.example` for template
 - **Production:** GCP Secret Manager
 - **Code Requirements:**
   - NEVER hardcode secrets

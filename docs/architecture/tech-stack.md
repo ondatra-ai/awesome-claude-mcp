@@ -64,6 +64,7 @@ This document captures the current technology stack after migrating from the leg
 - Tests actual tool invocation and result handling
 - **NO browser automation required** - Playwright used only as test framework
 - **Example**: `tests/e2e/mcp-integration.spec.ts`
+- **Configuration**: Requires `.env.test` file with `ANTHROPIC_API_KEY` (copy from `.env.test.example`)
 
 **Key Difference:**
 - ❌ Browser WebSocket (not realistic for MCP)

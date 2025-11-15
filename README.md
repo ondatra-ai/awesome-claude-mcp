@@ -93,6 +93,19 @@ docker compose down
 ## 🧪 Testing
 
 ### E2E Testing
+
+**Prerequisites:**
+Create a `.env.test` file in the project root with required environment variables:
+
+```bash
+# Copy the example file and add your API key
+cp .env.test.example .env.test
+
+# Then edit .env.test and add your Anthropic API key
+# ANTHROPIC_API_KEY=your_actual_api_key_here
+```
+
+**Running Tests:**
 ```bash
 # Run complete E2E test suite with Docker
 make test-e2e
