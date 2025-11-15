@@ -8,11 +8,13 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 
 ---
 
-## Step 0: Understand Project Architecture
+## Step 0: Understand Project Architecture & Best Practices
 
-**CRITICAL**: Before generating tests, read architecture documents to understand the service structure:
+**CRITICAL**: Before generating tests, gather both local project knowledge and official framework best practices.
 
-1. Read for references the following documents:
+### Local Project Knowledge
+
+1. **Read Architecture Documents**:
   - Read(`docs/architecture.md`) - Architecture Document
   - Read(`docs/architecture/source-tree.md`) - Source Tree Structure
   - Read(`docs/architecture/coding-standards.md`) - Coding Standards
@@ -26,6 +28,91 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 3. **Verify Test File Location**:
    - Ensure test file path aligns with service structure from source-tree.md
    - Cross-reference with story tasks to see specified file paths
+
+### Official Framework & Library Documentation (Context7)
+
+4. **Fetch Latest Documentation for Relevant Libraries**:
+
+   Based on the test level (`{{.Level}}`) and service (`{{.Service}}`), fetch official documentation from Context7 for the libraries and frameworks you'll use.
+
+   **Step 4.1: Identify Relevant Libraries**
+
+   Review `docs/architecture/tech-stack.md` (already read in step 1) to identify which libraries are relevant for this test:
+
+   **For ALL tests:**
+   - **Playwright** (`/microsoft/playwright`) - Testing framework
+   - **TypeScript** patterns for type-safe test code
+
+   **For Integration (INT) tests:**
+   - **Fetch API** or **Axios** - HTTP client patterns (if testing REST APIs)
+   - **@modelcontextprotocol/sdk** - If testing MCP protocol
+   - **@anthropic-ai/sdk** - If testing with Claude API simulation
+
+   **For E2E tests:**
+   - **Next.js** (`/vercel/next.js`) - If testing frontend routing/rendering
+   - **React Hook Form** - If testing forms
+   - **Zod** - If validating form schemas
+   - **Zustand** - If testing state management
+
+   **For Backend/MCP service tests:**
+   - **Go** patterns for backend testing (if applicable)
+   - **WebSocket** patterns for MCP protocol
+
+   **Step 4.2: Fetch Documentation via Context7**
+
+   Use Context7 to get official, up-to-date patterns. **Fetch docs in order of importance:**
+
+   ```
+   # 1. ALWAYS fetch Playwright (primary testing framework)
+   context7.get-library-docs(
+     libraryID: "/microsoft/playwright",
+     topic: "test assertions, error handling, and best practices",
+     tokens: 2000
+   )
+   ```
+
+   ```
+   # 2. Fetch additional libraries based on test type
+   # Example for MCP E2E tests:
+   context7.get-library-docs(
+     libraryID: "/anthropic-ai/sdk",  # Use resolver if needed
+     topic: "testing with Claude API, message handling, tool calling",
+     tokens: 1500
+   )
+   ```
+
+   ```
+   # Example for Frontend E2E tests:
+   context7.get-library-docs(
+     libraryID: "/vercel/next.js",
+     topic: "testing Next.js applications, routing, server components",
+     tokens: 1500
+   )
+   ```
+
+   **Why use Context7:**
+   - ✅ Official documentation from library maintainers (not hallucinated patterns)
+   - ✅ Latest best practices from framework teams
+   - ✅ Real code examples from official docs
+   - ✅ Version-specific guidance for current library versions
+   - ✅ Ensures tests follow recommended patterns for each library
+
+   **What to extract from Context7 results:**
+
+   *From Playwright docs:*
+   - How to use `expect()` vs `expect.soft()` vs `expect.poll()`
+   - Custom error message patterns: `expect(locator, 'custom message').toBeVisible()`
+   - Web-first assertions: `await expect(page.getByText()).toBeVisible()`
+   - Async event handling patterns (for WebSocket/event-driven tests)
+   - Assertion best practices and anti-patterns
+
+   *From library-specific docs:*
+   - Recommended testing patterns for that library
+   - Common test scenarios and how to implement them
+   - Integration points with Playwright
+   - API patterns and error handling
+
+   **Apply these patterns** in Step 3 when generating test code.
 
 ---
 
@@ -181,6 +268,203 @@ Use the Edit tool to update only the `implementation_status` section.
 3. **Comments**: Add Given/When/Then comments for clarity
 4. **No mocks**: Generate real API/browser interactions
 5. **Update requirements**: Always update implementation_status after test creation
+
+---
+
+## CRITICAL: Explicit Failure Handling - Avoid Hiding Problems
+
+**Tests MUST fail fast and explicitly. Any issue must immediately fail the test with a clear error message.**
+
+_Note: The patterns below align with official Playwright documentation fetched via Context7 in Step 0. Always prefer the official docs from Context7 over these examples if there are conflicts._
+
+### ❌ ANTI-PATTERN: Conditional Logic That Hides Failures
+
+**DO NOT** write tests with conditional guards that silently skip logic:
+
+```typescript
+// ❌ BAD: Hides failures with state machine logic
+if (!handshakeComplete && message.id === 1 && message.result) {
+  handshakeComplete = true;
+  return;  // Silently skips if condition fails
+}
+
+// Later:
+expect(handshakeComplete).toBeTruthy();  // Fails, but WHY?
+```
+
+**Problems**:
+- If `message.error` instead of `message.result` → condition fails silently
+- If wrong `message.id` → condition fails silently
+- Test fails at final assertion with unclear error
+- Root cause is hidden in conditional logic
+
+### ✅ CORRECT PATTERN: Explicit Error Checking with expect()
+
+**DO** write tests that fail immediately with descriptive expect() assertions:
+
+```typescript
+// ✅ GOOD: Explicit error checking with expect()
+if (message.id === 1) {
+  expect(message.error, 'Handshake should not return error').toBeUndefined();
+  expect(message.result, 'Handshake response must include result').toBeDefined();
+  expect(handshakeComplete, 'Should not receive duplicate handshake response').toBe(false);
+
+  handshakeComplete = true;
+  return;
+}
+```
+
+**Benefits**:
+- Clear error: `Expected: undefined, Received: { code: -32600, message: "Invalid request" }`
+- Immediate failure at root cause with Playwright error formatting
+- Custom messages explain WHY the assertion exists
+- Easy debugging with stack traces
+- No hidden state
+
+### Principles for Test Generation
+
+1. **Use Playwright expect() for All Assertions**: Follow Playwright's web-first assertion pattern
+   ```typescript
+   // ✅ GOOD: Use expect() with custom messages
+   await expect(response, 'API response should succeed').toHaveStatus(200);
+   expect(response.status(), 'Expected successful status').toBe(200);
+
+   // ❌ BAD: Don't throw errors for assertions
+   if (response.status() !== 200) {
+     throw new Error(`Expected 200, got ${response.status()}`);
+   }
+   ```
+
+2. **Explicit Error Checks with expect()**: Check errors explicitly, don't filter them silently
+   ```typescript
+   // ❌ BAD: Hides errors with conditional filtering
+   if (message.result) {
+     // Process result - but what if message.error exists?
+   }
+
+   // ✅ GOOD: Check for errors explicitly
+   expect(message.error, 'Server should not return error').toBeUndefined();
+   expect(message.result, 'Response must have result field').toBeDefined();
+   ```
+
+3. **Custom Messages for Context**: Add descriptive messages to expect() calls
+   ```typescript
+   // ✅ GOOD: Clear context in assertion
+   expect(tools.find(t => t.name === 'replace_all'),
+     'replace_all tool should be in tools list').toBeDefined();
+
+   // ❌ BAD: Generic assertion without context
+   expect(tools.find(t => t.name === 'replace_all')).toBeDefined();
+   ```
+
+4. **Validate State Transitions Explicitly**: Don't rely on implicit state from previous steps
+   ```typescript
+   // ❌ BAD: Step 2 silently skips if step 1 failed
+   if (!step1Complete && condition) { step1Complete = true; }
+   if (!step2Complete && step1Complete) { step2Complete = true; }
+   // Later: expect(step2Complete).toBeTruthy(); // Unclear why it failed
+
+   // ✅ GOOD: Explicit assertions at each transition
+   expect(step1Complete, 'Step 1 must complete before Step 2').toBe(true);
+   if (step2Condition) {
+     step2Complete = true;
+   }
+   expect(step2Complete, 'Step 2 should complete successfully').toBe(true);
+   ```
+
+5. **Direct Assertions Over Complex Result Objects**: Keep tests simple
+   ```typescript
+   // ❌ BAD: Complex result object with boolean flags
+   const result = { success: false, handshakeComplete: false };
+   // ... 100 lines of complex state machine logic ...
+   expect(result.success).toBeTruthy(); // Unclear what failed
+
+   // ✅ GOOD: Assert immediately after each operation
+   const response = await request.get(url);
+   expect(response.status(), 'Initialize request should succeed').toBe(200);
+   const data = await response.json();
+   expect(data.connectionId, 'Response should include connectionId').toBeDefined();
+   ```
+
+6. **Use expect.soft() for Multiple Related Checks**: When you need to check multiple things
+   ```typescript
+   // ✅ GOOD: Check all fields even if some fail
+   await expect.soft(healthData, 'Health endpoint returns status').toHaveProperty('status');
+   await expect.soft(healthData, 'Health endpoint returns connections').toHaveProperty('connections');
+   await expect.soft(healthData, 'Health endpoint returns dependencies').toHaveProperty('dependencies');
+   ```
+
+### When Complex Flow Is Necessary (WebSocket, Async Events)
+
+For WebSocket or event-driven tests, **collect state then assert with expect()**:
+
+```typescript
+test('WebSocket flow with explicit assertions', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    return new Promise((resolve) => {
+      const ws = new WebSocket(url);
+      const state = {
+        connected: false,
+        messageReceived: false,
+        error: null as string | null,
+        data: null as any
+      };
+
+      ws.onopen = () => {
+        state.connected = true;
+        ws.send(JSON.stringify(request));
+      };
+
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        state.messageReceived = true;
+
+        if (msg.error) {
+          state.error = `Server error: ${msg.error.message}`;
+          ws.close();
+          resolve(state);
+          return;
+        }
+
+        if (!msg.result) {
+          state.error = 'Response missing result field';
+          ws.close();
+          resolve(state);
+          return;
+        }
+
+        state.data = msg.result;
+        ws.close();
+        resolve(state);
+      };
+
+      ws.onerror = () => {
+        state.error = 'WebSocket connection error';
+        resolve(state);
+      };
+
+      setTimeout(() => {
+        state.error = 'WebSocket timeout';
+        ws.close();
+        resolve(state);
+      }, 5000);
+    });
+  });
+
+  // ✅ Assert each aspect with descriptive messages
+  expect(result.connected, 'WebSocket should establish connection').toBe(true);
+  expect(result.messageReceived, 'Should receive message from server').toBe(true);
+  expect(result.error, 'Should not have errors').toBeNull();
+  expect(result.data, 'Response should include data').toBeDefined();
+  expect(result.data, 'Data should have expected field').toHaveProperty('expectedField');
+});
+```
+
+**Key difference**: Instead of throwing errors inside callbacks, **collect state and assert outside**:
+- ✅ `expect()` provides better error messages
+- ✅ Multiple assertions give complete picture
+- ✅ Custom messages explain what failed
+- ❌ Don't throw errors - let expect() handle failures
 
 ---
 
