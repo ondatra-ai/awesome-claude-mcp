@@ -12,7 +12,7 @@ import (
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
-const aiPromptTimeout = 10 * time.Minute // Timeout for AI prompt execution
+const aiPromptTimeout = 20 * time.Minute // Timeout for AI prompt execution
 
 type ClaudeClient struct {
 	// No persistent client needed with severity1 SDK
