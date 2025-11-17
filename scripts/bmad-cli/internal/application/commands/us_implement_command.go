@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -545,6 +546,17 @@ func (c *USImplementCommand) implementSingleTest(
 		return false
 	}
 
+	// Save user prompt to tmp directory for debugging
+	userPromptFile := filepath.Join(c.runDir.GetTmpOutPath(),
+		scenario.ScenarioID+"-test-generation-user-prompt.txt")
+
+	writeErr := os.WriteFile(userPromptFile, []byte(userPrompt), fileModeReadWrite)
+	if writeErr != nil {
+		slog.Warn("Failed to save user prompt", "file", userPromptFile, "error", writeErr)
+	} else {
+		slog.Info("💾 User prompt saved", "file", userPromptFile, "scenario_id", scenario.ScenarioID)
+	}
+
 	systemPrompt, err := systemLoader.LoadTemplate(scenario)
 	if err != nil {
 		slog.Warn(
@@ -556,9 +568,20 @@ func (c *USImplementCommand) implementSingleTest(
 		return false
 	}
 
-	slog.Debug("Calling Claude Code for test generation", "scenario_id", scenario.ScenarioID)
+	// Save system prompt to tmp directory for debugging
+	systemPromptFile := filepath.Join(c.runDir.GetTmpOutPath(),
+		scenario.ScenarioID+"-test-generation-system-prompt.txt")
 
-	_, err = c.claudeClient.ExecutePromptWithSystem(
+	writeErr = os.WriteFile(systemPromptFile, []byte(systemPrompt), fileModeReadWrite)
+	if writeErr != nil {
+		slog.Warn("Failed to save system prompt", "file", systemPromptFile, "error", writeErr)
+	} else {
+		slog.Info("💾 System prompt saved", "file", systemPromptFile, "scenario_id", scenario.ScenarioID)
+	}
+
+	slog.Info("🤖 Calling Claude for test generation", "scenario_id", scenario.ScenarioID)
+
+	response, err := c.claudeClient.ExecutePromptWithSystem(
 		ctx,
 		systemPrompt,
 		userPrompt,
@@ -573,6 +596,17 @@ func (c *USImplementCommand) implementSingleTest(
 		)
 
 		return false
+	}
+
+	// Save Claude response to tmp directory for debugging
+	responseFile := filepath.Join(c.runDir.GetTmpOutPath(),
+		scenario.ScenarioID+"-test-generation-response.txt")
+
+	writeErr = os.WriteFile(responseFile, []byte(response), fileModeReadWrite)
+	if writeErr != nil {
+		slog.Warn("Failed to save Claude response", "file", responseFile, "error", writeErr)
+	} else {
+		slog.Info("💾 Claude response saved", "file", responseFile, "scenario_id", scenario.ScenarioID)
 	}
 
 	return true
@@ -697,6 +731,18 @@ type ImplementFeatureData struct {
 	MaxAttempts int
 }
 
+// savePromptFile saves a prompt to tmp directory for debugging.
+func (c *USImplementCommand) savePromptFile(content, filename string) {
+	filePath := filepath.Join(c.runDir.GetTmpOutPath(), filename)
+
+	writeErr := os.WriteFile(filePath, []byte(content), fileModeReadWrite)
+	if writeErr != nil {
+		slog.Warn("Failed to save prompt file", "file", filePath, "error", writeErr)
+	} else {
+		slog.Info("💾 Prompt saved", "file", filePath)
+	}
+}
+
 func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyNumber string) error {
 	slog.Info("Step 5: Implementing feature")
 
@@ -756,13 +802,18 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 			return pkgerrors.ErrLoadPromptsFailed(err)
 		}
 
+		c.savePromptFile(userPrompt, fmt.Sprintf("%s-implement-feature-attempt-%d-user-prompt.txt", storyNumber, attempt))
+
 		systemPrompt, err := systemPromptLoader.LoadTemplate(promptData)
 		if err != nil {
 			return pkgerrors.ErrLoadPromptsFailed(err)
 		}
 
-		// Call Claude to fix the code
-		_, err = c.claudeClient.ExecutePromptWithSystem(
+		c.savePromptFile(systemPrompt, fmt.Sprintf("%s-implement-feature-attempt-%d-system-prompt.txt", storyNumber, attempt))
+
+		slog.Info("🤖 Calling Claude to implement feature", "attempt", attempt)
+
+		response, err := c.claudeClient.ExecutePromptWithSystem(
 			ctx,
 			systemPrompt,
 			userPrompt,
@@ -772,6 +823,8 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 		if err != nil {
 			return pkgerrors.ErrImplementFeaturesFailed(err)
 		}
+
+		c.savePromptFile(response, fmt.Sprintf("%s-implement-feature-attempt-%d-response.txt", storyNumber, attempt))
 
 		slog.Info("✓ Claude finished attempt", "attempt", attempt)
 	}

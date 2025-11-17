@@ -466,6 +466,126 @@ test('WebSocket flow with explicit assertions', async ({ page }) => {
 - ✅ Custom messages explain what failed
 - ❌ Don't throw errors - let expect() handle failures
 
+### CRITICAL: WebSocket Reconnection Timeout Handling
+
+**When testing WebSocket reconnections, ALWAYS add explicit connection timeouts to prevent hanging tests.**
+
+**Problem**: Browser WebSocket connections in page.evaluate() can hang indefinitely if:
+- Server doesn't respond to connection attempt
+- Network issue prevents connection completion
+- Connection cleanup from previous test hasn't finished
+
+**❌ BAD: Reconnection without timeout**
+```typescript
+const ws2 = new WebSocket(url);
+
+ws2.onopen = () => {
+  state.reconnected = true;  // May never fire!
+  ws2.send(JSON.stringify(request));
+};
+
+ws2.onerror = () => {
+  state.error = 'Connection failed';  // May never fire!
+  resolve(state);
+};
+```
+
+**Why this fails:**
+- If connection hangs, neither `onopen` nor `onerror` fires
+- Promise never resolves
+- Test hangs until Playwright timeout (30+ seconds)
+- `state.reconnected` stays false with no explanation
+
+**✅ GOOD: Reconnection with explicit timeout**
+```typescript
+const ws2 = new WebSocket(url);
+let connectionTimeout: NodeJS.Timeout;
+
+// Set timeout BEFORE waiting for connection
+connectionTimeout = setTimeout(() => {
+  if (!state.reconnected) {
+    state.error = 'Reconnection attempt timed out after 3000ms';
+    ws2.close();
+    resolve(state);
+  }
+}, 3000); // 3 second timeout for connection attempt
+
+ws2.onopen = () => {
+  clearTimeout(connectionTimeout);  // Cancel timeout on success
+  state.reconnected = true;
+  ws2.send(JSON.stringify(request));
+};
+
+ws2.onerror = (error) => {
+  clearTimeout(connectionTimeout);  // Cancel timeout on explicit error
+  state.error = `Reconnection WebSocket error: ${error}`;
+  resolve(state);
+};
+
+ws2.onclose = () => {
+  clearTimeout(connectionTimeout);  // Cancel timeout on close
+  if (!state.reconnected) {
+    state.error = 'Connection closed before reconnection completed';
+    resolve(state);
+  }
+};
+```
+
+**Why this works:**
+- ✅ Test fails explicitly after 3 seconds if connection hangs
+- ✅ Clear error message: "Reconnection attempt timed out after 3000ms"
+- ✅ Timeout is cleared if connection succeeds or explicitly fails
+- ✅ No hanging tests
+- ✅ Fast feedback on connection issues
+
+**Reconnection delay guidelines:**
+- Wait 500-2000ms between close and reconnect (allows server cleanup)
+- Set 3-5 second timeout for connection attempt
+- Clear all timeouts in success/error/close handlers
+- Always resolve() promise in timeout handler
+
+**Example: Complete reconnection flow**
+```typescript
+// Close first connection
+ws.close(1006, 'Simulated disconnect');
+
+// Wait for server cleanup
+setTimeout(() => {
+  const ws2 = new WebSocket(url);
+  let connectionTimeout: NodeJS.Timeout;
+
+  connectionTimeout = setTimeout(() => {
+    if (!state.reconnected) {
+      state.error = 'Reconnection timeout - server may not be accepting new connections';
+      if (ws2.readyState === WebSocket.CONNECTING || ws2.readyState === WebSocket.OPEN) {
+        ws2.close();
+      }
+      resolve(state);
+    }
+  }, 3000);
+
+  ws2.onopen = () => {
+    clearTimeout(connectionTimeout);
+    state.reconnected = true;
+    // ... continue test
+  };
+
+  ws2.onerror = () => {
+    clearTimeout(connectionTimeout);
+    state.error = 'Reconnection failed';
+    resolve(state);
+  };
+
+  ws2.onclose = () => {
+    clearTimeout(connectionTimeout);
+    if (!state.reconnected && !state.error) {
+      state.error = 'Connection closed unexpectedly';
+      resolve(state);
+    }
+  };
+}, 1000); // Wait 1 second before reconnect attempt
+```
+
 ---
 
 ## Output Requirements
