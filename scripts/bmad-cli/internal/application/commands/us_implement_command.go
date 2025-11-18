@@ -588,6 +588,20 @@ func (c *USImplementCommand) implementSingleTest(
 		"sonnet",
 		ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit"}},
 	)
+
+	// Save Claude response to tmp directory for debugging (even if there's an error with partial response)
+	if response != "" {
+		responseFile := filepath.Join(c.runDir.GetTmpOutPath(),
+			scenario.ScenarioID+"-test-generation-response.txt")
+
+		writeErr = os.WriteFile(responseFile, []byte(response), fileModeReadWrite)
+		if writeErr != nil {
+			slog.Warn("Failed to save Claude response", "file", responseFile, "error", writeErr)
+		} else {
+			slog.Info("💾 Claude response saved", "file", responseFile, "scenario_id", scenario.ScenarioID)
+		}
+	}
+
 	if err != nil {
 		slog.Warn(
 			"⚠️  Failed to implement test scenario",
@@ -596,17 +610,6 @@ func (c *USImplementCommand) implementSingleTest(
 		)
 
 		return false
-	}
-
-	// Save Claude response to tmp directory for debugging
-	responseFile := filepath.Join(c.runDir.GetTmpOutPath(),
-		scenario.ScenarioID+"-test-generation-response.txt")
-
-	writeErr = os.WriteFile(responseFile, []byte(response), fileModeReadWrite)
-	if writeErr != nil {
-		slog.Warn("Failed to save Claude response", "file", responseFile, "error", writeErr)
-	} else {
-		slog.Info("💾 Claude response saved", "file", responseFile, "scenario_id", scenario.ScenarioID)
 	}
 
 	return true
@@ -743,6 +746,36 @@ func (c *USImplementCommand) savePromptFile(content, filename string) {
 	}
 }
 
+// executeAndSaveClaudeResponse executes Claude and saves the response (even on timeout).
+func (c *USImplementCommand) executeAndSaveClaudeResponse(
+	ctx context.Context,
+	systemPrompt, userPrompt, storyNumber string,
+	attempt int,
+) error {
+	slog.Info("🤖 Calling Claude to implement feature", "attempt", attempt)
+
+	response, err := c.claudeClient.ExecutePromptWithSystem(
+		ctx,
+		systemPrompt,
+		userPrompt,
+		"sonnet",
+		ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
+	)
+
+	// Save response even if there's an error (e.g., timeout with partial response)
+	if response != "" {
+		c.savePromptFile(response, fmt.Sprintf("%s-implement-feature-attempt-%d-response.txt", storyNumber, attempt))
+	}
+
+	if err != nil {
+		return pkgerrors.ErrImplementFeaturesFailed(err)
+	}
+
+	slog.Info("✓ Claude finished attempt", "attempt", attempt)
+
+	return nil
+}
+
 func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyNumber string) error {
 	slog.Info("Step 5: Implementing feature")
 
@@ -811,22 +844,11 @@ func (c *USImplementCommand) executeImplementFeature(ctx context.Context, storyN
 
 		c.savePromptFile(systemPrompt, fmt.Sprintf("%s-implement-feature-attempt-%d-system-prompt.txt", storyNumber, attempt))
 
-		slog.Info("🤖 Calling Claude to implement feature", "attempt", attempt)
-
-		response, err := c.claudeClient.ExecutePromptWithSystem(
-			ctx,
-			systemPrompt,
-			userPrompt,
-			"sonnet",
-			ai.ExecutionMode{AllowedTools: []string{"Read", "Write", "Edit", "Bash"}},
-		)
+		// Execute Claude and save response
+		err = c.executeAndSaveClaudeResponse(ctx, systemPrompt, userPrompt, storyNumber, attempt)
 		if err != nil {
-			return pkgerrors.ErrImplementFeaturesFailed(err)
+			return err
 		}
-
-		c.savePromptFile(response, fmt.Sprintf("%s-implement-feature-attempt-%d-response.txt", storyNumber, attempt))
-
-		slog.Info("✓ Claude finished attempt", "attempt", attempt)
 	}
 
 	// If we get here, we've exhausted all attempts and tests are still failing
