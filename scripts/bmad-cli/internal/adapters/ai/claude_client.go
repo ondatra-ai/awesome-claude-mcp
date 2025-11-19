@@ -145,9 +145,11 @@ func (c *ClaudeClient) streamMessages(ctx context.Context, client claudecode.Cli
 				return result.String(), nil
 			}
 		case <-ctx.Done():
-			slog.Warn("Timeout reached", "error", ctx.Err())
+			partialResult := result.String()
+			slog.Warn("Timeout reached", "error", ctx.Err(), "partial_result_length", len(partialResult))
 
-			return "", fmt.Errorf("context cancelled: %w", ctx.Err())
+			// Return partial result even on timeout so we can save it for debugging
+			return partialResult, fmt.Errorf("context cancelled: %w", ctx.Err())
 		}
 	}
 }
