@@ -63,8 +63,11 @@ func NewUSCommand(container *app.Container) *cobra.Command {
 
 	implementCmd.Flags().BoolP("force", "f", false,
 		"Force recreate the story branch even if it already exists")
-	implementCmd.Flags().StringP("steps", "s", "all",
-		"Comma-separated list of steps to execute (validate_story,create_branch,merge_scenarios,generate_tests,all)")
+
+	stepsHelp := "Comma-separated list of steps to execute " +
+		"(validate_story,create_branch,merge_scenarios,generate_tests," +
+		"validate_tests,validate_scenarios,implement_feature,all)"
+	implementCmd.Flags().StringP("steps", "s", "all", stepsHelp)
 
 	usCmd.AddCommand(createCmd)
 	usCmd.AddCommand(implementCmd)
