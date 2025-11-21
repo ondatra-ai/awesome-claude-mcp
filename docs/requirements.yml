@@ -344,7 +344,7 @@ scenarios:
         - and: "all elements remain accessible and properly positioned"
 
   INT-008:
-    description: "WebSocket connection establishment succeeds"
+    description: "HTTP+SSE session establishment succeeds"
     service: "mcp-service"
     level: "integration"
     priority: "P0"
@@ -363,15 +363,15 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Server runs WebSocket service on configured port"
+        - "Server runs HTTP+SSE service on configured port"
       when:
-        - "Client connects to ws://localhost:8081/mcp"
+        - "Client sends POST to http://localhost:8081/mcp with initialize request"
       then:
-        - "Server establishes WebSocket connection"
-        - "Server assigns unique connection identifier"
+        - "Server establishes MCP session"
+        - "Server assigns unique session identifier via Mcp-Session-Id header"
 
   INT-009:
-    description: "HTTP endpoint initiates WebSocket protocol upgrade"
+    description: "HTTP endpoint establishes SSE stream for server messages"
     service: "mcp-service"
     level: "integration"
     priority: "P0"
@@ -386,11 +386,11 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Server exposes HTTP endpoint at /mcp"
+        - "Server exposes HTTP endpoints at /mcp"
       when:
-        - "Client sends GET request to /mcp"
+        - "Client sends GET request to /mcp for SSE stream"
       then:
-        - "Server initiates WebSocket protocol upgrade"
+        - "Server establishes SSE connection for server-to-client messages"
 
   INT-010:
     description: "Health check returns service status with dependencies"
@@ -476,9 +476,9 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
-        - "Client sends valid MCP protocol message"
+        - "Client sends valid MCP protocol message via HTTP POST"
       then:
         - "Server parses message successfully"
         - "Server extracts message type and protocol version"
@@ -499,9 +499,9 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
-        - "Client sends message with invalid JSON format"
+        - "Client sends message with invalid JSON format via HTTP POST"
       then:
         - "Server returns parsing error immediately"
         - "Error message specifies invalid JSON"
@@ -522,7 +522,7 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
         - "Client sends MCP message missing required protocol_version field"
       then:
@@ -545,7 +545,7 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
         - "Client sends message with field containing invalid value"
       then:
@@ -670,7 +670,7 @@ scenarios:
         - "Response conforms to MCP protocol specification"
 
   INT-022:
-    description: "Server tracks connection state and message activity"
+    description: "Server tracks session state and message activity"
     service: "mcp-service"
     level: "integration"
     priority: "P1"
@@ -685,16 +685,16 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client establishes WebSocket connection"
+        - "Client establishes MCP session via HTTP POST"
       when:
-        - "Client sends messages over connection"
+        - "Client sends messages over session"
       then:
-        - "Server maintains connection state"
-        - "Server tracks message count for connection"
+        - "Server maintains session state"
+        - "Server tracks message count for session"
         - "Server records last activity timestamp"
 
   INT-023:
-    description: "Server responds to WebSocket ping with pong frame"
+    description: "Server responds to keepalive request"
     service: "mcp-service"
     level: "integration"
     priority: "P0"
@@ -709,14 +709,14 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
-        - "Client sends ping frame"
+        - "Client sends keepalive request"
       then:
-        - "Server responds with pong frame immediately"
+        - "Server responds with keepalive acknowledgment immediately"
 
   INT-024:
-    description: "Server closes idle connection after timeout period"
+    description: "Server closes idle session after timeout period"
     service: "mcp-service"
     level: "integration"
     priority: "P0"
@@ -731,15 +731,15 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Server enforces connection timeout of 30 seconds"
-        - "Client maintains idle connection"
+        - "Server enforces session timeout of 30 seconds"
+        - "Client maintains idle session"
       when:
         - "30 seconds elapse without client activity"
       then:
-        - "Server closes connection automatically"
+        - "Server closes session automatically"
 
   INT-025:
-    description: "Server handles client-initiated connection closure gracefully"
+    description: "Server handles client-initiated session closure gracefully"
     service: "mcp-service"
     level: "integration"
     priority: "P0"
@@ -754,13 +754,13 @@ scenarios:
         merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active WebSocket connection"
+        - "Client maintains active MCP session"
       when:
-        - "Client sends close frame"
+        - "Client sends session close request"
       then:
-        - "Server acknowledges close frame"
-        - "Server removes connection from active pool"
-        - "Server releases connection resources"
+        - "Server acknowledges session closure"
+        - "Server removes session from active pool"
+        - "Server releases session resources"
 
   INT-026:
     description: "Server performs graceful shutdown on SIGTERM signal"
@@ -1036,10 +1036,10 @@ scenarios:
       given:
         - "MCP server runs on configured endpoint"
       when:
-        - "Client completes MCP handshake from connection to first message"
+        - "Client completes MCP handshake from HTTP POST to first message"
       then:
-        - "Client establishes WebSocket connection successfully"
-        - "Client sends initialize request in MCP format"
+        - "Client establishes HTTP+SSE session successfully"
+        - "Client sends initialize request in MCP format via POST"
         - "Server returns initialize response in MCP format"
 
   E2E-012:

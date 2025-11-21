@@ -30,7 +30,7 @@ This document captures the current technology stack after migrating from the leg
 - **Framework**: Playwright Request API
 - **Purpose**: Test MCP server endpoints, backend APIs, request/response validation
 - **Tools**: `@playwright/test` with Request fixture
-- **Examples**: WebSocket connections, MCP protocol compliance, error handling
+- **Examples**: HTTP+SSE connections (Streamable HTTP), MCP protocol compliance, error handling
 - **Execution**: Fast (seconds), runs on every commit
 
 ### End-to-End Testing (E2E)
@@ -49,7 +49,7 @@ This document captures the current technology stack after migrating from the leg
 ### MCP Testing Approach (Specific)
 
 **Integration Tests (INT) - Protocol Level:**
-- Direct WebSocket protocol testing
+- Direct HTTP+SSE protocol testing (Streamable HTTP per MCP specification)
 - Message format validation (initialize, tools/list, tools/call, etc.)
 - CORS and connection handling
 - Fast, no external dependencies
@@ -67,8 +67,8 @@ This document captures the current technology stack after migrating from the leg
 - **Configuration**: Requires `.env.test` file with `ANTHROPIC_API_KEY` (copy from `.env.test.example`)
 
 **Key Difference:**
-- ❌ Browser WebSocket (not realistic for MCP)
-- ✅ Claude API client with MCP SDK (realistic LLM↔MCP behavior)
+- ❌ Browser WebSocket (MCP uses HTTP+SSE, not WebSocket)
+- ✅ Claude API client with MCP SDK (realistic LLM↔MCP behavior via Streamable HTTP)
 
 ### Test Level Selection
 **Question**: "Does this test require UI or realistic LLM client simulation?"

@@ -13,7 +13,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 ├── services/
 │   ├── frontend/                       # Next.js App Router frontend (React UI)
 │   ├── backend/                        # Go REST API service (user management, OAuth)
-│   └── mcp-service/                    # Go MCP Protocol Handler (WebSocket, tool execution)
+│   └── mcp-service/                    # Go MCP Protocol Handler (HTTP+SSE, tool execution)
 ├── tests/                              # Playwright and other cross-service tests
 ├── scripts/                            # Utility scripts (linting, PR triage, etc.)
 ├── Makefile                            # Local tasks (lint, test, railway deploy)
@@ -39,7 +39,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 
 ### `services/mcp-service`
 - Go module with Mark3Labs MCP-Go server (`cmd/main.go` entry point)
-- MCP protocol WebSocket endpoints for Claude AI communication
+- MCP protocol HTTP+SSE endpoints for Claude AI communication (Streamable HTTP)
 - Tool registration and Google Docs operations
 - Dockerfile multi-stage build for Railway deployments
 
@@ -100,9 +100,9 @@ services/backend/
 ```text
 services/mcp-service/
 ├── cmd/
-│   └── main.go            # Entry point for MCP WebSocket server
+│   └── main.go            # Entry point for MCP HTTP+SSE server
 ├── internal/
-│   ├── server/            # MCP protocol server and WebSocket handling
+│   ├── server/            # MCP protocol server and HTTP+SSE handling
 │   │   ├── mcp.go        # MCP server setup
 │   │   ├── tools.go      # Tool registration
 │   │   ├── handlers.go   # Tool handlers

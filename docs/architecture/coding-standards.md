@@ -37,7 +37,7 @@ Following the principle that each file should contain exactly one primary entity
 backend/
 ├── cmd/                    # Application entry points
 │   ├── api/main.go        # REST API server
-│   └── mcp/main.go        # MCP WebSocket server
+│   └── mcp/main.go        # MCP HTTP+SSE server
 ├── internal/              # Internal packages (not importable externally)
 │   ├── domain/            # Business domain entities
 │   │   ├── models/        # One model per file
@@ -78,7 +78,7 @@ backend/
 │       │   └── structured_logger.go   # Structured logger implementation
 │       └── server/        # Server infrastructure
 │           ├── http_server.go         # HTTP server setup
-│           └── mcp_server.go          # MCP WebSocket server setup
+│           └── mcp_server.go          # MCP HTTP+SSE server setup
 ├── pkg/                   # Public packages (importable)
 │   ├── errors/            # One error type per file
 │   │   ├── domain_errors.go           # Domain-specific errors
@@ -620,7 +620,7 @@ LOG_FORMAT=json
 ```env
 # Next.js Configuration
 NEXT_PUBLIC_API_URL=http://localhost:8080
-NEXT_PUBLIC_MCP_URL=ws://localhost:8081
+NEXT_PUBLIC_MCP_URL=http://localhost:8081
 
 # Authentication
 NEXTAUTH_URL=http://localhost:3000
@@ -635,7 +635,7 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 # Optional - defaults provided if not set
 NODE_ENV=test
 BACKEND_API_URL=http://localhost:8080
-MCP_SERVER_URL=ws://localhost:8081
+MCP_SERVER_URL=http://localhost:8081
 ```
 
 **Note:** Copy `.env.test.example` to `.env.test` and fill in your Anthropic API key. The `.env.test` file is excluded from git to protect API keys.
@@ -685,11 +685,11 @@ func LoadConfig() (*Config, error) {
 **Integration Tests (INT) - 70% of test pyramid:**
 - Direct API/protocol testing using Playwright Request API
 - No UI interaction required
-- Tests: HTTP endpoints, WebSocket connections, MCP protocol, message validation
+- Tests: HTTP endpoints, HTTP+SSE connections, MCP protocol, message validation
 - Execution: Fast (seconds to minutes), runs in CI on every commit
 - Mock downstream services as needed
 - Framework: Playwright with Request fixture
-- Example: `test('INT-001: should establish WebSocket connection', async ({ request }) => {...})`
+- Example: `test('INT-001: should establish HTTP+SSE connection', async ({ request }) => {...})`
 
 **End-to-End Tests (E2E) - 30% of test pyramid:**
 - Complete user workflows using Playwright Browser API
