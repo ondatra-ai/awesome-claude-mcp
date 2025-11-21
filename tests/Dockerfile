@@ -14,6 +14,7 @@ RUN npm ci
 
 # Copy test files
 COPY e2e/ ./e2e/
+COPY integration/ ./integration/
 
 # Browsers are already installed in the base image
 
