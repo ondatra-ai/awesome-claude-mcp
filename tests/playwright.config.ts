@@ -7,7 +7,8 @@ import { getEnvironmentConfig } from './config/environments';
 const resolvedEnvironment = getEnvironmentConfig(process.env.E2E_ENV);
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: '.',
+  testMatch: ['e2e/**/*.spec.ts', 'integration/**/*.spec.ts'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,13 +15,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/websocket/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/valyala/fasthttp"
 )
 
-// MCPMessage represents an MCP protocol message
+// MCPMessage represents an MCP protocol message (JSON-RPC 2.0)
 type MCPMessage struct {
 	JSONRPC string          `json:"jsonrpc"`
 	Method  string          `json:"method,omitempty"`
@@ -35,24 +37,24 @@ type MCPError struct {
 	Message string `json:"message"`
 }
 
-// ConnectionPool manages WebSocket connections
-type ConnectionPool struct {
-	connections sync.Map
+// SessionPool manages HTTP+SSE sessions
+type SessionPool struct {
+	sessions    sync.Map
 	activeCount atomic.Int64
 	totalCount  atomic.Int64
 }
 
-// ConnectionInfo stores connection metadata
-type ConnectionInfo struct {
-	ID          string
-	Conn        *websocket.Conn
-	ConnectedAt time.Time
-	LastActive  time.Time
+// SessionInfo stores session metadata
+type SessionInfo struct {
+	ID           string
+	CreatedAt    time.Time
+	LastActive   time.Time
 	MessageCount atomic.Int64
-	mu          sync.Mutex
+	SSEChannel   chan []byte
+	mu           sync.Mutex
 }
 
-var pool = &ConnectionPool{}
+var pool = &SessionPool{}
 
 func main() {
 	// Configure logging
@@ -75,18 +77,22 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*", // For testing - production should restrict this
 		AllowMethods: "GET,POST,HEAD,OPTIONS",
-		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
+		AllowHeaders: "Origin,Content-Type,Accept,Authorization,Mcp-Session-Id",
+		ExposeHeaders: "Mcp-Session-Id",
 	}))
 
 	// Health check endpoint
 	app.Get("/health", healthCheckHandler)
 
-	// WebSocket upgrade endpoint for MCP protocol
-	app.Get("/mcp", websocket.New(mcpWebSocketHandler))
+	// MCP HTTP+SSE endpoints (Streamable HTTP per MCP specification)
+	// POST /mcp: Client sends JSON-RPC messages
+	app.Post("/mcp", mcpPostHandler)
+	// GET /mcp: Client establishes SSE stream for server-to-client messages
+	app.Get("/mcp", mcpSSEHandler)
 
 	// Start server in goroutine
 	go func() {
-		log.Info().Str("port", port).Msg("Starting MCP service")
+		log.Info().Str("port", port).Msg("Starting MCP service with HTTP+SSE transport")
 		if err := app.Listen(":" + port); err != nil {
 			log.Fatal().Err(err).Msg("Server failed to start")
 		}
@@ -103,11 +109,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Close all WebSocket connections
-	pool.connections.Range(func(key, value interface{}) bool {
-		if connInfo, ok := value.(*ConnectionInfo); ok {
-			log.Info().Str("connection_id", connInfo.ID).Msg("Closing connection")
-			connInfo.Conn.Close()
+	// Close all SSE sessions
+	pool.sessions.Range(func(key, value interface{}) bool {
+		if sessionInfo, ok := value.(*SessionInfo); ok {
+			log.Info().Str("session_id", sessionInfo.ID).Msg("Closing session")
+			close(sessionInfo.SSEChannel)
 		}
 		return true
 	})
@@ -140,143 +146,180 @@ func healthCheckHandler(c *fiber.Ctx) error {
 	return c.JSON(health)
 }
 
-func mcpWebSocketHandler(c *websocket.Conn) {
-	// Create connection info
-	connInfo := &ConnectionInfo{
-		ID:          uuid.New().String(),
-		Conn:        c,
-		ConnectedAt: time.Now(),
-		LastActive:  time.Now(),
+// mcpPostHandler handles POST /mcp for JSON-RPC messages
+func mcpPostHandler(c *fiber.Ctx) error {
+	// Get or create session ID
+	sessionID := c.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		sessionID = uuid.New().String()
 	}
 
-	// Register connection
-	pool.connections.Store(connInfo.ID, connInfo)
+	// Get or create session
+	session := getOrCreateSession(sessionID)
+
+	// Update session activity
+	session.mu.Lock()
+	session.LastActive = time.Now()
+	session.mu.Unlock()
+	session.MessageCount.Add(1)
+
+	// Set session ID header in response
+	c.Set("Mcp-Session-Id", sessionID)
+
+	// Parse request body
+	body := c.Body()
+	if len(body) == 0 {
+		return c.Status(400).JSON(MCPMessage{
+			JSONRPC: "2.0",
+			Error: &MCPError{
+				Code:    -32700,
+				Message: "Parse error - empty body",
+			},
+		})
+	}
+
+	// Parse MCP message
+	var mcpMsg MCPMessage
+	if err := json.Unmarshal(body, &mcpMsg); err != nil {
+		log.Error().
+			Err(err).
+			Str("session_id", sessionID).
+			Str("body", string(body)).
+			Msg("Failed to parse MCP message")
+
+		return c.Status(400).JSON(MCPMessage{
+			JSONRPC: "2.0",
+			Error: &MCPError{
+				Code:    -32700,
+				Message: "Parse error - invalid JSON",
+			},
+		})
+	}
+
+	// Validate JSON-RPC version
+	if mcpMsg.JSONRPC != "2.0" {
+		return c.Status(400).JSON(MCPMessage{
+			JSONRPC: "2.0",
+			ID:      mcpMsg.ID,
+			Error: &MCPError{
+				Code:    -32600,
+				Message: "Invalid Request - jsonrpc must be '2.0'",
+			},
+		})
+	}
+
+	// Handle notifications (no ID, no response needed)
+	if mcpMsg.Method != "" && mcpMsg.ID == nil {
+		log.Info().
+			Str("session_id", sessionID).
+			Str("method", mcpMsg.Method).
+			Msg("Received MCP notification")
+		// Notifications return 204 No Content
+		return c.SendStatus(204)
+	}
+
+	// Validate method field for requests
+	if mcpMsg.Method == "" && mcpMsg.Result == nil && mcpMsg.Error == nil {
+		return c.Status(400).JSON(MCPMessage{
+			JSONRPC: "2.0",
+			ID:      mcpMsg.ID,
+			Error: &MCPError{
+				Code:    -32600,
+				Message: "Invalid Request - method field is required",
+			},
+		})
+	}
+
+	log.Info().
+		Str("session_id", sessionID).
+		Str("method", mcpMsg.Method).
+		Interface("id", mcpMsg.ID).
+		Msg("Processing MCP request")
+
+	// Handle MCP methods
+	response := handleMCPMethod(mcpMsg, sessionID)
+	return c.JSON(response)
+}
+
+// mcpSSEHandler handles GET /mcp for SSE stream
+func mcpSSEHandler(c *fiber.Ctx) error {
+	// Get session ID from header
+	sessionID := c.Get("Mcp-Session-Id")
+	if sessionID == "" {
+		sessionID = uuid.New().String()
+	}
+
+	// Get or create session
+	session := getOrCreateSession(sessionID)
+
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("SSE stream requested")
+
+	// Set SSE headers
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Mcp-Session-Id", sessionID)
+
+	// Use streaming response
+	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		// Send initial ping to establish connection
+		fmt.Fprintf(w, "event: ping\ndata: {\"type\":\"ping\"}\n\n")
+		w.Flush()
+
+		// Listen for messages on session channel
+		for msg := range session.SSEChannel {
+			fmt.Fprintf(w, "data: %s\n\n", msg)
+			if err := w.Flush(); err != nil {
+				log.Warn().
+					Err(err).
+					Str("session_id", sessionID).
+					Msg("SSE write error, closing stream")
+				return
+			}
+		}
+	})
+
+	return nil
+}
+
+// getOrCreateSession returns existing session or creates new one
+func getOrCreateSession(sessionID string) *SessionInfo {
+	// Try to load existing session
+	if existing, ok := pool.sessions.Load(sessionID); ok {
+		return existing.(*SessionInfo)
+	}
+
+	// Create new session
+	session := &SessionInfo{
+		ID:         sessionID,
+		CreatedAt:  time.Now(),
+		LastActive: time.Now(),
+		SSEChannel: make(chan []byte, 100),
+	}
+
+	// Store session (use LoadOrStore to handle race condition)
+	actual, loaded := pool.sessions.LoadOrStore(sessionID, session)
+	if loaded {
+		// Another goroutine created the session first
+		return actual.(*SessionInfo)
+	}
+
 	pool.activeCount.Add(1)
 	pool.totalCount.Add(1)
 
 	log.Info().
-		Str("connection_id", connInfo.ID).
-		Str("remote_addr", c.RemoteAddr().String()).
-		Msg("WebSocket connection established")
+		Str("session_id", sessionID).
+		Msg("New MCP session created")
 
-	// Cleanup on exit
-	defer func() {
-		pool.connections.Delete(connInfo.ID)
-		pool.activeCount.Add(-1)
-		log.Info().
-			Str("connection_id", connInfo.ID).
-			Int64("messages_processed", connInfo.MessageCount.Load()).
-			Msg("WebSocket connection closed")
-	}()
-
-	// Message handling loop
-	for {
-		messageType, message, err := c.ReadMessage()
-		if err != nil {
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				log.Info().
-					Str("connection_id", connInfo.ID).
-					Msg("Client closed connection")
-			} else {
-				log.Error().
-					Err(err).
-					Str("connection_id", connInfo.ID).
-					Msg("Error reading message")
-			}
-			break
-		}
-
-		// Only handle text messages
-		if messageType != websocket.TextMessage {
-			log.Warn().
-				Str("connection_id", connInfo.ID).
-				Int("message_type", messageType).
-				Msg("Received non-text message")
-			continue
-		}
-
-		// Update connection metadata
-		connInfo.mu.Lock()
-		connInfo.LastActive = time.Now()
-		connInfo.mu.Unlock()
-		connInfo.MessageCount.Add(1)
-
-		// Parse MCP message
-		var mcpMsg MCPMessage
-		if err := json.Unmarshal(message, &mcpMsg); err != nil {
-			log.Error().
-				Err(err).
-				Str("connection_id", connInfo.ID).
-				Str("message", string(message)).
-				Msg("Failed to parse MCP message")
-
-			// Send error response
-			errorResponse := MCPMessage{
-				JSONRPC: "2.0",
-				ID:      nil,
-				Error: &MCPError{
-					Code:    -32700,
-					Message: "Parse error",
-				},
-			}
-			sendMCPMessage(c, connInfo.ID, errorResponse)
-			continue
-		}
-
-		// Validate required fields
-		if mcpMsg.JSONRPC != "2.0" {
-			errorResponse := MCPMessage{
-				JSONRPC: "2.0",
-				ID:      mcpMsg.ID,
-				Error: &MCPError{
-					Code:    -32600,
-					Message: "Invalid Request - jsonrpc must be '2.0'",
-				},
-			}
-			sendMCPMessage(c, connInfo.ID, errorResponse)
-			continue
-		}
-
-		// Handle methods that require ID
-		if mcpMsg.Method != "" && mcpMsg.ID == nil {
-			// This is a notification, not a request
-			log.Info().
-				Str("connection_id", connInfo.ID).
-				Str("method", mcpMsg.Method).
-				Msg("Received MCP notification")
-			continue
-		}
-
-		// Validate method field for requests
-		if mcpMsg.Method == "" && mcpMsg.Result == nil && mcpMsg.Error == nil {
-			errorResponse := MCPMessage{
-				JSONRPC: "2.0",
-				ID:      mcpMsg.ID,
-				Error: &MCPError{
-					Code:    -32600,
-					Message: "Invalid Request - method field is required",
-				},
-			}
-			sendMCPMessage(c, connInfo.ID, errorResponse)
-			continue
-		}
-
-		log.Info().
-			Str("connection_id", connInfo.ID).
-			Str("method", mcpMsg.Method).
-			Interface("id", mcpMsg.ID).
-			Msg("Processing MCP request")
-
-		// Handle MCP methods
-		response := handleMCPMethod(mcpMsg)
-		sendMCPMessage(c, connInfo.ID, response)
-	}
+	return session
 }
 
-func handleMCPMethod(msg MCPMessage) MCPMessage {
+func handleMCPMethod(msg MCPMessage, sessionID string) MCPMessage {
 	switch msg.Method {
 	case "initialize":
-		// Return initialize response
+		// Return initialize response with session ID
 		return MCPMessage{
 			JSONRPC: "2.0",
 			ID:      msg.ID,
@@ -289,7 +332,16 @@ func handleMCPMethod(msg MCPMessage) MCPMessage {
 					"name":    "mcp-service",
 					"version": "1.0.0",
 				},
+				"sessionId": sessionID,
 			},
+		}
+
+	case "ping":
+		// Return pong response
+		return MCPMessage{
+			JSONRPC: "2.0",
+			ID:      msg.ID,
+			Result:  map[string]interface{}{},
 		}
 
 	case "tools/list":
@@ -315,20 +367,26 @@ func handleMCPMethod(msg MCPMessage) MCPMessage {
 	}
 }
 
-func sendMCPMessage(c *websocket.Conn, connID string, msg MCPMessage) {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		log.Error().
-			Err(err).
-			Str("connection_id", connID).
-			Msg("Failed to marshal MCP response")
-		return
+// sendSSEMessage sends a message to a session's SSE channel (for server-initiated messages)
+func sendSSEMessage(sessionID string, msg MCPMessage) error {
+	sessionVal, ok := pool.sessions.Load(sessionID)
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
 	}
 
-	if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
-		log.Error().
-			Err(err).
-			Str("connection_id", connID).
-			Msg("Failed to send MCP response")
+	session := sessionVal.(*SessionInfo)
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	select {
+	case session.SSEChannel <- data:
+		return nil
+	default:
+		return fmt.Errorf("SSE channel full for session: %s", sessionID)
 	}
 }
+
+// Ensure fasthttp import is used
+var _ = fasthttp.StatusOK
