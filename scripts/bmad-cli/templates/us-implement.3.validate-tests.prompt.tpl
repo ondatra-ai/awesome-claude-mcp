@@ -145,21 +145,73 @@ These tests should:
 
 ---
 
-## Validation Summary
+## Step 5: Save Validation Results
 
-After completing validation, provide a summary:
+**CRITICAL**: You MUST save the validation results to a YAML file using the Write tool.
 
+Use the Write tool to create: `{{.TmpDir}}/validate-tests-result.yaml`
+
+### Result Schema
+
+```yaml
+# If ALL issues were fixed or no issues found:
+result: ok
+data:
+  files_scanned: <number>
+  issues_found: <number>
+  issues_fixed: <number>
+  unfixed_issues: []
+
+# If ANY issues could NOT be automatically fixed:
+result: fail
+data:
+  files_scanned: <number>
+  issues_found: <number>
+  issues_fixed: <number>
+  unfixed_issues:
+    - file: "path/to/file.spec.ts"
+      line: 42
+      description: "Brief description of the issue"
+      suggested_fix: "How to fix it manually"
 ```
-Test Validation Summary:
-- Files scanned: [count]
-- Issues found: [count]
-- Issues fixed: [count]
-- Files modified: [list]
-- Skipped (legitimate error tests): [count]
+
+### Example Output Files
+
+**Success case (all issues fixed):**
+```yaml
+result: ok
+data:
+  files_scanned: 5
+  issues_found: 3
+  issues_fixed: 3
+  unfixed_issues: []
 ```
 
-**If any issues could not be automatically fixed**, list them with:
-- File path
-- Line number
-- Issue description
-- Suggested fix
+**Failure case (some issues remain):**
+```yaml
+result: fail
+data:
+  files_scanned: 5
+  issues_found: 4
+  issues_fixed: 2
+  unfixed_issues:
+    - file: "tests/integration/mcp-protocol.spec.ts"
+      line: 156
+      description: "Complex state machine with multiple branches requires manual refactoring"
+      suggested_fix: "Split into separate test cases with explicit state assertions"
+    - file: "tests/e2e/editor-flow.spec.ts"
+      line: 89
+      description: "Dynamic timeout value cannot be statically validated"
+      suggested_fix: "Add explicit timeout assertion with custom message"
+```
+
+---
+
+## Completion Signal
+
+After writing the YAML result file, respond with:
+```
+VALIDATE_TESTS_COMPLETE
+```
+
+Do not add any explanations after this signal.

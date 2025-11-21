@@ -2055,6 +2055,9 @@ var (
 	ErrValidateTests           = errors.New("test validation failed")
 	ErrValidateScenarios       = errors.New("scenario validation failed")
 	ErrMissingScenarioCoverage = errors.New("missing scenario coverage in tests")
+	ErrUnfixedTestIssues       = errors.New("unfixed test quality issues")
+	ErrReadResultFile          = errors.New("failed to read result file")
+	ErrParseResultYAML         = errors.New("failed to parse result YAML")
 )
 
 func ErrBaselineTestsFailedError(output string) error {
@@ -2108,5 +2111,32 @@ func ErrMissingScenarioCoverageError(missingScenarios []string) error {
 		Code:     "MISSING_SCENARIO_COVERAGE",
 		Message:  fmt.Sprintf("missing test coverage for scenarios: %v", missingScenarios),
 		Cause:    ErrMissingScenarioCoverage,
+	}
+}
+
+func ErrUnfixedTestIssuesError(count int) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "UNFIXED_TEST_ISSUES",
+		Message:  fmt.Sprintf("%d issues could not be automatically fixed", count),
+		Cause:    ErrUnfixedTestIssues,
+	}
+}
+
+func ErrReadResultFileFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "READ_RESULT_FILE_FAILED",
+		Message:  "failed to read result file",
+		Cause:    errors.Join(ErrReadResultFile, cause),
+	}
+}
+
+func ErrParseResultYAMLFailed(cause error) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "PARSE_RESULT_YAML_FAILED",
+		Message:  "failed to parse result YAML",
+		Cause:    errors.Join(ErrParseResultYAML, cause),
 	}
 }
