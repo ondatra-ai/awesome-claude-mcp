@@ -234,10 +234,10 @@ func (c *ClaudeClient) handleExecutionResult(resultStr string, err error) (strin
 
 		errStr := err.Error()
 		if strings.Contains(errStr, "token too long") || strings.Contains(errStr, "bufio.Scanner") {
-			return "", fmt.Errorf("response too large: %w", pkgerrors.ErrResponseTooLargeForBuffer(err))
+			return resultStr, fmt.Errorf("response too large: %w", pkgerrors.ErrResponseTooLargeForBuffer(err))
 		}
 
-		return "", fmt.Errorf("claude execution failed: %w", pkgerrors.ErrClaudeExecutionFailed(err))
+		return resultStr, fmt.Errorf("claude execution failed: %w", pkgerrors.ErrClaudeExecutionFailed(err))
 	}
 
 	slog.Info("Claude returned result", "length", len(resultStr))
