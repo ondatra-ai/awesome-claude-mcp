@@ -267,6 +267,17 @@ func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
 func (c *USImplementCommand) executeValidateTests(ctx context.Context) error {
 	slog.Info("Step 5: Validating test quality (Claude-based)")
 
+	// Execute Claude validation
+	err := c.runClaudeTestValidation(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Parse and check validation result
+	return c.checkValidateTestsResult()
+}
+
+func (c *USImplementCommand) runClaudeTestValidation(ctx context.Context) error {
 	// Load template paths from config
 	userPromptPath := c.config.GetString("templates.prompts.validate_tests")
 	systemPromptPath := c.config.GetString("templates.prompts.validate_tests_system")
@@ -275,10 +286,11 @@ func (c *USImplementCommand) executeValidateTests(ctx context.Context) error {
 	userPromptLoader := template.NewTemplateLoader[*ValidateTestsData](userPromptPath)
 	systemPromptLoader := template.NewTemplateLoader[*ValidateTestsData](systemPromptPath)
 
-	// Create validation data
+	// Create validation data with TmpDir for result output
 	validateData := &ValidateTestsData{
 		RequirementsFile: "docs/requirements.yml",
 		TestFilesGlob:    "tests/**/*.spec.ts",
+		TmpDir:           c.runDir.GetTmpOutPath(),
 	}
 
 	// Load prompts
@@ -303,7 +315,7 @@ func (c *USImplementCommand) executeValidateTests(ctx context.Context) error {
 		systemPrompt,
 		userPrompt,
 		"sonnet",
-		ai.ExecutionMode{AllowedTools: []string{"Read", "Edit", "Glob", "Grep"}},
+		ai.ExecutionMode{AllowedTools: []string{"Read", "Edit", "Glob", "Grep", "Write"}},
 	)
 
 	// Save response
@@ -315,9 +327,51 @@ func (c *USImplementCommand) executeValidateTests(ctx context.Context) error {
 		return pkgerrors.ErrValidateTestsFailed(err)
 	}
 
-	slog.Info("✅ Test validation completed")
+	return nil
+}
+
+func (c *USImplementCommand) checkValidateTestsResult() error {
+	resultPath := filepath.Join(c.runDir.GetTmpOutPath(), "validate-tests-result.yaml")
+
+	result, err := parseValidateTestsResult(resultPath)
+	if err != nil {
+		slog.Warn("⚠️  Could not parse validation result file", "path", resultPath, "error", err)
+		slog.Info("✅ Test validation completed (no structured result)")
+
+		return nil
+	}
+
+	// Log validation summary
+	slog.Info("Test validation summary",
+		"files_scanned", result.Data.FilesScanned,
+		"issues_found", result.Data.IssuesFound,
+		"issues_fixed", result.Data.IssuesFixed,
+		"unfixed_count", len(result.Data.UnfixedIssues),
+	)
+
+	// Check if there are unfixed issues
+	if !result.IsSuccess() && result.HasUnfixedIssues() {
+		c.logUnfixedIssues(result.Data.UnfixedIssues)
+
+		return pkgerrors.ErrUnfixedTestIssuesError(len(result.Data.UnfixedIssues))
+	}
+
+	slog.Info("✅ Test validation completed successfully")
 
 	return nil
+}
+
+func (c *USImplementCommand) logUnfixedIssues(issues []UnfixedIssue) {
+	slog.Error("❌ Some issues could not be automatically fixed:")
+
+	for _, issue := range issues {
+		slog.Error("  Unfixed issue",
+			"file", issue.File,
+			"line", issue.Line,
+			"description", issue.Description,
+			"suggested_fix", issue.SuggestedFix,
+		)
+	}
 }
 
 func (c *USImplementCommand) executeValidateScenarios() error {
@@ -356,6 +410,7 @@ func (c *USImplementCommand) executeValidateScenarios() error {
 type ValidateTestsData struct {
 	RequirementsFile string
 	TestFilesGlob    string
+	TmpDir           string
 }
 
 func (c *USImplementCommand) cloneRequirements(outputFile string) error {
