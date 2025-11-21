@@ -7,8 +7,8 @@ This document outlines the full-stack architecture: Foundation & Infrastructure 
 **Architecture Overview:**
 - **Frontend:** Next.js 14 with App Router, React Server Components, and Tailwind CSS
 - **Backend:** Go services handling REST APIs, OAuth flows, and integrations with Google Docs
-- **MCP Service:** Separate Go service implementing MCP Protocol Handler for WebSocket communication with AI clients
-- **Communication:** REST API today with planned WebSocket support for real-time MCP protocol
+- **MCP Service:** Separate Go service implementing MCP Protocol Handler for HTTP+SSE communication with AI clients (per MCP specification)
+- **Communication:** REST API for frontend, HTTP+SSE (Streamable HTTP) for MCP protocol per specification
 - **Infrastructure:** Railway environments (Development, Staging, Production) running Dockerized services with managed networking and TLS
 - **Deployment:** Railway CLI + GitHub Actions workflow (`deploy_to_railway.yml`) for repeatable multi-environment releases
 
@@ -26,7 +26,7 @@ No starter template will be used. We'll use **create-next-app** for the Next.js 
 
 ### Technical Summary
 
-The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and two separate Go backend services. The frontend provides a responsive user interface for authentication, document management, and operation monitoring. The Backend Service handles REST APIs, OAuth flows, and Google Docs integrations. The MCP Service is a separate WebSocket server implementing the Model Context Protocol for AI client communication. All services are built into Docker images and deployed to Railway environments, which supply managed HTTPS endpoints, load balancing, and horizontal scaling without custom cloud infrastructure. This approach keeps the deployment footprint lightweight while satisfying the PRD's goal of reliability through automated builds, staged environments, and centralized observability.
+The MCP Google Docs Editor implements a modern full-stack architecture with Next.js 14 for the frontend and two separate Go backend services. The frontend provides a responsive user interface for authentication, document management, and operation monitoring. The Backend Service handles REST APIs, OAuth flows, and Google Docs integrations. The MCP Service is a separate HTTP server implementing the Model Context Protocol with Streamable HTTP transport (HTTP POST + Server-Sent Events) for AI client communication. All services are built into Docker images and deployed to Railway environments, which supply managed HTTPS endpoints, load balancing, and horizontal scaling without custom cloud infrastructure. This approach keeps the deployment footprint lightweight while satisfying the PRD's goal of reliability through automated builds, staged environments, and centralized observability.
 
 ### High Level Overview
 
@@ -35,10 +35,10 @@ The MCP Google Docs Editor implements a modern full-stack architecture with Next
 3. **Service Architecture:**
    - **Frontend Service:** Next.js container for user interface, authentication flows, and document management UI
    - **Backend Service:** Go API container for user management, OAuth token management, and document operations
-   - **MCP Service:** Separate Go container implementing MCP Protocol Handler with WebSocket server for AI client communication (Claude Desktop, Claude Code, ChatGPT)
+   - **MCP Service:** Separate Go container implementing MCP Protocol Handler with HTTP+SSE transport for AI client communication (Claude Desktop, Claude Code, ChatGPT)
 4. **Primary Data Flow:**
    - **User Flow:** User → Railway HTTPS endpoint → Frontend Service → Backend Service → Google APIs
-   - **AI Client Flow:** Claude/ChatGPT → Railway WSS endpoint → MCP Service → Backend Service → Google APIs
+   - **AI Client Flow:** Claude/ChatGPT → Railway HTTPS endpoint → MCP Service (HTTP+SSE) → Backend Service → Google APIs
 5. **Key Architectural Decisions:**
    - **Service Separation:** Maintain clear boundaries between UI and backend integration responsibilities
    - **Next.js 14 with App Router** to leverage modern React primitives and streaming rendering
@@ -325,16 +325,17 @@ Please confirm or suggest modifications before we proceed.
 ### Backend Components (Go)
 
 #### MCP Protocol Handler
-**Responsibility:** Handle MCP protocol communication with Claude AI
+**Responsibility:** Handle MCP protocol communication with Claude AI per MCP specification
 
 **Key Interfaces:**
-- WebSocket endpoint for bidirectional communication
+- HTTP POST endpoint for receiving JSON-RPC messages from clients
+- Server-Sent Events (SSE) for streaming responses and notifications to clients
 - Tool registration and discovery
 - Request/response message handling
 
 **Dependencies:** Network layer, Command Processor
 
-**Technology Stack:** Go stdlib net/http, gorilla/websocket for WebSocket support
+**Technology Stack:** Go stdlib net/http for HTTP handlers, SSE for streaming responses
 
 #### OAuth Manager
 **Responsibility:** Manage OAuth authentication flow and token lifecycle
@@ -574,12 +575,46 @@ paths:
           description: Invalid authorization code
 
   /mcp:
-    get:
-      summary: MCP WebSocket endpoint
-      description: Upgrades to WebSocket for MCP protocol communication
+    post:
+      summary: MCP Streamable HTTP endpoint
+      description: Receives JSON-RPC messages from MCP clients per MCP specification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jsonrpc:
+                  type: string
+                  example: "2.0"
+                method:
+                  type: string
+                  example: "initialize"
+                id:
+                  type: integer
+                params:
+                  type: object
       responses:
-        '101':
-          description: Switching to WebSocket protocol
+        '200':
+          description: JSON-RPC response or SSE stream
+          content:
+            application/json:
+              schema:
+                type: object
+            text/event-stream:
+              description: Server-Sent Events for streaming responses
+        '202':
+          description: Request accepted, response via SSE stream
+    get:
+      summary: MCP SSE endpoint
+      description: Establishes SSE stream for receiving server-initiated messages
+      responses:
+        '200':
+          description: SSE stream established
+          content:
+            text/event-stream:
+              description: Server-Sent Events stream for notifications
 ```
 
 ## Database Design
