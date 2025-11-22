@@ -60,6 +60,38 @@ This document defines BDD best practices for writing Given-When-Then scenarios i
 
 ---
 
+### MCP E2E Tests with Claude SDK
+
+**What**: Tests where Claude decides which MCP tools to use
+**How**: Claude SDK (`@anthropic-ai/sdk`) + MCP Client (`@modelcontextprotocol/sdk`)
+**No Browser Required**: Playwright used only for test framework (assertions, structure)
+
+**Architecture**:
+```
+Test → Claude SDK → Claude decides tool → MCP Client → MCP Server → Google Docs
+```
+
+**Examples**:
+```gherkin
+✅ Given: MCP server runs with document operation tools
+   When: Claude API client performs complete workflow from initialize to tool call
+   Then: Server processes entire flow and returns valid tool result
+
+✅ Given: MCP server accepts HTTP connections on configured endpoint
+   When: Claude API client executes document operation via MCP tools
+   Then: Server returns tool result within 2 seconds round-trip time
+```
+
+**Keywords**: Claude API client, MCP server, tool result, document operation
+
+**Key Differences from INT tests**:
+- INT tests: Direct JSON-RPC calls to MCP server
+- E2E tests: Claude decides which tools to call based on user prompt
+
+**See**: [MCP E2E Testing Guide](./mcp-e2e-testing.md) for implementation details.
+
+---
+
 ## Given-When-Then Format
 
 ### Structure Rules
@@ -197,6 +229,7 @@ then: "Server accepts connections up to configured limit"
 - Client, User, System, Server
 - Administrator, External System
 - Claude (for Claude.ai interactions)
+- Claude API client (for MCP E2E tests via SDK)
 
 ### Actions
 - connect, send, receive, respond, reject
@@ -294,3 +327,4 @@ Every scenario must pass ALL these checks:
 - [Cucumber - BDD Documentation](https://cucumber.io/docs/bdd/)
 - [Coding Standards - Testing](./coding-standards.md#testing-standards)
 - [Tech Stack - Testing Strategy](./tech-stack.md#testing-strategy)
+- [MCP E2E Testing with Claude SDK](./mcp-e2e-testing.md)

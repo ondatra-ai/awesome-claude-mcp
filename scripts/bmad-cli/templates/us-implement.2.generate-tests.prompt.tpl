@@ -19,6 +19,7 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
   - Read(`docs/architecture/source-tree.md`) - Source Tree Structure
   - Read(`docs/architecture/coding-standards.md`) - Coding Standards
   - Read(`docs/architecture/tech-stack.md`) - Tech Stack
+  - Read(`docs/architecture/mcp-e2e-testing.md`) - MCP E2E Testing with Claude SDK
 
 2. **Determine Correct Service**:
    - Review which service this scenario actually tests (frontend, backend, mcp-service)
@@ -48,11 +49,19 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
    - **@modelcontextprotocol/sdk** - If testing MCP protocol
    - **@anthropic-ai/sdk** - If testing with Claude API simulation
 
-   **For E2E tests:**
+   **For UI E2E tests:**
    - **Next.js** (`/vercel/next.js`) - If testing frontend routing/rendering
    - **React Hook Form** - If testing forms
    - **Zod** - If validating form schemas
    - **Zustand** - If testing state management
+
+   **For MCP E2E tests (Claude SDK):**
+   - **@anthropic-ai/sdk** - Claude API client for LLM-driven tool selection
+   - **@modelcontextprotocol/sdk** - MCP client for tool execution
+   - Claude decides which tools to call based on prompts
+   - Tests real LLM → MCP Server → Google Docs flow
+   - No browser required (Playwright for test structure and assertions only)
+   - See `docs/architecture/mcp-e2e-testing.md` for implementation patterns
 
    **For Backend/MCP service tests:**
    - **Go** patterns for backend testing (if applicable)
