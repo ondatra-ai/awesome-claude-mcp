@@ -146,12 +146,22 @@ Based on the scenario metadata:
 - Level: `{{.Level}}`
 - Service: `{{.Service}}`
 
-**Target file**: `tests/{{.Level}}/{{.Service}}.spec.ts`
+**Determine target file:**
+- If level=`e2e` AND service=`mcp-service` → `tests/e2e/mcp-claude-sdk.spec.ts`
+- Otherwise → `tests/{{.Level}}/{{.Service}}.spec.ts`
+
+**⚠️ IMPORTANT**: MCP E2E tests go to `mcp-claude-sdk.spec.ts`, NOT `mcp-service.spec.ts`
 
 ---
 
 ## Step 2: Read Existing Test File (if exists)
 
+**For MCP E2E tests (level=e2e, service=mcp-service):**
+```
+Read tests/e2e/mcp-claude-sdk.spec.ts
+```
+
+**For all other tests:**
 ```
 Read tests/{{.Level}}/{{.Service}}.spec.ts
 ```
@@ -168,6 +178,18 @@ If the file doesn't exist, you'll create it with proper structure.
 ---
 
 ## Step 3: Generate Test Code
+
+### CRITICAL: Determine Test Pattern Based on Level and Service
+
+**Before writing any code, determine which pattern to use:**
+
+| Level | Service | Pattern | DO NOT USE |
+|-------|---------|---------|------------|
+| `integration` | any | Playwright Request API | - |
+| `e2e` | `frontend` | Playwright Browser API | - |
+| `e2e` | `mcp-service` | **Claude SDK + MCP SDK** | ❌ Playwright Request API |
+
+---
 
 ### For Integration Tests (API)
 Use Playwright Request API (`{ request }`):
@@ -186,7 +208,88 @@ test('{{.ScenarioID}}: {{.Description}}', async ({ request }) => {
 });
 ```
 
-### For E2E Tests (Browser)
+---
+
+### For MCP E2E Tests (Claude SDK) - MANDATORY FOR e2e + mcp-service
+
+**⚠️ CRITICAL: When level=`e2e` AND service=`mcp-service`, you MUST use Claude SDK.**
+
+**❌ DO NOT:**
+- Use Playwright Request API (`{ request }`)
+- Use direct HTTP calls to MCP endpoints
+- Copy patterns from existing HTTP-based tests
+
+**✅ MUST USE:**
+- `@anthropic-ai/sdk` for Claude API client
+- `@modelcontextprotocol/sdk` for MCP client
+- Claude decides which tools to call (LLM-driven tool selection)
+
+**Target file**: `tests/e2e/mcp-claude-sdk.spec.ts` (NOT `mcp-service.spec.ts`)
+
+**Required imports:**
+```typescript
+import { test, expect } from '@playwright/test';
+import Anthropic from '@anthropic-ai/sdk';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { getEnvironmentConfig } from '../config/environments';
+```
+
+**Test pattern:**
+```typescript
+test('{{.ScenarioID}}: {{.Description}}', async () => {
+  const { mcpServiceUrl } = getEnvironmentConfig(process.env.E2E_ENV);
+
+  // Given: MCP server runs with document operation tools
+  const mcpClient = new Client({ name: 'e2e-test', version: '1.0.0' });
+  const transport = new SSEClientTransport(new URL(`${mcpServiceUrl}/mcp`));
+  await mcpClient.connect(transport);
+
+  // Get tools from MCP server and convert to Claude format
+  const { tools } = await mcpClient.listTools();
+  const claudeTools = tools.map(tool => ({
+    name: tool.name,
+    description: tool.description || '',
+    input_schema: tool.inputSchema as Anthropic.Tool.InputSchema,
+  }));
+
+  // When: Claude API client performs workflow
+  const anthropic = new Anthropic();
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    tools: claudeTools,
+    messages: [{
+      role: 'user',
+      content: 'Your prompt here based on scenario'
+    }]
+  });
+
+  // Then: Verify Claude selected correct tool and MCP returned valid result
+  const toolUse = response.content.find(block => block.type === 'tool_use');
+  expect(toolUse, 'Claude should use a tool').toBeDefined();
+
+  // Execute tool via MCP
+  const result = await mcpClient.callTool({
+    name: toolUse.name,
+    arguments: toolUse.input as Record<string, unknown>,
+  });
+
+  expect(result.isError, 'Tool call should succeed').toBeFalsy();
+
+  // Cleanup
+  await mcpClient.close();
+});
+```
+
+**See `docs/architecture/mcp-e2e-testing.md` for complete patterns including:**
+- Multi-tool workflows
+- Error handling
+- Helper utilities (ClaudeMcpSession)
+
+---
+
+### For UI E2E Tests (Browser)
 Use Playwright Browser API (`{ page }`):
 
 ```typescript
