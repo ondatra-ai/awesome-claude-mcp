@@ -2049,9 +2049,15 @@ func ErrInvalidSteps(cause error) error {
 
 // Test Execution Errors.
 var (
-	ErrBaselineTestsFailed = errors.New("baseline tests failed")
-	ErrGeneratedTestsPass  = errors.New("generated tests should fail but passed")
-	ErrRunTests            = errors.New("failed to run tests")
+	ErrBaselineTestsFailed     = errors.New("baseline tests failed")
+	ErrGeneratedTestsPass      = errors.New("generated tests should fail but passed")
+	ErrRunTests                = errors.New("failed to run tests")
+	ErrValidateTests           = errors.New("test validation failed")
+	ErrValidateScenarios       = errors.New("scenario validation failed")
+	ErrMissingScenarioCoverage = errors.New("missing scenario coverage in tests")
+	ErrUnfixedTestIssues       = errors.New("unfixed test quality issues")
+	ErrReadResultFile          = errors.New("failed to read result file")
+	ErrParseResultYAML         = errors.New("failed to parse result YAML")
 )
 
 func ErrBaselineTestsFailedError(output string) error {
@@ -2078,5 +2084,59 @@ func ErrRunTestsFailed(phase string, cause error) error {
 		Code:     "RUN_TESTS_FAILED",
 		Message:  "failed to run tests during " + phase + " phase",
 		Cause:    errors.Join(ErrRunTests, cause),
+	}
+}
+
+func ErrValidateTestsFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "VALIDATE_TESTS_FAILED",
+		Message:  "test validation failed - tests contain quality issues",
+		Cause:    errors.Join(ErrValidateTests, cause),
+	}
+}
+
+func ErrValidateScenariosFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "VALIDATE_SCENARIOS_FAILED",
+		Message:  "scenario validation failed",
+		Cause:    errors.Join(ErrValidateScenarios, cause),
+	}
+}
+
+func ErrMissingScenarioCoverageError(missingScenarios []string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "MISSING_SCENARIO_COVERAGE",
+		Message:  fmt.Sprintf("missing test coverage for scenarios: %v", missingScenarios),
+		Cause:    ErrMissingScenarioCoverage,
+	}
+}
+
+func ErrUnfixedTestIssuesError(count int) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "UNFIXED_TEST_ISSUES",
+		Message:  fmt.Sprintf("%d issues could not be automatically fixed", count),
+		Cause:    ErrUnfixedTestIssues,
+	}
+}
+
+func ErrReadResultFileFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "READ_RESULT_FILE_FAILED",
+		Message:  "failed to read result file",
+		Cause:    errors.Join(ErrReadResultFile, cause),
+	}
+}
+
+func ErrParseResultYAMLFailed(cause error) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "PARSE_RESULT_YAML_FAILED",
+		Message:  "failed to parse result YAML",
+		Cause:    errors.Join(ErrParseResultYAML, cause),
 	}
 }
