@@ -106,31 +106,78 @@ func (c *USImplementCommand) executeImplementationSteps(
 	storyNumber string,
 	steps *ExecutionSteps,
 ) error {
-	// Step 3: Merge scenarios
-	if steps.MergeScenarios {
-		_, err := c.executeMergeScenarios(ctx, storyNumber)
-		if err != nil {
-			return err
-		}
+	// Execute each enabled step in order
+	err := c.runMergeScenariosIfEnabled(ctx, storyNumber, steps)
+	if err != nil {
+		return err
 	}
 
-	// Step 4: Generate tests
-	if steps.GenerateTests {
-		err := c.executeGenerateTests(ctx)
-		if err != nil {
-			return err
-		}
+	err = c.runGenerateTestsIfEnabled(ctx, steps)
+	if err != nil {
+		return err
 	}
 
-	// Step 5: Implement feature
-	if steps.ImplementFeature {
-		err := c.executeImplementFeature(ctx, storyNumber)
-		if err != nil {
-			return err
-		}
+	err = c.runValidateTestsIfEnabled(ctx, steps)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	err = c.runValidateScenariosIfEnabled(steps)
+	if err != nil {
+		return err
+	}
+
+	return c.runImplementFeatureIfEnabled(ctx, storyNumber, steps)
+}
+
+func (c *USImplementCommand) runMergeScenariosIfEnabled(
+	ctx context.Context,
+	storyNumber string,
+	steps *ExecutionSteps,
+) error {
+	if !steps.MergeScenarios {
+		return nil
+	}
+
+	_, err := c.executeMergeScenarios(ctx, storyNumber)
+
+	return err
+}
+
+func (c *USImplementCommand) runGenerateTestsIfEnabled(ctx context.Context, steps *ExecutionSteps) error {
+	if !steps.GenerateTests {
+		return nil
+	}
+
+	return c.executeGenerateTests(ctx)
+}
+
+func (c *USImplementCommand) runValidateTestsIfEnabled(ctx context.Context, steps *ExecutionSteps) error {
+	if !steps.ValidateTests {
+		return nil
+	}
+
+	return c.executeValidateTests(ctx)
+}
+
+func (c *USImplementCommand) runValidateScenariosIfEnabled(steps *ExecutionSteps) error {
+	if !steps.ValidateScenarios {
+		return nil
+	}
+
+	return c.executeValidateScenarios()
+}
+
+func (c *USImplementCommand) runImplementFeatureIfEnabled(
+	ctx context.Context,
+	storyNumber string,
+	steps *ExecutionSteps,
+) error {
+	if !steps.ImplementFeature {
+		return nil
+	}
+
+	return c.executeImplementFeature(ctx, storyNumber)
 }
 
 func (c *USImplementCommand) executeValidateStory(storyNumber string) error {
@@ -215,6 +262,155 @@ func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *USImplementCommand) executeValidateTests(ctx context.Context) error {
+	slog.Info("Step 5: Validating test quality (Claude-based)")
+
+	// Execute Claude validation
+	err := c.runClaudeTestValidation(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Parse and check validation result
+	return c.checkValidateTestsResult()
+}
+
+func (c *USImplementCommand) runClaudeTestValidation(ctx context.Context) error {
+	// Load template paths from config
+	userPromptPath := c.config.GetString("templates.prompts.validate_tests")
+	systemPromptPath := c.config.GetString("templates.prompts.validate_tests_system")
+
+	// Create template loaders
+	userPromptLoader := template.NewTemplateLoader[*ValidateTestsData](userPromptPath)
+	systemPromptLoader := template.NewTemplateLoader[*ValidateTestsData](systemPromptPath)
+
+	// Create validation data with TmpDir for result output
+	validateData := &ValidateTestsData{
+		RequirementsFile: "docs/requirements.yml",
+		TestFilesGlob:    "tests/**/*.spec.ts",
+		TmpDir:           c.runDir.GetTmpOutPath(),
+	}
+
+	// Load prompts
+	userPrompt, err := userPromptLoader.LoadTemplate(validateData)
+	if err != nil {
+		return pkgerrors.ErrLoadPromptsFailed(err)
+	}
+
+	c.savePromptFile(userPrompt, "validate-tests-user-prompt.txt")
+
+	systemPrompt, err := systemPromptLoader.LoadTemplate(validateData)
+	if err != nil {
+		return pkgerrors.ErrLoadPromptsFailed(err)
+	}
+
+	c.savePromptFile(systemPrompt, "validate-tests-system-prompt.txt")
+
+	slog.Info("🤖 Calling Claude to validate tests")
+
+	response, err := c.claudeClient.ExecutePromptWithSystem(
+		ctx,
+		systemPrompt,
+		userPrompt,
+		"sonnet",
+		ai.ExecutionMode{AllowedTools: []string{"Read", "Edit", "Glob", "Grep", "Write"}},
+	)
+
+	// Save response
+	if response != "" {
+		c.savePromptFile(response, "validate-tests-response.txt")
+	}
+
+	if err != nil {
+		return pkgerrors.ErrValidateTestsFailed(err)
+	}
+
+	return nil
+}
+
+func (c *USImplementCommand) checkValidateTestsResult() error {
+	resultPath := filepath.Join(c.runDir.GetTmpOutPath(), "validate-tests-result.yaml")
+
+	result, err := parseValidateTestsResult(resultPath)
+	if err != nil {
+		slog.Warn("⚠️  Could not parse validation result file", "path", resultPath, "error", err)
+		slog.Info("✅ Test validation completed (no structured result)")
+
+		return nil
+	}
+
+	// Log validation summary
+	slog.Info("Test validation summary",
+		"files_scanned", result.Data.FilesScanned,
+		"issues_found", result.Data.IssuesFound,
+		"issues_fixed", result.Data.IssuesFixed,
+		"unfixed_count", len(result.Data.UnfixedIssues),
+	)
+
+	// Check if there are unfixed issues
+	if !result.IsSuccess() && result.HasUnfixedIssues() {
+		c.logUnfixedIssues(result.Data.UnfixedIssues)
+
+		return pkgerrors.ErrUnfixedTestIssuesError(len(result.Data.UnfixedIssues))
+	}
+
+	slog.Info("✅ Test validation completed successfully")
+
+	return nil
+}
+
+func (c *USImplementCommand) logUnfixedIssues(issues []UnfixedIssue) {
+	slog.Error("❌ Some issues could not be automatically fixed:")
+
+	for _, issue := range issues {
+		slog.Error("  Unfixed issue",
+			"file", issue.File,
+			"line", issue.Line,
+			"description", issue.Description,
+			"suggested_fix", issue.SuggestedFix,
+		)
+	}
+}
+
+func (c *USImplementCommand) executeValidateScenarios() error {
+	slog.Info("Step 6: Validating scenario coverage (Go-based)")
+
+	validator := NewScenarioValidator("docs/requirements.yml", "tests")
+
+	result, err := validator.Validate()
+	if err != nil {
+		return pkgerrors.ErrValidateScenariosFailed(err)
+	}
+
+	// Log results
+	slog.Info("Scenario validation results",
+		"total_scenarios", result.TotalScenarios,
+		"covered", result.CoveredCount,
+		"missing", len(result.MissingScenarios),
+	)
+
+	if len(result.MissingScenarios) > 0 {
+		slog.Warn("⚠️  Missing scenario coverage:")
+
+		for _, missing := range result.MissingScenarios {
+			slog.Warn("  - " + missing)
+		}
+
+		return pkgerrors.ErrMissingScenarioCoverageError(result.MissingScenarios)
+	}
+
+	slog.Info("✅ All scenarios have test coverage")
+
+	return nil
+}
+
+// ValidateTestsData holds the data for the validate tests prompt.
+type ValidateTestsData struct {
+	RequirementsFile string
+	TestFilesGlob    string
+	TmpDir           string
 }
 
 func (c *USImplementCommand) cloneRequirements(outputFile string) error {
