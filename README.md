@@ -98,11 +98,8 @@ docker compose down
 Create a `.env.test` file in the project root with required environment variables:
 
 ```bash
-# Copy the example file and add your API key
+# Copy the example file for test configuration
 cp .env.test.example .env.test
-
-# Then edit .env.test and add your Anthropic API key
-# ANTHROPIC_API_KEY=your_actual_api_key_here
 ```
 
 **Running Tests:**

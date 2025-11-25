@@ -19,8 +19,7 @@ This document captures the current technology stack after migrating from the leg
 | Validation | Zod | 3.x | Schema validation | Shared between client/server |
 | HTTP Client | Fetch API / Axios | 1.x | REST calls to backend | `lib/api.ts` |
 | Testing | Jest + Playwright | latest | Unit + INT + E2E | Playwright config under `tests/` |
-| MCP Client | @modelcontextprotocol/sdk | latest | MCP client for E2E tests | TypeScript SDK for MCP protocol |
-| Claude SDK | @anthropic-ai/sdk | latest | Claude API for E2E LLM simulation | Used in MCP E2E tests |
+| MCP Client | @modelcontextprotocol/sdk | latest | MCP protocol E2E testing | TypeScript SDK for MCP protocol |
 | Linting | ESLint + Prettier | latest | Code quality | `npm run lint`, `npm run format` |
 
 ## Testing Strategy
@@ -39,8 +38,7 @@ This document captures the current technology stack after migrating from the leg
 - **Purpose**: Test complete workflows, user experience, LLM↔MCP integration
 - **Tools**:
   - `@playwright/test` with Page fixture (for frontend workflows)
-  - `@anthropic-ai/sdk` (for MCP server testing with real LLM simulation)
-  - `@modelcontextprotocol/sdk` (for MCP client implementation)
+  - `@modelcontextprotocol/sdk` (for MCP protocol E2E testing)
 - **Examples**:
   - **MCP E2E**: Claude API client → MCP Server → Tools → Response (simulates real LLM behavior)
   - **Frontend E2E**: User authentication flows, document management UI, operations
@@ -55,26 +53,25 @@ This document captures the current technology stack after migrating from the leg
 - Fast, no external dependencies
 - **Example**: `tests/integration/mcp-service.spec.ts`
 
-**End-to-End Tests (E2E) - LLM Simulation:**
+**End-to-End Tests (E2E) - MCP Protocol Testing:**
 - Use `@playwright/test` as test runner framework (assertions, test structure)
-- Use **@anthropic-ai/sdk** with MCP TypeScript SDK for actual testing
-- Simulate real Claude API client connecting to MCP server
-- Test complete flow: Claude → MCP Server → Tool Execution → Response → Claude
-- Verify tool calling works as LLM would use it in production
-- Tests actual tool invocation and result handling
+- Use **@modelcontextprotocol/sdk** with `McpClient` helper for MCP testing
+- Test MCP protocol compliance via HTTP+SSE transport
+- Test complete flow: MCP Client → MCP Server → Tool Execution → Response
+- Verify tool listing, tool calls, and response handling
 - **NO browser automation required** - Playwright used only as test framework
-- **Example**: `tests/e2e/mcp-integration.spec.ts`
-- **Configuration**: Requires `.env.test` file with `ANTHROPIC_API_KEY` (copy from `.env.test.example`)
+- **Example**: `tests/e2e/mcp-service.spec.ts`
+- **Helper**: `tests/e2e/helpers/mcp-client.ts` provides `McpClient` wrapper
 
 **Key Difference:**
 - ❌ Browser WebSocket (MCP uses HTTP+SSE, not WebSocket)
-- ✅ Claude API client with MCP SDK (realistic LLM↔MCP behavior via Streamable HTTP)
+- ✅ MCP SDK client via Streamable HTTP transport
 
 ### Test Level Selection
-**Question**: "Does this test require UI or realistic LLM client simulation?"
+**Question**: "Does this test require UI or MCP protocol testing?"
 - **NO** → Integration (INT) - use Playwright Request API for protocol testing
 - **YES (Frontend)** → End-to-End (E2E) - use Playwright Browser API
-- **YES (MCP)** → End-to-End (E2E) - use Claude API client with MCP SDK
+- **YES (MCP)** → End-to-End (E2E) - use `@modelcontextprotocol/sdk` with `McpClient` helper
 
 ## Backend Stack (Go)
 

@@ -45,8 +45,7 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
 
    **For Integration (INT) tests:**
    - **Fetch API** or **Axios** - HTTP client patterns (if testing REST APIs)
-   - **@modelcontextprotocol/sdk** - If testing MCP protocol
-   - **@anthropic-ai/sdk** - If testing with Claude API simulation
+   - **@modelcontextprotocol/sdk** - If testing MCP protocol E2E
 
    **For E2E tests:**
    - **Next.js** (`/vercel/next.js`) - If testing frontend routing/rendering
@@ -75,8 +74,8 @@ Generate a Playwright test for scenario **{{.ScenarioID}}** and update the requi
    # 2. Fetch additional libraries based on test type
    # Example for MCP E2E tests:
    context7.get-library-docs(
-     libraryID: "/anthropic-ai/sdk",  # Use resolver if needed
-     topic: "testing with Claude API, message handling, tool calling",
+     libraryID: "/modelcontextprotocol/sdk",  # Use resolver if needed
+     topic: "MCP client, HTTP+SSE transport, tool calling, message handling",
      tokens: 1500
    )
    ```

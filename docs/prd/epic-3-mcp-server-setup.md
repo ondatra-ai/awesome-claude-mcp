@@ -30,11 +30,11 @@
 - MCP server error handling verified with invalid tool names, parameters, and message formats
 
 **Technical Approach:**
-- Install and configure `@anthropic-ai/sdk` for Claude API access
-- Install and configure `@modelcontextprotocol/sdk` for MCP client
+- Install and configure `@modelcontextprotocol/sdk` for MCP E2E testing
 - Use `@playwright/test` as test runner framework (no browser automation)
-- Create test client that connects to MCP server as Claude would
-- Simulate realistic LLM tool calling patterns (list tools → call tool → process response)
+- Use `McpClient` helper at `tests/e2e/helpers/mcp-client.ts`
+- Create test client that connects to MCP server via HTTP+SSE transport
+- Test MCP protocol patterns (list tools → call tool → process response)
 - Build test fixtures for different tool schemas and expected responses
 - Create example tests showing complete Claude ↔ MCP Server ↔ Tool flow
 - Document LLM simulation patterns for future test development
