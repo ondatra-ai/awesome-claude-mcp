@@ -11,6 +11,12 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+# Test stage - has deps + source but doesn't build
+FROM base AS test
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
 # Rebuild the source code only when needed
 FROM base AS builder
 ARG NEXT_PUBLIC_API_URL
