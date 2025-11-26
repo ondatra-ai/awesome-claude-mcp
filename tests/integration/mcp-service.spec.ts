@@ -106,10 +106,10 @@ test.describe('MCP Service Integration Tests', () => {
         const status = response.status;
 
         // Server should support SSE (200 with event-stream)
-        expect([200, 204, 202]).toContain(status);
+        expect(status, 'SSE endpoint should return 200 status').toBe(200);
 
-        if (status === 200 && contentType) {
-          expect(contentType).toContain('text/event-stream');
+        if (contentType) {
+          expect(contentType, 'SSE response should have text/event-stream content type').toContain('text/event-stream');
         }
       } catch (error) {
         clearTimeout(timeoutId);
@@ -285,12 +285,12 @@ test.describe('MCP Service Integration Tests', () => {
 
       // Then: Server returns response (MCP uses 200 with error in body per JSON-RPC)
       // JSON-RPC errors are returned with 200 status and error object in body
-      expect([200, 400]).toContain(response.status());
+      expect(response.status(), 'MCP protocol uses 200 status even for errors per JSON-RPC spec').toBe(200);
 
       // Then: Error message specifies validation issue
       const result = await response.json();
       // Server may return error or handle gracefully with default protocolVersion
-      expect(result).toHaveProperty('jsonrpc', '2.0');
+      expect(result, 'Response must be valid JSON-RPC 2.0 format').toHaveProperty('jsonrpc', '2.0');
     }
   );
 
@@ -311,13 +311,13 @@ test.describe('MCP Service Integration Tests', () => {
       });
 
       // Then: Server returns response (MCP uses 200 with error in body per JSON-RPC)
-      expect([200, 400]).toContain(response.status());
+      expect(response.status(), 'MCP protocol uses 200 status even for errors per JSON-RPC spec').toBe(200);
 
       // Then: Response contains error details in JSON-RPC format
       const result = await response.json();
-      expect(result).toHaveProperty('jsonrpc', '2.0');
+      expect(result, 'Response must be valid JSON-RPC 2.0 format').toHaveProperty('jsonrpc', '2.0');
       // Server should return error for unknown method
-      expect(result).toHaveProperty('error');
+      expect(result, 'Response should contain error for invalid method').toHaveProperty('error');
     }
   );
 
@@ -398,12 +398,12 @@ test.describe('MCP Service Integration Tests', () => {
 
       // When: Server detects validation error
       // MCP uses JSON-RPC which returns 200 with error in body
-      expect([200, 400]).toContain(response.status());
+      expect(response.status(), 'MCP protocol uses 200 status even for validation errors per JSON-RPC spec').toBe(200);
       const result = await response.json();
 
       // Then: Server returns error response in MCP format
-      expect(result).toHaveProperty('jsonrpc', '2.0');
-      expect(result).toHaveProperty('error');
+      expect(result, 'Response must be valid JSON-RPC 2.0 format').toHaveProperty('jsonrpc', '2.0');
+      expect(result, 'Response should contain error for missing method field').toHaveProperty('error');
 
       // Then: Error response includes error code
       expect(result.error).toHaveProperty('code');
@@ -925,6 +925,1460 @@ test.describe('MCP Service Integration Tests', () => {
       const throughput = (processed / elapsed) * 1000;
       expect(processed).toBeGreaterThan(250); // At least 85% success
       expect(throughput).toBeGreaterThan(50); // At least 50 msg/s over HTTP
+    }
+  );
+
+  test(
+    'INT-037: Server responds to tools/list request with tool definitions',
+    async ({ request }) => {
+      // Given: MCP server accepts HTTP connections on port 8081
+
+      // When: Test client sends tools/list request to /mcp endpoint
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: 1,
+        },
+      });
+
+      // Then: Server responds with available tool definitions
+      expect(
+        response.status(),
+        'Server should respond with 200 status'
+      ).toBe(200);
+
+      const result = await response.json();
+
+      // Verify JSON-RPC 2.0 format
+      expect(
+        result,
+        'Response must be valid JSON-RPC 2.0 format'
+      ).toHaveProperty('jsonrpc', '2.0');
+
+      expect(
+        result,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 1);
+
+      // Verify response contains tools list
+      expect(
+        result,
+        'Response must include result field'
+      ).toHaveProperty('result');
+
+      expect(
+        result.result,
+        'Result must contain tools array'
+      ).toHaveProperty('tools');
+
+      expect(
+        Array.isArray(result.result.tools),
+        'Tools must be an array'
+      ).toBeTruthy();
+
+      expect(
+        result.result.tools.length,
+        'Tools array should contain at least one tool definition'
+      ).toBeGreaterThan(0);
+
+      // Verify each tool has required fields
+      for (const tool of result.result.tools) {
+        expect(
+          tool,
+          'Each tool must have a name field'
+        ).toHaveProperty('name');
+
+        expect(
+          tool,
+          'Each tool must have a description field'
+        ).toHaveProperty('description');
+
+        expect(
+          tool,
+          'Each tool must have an inputSchema field'
+        ).toHaveProperty('inputSchema');
+      }
+    }
+  );
+
+  test(
+    'INT-038: Server streams tool catalog via SSE with schema definitions',
+    async ({ request }) => {
+      // Given: MCP server maintains active HTTP+SSE connection
+
+      // First establish a session via POST /mcp initialize
+      const initResponse = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'initialize',
+          id: 1,
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'test-client', version: '1.0.0' },
+          },
+        },
+      });
+
+      expect(
+        initResponse.ok(),
+        'Initialize request should succeed'
+      ).toBeTruthy();
+
+      // When: Test client requests tool catalog via Server-Sent Events
+      // Send tools/list request via POST and receive response
+      const toolsListResponse = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: 2,
+        },
+      });
+
+      // Then: Server streams tool definitions with name, description, and inputSchema fields
+      expect(
+        toolsListResponse.status(),
+        'Server should respond with 200 status for tools/list'
+      ).toBe(200);
+
+      const result = await toolsListResponse.json();
+
+      // Verify JSON-RPC 2.0 response format
+      expect(
+        result,
+        'Response must be valid JSON-RPC 2.0 format'
+      ).toHaveProperty('jsonrpc', '2.0');
+
+      expect(
+        result,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 2);
+
+      expect(
+        result,
+        'Response must not contain error'
+      ).not.toHaveProperty('error');
+
+      expect(
+        result,
+        'Response must include result field'
+      ).toHaveProperty('result');
+
+      expect(
+        result.result,
+        'Result must contain tools array'
+      ).toHaveProperty('tools');
+
+      const tools = result.result.tools;
+
+      expect(
+        Array.isArray(tools),
+        'Tools must be an array'
+      ).toBeTruthy();
+
+      expect(
+        tools.length,
+        'Tools array should contain at least one tool definition'
+      ).toBeGreaterThan(0);
+
+      // Verify each tool has required schema fields: name, description, inputSchema
+      for (const tool of tools) {
+        expect(
+          tool,
+          'Each tool must have name field'
+        ).toHaveProperty('name');
+
+        expect(
+          typeof tool.name,
+          'Tool name must be a string'
+        ).toBe('string');
+
+        expect(
+          tool.name.length,
+          'Tool name must not be empty'
+        ).toBeGreaterThan(0);
+
+        expect(
+          tool,
+          'Each tool must have description field'
+        ).toHaveProperty('description');
+
+        expect(
+          typeof tool.description,
+          'Tool description must be a string'
+        ).toBe('string');
+
+        expect(
+          tool.description.length,
+          'Tool description must not be empty'
+        ).toBeGreaterThan(0);
+
+        expect(
+          tool,
+          'Each tool must have inputSchema field'
+        ).toHaveProperty('inputSchema');
+
+        expect(
+          typeof tool.inputSchema,
+          'inputSchema must be an object'
+        ).toBe('object');
+
+        expect(
+          tool.inputSchema,
+          'inputSchema must have type field'
+        ).toHaveProperty('type');
+
+        expect(
+          tool.inputSchema,
+          'inputSchema must have properties field'
+        ).toHaveProperty('properties');
+      }
+
+      // Then: Tool definitions include Google Docs operations
+      const toolNames = tools.map((t: { name: string }) =>
+        t.name.toLowerCase()
+      );
+
+      // Check for at least one Google Docs operation (replaceAll, append, prepend, etc.)
+      const hasGoogleDocsOps =
+        toolNames.some((name) => name.includes('replace')) ||
+        toolNames.some((name) => name.includes('append')) ||
+        toolNames.some((name) => name.includes('prepend')) ||
+        toolNames.some((name) => name.includes('insert'));
+
+      expect(
+        hasGoogleDocsOps,
+        'Tool definitions should include Google Docs operations (replace/append/prepend/insert)'
+      ).toBeTruthy();
+
+      // Verify at least one tool has complete schema with documentId parameter
+      const hasDocumentIdParam = tools.some(
+        (t: { inputSchema?: { properties?: { documentId?: unknown } } }) =>
+          t.inputSchema?.properties?.documentId !== undefined
+      );
+
+      expect(
+        hasDocumentIdParam,
+        'At least one tool should have documentId parameter in schema'
+      ).toBeTruthy();
+    }
+  );
+
+  test(
+    'INT-039: Tool catalog includes all document editing operations',
+    async ({ request }) => {
+      // Given: MCP server provides tool catalog via /mcp endpoint
+
+      // When: Test client retrieves tool list from server
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: 1,
+        },
+      });
+
+      expect(
+        response.status(),
+        'Server should respond with 200 status'
+      ).toBe(200);
+
+      const result = await response.json();
+
+      // Verify JSON-RPC 2.0 format
+      expect(
+        result,
+        'Response must be valid JSON-RPC 2.0 format'
+      ).toHaveProperty('jsonrpc', '2.0');
+
+      expect(result, 'Response must include result field').toHaveProperty(
+        'result'
+      );
+
+      expect(
+        result.result,
+        'Result must contain tools array'
+      ).toHaveProperty('tools');
+
+      const tools = result.result.tools;
+
+      expect(
+        Array.isArray(tools),
+        'Tools must be an array'
+      ).toBeTruthy();
+
+      // Then: Response includes replaceAll operation with required parameters
+      const replaceAllTool = tools.find((t: { name: string }) =>
+        t.name.toLowerCase().includes('replace')
+      );
+      expect(
+        replaceAllTool,
+        'Tool catalog should include replaceAll operation'
+      ).toBeDefined();
+
+      expect(
+        replaceAllTool?.inputSchema,
+        'replaceAll tool should have inputSchema'
+      ).toBeDefined();
+
+      expect(
+        replaceAllTool?.inputSchema.properties,
+        'replaceAll should have properties for parameters'
+      ).toBeDefined();
+
+      // Then: Response includes append operation with anchor text parameter
+      const appendTool = tools.find((t: { name: string }) =>
+        t.name.toLowerCase().includes('append')
+      );
+      expect(
+        appendTool,
+        'Tool catalog should include append operation'
+      ).toBeDefined();
+
+      expect(
+        appendTool?.inputSchema?.properties,
+        'append tool should have parameter schema'
+      ).toBeDefined();
+
+      // Then: Response includes prepend operation definition
+      const prependTool = tools.find((t: { name: string }) =>
+        t.name.toLowerCase().includes('prepend')
+      );
+      expect(
+        prependTool,
+        'Tool catalog should include prepend operation'
+      ).toBeDefined();
+
+      // Then: Response includes insertBefore operation definition
+      const insertBeforeTool = tools.find((t: { name: string }) =>
+        t.name.toLowerCase().includes('before')
+      );
+      expect(
+        insertBeforeTool,
+        'Tool catalog should include insertBefore operation'
+      ).toBeDefined();
+
+      // Then: Response includes insertAfter operation definition
+      const insertAfterTool = tools.find((t: { name: string }) =>
+        t.name.toLowerCase().includes('after')
+      );
+      expect(
+        insertAfterTool,
+        'Tool catalog should include insertAfter operation'
+      ).toBeDefined();
+
+      // Verify all operations have required schema fields
+      const allOperations = [
+        replaceAllTool,
+        appendTool,
+        prependTool,
+        insertBeforeTool,
+        insertAfterTool,
+      ];
+
+      for (const operation of allOperations) {
+        expect(
+          operation,
+          'Each operation should be defined'
+        ).toBeDefined();
+
+        expect(
+          operation?.name,
+          'Each operation should have a name'
+        ).toBeTruthy();
+
+        expect(
+          operation?.description,
+          'Each operation should have a description'
+        ).toBeTruthy();
+
+        expect(
+          operation?.inputSchema,
+          'Each operation should have an inputSchema'
+        ).toBeDefined();
+      }
+    }
+  );
+
+  test(
+    'INT-041: Tool discovery completes within 2 seconds',
+    async ({ request }) => {
+      // Given: MCP server responds to discovery requests within 2 seconds
+
+      // When: Test client measures tool discovery response time
+      const startTime = Date.now();
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: 1,
+        },
+      });
+      const elapsedTime = Date.now() - startTime;
+
+      // Then: Server completes discovery request in under 2 seconds
+      expect(
+        elapsedTime,
+        'Tool discovery should complete within 2000ms'
+      ).toBeLessThan(2000);
+
+      expect(
+        response.status(),
+        'Server should return 200 status for tools/list request'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+      expect(
+        result,
+        'Response must include tools list result'
+      ).toHaveProperty('result');
+      expect(
+        result.result,
+        'Result must contain tools array'
+      ).toHaveProperty('tools');
+      expect(
+        Array.isArray(result.result.tools),
+        'Tools must be an array'
+      ).toBeTruthy();
+    }
+  );
+
+  test(
+    'INT-045: Tool invocation completes within 2 seconds',
+    async ({ request }) => {
+      // Given: MCP server completes operations within 2 seconds
+
+      // When: Test client measures tool invocation response time
+      const startTime = Date.now();
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'replaceAll',
+            arguments: {
+              documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+              content: '# Performance Test\n\nValidating 2-second SLA.',
+            },
+          },
+        },
+      });
+      const elapsedTime = Date.now() - startTime;
+
+      // Then: Server returns result in under 2 seconds
+      expect(
+        elapsedTime,
+        'Tool invocation should complete within 2000ms'
+      ).toBeLessThan(2000);
+
+      expect(
+        response.status(),
+        'Server should return 200 status for tool invocation'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+
+      // Verify response structure
+      const hasResult = 'result' in result;
+      const hasError = 'error' in result;
+      expect(
+        hasResult || hasError,
+        'Response must include either result or error field'
+      ).toBeTruthy();
+    }
+  );
+
+  test(
+    'INT-048: Server rejects non-existent tool with method not found error',
+    async ({ request }) => {
+      // Given: MCP server validates tool names in requests
+
+      // When: Test client sends tools/call with non-existent tool name
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'nonExistentTool',
+            arguments: {},
+          },
+        },
+      });
+
+      // Then: Server returns JSON-RPC error with code -32601
+      // JSON-RPC error code -32601 = Method not found
+      expect(
+        response.status(),
+        'Server should return 200 with error in JSON-RPC body'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+
+      // Then: Error message indicates Method not found
+      expect(
+        result,
+        'Response must contain error object for non-existent tool'
+      ).toHaveProperty('error');
+      expect(
+        result.error,
+        'Error code must be -32601 for Method not found'
+      ).toHaveProperty('code', -32601);
+      expect(
+        result.error,
+        'Error message must indicate method/tool not found'
+      ).toHaveProperty('message');
+      expect(
+        typeof result.error.message,
+        'Error message must be a string'
+      ).toBe('string');
+
+      // Verify error message mentions method or tool not found
+      const lowerMessage = result.error.message.toLowerCase();
+      const hasNotFoundError = ['method', 'tool', 'not found', 'unknown'].some(
+        (term) => lowerMessage.includes(term)
+      );
+      expect(
+        hasNotFoundError,
+        'Error message should indicate method/tool was not found'
+      ).toBeTruthy();
+    }
+  );
+
+  test(
+    'INT-050: Server validates documentId format and provides recovery hints',
+    async ({ request }) => {
+      // Given: MCP server validates documentId parameter format
+
+      // When: Test client provides invalid documentId in request
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'replaceAll',
+            arguments: {
+              documentId: 'invalid-id-format', // Invalid format
+              content: '# Test content',
+            },
+          },
+        },
+      });
+
+      // Then: Server rejects request with validation error
+      // MCP uses JSON-RPC: validation errors return 200 with error in body
+      expect(
+        response.status(),
+        'Server should return 200 with validation error in JSON-RPC body'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+
+      // Then: Error response includes recovery hints
+      expect(
+        result,
+        'Response must contain error object for validation failure'
+      ).toHaveProperty('error');
+      expect(
+        result.error,
+        'Error must include error code for validation'
+      ).toHaveProperty('code');
+      expect(
+        result.error,
+        'Error must include descriptive message'
+      ).toHaveProperty('message');
+      expect(
+        typeof result.error.message,
+        'Error message must be a string'
+      ).toBe('string');
+
+      // Verify error message includes validation details or recovery hints
+      const errorMessage = result.error.message.toLowerCase();
+      const hasValidationError = [
+        'documentid',
+        'invalid',
+        'format',
+        'validation',
+      ].some((term) => errorMessage.includes(term));
+      expect(
+        hasValidationError,
+        'Error message should indicate documentId validation issue'
+      ).toBeTruthy();
+
+      // Check for recovery hints in error data or message
+      const errorData = result.error.data;
+      if (errorData) {
+        // Recovery hints may be in error.data object
+        expect(
+          typeof errorData,
+          'Error data should provide additional context'
+        ).toBe('object');
+      }
+    }
+  );
+
+  test(
+    'INT-040: Tool schemas conform to JSON Schema specification',
+    async ({ request }) => {
+      // Given: MCP server serves tool schemas via HTTP endpoint
+
+      // When: Test client validates tool schemas against JSON Schema format
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/list',
+          id: 1,
+        },
+      });
+
+      // Then: All tool schemas conform to JSON Schema specification
+      expect(
+        response.status(),
+        'Server should return 200 status for tools/list request'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+      expect(
+        result,
+        'Response must include tools list result'
+      ).toHaveProperty('result');
+      expect(
+        result.result,
+        'Result must contain tools array'
+      ).toHaveProperty('tools');
+      expect(
+        Array.isArray(result.result.tools),
+        'Tools must be an array'
+      ).toBeTruthy();
+      expect(
+        result.result.tools.length,
+        'Tools array should contain at least one tool'
+      ).toBeGreaterThan(0);
+
+      // Validate each tool schema conforms to JSON Schema specification
+      for (const tool of result.result.tools) {
+        expect(
+          tool,
+          'Tool must have name field'
+        ).toHaveProperty('name');
+        expect(
+          typeof tool.name,
+          'Tool name must be a string'
+        ).toBe('string');
+
+        expect(
+          tool,
+          'Tool must have description field'
+        ).toHaveProperty('description');
+        expect(
+          typeof tool.description,
+          'Tool description must be a string'
+        ).toBe('string');
+
+        // Then: Required parameters include type and properties fields
+        expect(
+          tool,
+          'Tool must have inputSchema field for JSON Schema validation'
+        ).toHaveProperty('inputSchema');
+        expect(
+          typeof tool.inputSchema,
+          'inputSchema must be an object'
+        ).toBe('object');
+
+        expect(
+          tool.inputSchema,
+          'inputSchema must include type field per JSON Schema specification'
+        ).toHaveProperty('type');
+        expect(
+          tool.inputSchema.type,
+          'inputSchema type must be "object" for tool parameters'
+        ).toBe('object');
+
+        expect(
+          tool.inputSchema,
+          'inputSchema must include properties field per JSON Schema specification'
+        ).toHaveProperty('properties');
+        expect(
+          typeof tool.inputSchema.properties,
+          'inputSchema properties must be an object'
+        ).toBe('object');
+
+        // Validate properties field contains parameter definitions
+        const properties = tool.inputSchema.properties;
+        const propertyNames = Object.keys(properties);
+        expect(
+          propertyNames.length,
+          `Tool ${tool.name} should have at least one parameter defined`
+        ).toBeGreaterThan(0);
+
+        // Each parameter should have valid JSON Schema structure
+        for (const paramName of propertyNames) {
+          const param = properties[paramName];
+          expect(
+            param,
+            `Parameter ${paramName} must have type field per JSON Schema`
+          ).toHaveProperty('type');
+          expect(
+            typeof param.type,
+            `Parameter ${paramName} type must be a string`
+          ).toBe('string');
+
+          // Common JSON Schema types
+          const validTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
+          expect(
+            validTypes,
+            `Parameter ${paramName} type "${param.type}" must be valid JSON Schema type`
+          ).toContain(param.type);
+        }
+
+        // Verify required fields if present
+        if (tool.inputSchema.required) {
+          expect(
+            Array.isArray(tool.inputSchema.required),
+            'inputSchema required field must be an array'
+          ).toBeTruthy();
+
+          // All required fields must exist in properties
+          for (const requiredField of tool.inputSchema.required) {
+            expect(
+              properties,
+              `Required field "${requiredField}" must be defined in properties`
+            ).toHaveProperty(requiredField);
+          }
+        }
+      }
+    }
+  );
+
+  test(
+    'INT-043: append tool processes positioned insertion with anchor text',
+    async ({ request }) => {
+      // Given: MCP server accepts tool invocation requests on /mcp endpoint
+
+      // When: Test client sends append tool request with anchor text parameter
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'append',
+            arguments: {
+              documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+              content: '# New section appended content',
+              anchorText: 'Conclusion',
+            },
+          },
+        },
+      });
+
+      // Then: Server processes positioned operation successfully
+      expect(
+        response.status(),
+        'Server should return 200 for append tool invocation'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(result, 'Response must be valid JSON-RPC format').toHaveProperty(
+        'jsonrpc',
+        '2.0'
+      );
+      expect(result, 'Response must include matching request ID').toHaveProperty(
+        'id',
+        1
+      );
+
+      // Then: Response confirms content insertion at specified location
+      expect(
+        result,
+        'Response must include result for successful operation'
+      ).toHaveProperty('result');
+
+      // Result should contain operation confirmation
+      const opResult = result.result;
+      expect(
+        opResult,
+        'Result should contain content array with operation confirmation'
+      ).toHaveProperty('content');
+      expect(
+        Array.isArray(opResult.content),
+        'Content must be an array'
+      ).toBeTruthy();
+
+      // Verify operation completed successfully
+      if (opResult.content.length > 0) {
+        const firstContent = opResult.content[0];
+        expect(
+          firstContent,
+          'Content item should have type field'
+        ).toHaveProperty('type');
+        expect(
+          firstContent,
+          'Content item should have text field'
+        ).toHaveProperty('text');
+      }
+    }
+  );
+
+  test(
+    'INT-044: Tool invocation follows JSON-RPC 2.0 message format',
+    async ({ request }) => {
+      // Given: MCP server follows JSON-RPC 2.0 message format
+
+      // When: Test client sends tool invocation with proper JSON-RPC structure
+      const toolInvocationRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        id: 42,
+        params: {
+          name: 'replaceAll',
+          arguments: {
+            documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+            content: '# Test Content\n\nThis validates JSON-RPC 2.0 format.',
+          },
+        },
+      };
+
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: toolInvocationRequest,
+      });
+
+      // Then: Server responds with valid JSON-RPC 2.0 format
+      expect(
+        response.status(),
+        'Server should return 200 for tool invocation'
+      ).toBe(200);
+
+      const result = await response.json();
+
+      // Verify JSON-RPC 2.0 version field
+      expect(
+        result,
+        'Response must include jsonrpc field with value "2.0"'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        typeof result.jsonrpc,
+        'jsonrpc field must be a string'
+      ).toBe('string');
+
+      // Then: Response includes id matching request
+      expect(
+        result,
+        'Response must include id field matching request'
+      ).toHaveProperty('id', 42);
+      expect(
+        typeof result.id,
+        'id field must be a number or string'
+      ).toMatch(/^(number|string)$/);
+
+      // Then: Response includes result or error field (but not both)
+      const hasResult = 'result' in result;
+      const hasError = 'error' in result;
+
+      expect(
+        hasResult || hasError,
+        'Response must include either result or error field'
+      ).toBeTruthy();
+
+      expect(
+        !(hasResult && hasError),
+        'Response must not include both result and error fields'
+      ).toBeTruthy();
+
+      // If result is present, verify it's structured correctly
+      if (hasResult) {
+        expect(
+          result.result,
+          'result field should be defined when present'
+        ).toBeDefined();
+        // result can be any JSON value (object, array, string, number, boolean, null)
+        expect(
+          result.result !== undefined,
+          'result must not be undefined'
+        ).toBeTruthy();
+      }
+
+      // If error is present, verify JSON-RPC 2.0 error structure
+      if (hasError) {
+        expect(
+          result.error,
+          'error field must be an object when present'
+        ).toBeDefined();
+        expect(
+          typeof result.error,
+          'error must be an object'
+        ).toBe('object');
+
+        // JSON-RPC 2.0 error object must have code and message
+        expect(
+          result.error,
+          'error object must include code field'
+        ).toHaveProperty('code');
+        expect(
+          typeof result.error.code,
+          'error code must be a number'
+        ).toBe('number');
+
+        expect(
+          result.error,
+          'error object must include message field'
+        ).toHaveProperty('message');
+        expect(
+          typeof result.error.message,
+          'error message must be a string'
+        ).toBe('string');
+
+        // data field is optional in JSON-RPC 2.0 errors
+        if ('data' in result.error) {
+          expect(
+            result.error.data,
+            'error data field can contain additional information'
+          ).toBeDefined();
+        }
+      }
+
+      // Verify no unexpected fields at root level
+      // JSON-RPC 2.0 allows only: jsonrpc, id, result OR error
+      const allowedFields = ['jsonrpc', 'id', 'result', 'error'];
+      const actualFields = Object.keys(result);
+      for (const field of actualFields) {
+        expect(
+          allowedFields,
+          `Unexpected field "${field}" in JSON-RPC response`
+        ).toContain(field);
+      }
+    }
+  );
+
+  test(
+    'INT-046: Server parses Claude API format and returns compatible response',
+    async ({ request }) => {
+      // Given: MCP server accepts requests matching Claude API format
+      // Claude API uses JSON-RPC 2.0 with specific tool calling conventions
+      const claudeApiRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        id: 1,
+        params: {
+          name: 'replaceAll',
+          arguments: {
+            documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+            content: '# Claude API Test\n\nValidating API format compatibility.',
+          },
+        },
+      };
+
+      // When: Test client sends tool request with Claude API structure
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Claude/1.0',
+        },
+        data: claudeApiRequest,
+      });
+
+      // Then: Server parses request successfully
+      expect(
+        response.status(),
+        'Server should successfully parse Claude API format request'
+      ).toBe(200);
+
+      const result = await response.json();
+
+      // Verify JSON-RPC 2.0 compliance
+      expect(
+        result,
+        'Response must be valid JSON-RPC 2.0 format'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        result,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 1);
+
+      // Then: Server returns response compatible with Claude API client
+      // Claude API expects either result or error field
+      const hasResult = 'result' in result;
+      const hasError = 'error' in result;
+
+      expect(
+        hasResult || hasError,
+        'Response must include either result or error field for Claude compatibility'
+      ).toBeTruthy();
+
+      // Verify response structure matches Claude API expectations
+      if (hasResult) {
+        expect(
+          result.result,
+          'Result field must be defined when present'
+        ).toBeDefined();
+        expect(
+          typeof result.result,
+          'Result must be an object for Claude API compatibility'
+        ).toBe('object');
+
+        // Claude API expects MCP-compliant tool responses with content array
+        expect(
+          result.result,
+          'Result should contain content array for tool responses'
+        ).toHaveProperty('content');
+        expect(
+          Array.isArray(result.result.content),
+          'Content must be an array per MCP specification'
+        ).toBeTruthy();
+      }
+
+      if (hasError) {
+        expect(
+          result.error,
+          'Error must be an object when present'
+        ).toBeDefined();
+        expect(
+          typeof result.error,
+          'Error must be an object'
+        ).toBe('object');
+
+        // Claude API expects JSON-RPC 2.0 error structure
+        expect(
+          result.error,
+          'Error must include code field per JSON-RPC 2.0'
+        ).toHaveProperty('code');
+        expect(
+          typeof result.error.code,
+          'Error code must be a number'
+        ).toBe('number');
+
+        expect(
+          result.error,
+          'Error must include message field per JSON-RPC 2.0'
+        ).toHaveProperty('message');
+        expect(
+          typeof result.error.message,
+          'Error message must be a string'
+        ).toBe('string');
+      }
+
+      // Verify no unexpected fields that might break Claude API client
+      const allowedFields = ['jsonrpc', 'id', 'result', 'error'];
+      const actualFields = Object.keys(result);
+      for (const field of actualFields) {
+        expect(
+          allowedFields,
+          `Field "${field}" must be in allowed JSON-RPC 2.0 fields for Claude compatibility`
+        ).toContain(field);
+      }
+    }
+  );
+
+  test(
+    'INT-049: Server validates tool parameters and returns detailed error',
+    async ({ request }) => {
+      // Given: MCP server requires documentId parameter for operations
+
+      // When: Test client sends tool invocation without required parameters
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'replaceAll',
+            arguments: {
+              // Missing required documentId parameter
+              content: '# Test Content',
+            },
+          },
+        },
+      });
+
+      // Then: Server responds with detailed validation error
+      // MCP uses JSON-RPC: validation errors return 200 with error in body
+      expect(
+        response.status(),
+        'Server should return 200 with validation error in JSON-RPC body'
+      ).toBe(200);
+
+      const result = await response.json();
+      expect(
+        result,
+        'Response must be valid JSON-RPC format'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        result,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 1);
+
+      // Then: Error includes missing parameter names
+      expect(
+        result,
+        'Response must contain error object for missing parameters'
+      ).toHaveProperty('error');
+      expect(
+        result.error,
+        'Error must include error code for validation failure'
+      ).toHaveProperty('code');
+      expect(
+        typeof result.error.code,
+        'Error code must be a number'
+      ).toBe('number');
+
+      expect(
+        result.error,
+        'Error must include descriptive message'
+      ).toHaveProperty('message');
+      expect(
+        typeof result.error.message,
+        'Error message must be a string'
+      ).toBe('string');
+
+      // Verify error message mentions missing parameter
+      const errorMessage = result.error.message.toLowerCase();
+      const mentionsDocumentId = ['documentid', 'document_id', 'required', 'missing', 'parameter'].some(
+        (term) => errorMessage.includes(term)
+      );
+      expect(
+        mentionsDocumentId,
+        'Error message should indicate documentId is missing or required'
+      ).toBeTruthy();
+
+      // Check for detailed error information
+      const hasDetailedError =
+        errorMessage.includes('documentid') ||
+        (result.error.data && typeof result.error.data === 'object');
+      expect(
+        hasDetailedError,
+        'Error should provide detailed information about missing parameter'
+      ).toBeTruthy();
+    }
+  );
+
+  test(
+    'INT-047: Server processes operations with parameters and returns responses',
+    async ({ request }) => {
+      // Given: MCP server processes <operation> requests
+      // This test validates multiple operations with different parameter types
+
+      // Test operation 1: replaceAll with documentId and content
+      const replaceAllRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        id: 1,
+        params: {
+          name: 'replaceAll',
+          arguments: {
+            documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+            content: '# Test Document\n\nReplaced content',
+          },
+        },
+      };
+
+      // When: Test client invokes replaceAll with required parameters
+      const replaceResponse = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: replaceAllRequest,
+      });
+
+      // Then: Server returns valid JSON-RPC response
+      expect(
+        replaceResponse.status(),
+        'replaceAll operation should return 200'
+      ).toBe(200);
+      const replaceResult = await replaceResponse.json();
+      expect(
+        replaceResult,
+        'Response must be valid JSON-RPC format'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        replaceResult,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 1);
+      expect(
+        'result' in replaceResult || 'error' in replaceResult,
+        'Response must include result or error'
+      ).toBeTruthy();
+
+      // Test operation 2: append with documentId, content, and anchorText
+      const appendRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        id: 2,
+        params: {
+          name: 'append',
+          arguments: {
+            documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+            content: '# Appended Section',
+            anchorText: 'Conclusion',
+          },
+        },
+      };
+
+      // When: Test client invokes append with anchor text parameter
+      const appendResponse = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: appendRequest,
+      });
+
+      // Then: Server returns valid response
+      expect(
+        appendResponse.status(),
+        'append operation should return 200'
+      ).toBe(200);
+      const appendResult = await appendResponse.json();
+      expect(
+        appendResult,
+        'Response must be valid JSON-RPC format'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        appendResult,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 2);
+      expect(
+        'result' in appendResult || 'error' in appendResult,
+        'Response must include result or error'
+      ).toBeTruthy();
+
+      // Test operation 3: prepend with documentId and content
+      const prependRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        id: 3,
+        params: {
+          name: 'prepend',
+          arguments: {
+            documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+            content: '# Prepended Header',
+          },
+        },
+      };
+
+      // When: Test client invokes prepend operation
+      const prependResponse = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: prependRequest,
+      });
+
+      // Then: Server returns valid response
+      expect(
+        prependResponse.status(),
+        'prepend operation should return 200'
+      ).toBe(200);
+      const prependResult = await prependResponse.json();
+      expect(
+        prependResult,
+        'Response must be valid JSON-RPC format'
+      ).toHaveProperty('jsonrpc', '2.0');
+      expect(
+        prependResult,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 3);
+      expect(
+        'result' in prependResult || 'error' in prependResult,
+        'Response must include result or error'
+      ).toBeTruthy();
+
+      // Verify all operations follow consistent response structure
+      const allResponses = [replaceResult, appendResult, prependResult];
+      for (const response of allResponses) {
+        expect(
+          response,
+          'All responses must follow JSON-RPC 2.0 format'
+        ).toHaveProperty('jsonrpc', '2.0');
+
+        // If result is present, verify structure
+        if ('result' in response && response.result) {
+          expect(
+            response.result,
+            'Result should contain content array'
+          ).toHaveProperty('content');
+          expect(
+            Array.isArray(response.result.content),
+            'Content must be an array'
+          ).toBeTruthy();
+        }
+
+        // If error is present, verify structure
+        if ('error' in response && response.error) {
+          expect(
+            response.error,
+            'Error must include code'
+          ).toHaveProperty('code');
+          expect(
+            response.error,
+            'Error must include message'
+          ).toHaveProperty('message');
+        }
+      }
+    }
+  );
+
+  test(
+    'INT-042: replaceAll tool execution returns success with metadata',
+    async ({ request }) => {
+      // Given: MCP server processes tools/call requests via HTTP POST
+
+      // When: Test client invokes replaceAll tool with documentId and content parameters
+      const response = await request.post(`${mcpServiceUrl}/mcp`, {
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+          jsonrpc: '2.0',
+          method: 'tools/call',
+          id: 1,
+          params: {
+            name: 'replaceAll',
+            arguments: {
+              documentId: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+              content: '# Test Document\n\nValidating replaceAll operation.',
+            },
+          },
+        },
+      });
+
+      // Then: Server returns success status with operation result
+      expect(
+        response.status(),
+        'Server should return 200 status for replaceAll tool invocation'
+      ).toBe(200);
+
+      const result = await response.json();
+
+      // Verify JSON-RPC 2.0 format
+      expect(
+        result,
+        'Response must be valid JSON-RPC 2.0 format'
+      ).toHaveProperty('jsonrpc', '2.0');
+
+      expect(
+        result,
+        'Response must include matching request ID'
+      ).toHaveProperty('id', 1);
+
+      // Verify operation succeeded (result present, no error)
+      expect(
+        result,
+        'Response must include result field for successful operation'
+      ).toHaveProperty('result');
+
+      expect(
+        result,
+        'Successful response should not include error field'
+      ).not.toHaveProperty('error');
+
+      // Then: Response includes execution metadata
+      const opResult = result.result;
+
+      // Verify MCP tool response structure with content array
+      expect(
+        opResult,
+        'Result should contain content array per MCP specification'
+      ).toHaveProperty('content');
+
+      expect(
+        Array.isArray(opResult.content),
+        'Content must be an array'
+      ).toBeTruthy();
+
+      expect(
+        opResult.content.length,
+        'Content array should contain at least one item'
+      ).toBeGreaterThan(0);
+
+      // Verify metadata in response
+      if (opResult.content.length > 0) {
+        const firstContent = opResult.content[0];
+
+        expect(
+          firstContent,
+          'Content item should have type field for metadata'
+        ).toHaveProperty('type');
+
+        expect(
+          firstContent,
+          'Content item should have text field with operation result'
+        ).toHaveProperty('text');
+
+        expect(
+          typeof firstContent.text,
+          'Content text must be a string'
+        ).toBe('string');
+
+        // Verify operation completed successfully (text should indicate success)
+        const contentText = firstContent.text.toLowerCase();
+        const hasSuccessIndicator = ['success', 'completed', 'updated'].some(
+          (term) => contentText.includes(term)
+        );
+
+        expect(
+          hasSuccessIndicator,
+          'Content text should indicate successful operation'
+        ).toBeTruthy();
+      }
+
+      // Additional metadata validation
+      // MCP tools may return metadata in result object or content items
+      const hasMetadata =
+        opResult.isError !== undefined ||
+        opResult.content.some(
+          (item: { type?: string }) => item.type === 'text'
+        );
+
+      expect(
+        hasMetadata,
+        'Response should include execution metadata (isError flag or content type)'
+      ).toBeTruthy();
     }
   );
 });
