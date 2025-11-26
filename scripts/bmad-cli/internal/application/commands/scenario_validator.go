@@ -123,18 +123,17 @@ func (v *ScenarioValidator) getScenarioIDs() ([]string, error) {
 func (v *ScenarioValidator) getTestIDs() ([]string, error) {
 	ids := make([]string, 0)
 
-	// Pattern to match test names like: test('INT-012: description', ...
-	// or test("E2E-001: description", ...
-	testPattern := regexp.MustCompile(`test\(['"]([A-Z]+-\d+):`)
+	// Pattern to match test IDs like: 'INT-012: description' or "E2E-001: description"
+	testPattern := regexp.MustCompile(`['"]([A-Z0-9]+-\d+):`)
 
-	// Walk through all .spec.ts files in the tests directory
+	// Walk through all .ts files in the tests directory
 	err := filepath.Walk(v.testsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("error accessing path %s: %w", path, err)
 		}
 
-		// Skip directories and non-spec files
-		if info.IsDir() || !strings.HasSuffix(path, ".spec.ts") {
+		// Skip directories and non-ts files
+		if info.IsDir() || !strings.HasSuffix(path, ".ts") {
 			return nil
 		}
 

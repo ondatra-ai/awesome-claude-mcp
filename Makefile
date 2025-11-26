@@ -43,12 +43,14 @@ dev: ## Start all services with Docker Compose
 		docker compose up --build; \
 	fi
 
-test-unit: ## Run unit tests for both services
+test-unit: ## Run unit tests for both services (via Docker)
 	@echo "🧪 Running unit tests..."
-	@echo "🔧 Running Go backend tests..."
-	go test -C services/backend ./...
-	@echo "🔧 Running Node.js frontend tests..."
-	npm test --prefix services/frontend
+	@echo "🔧 Running Go backend tests (via Docker)..."
+	docker build -t mcp-backend-test --target test -f services/backend/Dockerfile services/backend
+	docker run --rm mcp-backend-test go test ./...
+	@echo "🔧 Running Node.js frontend tests (via Docker)..."
+	docker build -t mcp-frontend-test --target test -f services/frontend/Dockerfile services/frontend
+	docker run --rm mcp-frontend-test npm test
 	@echo "✅ Unit tests completed!"
 
 test-e2e: ## Run E2E tests (default local; append environment name e.g. `make test-e2e dev`)
@@ -83,11 +85,10 @@ lint-backend: ## Run Go linter on backend code (auto-fix when possible)
 	cd services/backend && golangci-lint run --fix ./...
 	@echo "✅ Backend linting completed!"
 
-lint-frontend: ## Run ESLint and Prettier on frontend code (auto-fix when possible)
-	@echo "🔍 Running Next.js ESLint with --fix on frontend..."
-	npm run lint --prefix services/frontend -- --fix
-	@echo "🎨 Running Prettier with --write on frontend..."
-	npx prettier --write services/frontend/ --ignore-path services/frontend/.prettierignore --config services/frontend/.prettierrc.json
+lint-frontend: ## Run ESLint and Prettier on frontend code (via Docker)
+	@echo "🔍 Running Next.js ESLint on frontend (via Docker)..."
+	docker build -t mcp-frontend-test --target test -f services/frontend/Dockerfile services/frontend
+	docker run --rm mcp-frontend-test npm run lint
 	@echo "✅ Frontend linting completed!"
 
 lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)

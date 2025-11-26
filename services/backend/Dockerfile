@@ -1,6 +1,6 @@
 # Multi-stage Docker build for Go backend service
-# Build stage
-FROM golang:1.25-alpine AS builder
+# Base stage with dependencies
+FROM golang:1.25-alpine AS base
 
 # Set working directory
 WORKDIR /app
@@ -13,6 +13,13 @@ COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
+
+# Test stage - has deps + source but doesn't build
+FROM base AS test
+COPY . .
+
+# Build stage
+FROM base AS builder
 
 # Copy source code
 COPY . .
