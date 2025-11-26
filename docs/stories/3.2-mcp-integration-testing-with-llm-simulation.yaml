@@ -1,0 +1,646 @@
+story:
+  id: "3.2"
+  title: "MCP Integration Testing with LLM Simulation"
+  as_a: "Developer/Maintainer"
+  i_want: "to test MCP server with realistic Claude API client simulation"
+  so_that: "MCP tool calling works correctly with real LLM behavior"
+  status: "PLANNED"
+  acceptance_criteria:
+    - id: AC-1
+      description: "MCP server responds correctly to tool discovery requests from Claude API client"
+    - id: AC-2
+      description: "MCP server processes tool invocations from Claude API client and returns valid responses"
+    - id: AC-3
+      description: "E2E test verifies complete Claude → MCP Server → Tool Execution → Response flow"
+    - id: AC-4
+      description: "MCP server tool invocation protocol tested with realistic LLM request/response patterns"
+    - id: AC-5
+      description: "MCP server error handling verified with invalid tool names, parameters, and message formats"
+
+tasks:
+  - name: "Set up MCP E2E test infrastructure with TypeScript SDK client"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Install @modelcontextprotocol/sdk package in test dependencies (package.json)"
+      - "Create tests/e2e/helpers/mcp-client.ts wrapper implementing McpClient with HTTP+SSE transport per MCP specification"
+      - "Implement connection management with automatic reconnection and error handling in McpClient helper"
+      - "Configure test environment variables in .env.test (MCP_SERVER_URL=http://localhost:8081) per docs/architecture/coding-standards.md security section"
+      - "Create tests/e2e/mcp-integration.spec.ts test suite file following Playwright E2E naming conventions per docs/architecture/coding-standards.md"
+      - "Verify Docker Compose includes mcp-service running on port 8081 for automated test execution"
+    status: "pending"
+
+  - name: "Implement MCP tool discovery E2E test with realistic LLM simulation"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-3"
+    subtasks:
+      - "Create E2E test: 'should discover available tools from MCP server via HTTP+SSE' using McpClient helper from tests/e2e/helpers/mcp-client.ts"
+      - "Send tools/list request via HTTP POST endpoint (/mcp) per MCP Streamable HTTP specification in docs/architecture.md"
+      - "Parse Server-Sent Events response stream for tool definitions returned by MCP server"
+      - "Assert tool definitions include expected fields: name, description, inputSchema per MCP protocol"
+      - "Verify tools include Google Docs operations: replaceAll, append, prepend, insertBefore, insertAfter per docs/architecture.md components section"
+      - "Assert tool schemas match JSON Schema format with required parameters validation"
+      - "Add test performance assertion: discovery completes within 2 seconds per docs/architecture/coding-standards.md performance standards"
+    status: "pending"
+
+  - name: "Implement MCP tool invocation E2E test with parameter validation"
+    acceptance_criteria:
+      - "AC-2"
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create E2E test: 'should invoke replaceAll tool and receive valid MCP response' in tests/e2e/mcp-integration.spec.ts"
+      - "Construct realistic tools/call request matching Claude API format with documentId and content parameters"
+      - "Send tool invocation via HTTP POST to /mcp endpoint with proper JSON-RPC 2.0 message format per MCP specification"
+      - "Verify MCP server processes request and returns valid tools/call response via SSE stream"
+      - "Assert response includes success status, operation result, and execution metadata"
+      - "Validate response schema matches MCP protocol specification with id, result, and optional error fields"
+      - "Create E2E test: 'should invoke append tool with anchor text parameter' testing positioned operations per docs/architecture.md data models"
+      - "Verify tool invocation timing: assert operation completes within 2 seconds per docs/architecture/coding-standards.md performance requirements"
+    status: "pending"
+
+  - name: "Implement MCP error handling E2E tests with invalid inputs"
+    acceptance_criteria:
+      - "AC-5"
+    subtasks:
+      - "Create E2E test: 'should return error for invalid tool name' sending tools/call with non-existent tool"
+      - "Assert MCP server returns proper JSON-RPC error response with code -32601 (Method not found)"
+      - "Create E2E test: 'should return error for missing required parameters' sending incomplete tool invocation"
+      - "Verify error response includes detailed error message and error code per docs/architecture.md error handling strategy"
+      - "Create E2E test: 'should return error for malformed JSON-RPC message' with invalid message structure"
+      - "Assert server responds with -32700 (Parse error) or -32600 (Invalid Request) per JSON-RPC 2.0 spec"
+      - "Create E2E test: 'should handle invalid documentId parameter validation' per docs/architecture.md validation requirements"
+      - "Verify all error responses maintain proper MCP protocol format and include recovery hints per docs/architecture.md error handling patterns"
+    status: "pending"
+
+  - name: "Implement complete Claude → MCP flow E2E test with realistic LLM behavior"
+    acceptance_criteria:
+      - "AC-3"
+      - "AC-4"
+    subtasks:
+      - "Create E2E test: 'should complete full Claude to MCP to Tool execution flow' in tests/e2e/mcp-integration.spec.ts"
+      - "Simulate initialize handshake: send initialize request with clientInfo matching Claude API client format"
+      - "Verify server responds with serverInfo including protocolVersion, capabilities, and server metadata per MCP spec"
+      - "Simulate tool discovery phase: send tools/list request and parse complete tool catalog"
+      - "Simulate tool selection: construct tools/call request for replaceAll operation with realistic document content"
+      - "Track complete request-response cycle: measure timing from request to final response"
+      - "Assert end-to-end flow completes within 2 seconds total per docs/architecture/coding-standards.md performance standards"
+      - "Verify response data includes operation confirmation, document preview URL, and execution metrics per docs/architecture.md core workflows"
+      - "Add logging assertions: verify structured logs capture complete operation trace per docs/architecture/coding-standards.md logging standards"
+    status: "pending"
+
+  - name: "Add integration test documentation and test data fixtures"
+    acceptance_criteria:
+      - "AC-1"
+      - "AC-2"
+      - "AC-3"
+      - "AC-4"
+      - "AC-5"
+    subtasks:
+      - "Create tests/fixtures/mcp/valid-tools-list-response.json with expected tool definitions per MCP protocol"
+      - "Create tests/fixtures/mcp/sample-tool-call-requests.json with realistic Claude API request patterns"
+      - "Create tests/fixtures/mcp/error-responses.json with all expected error scenarios and codes"
+      - "Document MCP E2E testing approach in tests/e2e/README.md explaining HTTP+SSE transport usage"
+      - "Add inline comments in McpClient helper explaining connection lifecycle and error recovery per docs/architecture/coding-standards.md documentation standards"
+      - "Create test data factory functions in tests/helpers/mcp-data-factory.ts for generating valid/invalid requests"
+      - "Document required environment variables and test setup in .env.test.example per docs/architecture/coding-standards.md security section"
+    status: "pending"
+
+dev_notes:
+  architecture:
+      component: MCP Protocol Handler
+      dependencies:
+          - Network layer (HTTP+SSE transport)
+          - Command Processor (document operations)
+          - OAuth Manager (authentication)
+      description: 'From the MCP protocol workflow diagram:'
+      responsibilities:
+          - HTTP POST endpoint for receiving JSON-RPC messages from clients
+          - Server-Sent Events (SSE) for streaming responses and notifications to clients
+          - Tool registration and discovery (tools/list)
+          - Request/response message handling (tools/call)
+      source: ./docs/architecture.md#Backend Components
+      tech_stack:
+          - Go stdlib net/http for HTTP handlers
+          - SSE for streaming responses
+          - Mark3Labs MCP-Go library for protocol implementation
+      transport_protocol: HTTP POST + Server-Sent Events (Streamable HTTP per MCP specification)
+  configuration:
+      description: 'Required environment variables for MCP E2E testing:'
+      environment_variables:
+          BACKEND_API_URL: http://localhost:8080
+          MCP_SERVER_URL: http://localhost:8081
+          NODE_ENV: test
+      source: ./docs/architecture/coding-standards.md#Environment Variables
+  file_structure:
+      description: 'Based on the monorepo three-service structure (frontend/backend/mcp-service):'
+      files:
+          - description: Main E2E test suite for MCP integration testing with LLM simulation
+            file: tests/e2e/mcp-integration.spec.ts
+          - description: McpClient wrapper implementing HTTP+SSE transport per MCP specification
+            file: tests/e2e/helpers/mcp-client.ts
+          - description: Expected tool definitions fixture per MCP protocol
+            file: tests/fixtures/mcp/valid-tools-list-response.json
+          - description: Realistic Claude API request patterns for tool invocations
+            file: tests/fixtures/mcp/sample-tool-call-requests.json
+          - description: Expected error scenarios and JSON-RPC error codes
+            file: tests/fixtures/mcp/error-responses.json
+          - description: Test data factory functions for generating valid/invalid MCP requests
+            file: tests/helpers/mcp-data-factory.ts
+          - description: Documentation for E2E testing approach explaining HTTP+SSE transport usage
+            file: tests/e2e/README.md
+          - description: Test environment variables (copy from .env.test.example)
+            file: .env.test
+          - description: Template for test environment configuration
+            file: .env.test.example
+          - description: Add @modelcontextprotocol/sdk to test dependencies
+            file: package.json
+      source: ./docs/architecture/source-tree.md#Detailed Service Structures
+  integration_points:
+      backend_api_endpoint: http://localhost:8080
+      description: 'From the component diagram showing MCP integration:'
+      docker_compose: MCP service running on port 8081 for automated test execution
+      mcp_server_endpoint: http://localhost:8081/mcp
+      source: ./docs/architecture.md#Components
+      test_client: '@modelcontextprotocol/sdk McpClient with HTTP+SSE transport'
+  mcp_protocol_specifications:
+      description: 'From the MCP Streamable HTTP endpoint specification:'
+      endpoint: POST /mcp
+      error_codes:
+          - '-32700: Parse error'
+          - '-32600: Invalid Request'
+          - '-32601: Method not found'
+          - '-32602: Invalid params'
+      message_format: JSON-RPC 2.0
+      protocol_version: MCP Specification (JSON-RPC 2.0)
+      required_methods:
+          - initialize - handshake with clientInfo
+          - tools/list - discover available tools
+          - tools/call - invoke tool with parameters
+      source: ./docs/architecture.md#REST API Spec
+      tool_definitions:
+          - replaceAll - replace entire document content
+          - append - append content to document
+          - prepend - prepend content to document
+          - insertBefore - insert content before anchor
+          - insertAfter - insert content after anchor
+      transport: HTTP POST + Server-Sent Events (Streamable HTTP)
+  performance_requirements:
+      connection_establishment: < 1 second
+      description: 'Performance requirements based on coding standards and story tasks:'
+      end_to_end_flow: < 2 seconds total
+      source: ./docs/architecture/coding-standards.md#Performance Standards
+      tool_discovery: < 2 seconds
+      tool_invocation: < 2 seconds
+  previous_story_insights: |
+      Story 3.2 focuses on implementing MCP integration testing with realistic LLM simulation using the @modelcontextprotocol/sdk TypeScript client.
+      This story tests the MCP server's protocol compliance by simulating Claude API client behavior via HTTP+SSE transport (Streamable HTTP per MCP specification).
+
+      Key implementation approach:
+      - Use @modelcontextprotocol/sdk with McpClient helper wrapper for MCP protocol testing
+      - Test HTTP+SSE transport (NOT WebSocket) per MCP Streamable HTTP specification
+      - Implement complete Claude → MCP Server → Tool Execution → Response flow testing
+      - Use Playwright as test framework (assertions, test structure) but NOT for browser automation
+      - Focus on E2E tests that verify complete MCP protocol compliance with realistic LLM behavior
+      - Create reusable test helpers and fixtures for MCP request/response patterns
+
+      This differs from Integration (INT) tests which focus on direct protocol testing without LLM simulation.
+      E2E tests verify the complete system integration with realistic Claude API client behavior.
+  security_considerations:
+      description: 'Security requirements for MCP testing:'
+      environment_variables: Sensitive configuration in .env.test (excluded from git)
+      error_handling: Verify proper error responses without exposing internal details
+      source: ./docs/architecture/coding-standards.md#Security Standards
+      test_data: No production credentials or real document IDs in fixtures
+      validation: Test parameter validation and input sanitization
+  technology_stack:
+      config: Environment variables via .env.test (MCP_SERVER_URL=http://localhost:8081)
+      description: 'From the MCP testing approach documentation:'
+      framework: '@playwright/test (test runner framework only)'
+      language: TypeScript
+      logging: Playwright built-in logging with structured test output
+      mcp_integration: '@modelcontextprotocol/sdk with McpClient helper for HTTP+SSE transport'
+      source: ./docs/architecture/tech-stack.md#Testing Strategy
+      test_type: End-to-End (E2E) - MCP Protocol Testing
+      transport: HTTP+SSE (Streamable HTTP per MCP specification)
+  test_data_requirements:
+      data_factories:
+          - generateValidToolCallRequest(toolName, params)
+          - generateInvalidToolCallRequest(errorType)
+          - generateInitializeRequest(clientInfo)
+      description: 'Test fixtures and data factories needed for comprehensive MCP testing:'
+      fixtures:
+          error_responses:
+              - Invalid tool name scenarios
+              - Missing required parameters
+              - Malformed JSON-RPC messages
+              - Invalid documentId validation
+          sample_tool_calls:
+              - Realistic Claude API request format
+              - Valid documentId and content parameters
+              - JSON-RPC 2.0 message format
+          valid_tools_list:
+              - Tool definitions with name, description, inputSchema
+              - JSON Schema format with required parameters validation
+              - Google Docs operations per architecture document
+      source: Story 3.2 Tasks
+  testing_standards:
+      assertions: Playwright expect() with specific, measurable expectations
+      description: 'From the E2E testing standards and scenario ID system:'
+      documentation: Inline comments explaining MCP protocol interaction
+      mcp_client: '@modelcontextprotocol/sdk with McpClient helper'
+      scenario_id_format: EE_XXXXX_YY format using underscores
+      source: ./docs/architecture/coding-standards.md#Testing Standards
+      test_framework: Playwright (test runner only, NOT browser automation)
+      test_naming: '[SCENARIO_ID]: should [action] [expected result]'
+      test_structure: Arrange-Act-Assert (AAA) pattern
+
+
+testing:
+  test_location: "tests/e2e/"
+  frameworks:
+    - "Playwright (latest version) as test runner framework for assertions and test structure"
+    - "@modelcontextprotocol/sdk (TypeScript MCP client for HTTP+SSE transport per MCP specification)"
+    - "Jest (latest version) for unit testing of helper functions and data factories"
+    - "TypeScript (5.x) for type-safe test implementation"
+  requirements:
+    - "Unit test: McpClient helper wrapper connection lifecycle management (AC-1, AC-3)"
+    - "Unit test: MCP data factory functions for valid/invalid request generation (AC-2, AC-4, AC-5)"
+    - "Unit test: HTTP+SSE transport error recovery logic in McpClient (AC-5)"
+    - "Integration test: MCP server responds to tools/list discovery request via HTTP+SSE (AC-1, scenario 3.2-INT-001)"
+    - "Integration test: MCP server returns complete tool catalog with correct schema format (AC-1, scenario 3.2-INT-002)"
+    - "Integration test: MCP server processes replaceAll tool invocation and returns valid response (AC-2, scenario 3.2-INT-003)"
+    - "Integration test: MCP server processes append tool invocation with anchor text parameter (AC-2, scenario 3.2-INT-004)"
+    - "Integration test: MCP server returns error for invalid tool name with proper JSON-RPC error code (AC-5, scenario 3.2-INT-005)"
+    - "Integration test: MCP server returns error for missing required parameters in tool call (AC-5, scenario 3.2-INT-006)"
+    - "Integration test: MCP server returns parse error for malformed JSON-RPC message (AC-5, scenario 3.2-INT-007)"
+    - "Integration test: MCP server validates and rejects invalid documentId parameter (AC-5, scenario 3.2-INT-008)"
+    - "E2E test: Complete initialize handshake between Claude API client and MCP server (AC-3, AC-4, scenario 3.2-E2E-001)"
+    - "E2E test: Complete tool discovery phase with Claude API client request format (AC-1, AC-3, scenario 3.2-E2E-002)"
+    - "E2E test: Complete replaceAll tool execution flow from Claude to MCP to response (AC-2, AC-3, AC-4, scenario 3.2-E2E-003)"
+    - "E2E test: End-to-end timing verification for complete Claude to MCP flow under 2 seconds (AC-3, scenario 3.2-E2E-004)"
+    - "Performance test: Tool discovery completes within 2 seconds per performance requirements (AC-1)"
+    - "Performance test: Tool invocation completes within 2 seconds per performance requirements (AC-2)"
+  coverage:
+    data_factories: "85%"
+    error_handling: "90%"
+    mcp_client_helper: "90%"
+    overall: "85%"
+    request_handling: "85%"
+    tool_registration: "90%"
+
+scenarios:
+  test_scenarios:
+    - id: "3.2-INT-001"
+      acceptance_criteria: ["AC-1"]
+      steps:
+        - given:
+            - "MCP server accepts HTTP connections on port 8081"
+        - when:
+            - "Test client sends tools/list request to /mcp endpoint"
+        - then:
+            - "Server responds with available tool definitions"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-002"
+      acceptance_criteria: ["AC-1"]
+      steps:
+        - given:
+            - "MCP server maintains active HTTP+SSE connection"
+        - when:
+            - "Test client requests tool catalog via Server-Sent Events"
+        - then:
+            - "Server streams tool definitions with name, description, and inputSchema fields"
+            - and: "Tool definitions include Google Docs operations"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-003"
+      acceptance_criteria: ["AC-1"]
+      steps:
+        - given:
+            - "MCP server provides tool catalog via /mcp endpoint"
+        - when:
+            - "Test client retrieves tool list from server"
+        - then:
+            - "Response includes replaceAll operation with required parameters"
+            - and: "Response includes append operation with anchor text parameter"
+            - and: "Response includes prepend operation definition"
+            - and: "Response includes insertBefore operation definition"
+            - and: "Response includes insertAfter operation definition"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-004"
+      acceptance_criteria: ["AC-1"]
+      steps:
+        - given:
+            - "MCP server serves tool schemas via HTTP endpoint"
+        - when:
+            - "Test client validates tool schemas against JSON Schema format"
+        - then:
+            - "All tool schemas conform to JSON Schema specification"
+            - and: "Required parameters include type and properties fields"
+
+      level: "integration"
+      priority: "P1"
+    - id: "3.2-INT-005"
+      acceptance_criteria: ["AC-1"]
+      steps:
+        - given:
+            - "MCP server responds to discovery requests within 2 seconds"
+        - when:
+            - "Test client measures tool discovery response time"
+        - then:
+            - "Server completes discovery request in under 2 seconds"
+
+      level: "integration"
+      priority: "P1"
+    - id: "3.2-INT-006"
+      acceptance_criteria: ["AC-2"]
+      steps:
+        - given:
+            - "MCP server processes tools/call requests via HTTP POST"
+        - when:
+            - "Test client invokes replaceAll tool with documentId and content parameters"
+        - then:
+            - "Server returns success status with operation result"
+            - and: "Response includes execution metadata"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-007"
+      acceptance_criteria: ["AC-2"]
+      steps:
+        - given:
+            - "MCP server accepts tool invocation requests on /mcp endpoint"
+        - when:
+            - "Test client sends append tool request with anchor text parameter"
+        - then:
+            - "Server processes positioned operation successfully"
+            - and: "Response confirms content insertion at specified location"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-008"
+      acceptance_criteria: ["AC-2"]
+      steps:
+        - given:
+            - "MCP server follows JSON-RPC 2.0 message format"
+        - when:
+            - "Test client sends tool invocation with proper JSON-RPC structure"
+        - then:
+            - "Server responds with valid JSON-RPC 2.0 format"
+            - and: "Response includes id, result, and optional error fields"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-009"
+      acceptance_criteria: ["AC-2"]
+      steps:
+        - given:
+            - "MCP server completes operations within 2 seconds"
+        - when:
+            - "Test client measures tool invocation response time"
+        - then:
+            - "Server returns result in under 2 seconds"
+
+      level: "integration"
+      priority: "P1"
+    - id: "3.2-INT-010"
+      acceptance_criteria: ["AC-4"]
+      steps:
+        - given:
+            - "MCP server accepts requests matching Claude API format"
+        - when:
+            - "Test client sends tool request with Claude API structure"
+        - then:
+            - "Server parses request successfully"
+            - and: "Server returns response compatible with Claude API client"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-011"
+      acceptance_criteria: ["AC-4"]
+      steps:
+        - given:
+            - "MCP server processes <operation> requests"
+        - when:
+            - "Test client invokes <operation> with <parameter_type> parameters"
+        - then:
+            - "Server returns <expected_response> response"
+      scenario_outline: true
+      examples:
+        - expected_response: success with operation confirmation
+          operation: replaceAll
+          parameter_type: documentId and content
+
+        - expected_response: success with positioned insertion
+          operation: append
+          parameter_type: documentId and anchor text
+
+        - expected_response: success with content prepended
+          operation: prepend
+          parameter_type: documentId and content
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-012"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given:
+            - "MCP server validates tool names in requests"
+        - when:
+            - "Test client sends tools/call with non-existent tool name"
+        - then:
+            - "Server returns JSON-RPC error with code -32601"
+            - and: "Error message indicates Method not found"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-013"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given:
+            - "MCP server requires documentId parameter for operations"
+        - when:
+            - "Test client sends tool invocation without required parameters"
+        - then:
+            - "Server responds with detailed validation error"
+            - and: "Error includes missing parameter names"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-014"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given:
+            - "MCP server parses JSON-RPC messages per specification"
+        - when:
+            - "Test client sends malformed JSON-RPC message"
+        - then:
+            - "Server returns error code -32700 for parse error"
+            - but: "Server maintains connection after error response"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-015"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given:
+            - "MCP server validates documentId parameter format"
+        - when:
+            - "Test client provides invalid documentId in request"
+        - then:
+            - "Server rejects request with validation error"
+            - and: "Error response includes recovery hints"
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-INT-016"
+      acceptance_criteria: ["AC-5"]
+      steps:
+        - given:
+            - "MCP server validates <validation_type> in requests"
+        - when:
+            - "Test client sends <error_scenario> request"
+        - then:
+            - "Server returns error code <error_code>"
+            - and: "Error message provides <error_detail>"
+      scenario_outline: true
+      examples:
+        - error_code: -32600
+          error_detail: Invalid Request indication
+          error_scenario: invalid JSON-RPC format
+          validation_type: message structure
+
+        - error_code: -32601
+          error_detail: Method not found message
+          error_scenario: unknown tool
+          validation_type: tool name
+
+        - error_code: -32602
+          error_detail: Invalid params with parameter name
+          error_scenario: missing required parameter
+          validation_type: parameter completeness
+
+      level: "integration"
+      priority: "P0"
+    - id: "3.2-E2E-001"
+      acceptance_criteria: ["AC-3"]
+      steps:
+        - given:
+            - "MCP server accepts client connections on port 8081"
+        - when:
+            - "Test client sends initialize handshake with clientInfo"
+        - then:
+            - "Server responds with serverInfo including protocolVersion"
+            - and: "Response includes capabilities and server metadata"
+
+      level: "e2e"
+      priority: "P0"
+    - id: "3.2-E2E-002"
+      acceptance_criteria: ["AC-3", "AC-1"]
+      steps:
+        - given:
+            - "Test client completes initialize handshake with MCP server"
+        - when:
+            - "Client requests complete tool catalog"
+        - then:
+            - "Server provides all available tool definitions"
+            - and: "Tool catalog includes Google Docs operations"
+
+      level: "e2e"
+      priority: "P0"
+    - id: "3.2-E2E-003"
+      acceptance_criteria: ["AC-3", "AC-2", "AC-4"]
+      steps:
+        - given:
+            - "Test client maintains established connection to MCP server"
+            - and: "Client selects replaceAll operation from tool catalog"
+        - when:
+            - "Client sends complete tool execution request with realistic document content"
+        - then:
+            - "Server executes operation and returns confirmation"
+            - and: "Response includes document preview URL"
+            - and: "Response includes execution metrics"
+
+      level: "e2e"
+      priority: "P0"
+    - id: "3.2-E2E-004"
+      acceptance_criteria: ["AC-3"]
+      steps:
+        - given:
+            - "Complete Claude to MCP flow requires under 2 seconds"
+        - when:
+            - "Test client measures end-to-end request-response cycle time"
+        - then:
+            - "Flow completes from initialize to final response in under 2 seconds"
+
+      level: "e2e"
+      priority: "P1"
+    - id: "3.2-E2E-005"
+      acceptance_criteria: ["AC-3", "AC-4"]
+      steps:
+        - given:
+            - "MCP server captures structured logs for operations"
+        - when:
+            - "Test client completes full operation from discovery to execution"
+        - then:
+            - "Server logs include complete operation trace"
+            - and: "Logs capture request ID, operation type, and execution time"
+
+      level: "e2e"
+      priority: "P2"
+
+change_log:
+  - date: "2025-11-26"
+    version: "1.0.0"
+    description: "Initial story creation"
+    author: "bmad-cli"
+
+qa_results:
+  review_date: "2025-11-26"
+  reviewed_by: "Quinn (Test Architect)"
+
+  assessment:
+    summary: "Story 3.2 demonstrates excellent implementation readiness with comprehensive E2E testing approach for MCP protocol integration. The story provides detailed technical specifications, clear acceptance criteria, and well-structured tasks with explicit dependencies on architecture documentation. Strong focus on realistic LLM simulation and protocol compliance testing."
+
+    strengths:
+      - "Comprehensive acceptance criteria covering tool discovery, invocation, error handling, and complete E2E flow with realistic LLM behavior"
+      - "Detailed task breakdown with explicit subtasks mapping to acceptance criteria and architecture documentation references"
+      - "Clear technology stack specification: @modelcontextprotocol/sdk, HTTP+SSE transport, Playwright test framework (runner only)"
+      - "Extensive development notes including MCP protocol specifications, error codes, performance requirements, and security considerations"
+      - "Well-defined test data requirements with fixtures and data factory functions for comprehensive test coverage"
+      - "Explicit performance requirements with measurable targets (2-second timeouts for operations)"
+      - "Strong architectural context with component responsibilities, dependencies, and integration points clearly documented"
+      - "Security considerations addressed (no production credentials, environment variable isolation, error handling validation)"
+
+    improvements:
+      - "Task 'Set up MCP E2E test infrastructure' could specify version constraints for @modelcontextprotocol/sdk package dependency"
+      - "Consider adding explicit rollback/cleanup procedures for E2E test environment setup failures"
+      - "McpClient helper implementation details could benefit from explicit interface contract definition before implementation"
+      - "Test fixture creation tasks lack validation criteria for fixture data quality and completeness"
+      - "Missing explicit versioning strategy for MCP protocol compatibility testing (what happens when protocol version changes?)"
+      - "Consider adding performance baseline capture mechanism to track test execution time trends over iterations"
+      - "Error scenario coverage could include network timeout/retry scenarios for HTTP+SSE transport resilience testing"
+
+    risk_level: "Low"
+    risk_reason: "Story has minimal technical risk due to comprehensive documentation, clear architectural guidance, and well-defined test approach. Primary risks are limited to: (1) @modelcontextprotocol/sdk API changes requiring test updates, (2) HTTP+SSE transport implementation complexity in test client wrapper, (3) realistic LLM simulation accuracy. All risks are manageable with proper implementation following documented standards."
+    testability_score: 9
+    testability_max: 10
+    testability_notes: "Exceptionally high testability with explicit E2E test scenarios, measurable acceptance criteria, comprehensive test data fixtures, and clear performance assertions. Story includes detailed test infrastructure setup, realistic LLM simulation patterns, error scenario coverage, and complete flow verification. Minor deduction for lack of explicit protocol version compatibility test strategy."
+    implementation_readiness: 9
+    implementation_readiness_max: 10
+
+  gate_status: "PASS"
+  gate_reference: "docs/qa/gates/3.2-mcp-integration-testing-with-llm-simulation.yml"
+
+dev_agent_record:
+  agent_model_used: null
+  debug_log_references: []
+  completion_notes: []
+  file_list: []

@@ -497,14 +497,18 @@ scenarios:
         story_file: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-008"
         merge_date: "2025-10-09"
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-014"
+        merge_date: "2025-10-09"
     merged_steps:
       given:
-        - "Client maintains active MCP session"
+        - "MCP server parses JSON-RPC messages per specification"
       when:
-        - "Client sends message with invalid JSON format via HTTP POST"
+        - "Test client sends malformed JSON-RPC message"
       then:
-        - "Server returns parsing error immediately"
-        - "Error message specifies invalid JSON"
+        - "Server returns error code -32700 for parse error"
+        - "Server maintains connection after error response"
 
   INT-015:
     description: "Server validates required MCP protocol fields"
@@ -543,13 +547,21 @@ scenarios:
         story_file: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-010"
         merge_date: "2025-10-09"
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-016"
+        merge_date: "2025-10-09"
     merged_steps:
       given:
+        - "MCP server validates validation types in requests"
         - "Client maintains active MCP session"
       when:
+        - "Test client sends error scenario request"
         - "Client sends message with field containing invalid value"
       then:
+        - "Server returns error code for validation failure"
         - "Server returns validation error"
+        - "Error message provides error detail"
         - "Error message specifies error detail"
 
   INT-017:
@@ -1137,3 +1149,440 @@ scenarios:
         - "Server reports healthy status"
         - "Server includes connection pool metrics"
         - "Server includes dependency health for Redis and Google API"
+
+  E2E-016:
+    description: "Initialize handshake returns server metadata and capabilities"
+    service: ""
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-E2E-001"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server accepts client connections on port 8081"
+      when:
+        - "Test client sends initialize handshake with clientInfo"
+      then:
+        - "Server responds with serverInfo including protocolVersion"
+        - "Response includes capabilities and server metadata"
+
+  INT-037:
+    description: "Server responds to tools/list request with tool definitions"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-001"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server accepts HTTP connections on port 8081"
+      when:
+        - "Test client sends tools/list request to /mcp endpoint"
+      then:
+        - "Server responds with available tool definitions"
+
+  INT-038:
+    description: "Server streams tool catalog via SSE with schema definitions"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-002"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server maintains active HTTP+SSE connection"
+      when:
+        - "Test client requests tool catalog via Server-Sent Events"
+      then:
+        - "Server streams tool definitions with name, description, and inputSchema fields"
+        - "Tool definitions include Google Docs operations"
+
+  INT-039:
+    description: "Tool catalog includes all document editing operations"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-003"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server provides tool catalog via /mcp endpoint"
+      when:
+        - "Test client retrieves tool list from server"
+      then:
+        - "Response includes replaceAll operation with required parameters"
+        - "Response includes append operation with anchor text parameter"
+        - "Response includes prepend operation definition"
+        - "Response includes insertBefore operation definition"
+        - "Response includes insertAfter operation definition"
+
+  INT-040:
+    description: "Tool schemas conform to JSON Schema specification"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-004"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server serves tool schemas via HTTP endpoint"
+      when:
+        - "Test client validates tool schemas against JSON Schema format"
+      then:
+        - "All tool schemas conform to JSON Schema specification"
+        - "Required parameters include type and properties fields"
+
+  INT-041:
+    description: "Tool discovery completes within 2 seconds"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-005"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server responds to discovery requests within 2 seconds"
+      when:
+        - "Test client measures tool discovery response time"
+      then:
+        - "Server completes discovery request in under 2 seconds"
+
+  INT-042:
+    description: "replaceAll tool execution returns success with metadata"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-006"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server processes tools/call requests via HTTP POST"
+      when:
+        - "Test client invokes replaceAll tool with documentId and content parameters"
+      then:
+        - "Server returns success status with operation result"
+        - "Response includes execution metadata"
+
+  INT-043:
+    description: "append tool processes positioned insertion with anchor text"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-007"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server accepts tool invocation requests on /mcp endpoint"
+      when:
+        - "Test client sends append tool request with anchor text parameter"
+      then:
+        - "Server processes positioned operation successfully"
+        - "Response confirms content insertion at specified location"
+
+  INT-044:
+    description: "Tool invocation follows JSON-RPC 2.0 message format"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-008"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server follows JSON-RPC 2.0 message format"
+      when:
+        - "Test client sends tool invocation with proper JSON-RPC structure"
+      then:
+        - "Server responds with valid JSON-RPC 2.0 format"
+        - "Response includes id, result, and optional error fields"
+
+  INT-045:
+    description: "Tool invocation completes within 2 seconds"
+    service: ""
+    level: "integration"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-009"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server completes operations within 2 seconds"
+      when:
+        - "Test client measures tool invocation response time"
+      then:
+        - "Server returns result in under 2 seconds"
+
+  INT-046:
+    description: "Server parses Claude API format and returns compatible response"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-010"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server accepts requests matching Claude API format"
+      when:
+        - "Test client sends tool request with Claude API structure"
+      then:
+        - "Server parses request successfully"
+        - "Server returns response compatible with Claude API client"
+
+  INT-047:
+    description: "Server processes operations with parameters and returns responses"
+    service: ""
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-011"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server processes <operation> requests"
+      when:
+        - "Test client invokes <operation> with <parameter_type> parameters"
+      then:
+        - "Server returns <expected_response> response"
+
+  INT-048:
+    description: "Server rejects non-existent tool with method not found error"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-012"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server validates tool names in requests"
+      when:
+        - "Test client sends tools/call with non-existent tool name"
+      then:
+        - "Server returns JSON-RPC error with code -32601"
+        - "Error message indicates Method not found"
+
+  INT-049:
+    description: "Server validates tool parameters and returns detailed error"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-013"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server requires documentId parameter for operations"
+      when:
+        - "Test client sends tool invocation without required parameters"
+      then:
+        - "Server responds with detailed validation error"
+        - "Error includes missing parameter names"
+
+  INT-050:
+    description: "Server validates documentId format and provides recovery hints"
+    service: "mcp-service"
+    level: "integration"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/integration/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-INT-015"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server validates documentId parameter format"
+      when:
+        - "Test client provides invalid documentId in request"
+      then:
+        - "Server rejects request with validation error"
+        - "Error response includes recovery hints"
+
+  E2E-017:
+    description: "Tool catalog discovery includes Google Docs operations"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-E2E-002"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Test client completes initialize handshake with MCP server"
+      when:
+        - "Client requests complete tool catalog"
+      then:
+        - "Server provides all available tool definitions"
+        - "Tool catalog includes Google Docs operations"
+
+  E2E-018:
+    description: "replaceAll operation executes with document preview and metrics"
+    service: ""
+    level: "e2e"
+    priority: "P0"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-E2E-003"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Test client maintains established connection to MCP server"
+        - "Client selects replaceAll operation from tool catalog"
+      when:
+        - "Client sends complete tool execution request with realistic document content"
+      then:
+        - "Server executes operation and returns confirmation"
+        - "Response includes document preview URL"
+        - "Response includes execution metrics"
+
+  E2E-019:
+    description: "Complete Claude to MCP flow completes within 2 seconds"
+    service: "mcp-service"
+    level: "e2e"
+    priority: "P1"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-10"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-E2E-004"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "Complete Claude to MCP flow requires under 2 seconds"
+      when:
+        - "Test client measures end-to-end request-response cycle time"
+      then:
+        - "Flow completes from initialize to final response in under 2 seconds"
+
+  E2E-020:
+    description: "MCP server logs complete operation trace with metadata"
+    service: ""
+    level: "e2e"
+    priority: "P2"
+    implementation_status:
+      status: "implemented"
+      file_path: "tests/e2e/mcp-service.spec.ts"
+    last_updated: "2025-10-09"
+    user_stories:
+      - story_id: "3.2"
+        story_file: "docs/stories/3.2-*.yaml"
+        scenario_id: "3.2-E2E-005"
+        merge_date: "2025-10-09"
+    merged_steps:
+      given:
+        - "MCP server captures structured logs for operations"
+      when:
+        - "Test client completes full operation from discovery to execution"
+      then:
+        - "Server logs include complete operation trace"
+        - "Logs capture request ID, operation type, and execution time"
