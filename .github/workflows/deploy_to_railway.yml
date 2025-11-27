@@ -60,15 +60,15 @@ jobs:
           case "$env_name" in
             Development)
               cli_env="development"
-              services="frontend-dev backend-dev"
+              services="frontend-dev backend-dev mcp-dev"
               ;;
             Staging)
               cli_env="staging"
-              services="frontend-staging backend-staging"
+              services="frontend-staging backend-staging mcp-staging"
               ;;
             Production)
               cli_env="production"
-              services="frontend backend"
+              services="frontend backend mcp"
               ;;
             *)
               echo "Unknown environment: $env_name" >&2
@@ -91,6 +91,8 @@ jobs:
           for svc in $SERVICES; do
             if [[ "$svc" == frontend* ]]; then
               path="services/frontend"
+            elif [[ "$svc" == mcp* ]]; then
+              path="services/mcp-service"
             else
               path="services/backend"
             fi

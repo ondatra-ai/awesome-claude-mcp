@@ -150,7 +150,11 @@ func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 	// Get port from environment or use default
-	port := os.Getenv("MCP_PORT")
+	// Check PORT first (Railway standard), then MCP_PORT for backwards compatibility
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = os.Getenv("MCP_PORT")
+	}
 	if port == "" {
 		port = "8081"
 	}
