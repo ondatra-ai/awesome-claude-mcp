@@ -124,13 +124,9 @@ export class ClaudeAuth {
       { timeout: 60000 }
     );
 
-    const magicLink =
-      message.html?.links?.find(
-        (link) => link.href?.includes('claude.ai') || link.href?.includes('anthropic')
-      ) ||
-      message.text?.links?.find(
-        (link) => link.href?.includes('claude.ai') || link.href?.includes('anthropic')
-      );
+    const magicLink = message.html?.links?.find((link) =>
+      link.href?.includes('claude.ai')
+    );
 
     if (!magicLink?.href) {
       throw new Error('Magic link not found in email');
