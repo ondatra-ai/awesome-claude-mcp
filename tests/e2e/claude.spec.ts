@@ -67,14 +67,6 @@ test.describe('Claude Desktop via CDP', () => {
 
     expect(responses.join(' ')).toContain('DELTA-42');
   });
-
-  test('should take screenshot for debugging', async ({ }, testInfo) => {
-    const screenshotPath = testInfo.outputPath('claude-desktop-test.png');
-    await client.takeScreenshot(screenshotPath);
-    // Verify screenshot was created
-    const fs = await import('fs');
-    expect(fs.existsSync(screenshotPath)).toBe(true);
-  });
 });
 
 /**
