@@ -1,5 +1,11 @@
+import path from 'path';
+
+import dotenv from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
+
 import { getEnvironmentConfig } from './config/environments';
+
+dotenv.config({ path: path.join(process.cwd(), '.env.test') });
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -8,7 +14,9 @@ const resolvedEnvironment = getEnvironmentConfig(process.env.E2E_ENV);
 
 export default defineConfig({
   testDir: '.',
+  /* Exclude claude-login tests by default - run with: npx playwright test e2e/claude-login.spec.ts */
   testMatch: ['e2e/**/*.spec.ts', 'integration/**/*.spec.ts'],
+  testIgnore: ['**/claude-login.spec.ts'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

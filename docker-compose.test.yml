@@ -79,6 +79,8 @@ services:
       # Mount test results and reports
       - ./test-results:/app/test-results
       - ./playwright-report:/app/playwright-report
+      # Mount .env.test for auth state persistence
+      - ./tests/.env.test:/app/.env.test
 
 
 volumes:
