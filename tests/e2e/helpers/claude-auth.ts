@@ -8,72 +8,12 @@
  */
 import * as fs from 'fs';
 
-import { BrowserContext, Page, chromium } from '@playwright/test';
+import { BrowserContext, Page } from '@playwright/test';
 import MailosaurClient from 'mailosaur';
 
 import { IClaudeAuthConfig, IAuthResult } from './claude-auth-interfaces';
 
 export const CLAUDE_URL = 'https://claude.ai';
-
-/**
- * Manual login helper - opens a headed browser for manual authentication
- * Use this to obtain initial auth state when Cloudflare blocks automated login
- *
- * Usage: npx ts-node -e "require('./e2e/helpers/claude-auth').manualLogin()"
- */
-export async function manualLogin(envFilePath?: string): Promise<string> {
-  const targetEnvFile = envFilePath || process.env.ENV_FILE_PATH || '.env.test';
-
-  console.log('🔐 Opening browser for manual Claude.ai login...');
-  console.log('📝 Complete the login process (including any Cloudflare challenges)');
-  console.log('✅ Once logged in, the auth state will be saved automatically\n');
-
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  await page.goto(`${CLAUDE_URL}/login`, { waitUntil: 'domcontentloaded' });
-
-  // Wait for successful login - detect chat interface
-  console.log('⏳ Waiting for successful login...');
-  try {
-    await page.waitForURL(/claude\.ai\/(new|chat)/, { timeout: 300000 }); // 5 min timeout
-
-    // Additional wait to ensure session is fully established
-    await page.waitForTimeout(2000);
-
-    // Capture auth state
-    const state = await context.storageState();
-    const authState = Buffer.from(JSON.stringify(state)).toString('base64');
-
-    // Save to .env.test
-    if (fs.existsSync(targetEnvFile)) {
-      const content = fs.readFileSync(targetEnvFile, 'utf-8');
-      const regex = /^CLAUDE_AUTH_STATE=.*$/m;
-
-      if (regex.test(content)) {
-        const updated = content.replace(regex, `CLAUDE_AUTH_STATE=${authState}`);
-        fs.writeFileSync(targetEnvFile, updated, 'utf-8');
-        console.log(`\n✅ Auth state saved to ${targetEnvFile}`);
-        console.log(`📊 State size: ${authState.length} characters`);
-      } else {
-        console.log('\n⚠️  CLAUDE_AUTH_STATE= line not found in env file');
-        console.log('Add this to your env file:');
-        console.log(`CLAUDE_AUTH_STATE=${authState}`);
-      }
-    } else {
-      console.log(`\n⚠️  Env file not found: ${targetEnvFile}`);
-      console.log('Auth state (base64):');
-      console.log(authState);
-    }
-
-    await browser.close();
-    return authState;
-  } catch (error) {
-    await browser.close();
-    throw new Error('Login timeout - did not detect successful authentication');
-  }
-}
 
 /**
  * Claude Authentication Manager
@@ -242,9 +182,7 @@ export class ClaudeAuth {
         // Check if blocked by Cloudflare
         const currentUrl = page.url();
         if (currentUrl.includes('challenge_redirect')) {
-          throw new Error(
-            'Cloudflare challenge detected. Run "npm run auth:login" to manually authenticate.'
-          );
+          throw new Error('Cloudflare challenge detected - automated login blocked.');
         }
 
         await this.performEmailLogin(page);

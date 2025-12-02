@@ -11,8 +11,7 @@
     "test:report": "playwright show-report",
     "test:docker": "npm run test:docker:simple --",
     "test:docker:simple": "docker-compose -f ../docker-compose.test.yml run --rm playwright-test",
-    "install:browsers": "npx playwright install",
-    "auth:login": "npx ts-node scripts/manual-login.ts"
+    "install:browsers": "npx playwright install"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
