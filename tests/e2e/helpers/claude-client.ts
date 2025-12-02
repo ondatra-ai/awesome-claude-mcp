@@ -139,9 +139,6 @@ export class ClaudeDesktopClient {
         /^Artifacts$/,
         /^Recents$/,
         /^Hide$/,
-        /^Max plan$/,
-        /^BD$/,
-        /^Boarlabz/,
       ];
 
       const responseLines = lines.filter(line => {
@@ -165,28 +162,6 @@ export class ClaudeDesktopClient {
     return response;
   }
 
-  async getConversation(): Promise<string[]> {
-    if (!this.page) {
-      throw new Error('Not connected to Claude Desktop');
-    }
-
-    return this.page.evaluate(() => {
-      const messages: string[] = [];
-      const messageElements = document.querySelectorAll(
-        '[data-testid="chat-message-content"], .font-claude-message'
-      );
-
-      messageElements.forEach(el => {
-        const text = el.textContent?.trim();
-        if (text) {
-          messages.push(text);
-        }
-      });
-
-      return messages;
-    });
-  }
-
   async newChat(): Promise<void> {
     if (!this.page) {
       throw new Error('Not connected to Claude Desktop');
@@ -202,14 +177,6 @@ export class ClaudeDesktopClient {
     await this.page.waitForSelector('[contenteditable="true"]', {
       timeout: this.config.timeout
     });
-  }
-
-  async takeScreenshot(path: string): Promise<void> {
-    if (!this.page) {
-      throw new Error('Not connected to Claude Desktop');
-    }
-
-    await this.page.screenshot({ path });
   }
 
   async disconnect(): Promise<void> {
