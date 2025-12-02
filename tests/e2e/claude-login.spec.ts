@@ -27,17 +27,15 @@ const MAILOSAUR_SERVER_ID = process.env.MAILOSAUR_SERVER_ID;
 const CLAUDE_EMAIL = process.env.CLAUDE_EMAIL;
 const CLAUDE_AUTH_STATE = process.env.CLAUDE_AUTH_STATE;
 
-const HAS_REQUIRED_ENV_VARS = !!(
-  MAILOSAUR_API_KEY &&
-  MAILOSAUR_SERVER_ID &&
-  CLAUDE_EMAIL
-);
+// Fail fast if required env vars are missing
+if (!MAILOSAUR_API_KEY || !MAILOSAUR_SERVER_ID || !CLAUDE_EMAIL) {
+  throw new Error(
+    'Missing required env vars: MAILOSAUR_API_KEY, MAILOSAUR_SERVER_ID, CLAUDE_EMAIL. ' +
+      'Copy tests/.env.test.example to tests/.env.test and fill in values.'
+  );
+}
 
 test.describe('Claude.ai Authentication with ClaudeAIClient', () => {
-  test.skip(
-    !HAS_REQUIRED_ENV_VARS,
-    'Missing required env vars: MAILOSAUR_API_KEY, MAILOSAUR_SERVER_ID, CLAUDE_EMAIL'
-  );
 
   let client: ClaudeAIClient;
   let authResult: IAuthResult;
@@ -68,9 +66,6 @@ test.describe('Claude.ai Authentication with ClaudeAIClient', () => {
   });
 
   test('should authenticate successfully', async () => {
-    if (!authResult.success && authResult.error?.includes('Cloudflare')) {
-      test.skip(true, 'Cloudflare blocked - run "npm run auth:login" manually');
-    }
     expect(authResult.success).toBe(true);
     expect(client.isReady()).toBe(true);
   });
@@ -142,11 +137,6 @@ test.describe('Claude.ai Login Page UI', () => {
  * Auth State Management Tests
  */
 test.describe('Auth State Management', () => {
-  test.skip(
-    !HAS_REQUIRED_ENV_VARS,
-    'Missing required env vars: MAILOSAUR_API_KEY, MAILOSAUR_SERVER_ID, CLAUDE_EMAIL'
-  );
-
   test('should save auth state after successful login', async ({ browser }) => {
     const context = await browser.newContext();
     const client = new ClaudeAIClient(context, {
@@ -158,9 +148,6 @@ test.describe('Auth State Management', () => {
     });
 
     const result = await client.initialize();
-    if (!result.success && result.error?.includes('Cloudflare')) {
-      test.skip(true, 'Cloudflare blocked - run "npm run auth:login" manually');
-    }
     expect(result.success).toBe(true);
 
     const authState = await client.getAuthState();
