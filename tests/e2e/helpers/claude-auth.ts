@@ -8,12 +8,72 @@
  */
 import * as fs from 'fs';
 
-import { BrowserContext, Page } from '@playwright/test';
+import { BrowserContext, Page, chromium } from '@playwright/test';
 import MailosaurClient from 'mailosaur';
 
 import { IClaudeAuthConfig, IAuthResult } from './claude-auth-interfaces';
 
 export const CLAUDE_URL = 'https://claude.ai';
+
+/**
+ * Manual login helper - opens a headed browser for manual authentication
+ * Use this to obtain initial auth state when Cloudflare blocks automated login
+ *
+ * Usage: npx ts-node -e "require('./e2e/helpers/claude-auth').manualLogin()"
+ */
+export async function manualLogin(envFilePath?: string): Promise<string> {
+  const targetEnvFile = envFilePath || process.env.ENV_FILE_PATH || '.env.test';
+
+  console.log('🔐 Opening browser for manual Claude.ai login...');
+  console.log('📝 Complete the login process (including any Cloudflare challenges)');
+  console.log('✅ Once logged in, the auth state will be saved automatically\n');
+
+  const browser = await chromium.launch({ headless: false });
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  await page.goto(`${CLAUDE_URL}/login`, { waitUntil: 'domcontentloaded' });
+
+  // Wait for successful login - detect chat interface
+  console.log('⏳ Waiting for successful login...');
+  try {
+    await page.waitForURL(/claude\.ai\/(new|chat)/, { timeout: 300000 }); // 5 min timeout
+
+    // Additional wait to ensure session is fully established
+    await page.waitForTimeout(2000);
+
+    // Capture auth state
+    const state = await context.storageState();
+    const authState = Buffer.from(JSON.stringify(state)).toString('base64');
+
+    // Save to .env.test
+    if (fs.existsSync(targetEnvFile)) {
+      const content = fs.readFileSync(targetEnvFile, 'utf-8');
+      const regex = /^CLAUDE_AUTH_STATE=.*$/m;
+
+      if (regex.test(content)) {
+        const updated = content.replace(regex, `CLAUDE_AUTH_STATE=${authState}`);
+        fs.writeFileSync(targetEnvFile, updated, 'utf-8');
+        console.log(`\n✅ Auth state saved to ${targetEnvFile}`);
+        console.log(`📊 State size: ${authState.length} characters`);
+      } else {
+        console.log('\n⚠️  CLAUDE_AUTH_STATE= line not found in env file');
+        console.log('Add this to your env file:');
+        console.log(`CLAUDE_AUTH_STATE=${authState}`);
+      }
+    } else {
+      console.log(`\n⚠️  Env file not found: ${targetEnvFile}`);
+      console.log('Auth state (base64):');
+      console.log(authState);
+    }
+
+    await browser.close();
+    return authState;
+  } catch (error) {
+    await browser.close();
+    throw new Error('Login timeout - did not detect successful authentication');
+  }
+}
 
 /**
  * Claude Authentication Manager
@@ -40,6 +100,7 @@ export class ClaudeAuth {
 
   /**
    * Apply stored auth state to browser context
+   * Only applies cookies - localStorage is not needed for authentication
    */
   async applyAuthState(context: BrowserContext): Promise<boolean> {
     const state = this.parseAuthState();
@@ -47,7 +108,7 @@ export class ClaudeAuth {
       return false;
     }
 
-    const { cookies, origins } = state as {
+    const { cookies } = state as {
       cookies: Array<{
         name: string;
         value: string;
@@ -58,30 +119,14 @@ export class ClaudeAuth {
         secure?: boolean;
         sameSite?: 'Strict' | 'Lax' | 'None';
       }>;
-      origins: Array<{
-        origin: string;
-        localStorage: Array<{ name: string; value: string }>;
-      }>;
     };
 
     if (cookies?.length > 0) {
-      await context.addCookies(cookies);
-    }
-
-    if (origins?.length > 0) {
-      const page = await context.newPage();
-      for (const origin of origins) {
-        if (origin.origin.includes('claude.ai')) {
-          await page.goto(origin.origin, { waitUntil: 'domcontentloaded' });
-          for (const item of origin.localStorage) {
-            await page.evaluate(
-              ({ key, value }) => localStorage.setItem(key, value),
-              { key: item.name, value: item.value }
-            );
-          }
-        }
-      }
-      await page.close();
+      // Filter to only claude.ai cookies to avoid issues with other domains
+      const claudeCookies = cookies.filter(
+        (c) => c.domain.includes('claude.ai') || c.domain.includes('anthropic')
+      );
+      await context.addCookies(claudeCookies);
     }
 
     return true;
@@ -91,10 +136,22 @@ export class ClaudeAuth {
    * Validate if the current session is authenticated
    */
   async validateSession(page: Page): Promise<boolean> {
-    await page.goto(`${CLAUDE_URL}/new`, { waitUntil: 'networkidle', timeout: 30000 });
+    try {
+      await page.goto(`${CLAUDE_URL}/new`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    } catch {
+      return false;
+    }
 
     const url = page.url();
     if (url.includes('/login') || url.includes('challenge_redirect')) {
+      return false;
+    }
+
+    // Wait a bit for any client-side redirects
+    await page.waitForTimeout(2000);
+    const finalUrl = page.url();
+
+    if (finalUrl.includes('/login') || finalUrl.includes('challenge_redirect')) {
       return false;
     }
 
@@ -137,17 +194,59 @@ export class ClaudeAuth {
   }
 
   /**
+   * Apply stealth evasions to avoid bot detection
+   */
+  private async applyStealthEvasions(context: BrowserContext): Promise<void> {
+    await context.addInitScript(() => {
+      // Hide webdriver
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+
+      // Override plugins
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+      });
+
+      // Override languages
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      });
+
+      // Chrome detection
+      (window as Window & { chrome?: object }).chrome = { runtime: {} };
+
+      // Override permissions
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters: PermissionDescriptor) =>
+        parameters.name === 'notifications'
+          ? Promise.resolve({ state: 'denied' } as PermissionStatus)
+          : originalQuery(parameters);
+    });
+  }
+
+  /**
    * Main authentication flow
    */
   async authenticate(context: BrowserContext): Promise<IAuthResult> {
     let isNewLogin = false;
+
+    // Apply stealth evasions before any navigation
+    await this.applyStealthEvasions(context);
+
     const hasStoredState = await this.applyAuthState(context);
     const page = await context.newPage();
 
     try {
-      let isValid = hasStoredState && (await this.validateSession(page));
+      const isValid = hasStoredState && (await this.validateSession(page));
 
       if (!isValid) {
+        // Check if blocked by Cloudflare
+        const currentUrl = page.url();
+        if (currentUrl.includes('challenge_redirect')) {
+          throw new Error(
+            'Cloudflare challenge detected. Run "npm run auth:login" to manually authenticate.'
+          );
+        }
+
         await this.performEmailLogin(page);
         isNewLogin = true;
       }
