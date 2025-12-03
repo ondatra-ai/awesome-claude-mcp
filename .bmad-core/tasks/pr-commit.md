@@ -18,7 +18,7 @@ Execute a complete quality gate before committing and pushing changes: lint, uni
 - Push after successful commit without asking for confirmation.
 - Create any temporary files under `./tmp/` and clean them up.
 - Strict order: lint → unit → e2e → pre-commit → stage → compose message → commit → push. On any failure, attempt automated fixes and iterate until passing.
-- Fix policy: For any failing step (lint/tests/hooks), attempt up to 5 fix iterations. First apply tool auto-fixes; if issues remain, modify SOURCE CODE to conform. Never modify configuration files (e.g., `.golangci.yml`, `.eslintrc.json`, `tsconfig.json`, `package.json`, CI configs). If still failing after 5 attempts, STOP and report remaining issues.
+- Fix policy: For any failing step (lint/tests/hooks), attempt up to 5 fix iterations. First apply tool auto-fixes; if issues remain, modify SOURCE CODE to conform. Never modify configuration files (e.g., `.golangci.yaml`, `.eslintrc.json`, `tsconfig.json`, `package.json`, CI configs). If still failing after 5 attempts, STOP and report remaining issues.
 - E2E tests are authoritative: NEVER edit E2E test code to make tests pass. Fix the service/application code (frontend/backend/mcp/infra) to satisfy the tests.
 
 ## Inputs

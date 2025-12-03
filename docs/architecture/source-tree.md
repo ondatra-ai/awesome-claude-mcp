@@ -8,7 +8,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 .
 ├── .github/
 │   └── workflows/
-│       └── deploy_to_railway.yml       # GitHub Actions deployment workflow
+│       └── deploy_to_railway.yaml       # GitHub Actions deployment workflow
 ├── docs/                               # Product, architecture, QA documentation
 ├── services/
 │   ├── frontend/                       # Next.js App Router frontend (React UI)
@@ -17,7 +17,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 ├── tests/                              # Playwright and other cross-service tests
 ├── scripts/                            # Utility scripts (linting, PR triage, etc.)
 ├── Makefile                            # Local tasks (lint, test, railway deploy)
-├── docker-compose.yml                  # Local dev stack
+├── docker-compose.yaml                  # Local dev stack
 ├── railway.toml                        # Railway service definitions
 ├── service.toml                        # Railway CLI defaults
 ├── package.json                        # Root package for tooling
@@ -48,7 +48,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 - `railway.toml`: Defines four Railway services (production/staging/dev variants) and build contexts
 - `service.toml`: CLI defaults for `railway up`
 - `Makefile`: Targets `deploy-dev`, `deploy-staging`, `deploy-prod`, `deploy-service`
-- `.github/workflows/deploy_to_railway.yml`: Maps branches/environments to Railway deployments
+- `.github/workflows/deploy_to_railway.yaml`: Maps branches/environments to Railway deployments
 
 ## Environment Strategy
 

@@ -4,7 +4,7 @@
 
 ## Your Task
 
-You are merging a test scenario from user story {{.StoryNumber}} into `docs/requirements.yml`.
+You are merging a test scenario from user story {{.StoryNumber}} into `docs/requirements.yaml`.
 
 **CRITICAL**: Use fuzzy matching to understand scenario behavior and detect conflicts.
 

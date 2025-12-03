@@ -223,4 +223,4 @@ qa_results:
   implementation_readiness: "9/10"
   implementation_readiness_notes: "Very well prepared for development with minor security gaps"
 
-  gate_status: "CONCERNS → docs/qa/gates/3.1-mcp-server-implementation.yml"
+  gate_status: "CONCERNS → docs/qa/gates/3.1-mcp-server-implementation.yaml"

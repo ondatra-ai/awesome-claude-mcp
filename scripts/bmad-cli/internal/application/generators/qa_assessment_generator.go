@@ -61,7 +61,7 @@ func (g *AIQAAssessmentGenerator) GenerateQAResults(
 	// Generate gate reference path
 	slug := slugifyTitle(storyDoc.Story.Title)
 	qaGatesPath := g.config.GetString("paths.qa_gates")
-	qaResults.GateReference = fmt.Sprintf("%s/%s-%s.yml", qaGatesPath, storyDoc.Story.ID, slug)
+	qaResults.GateReference = fmt.Sprintf("%s/%s-%s.yaml", qaGatesPath, storyDoc.Story.ID, slug)
 
 	return qaResults, nil
 }

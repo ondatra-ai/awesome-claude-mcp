@@ -35,7 +35,7 @@ qa_results:
     implementation_readiness: 9
     implementation_readiness_max: 10
   gate_status: "PASS"  # Valid: PASS, CONCERNS, FAIL, WAIVED
-  gate_reference: "docs/qa/gates/{{.Story.ID}}.yml"
+  gate_reference: "docs/qa/gates/{{.Story.ID}}.yaml"
 === FILE_END: {{.TmpDir}}/{{.Story.ID}}-qa-assessment.yaml ===
 
 ## User Story

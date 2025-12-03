@@ -122,7 +122,7 @@ optional:
 
 ## QA Sources to Read
 
-- Gate (YAML): `{qa_root}/gates/{epic}.{story}-*.yml`
+- Gate (YAML): `{qa_root}/gates/{epic}.{story}-*.yaml`
   - If multiple, use the most recent by modified time
 - Assessments (Markdown):
   - Test Design: `{qa_root}/assessments/{epic}.{story}-test-design-*.md`
@@ -226,7 +226,7 @@ Status Rule:
 
 ## Example: Story 2.2
 
-Given gate `docs/project/qa/gates/2.2-*.yml` shows
+Given gate `docs/project/qa/gates/2.2-*.yaml` shows
 
 - `coverage_gaps`: Back action behavior untested (AC2)
 - `coverage_gaps`: Centralized dependencies enforcement untested (AC4)

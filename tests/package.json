@@ -10,7 +10,7 @@
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
     "test:docker": "npm run test:docker:simple --",
-    "test:docker:simple": "docker-compose -f ../docker-compose.test.yml run --rm playwright-test",
+    "test:docker:simple": "docker-compose -f ../docker-compose.test.yaml run --rm playwright-test",
     "install:browsers": "npx playwright install"
   },
   "devDependencies": {

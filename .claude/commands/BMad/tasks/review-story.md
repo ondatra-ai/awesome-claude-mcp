@@ -173,7 +173,7 @@ After review and any refactoring, append your results to the story file in the Q
 
 ### Gate Status
 
-Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
 Risk profile: qa.qaLocation/assessments/{epic}.{story}-risk-{YYYYMMDD}.md
 NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 
@@ -191,7 +191,7 @@ NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 
 - Render from `../templates/qa-gate-tmpl.yaml`
 - Create directory defined in `qa.qaLocation/gates` (see `bmad-core/core-config.yaml`) if missing
-- Save to: `qa.qaLocation/gates/{epic}.{story}-{slug}.yml`
+- Save to: `qa.qaLocation/gates/{epic}.{story}-{slug}.yaml`
 
 Gate file structure:
 

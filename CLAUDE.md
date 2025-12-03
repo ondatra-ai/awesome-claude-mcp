@@ -212,7 +212,7 @@ type DataCache struct { /* caching complexity */ }
 
 **Enforcement:**
 - Currently enforced through code review
-- No automated linter rule in `.golangci.yml` yet
+- No automated linter rule in `.golangci.yaml` yet
 - See audit report for compliance status
 
 **Current Status (as of 2025-10-10):**
@@ -225,5 +225,5 @@ type DataCache struct { /* caching complexity */ }
 
 - The .gitignore is configured for Go projects
 - Environment variables should be stored in .env files (excluded from git)
-- Never Update @services/frontend/.eslintrc.json and @.golangci.yml without my permission
+- Never Update @services/frontend/.eslintrc.json and @.golangci.yaml without my permission
 - **CRITICAL**: NEVER merge pull requests without explicit user command to merge
