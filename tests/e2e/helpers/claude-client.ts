@@ -108,55 +108,53 @@ export class ClaudeDesktopClient {
       throw new Error('Not connected to Claude Desktop');
     }
 
-    // Simple approach: get all text from body and parse it
+    // Find Claude's response by looking for the message content area
     const response = await this.page.evaluate(() => {
-      // Get the full text content from body
-      const fullText = document.body.innerText;
+      // Try to find response containers - Claude Desktop uses specific structure
+      // Look for paragraphs and lists that contain the actual response
+      const mainContent = document.querySelector('[class*="prose"]') ||
+                         document.querySelector('main') ||
+                         document.body;
 
-      // Split by newlines and filter
-      const lines = fullText.split('\n')
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
+      // Get all paragraphs and list items from the response area
+      const responseElements = mainContent.querySelectorAll('p, li, h1, h2, h3, strong');
+      const responseTexts: string[] = [];
 
-      // Find response lines (exclude UI elements)
-      const excludePatterns = [
-        /^How can I help/,
-        /^Thinking about/,
-        /^(Opus|Sonnet|Haiku|Claude)\s/,
-        /double-check responses/,
-        /^Reply with/,
-        /^Retry$/,
-        /^\+$/,
-        /^Send message$/,
-        /^Remember this code/,
-        /^What code did/,
-        /^\d+ step/,
-        /^Added memory/,
-        /^\d+ result/,
-        /^The memory has been/,
-        /^Chats$/,
-        /^Projects$/,
-        /^Artifacts$/,
-        /^Recents$/,
-        /^Hide$/,
+      // UI elements to exclude
+      const excludeTexts = [
+        'How can I help you today?',
+        'Claude can make mistakes',
+        'double-check responses',
+        'Send message',
+        'Retry',
+        'Copy',
+        'Edit',
+        'Give positive feedback',
+        'Give negative feedback',
+        'Chats',
+        'Projects',
+        'Artifacts',
+        'Recents',
+        'Hide',
+        'Open sidebar',
+        'Scroll to bottom',
       ];
 
-      const responseLines = lines.filter(line => {
-        for (const pattern of excludePatterns) {
-          if (pattern.test(line)) return false;
+      responseElements.forEach(el => {
+        const text = el.textContent?.trim();
+        if (text && text.length > 0) {
+          // Skip UI elements
+          const isUI = excludeTexts.some(exclude =>
+            text === exclude || text.startsWith(exclude)
+          );
+          if (!isUI) {
+            responseTexts.push(text);
+          }
         }
-        return line.length >= 3;
       });
 
-      // Find the actual response - usually after thinking sections
-      // Look for lines that could be Claude's direct response
-      const candidates = responseLines.filter(line =>
-        !line.includes('I should') &&
-        !line.includes('successfully stored') &&
-        line.length < 500
-      );
-
-      return candidates[candidates.length - 1] || '';
+      // Join all response text
+      return responseTexts.join('\n');
     });
 
     return response;
