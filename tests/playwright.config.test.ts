@@ -11,7 +11,7 @@ export default defineConfig({
   testDir: '.',
   testMatch: ['e2e/**/*.spec.ts', 'integration/**/*.spec.ts'],
   /* Exclude Claude Desktop tests - requires local desktop app with CDP */
-  testIgnore: ['**/claude.spec.ts'],
+  testIgnore: ['**/claude.spec.ts', '**/claude-mcp.spec.ts'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
