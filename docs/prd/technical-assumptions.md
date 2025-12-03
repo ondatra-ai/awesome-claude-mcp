@@ -31,6 +31,6 @@ Comprehensive testing pyramid including:
 - No access controls or rate limiting in MVP (add in v2)
 - Fail-fast error handling - no automatic retries
 - All configuration via environment variables managed per Railway environment
-- GitHub Actions + Railway CLI for CI/CD (`deploy_to_railway.yml`)
+- GitHub Actions + Railway CLI for CI/CD (`deploy_to_railway.yaml`)
 - Markdown parsing using goldmark library
 - Structured JSON logging for all operations

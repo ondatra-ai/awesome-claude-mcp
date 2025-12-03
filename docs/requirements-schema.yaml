@@ -1,4 +1,4 @@
-# Yamale schema for docs/requirements.yml (Version 2.0 - Flattened Structure)
+# Yamale schema for docs/requirements.yaml (Version 2.0 - Flattened Structure)
 # Validates flattened scenario registry with implementation status tracking
 
 metadata:

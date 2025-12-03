@@ -10,7 +10,7 @@ This document outlines the full-stack architecture: Foundation & Infrastructure 
 - **MCP Service:** Separate Go service implementing MCP Protocol Handler for HTTP+SSE communication with AI clients (per MCP specification)
 - **Communication:** REST API for frontend, HTTP+SSE (Streamable HTTP) for MCP protocol per specification
 - **Infrastructure:** Railway environments (Development, Staging, Production) running Dockerized services with managed networking and TLS
-- **Deployment:** Railway CLI + GitHub Actions workflow (`deploy_to_railway.yml`) for repeatable multi-environment releases
+- **Deployment:** Railway CLI + GitHub Actions workflow (`deploy_to_railway.yaml`) for repeatable multi-environment releases
 
 ### Starter Template or Existing Project
 
@@ -117,7 +117,7 @@ Let me present the technology choices for your approval. These are critical deci
   - Secrets & Env Vars: Railway environment variables managed per service
   - Observability: Railway deployment logs + custom application logging
 - **Deployment Tooling:**
-  - Railway CLI (`railway up`) executed by GitHub Actions (`.github/workflows/deploy_to_railway.yml`)
+  - Railway CLI (`railway up`) executed by GitHub Actions (`.github/workflows/deploy_to_railway.yaml`)
   - Local developers can deploy with the same CLI after `railway login` and `railway link`
 
 ### Technology Stack Table
@@ -161,7 +161,7 @@ Let me present the technology choices for your approval. These are critical deci
 | **Environments** | Railway environments (dev/staging/prod) | N/A | Isolated runtime stages | Mirrors branch strategy, supports GitHub Actions automation |
 | **Custom Domains** | CNAME records (`dev.ondatra-ai.xyz`, `api.dev.ondatra-ai.xyz`, etc.) | N/A | Friendly HTTPS endpoints | Maps Railway services to branded URLs |
 | **Secrets Management** | Railway environment variables | N/A | Configuration & credentials | UI/CLI management, per-environment overrides |
-| **CI/CD** | GitHub Actions (`deploy_to_railway.yml`) | N/A | Automated deployments | Branch-based environment mapping, manual dispatch support |
+| **CI/CD** | GitHub Actions (`deploy_to_railway.yaml`) | N/A | Automated deployments | Branch-based environment mapping, manual dispatch support |
 | **OAuth Library** | golang.org/x/oauth2 | 0.15.0 | OAuth 2.0 client | Official Google OAuth library, well-maintained |
 | **Google Docs Client** | google.golang.org/api/docs/v1 | 0.150.0 | Google Docs API interaction | Official Google API client |
 | **Markdown Parser** | goldmark | 1.6.0 | Markdown to AST conversion | Extensible, CommonMark compliant |
@@ -632,7 +632,7 @@ paths:
 - **Rationale:** High-performance caching for OAuth tokens, session data, and operation status
 
 **Current Deployment:**
-- **Local Development:** PostgreSQL + Redis containers in docker-compose.yml
+- **Local Development:** PostgreSQL + Redis containers in docker-compose.yaml
 - **Legacy Production Plan:** RDS PostgreSQL + ElastiCache Redis for managed services with high availability
 - **Container Support**: All services containerized for consistent environments across dev/staging/prod
 
@@ -907,7 +907,7 @@ mcp-google-docs-editor/
 │
 ├── .github/
 │   └── workflows/
-│       └── deploy_to_railway.yml   # Railway deployment pipeline
+│       └── deploy_to_railway.yaml   # Railway deployment pipeline
 │
 ├── scripts/                        # Build and deploy scripts
 │   └── (various shell scripts)     # Complex automation logic
@@ -915,7 +915,7 @@ mcp-google-docs-editor/
 ├── Makefile                        # Primary build and deploy interface
 ├── railway.toml                    # Railway service definitions
 ├── service.toml                    # CLI defaults for Railway services
-├── docker-compose.yml              # Local development stack
+├── docker-compose.yaml              # Local development stack
 ├── package.json                    # Monorepo root package
 ├── turbo.json                      # Turborepo config
 ├── .gitignore                      # Git ignore rules
@@ -935,7 +935,7 @@ mcp-google-docs-editor/
 
 ### Deployment Workflow
 - **Infrastructure Definition:** `railway.toml` + `service.toml`
-- **Automation:** `.github/workflows/deploy_to_railway.yml` runs `railway up` per environment based on branch names or manual input
+- **Automation:** `.github/workflows/deploy_to_railway.yaml` runs `railway up` per environment based on branch names or manual input
 - **Manual Deploy:** `make deploy ENV=development|staging|production`
 - **Secrets:** Managed via Railway environment variables
 

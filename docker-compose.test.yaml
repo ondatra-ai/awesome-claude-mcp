@@ -1,7 +1,7 @@
 services:
   backend:
     extends:
-      file: docker-compose.yml
+      file: docker-compose.yaml
       service: backend
     container_name: mcp-backend-test
     environment:
@@ -18,7 +18,7 @@ services:
 
   mcp-service:
     extends:
-      file: docker-compose.yml
+      file: docker-compose.yaml
       service: mcp-service
     container_name: mcp-service-test
     environment:
@@ -34,7 +34,7 @@ services:
 
   frontend:
     extends:
-      file: docker-compose.yml
+      file: docker-compose.yaml
       service: frontend
     container_name: mcp-frontend-test
     build:

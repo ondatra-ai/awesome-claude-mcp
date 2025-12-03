@@ -232,7 +232,7 @@ commands:
   - review {story}: |
       Adaptive, risk-aware comprehensive review.
       Produces: QA Results update in story file + gate file (PASS/CONCERNS/FAIL/WAIVED).
-      Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+      Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
       Executes review-story task which includes all analysis and creates gate decision.
   - risk-profile {story}: Execute risk-profile task to generate risk assessment matrix
   - test-design {story}: Execute test-design task to create comprehensive test scenarios
@@ -2244,7 +2244,7 @@ After review and any refactoring, append your results to the story file in the Q
 
 ### Gate Status
 
-Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
 Risk profile: qa.qaLocation/assessments/{epic}.{story}-risk-{YYYYMMDD}.md
 NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 
@@ -2262,7 +2262,7 @@ NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 
 - Render from `../templates/qa-gate-tmpl.yaml`
 - Create directory defined in `qa.qaLocation/gates` (see `bmad-core/core-config.yaml`) if missing
-- Save to: `qa.qaLocation/gates/{epic}.{story}-{slug}.yml`
+- Save to: `qa.qaLocation/gates/{epic}.{story}-{slug}.yaml`
 
 Gate file structure:
 
@@ -2528,7 +2528,7 @@ waiver:
 2. **ALWAYS** append this exact format to story's QA Results section:
 
    ```text
-   Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+   Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
    ```
 
 3. Keep status_reason to 1-2 sentences maximum
@@ -2549,7 +2549,7 @@ After creating gate file, append to story's QA Results section:
 
 ### Gate Status
 
-Gate: CONCERNS → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+Gate: CONCERNS → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
 ```
 
 ## Key Principles
@@ -2740,7 +2740,7 @@ NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 **Always print at the end:**
 
 ```
-Gate NFR block ready → paste into qa.qaLocation/gates/{epic}.{story}-{slug}.yml under nfr_validation
+Gate NFR block ready → paste into qa.qaLocation/gates/{epic}.{story}-{slug}.yaml under nfr_validation
 ```
 
 ## Assessment Criteria
@@ -5107,7 +5107,7 @@ optional:
 
 ## QA Sources to Read
 
-- Gate (YAML): `{qa_root}/gates/{epic}.{story}-*.yml`
+- Gate (YAML): `{qa_root}/gates/{epic}.{story}-*.yaml`
   - If multiple, use the most recent by modified time
 - Assessments (Markdown):
   - Test Design: `{qa_root}/assessments/{epic}.{story}-test-design-*.md`
@@ -5211,7 +5211,7 @@ Status Rule:
 
 ## Example: Story 2.2
 
-Given gate `docs/project/qa/gates/2.2-*.yml` shows
+Given gate `docs/project/qa/gates/2.2-*.yaml` shows
 
 - `coverage_gaps`: Back action behavior untested (AC2)
 - `coverage_gaps`: Centralized dependencies enforcement untested (AC4)

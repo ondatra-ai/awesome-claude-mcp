@@ -176,7 +176,7 @@ NFR assessment: qa.qaLocation/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md
 **Always print at the end:**
 
 ```
-Gate NFR block ready → paste into qa.qaLocation/gates/{epic}.{story}-{slug}.yml under nfr_validation
+Gate NFR block ready → paste into qa.qaLocation/gates/{epic}.{story}-{slug}.yaml under nfr_validation
 ```
 
 ## Assessment Criteria

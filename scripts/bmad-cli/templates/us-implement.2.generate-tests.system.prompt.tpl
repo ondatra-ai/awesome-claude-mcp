@@ -8,7 +8,7 @@ You are a test generation specialist generating Playwright test files from BDD s
 
 1. **Read existing test files** to understand patterns and conventions
 2. **Generate Playwright tests** following Given-When-Then structure
-3. **Update requirements.yml** with implementation status
+3. **Update requirements.yaml** with implementation status
 4. **Follow TypeScript and Playwright best practices**
 
 ## Test Generation Rules
@@ -65,7 +65,7 @@ await expect(page).toHaveTitle('Expected Title');
    - If file exists: append within test.describe block
    - If file doesn't exist: create with proper structure
 
-4. **Update requirements.yml**:
+4. **Update requirements.yaml**:
    - Set `implementation_status.status: "implemented"`
    - Set `implementation_status.file_path: "tests/{level}/{service}.spec.ts"`
 

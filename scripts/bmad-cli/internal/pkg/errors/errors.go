@@ -378,7 +378,7 @@ var (
 	ErrLoadUserPromptFailed           = errors.New("failed to load user prompt")
 	ErrLoadSystemPromptFailed         = errors.New("failed to load system prompt")
 	ErrCreateOutputDirectory          = errors.New("failed to create directory")
-	ErrReadRequirementsFile           = errors.New("failed to read requirements.yml")
+	ErrReadRequirementsFile           = errors.New("failed to read requirements.yaml")
 	ErrWriteOutputFile                = errors.New("failed to write output file")
 	ErrReadOriginalFile               = errors.New("failed to read original")
 	ErrCreateBackupFile               = errors.New("failed to create backup")
@@ -1610,7 +1610,7 @@ func ErrReadRequirementsFileFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
 		Code:     "READ_REQUIREMENTS_FILE_FAILED",
-		Message:  "failed to read requirements.yml",
+		Message:  "failed to read requirements.yaml",
 		Cause:    errors.Join(ErrReadRequirementsFile, cause),
 	}
 }

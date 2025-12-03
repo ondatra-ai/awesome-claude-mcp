@@ -16,7 +16,7 @@ const (
 	minRegexMatchGroups = 2
 )
 
-// ScenarioValidator validates that all scenarios from requirements.yml
+// ScenarioValidator validates that all scenarios from requirements.yaml
 // have corresponding tests in the test files.
 type ScenarioValidator struct {
 	requirementsFile string
@@ -41,7 +41,7 @@ func NewScenarioValidator(requirementsFile, testsDir string) *ScenarioValidator 
 
 // Validate checks that all scenarios have corresponding tests.
 func (v *ScenarioValidator) Validate() (*ValidationResult, error) {
-	// Get scenario IDs from requirements.yml
+	// Get scenario IDs from requirements.yaml
 	scenarioIDs, err := v.getScenarioIDs()
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (v *ScenarioValidator) Validate() (*ValidationResult, error) {
 	return result, nil
 }
 
-// getScenarioIDs extracts scenario IDs from requirements.yml.
+// getScenarioIDs extracts scenario IDs from requirements.yaml.
 func (v *ScenarioValidator) getScenarioIDs() ([]string, error) {
 	data, err := os.ReadFile(v.requirementsFile)
 	if err != nil {

@@ -69,7 +69,7 @@ commands:
   - review {story}: |
       Adaptive, risk-aware comprehensive review.
       Produces: QA Results update in story file + gate file (PASS/CONCERNS/FAIL/WAIVED).
-      Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+      Gate file location: qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
       Executes review-story task which includes all analysis and creates gate decision.
   - risk-profile {story}: Execute risk-profile task to generate risk assessment matrix
   - test-design {story}: Execute test-design task to create comprehensive test scenarios

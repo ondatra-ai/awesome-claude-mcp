@@ -125,7 +125,7 @@ tasks:
       - "Create `services/mcp-service/Dockerfile` with multi-stage build: golang:1.21-alpine base, separate build and runtime stages (Architecture Doc 'Platform Infrastructure')"
       - "Update `railway.toml` adding MCP service definitions for development, staging, production environments with correct build contexts"
       - "Add MCP service environment variables to Railway configuration: MCP_PORT, MCP_CONNECTION_TIMEOUT, MCP_HEARTBEAT_INTERVAL, MCP_IDLE_TIMEOUT, MCP_MAX_CONNECTIONS"
-      - "Update `.github/workflows/deploy_to_railway.yml` to include MCP service deployment steps for all environments"
+      - "Update `.github/workflows/deploy_to_railway.yaml` to include MCP service deployment steps for all environments"
       - "Create custom domain configuration in Railway for MCP endpoints: mcp.dev.ondatra-ai.xyz, mcp.staging.ondatra-ai.xyz, mcp.ondatra-ai.xyz"
       - "Update `Makefile` with MCP service targets: deploy-mcp-dev, deploy-mcp-staging, deploy-mcp-prod"
       - "Add MCP service health check configuration to Railway with proper endpoint and timeout settings"
@@ -845,7 +845,7 @@ qa_results:
     implementation_readiness_max: 10
 
   gate_status: "PASS"
-  gate_reference: "docs/qa/gates/3.1-mcp-server-implementation.yml"
+  gate_reference: "docs/qa/gates/3.1-mcp-server-implementation.yaml"
 
 dev_agent_record:
   agent_model_used: null

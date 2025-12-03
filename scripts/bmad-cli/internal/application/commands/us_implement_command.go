@@ -67,7 +67,7 @@ func (c *USImplementCommand) Execute(ctx context.Context, storyNumber string, fo
 		return err
 	}
 
-	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yml.backup")
+	slog.Info("✅ User story implementation completed successfully", "backup", "docs/requirements.yaml.backup")
 
 	return nil
 }
@@ -218,8 +218,8 @@ func (c *USImplementCommand) executeMergeScenarios(
 ) (*storyModels.StoryDocument, error) {
 	slog.Info("Step 3: Merging scenarios into requirements")
 
-	// Clone requirements.yml to run directory for safe testing
-	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yml")
+	// Clone requirements.yaml to run directory for safe testing
+	outputFile := filepath.Join(c.runDir.GetTmpOutPath(), "requirements-merged.yaml")
 
 	err := c.cloneRequirements(outputFile)
 	if err != nil {
@@ -232,7 +232,7 @@ func (c *USImplementCommand) executeMergeScenarios(
 		return nil, pkgerrors.ErrLoadStoryFailed(err)
 	}
 
-	// Merge scenarios from story into requirements-merged.yml
+	// Merge scenarios from story into requirements-merged.yaml
 	err = c.mergeScenarios(ctx, storyNumber, storyDoc, outputFile)
 	if err != nil {
 		return nil, pkgerrors.ErrMergeScenariosFailed(err)
@@ -244,7 +244,7 @@ func (c *USImplementCommand) executeMergeScenarios(
 		"story", storyNumber,
 	)
 
-	// Replace original requirements.yml with merged version
+	// Replace original requirements.yaml with merged version
 	err = c.replaceRequirements(outputFile)
 	if err != nil {
 		return nil, pkgerrors.ErrReplaceRequirementsFailed(err)
@@ -256,7 +256,7 @@ func (c *USImplementCommand) executeMergeScenarios(
 func (c *USImplementCommand) executeGenerateTests(ctx context.Context) error {
 	slog.Info("Step 4: Generating test code")
 
-	err := c.generateTests(ctx, "docs/requirements.yml")
+	err := c.generateTests(ctx, "docs/requirements.yaml")
 	if err != nil {
 		return pkgerrors.ErrGenerateTestsFailed(err)
 	}
@@ -288,7 +288,7 @@ func (c *USImplementCommand) runClaudeTestValidation(ctx context.Context) error 
 
 	// Create validation data with TmpDir for result output
 	validateData := &ValidateTestsData{
-		RequirementsFile: "docs/requirements.yml",
+		RequirementsFile: "docs/requirements.yaml",
 		TestFilesGlob:    "tests/**/*.spec.ts",
 		TmpDir:           c.runDir.GetTmpOutPath(),
 	}
@@ -377,7 +377,7 @@ func (c *USImplementCommand) logUnfixedIssues(issues []UnfixedIssue) {
 func (c *USImplementCommand) executeValidateScenarios() error {
 	slog.Info("Step 6: Validating scenario coverage (Go-based)")
 
-	validator := NewScenarioValidator("docs/requirements.yml", "tests")
+	validator := NewScenarioValidator("docs/requirements.yaml", "tests")
 
 	result, err := validator.Validate()
 	if err != nil {
@@ -425,7 +425,7 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 	}
 
 	// Read original file
-	data, err := os.ReadFile("docs/requirements.yml")
+	data, err := os.ReadFile("docs/requirements.yaml")
 	if err != nil {
 		return pkgerrors.ErrReadRequirementsFileFailed(err)
 	}
@@ -436,15 +436,15 @@ func (c *USImplementCommand) cloneRequirements(outputFile string) error {
 		return pkgerrors.ErrWriteOutputFileFailed(outputFile, err)
 	}
 
-	slog.Info("✓ Cloned requirements file", "source", "docs/requirements.yml", "destination", outputFile)
+	slog.Info("✓ Cloned requirements file", "source", "docs/requirements.yaml", "destination", outputFile)
 
 	return nil
 }
 
 func (c *USImplementCommand) replaceRequirements(mergedFile string) error {
 	const (
-		requirementsPath = "docs/requirements.yml"
-		backupPath       = "docs/requirements.yml.backup"
+		requirementsPath = "docs/requirements.yaml"
+		backupPath       = "docs/requirements.yaml.backup"
 	)
 
 	slog.Info("Replacing requirements file", "source", mergedFile)

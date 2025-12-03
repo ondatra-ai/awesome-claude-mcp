@@ -55,11 +55,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Validate requirements.yml with Yamale
+      - name: Validate requirements.yaml with Yamale
         uses: nrkno/yaml-schema-validator-github-action@v5.1.0
         with:
           schema: docs/requirements-schema.yaml
-          target: docs/requirements.yml
+          target: docs/requirements.yaml
 
   e2e-tests:
     runs-on: ubuntu-latest
