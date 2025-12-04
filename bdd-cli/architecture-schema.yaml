@@ -13,3 +13,4 @@ service:
   path: str()
   language: str()
   frameworks: list(str())
+  dependencies: list(str())

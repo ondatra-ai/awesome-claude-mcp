@@ -9,15 +9,21 @@ architecture:
         - tailwindcss
         - jest
         - playwright
+      dependencies:
+        - backend
+        - mcp-service
     - name: backend
       path: services/backend
       language: go
       frameworks:
         - fiber
         - zerolog
+      dependencies: []
     - name: mcp-service
       path: services/mcp-service
       language: go
       frameworks:
         - fiber
         - zerolog
+      dependencies:
+        - backend
