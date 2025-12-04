@@ -1,0 +1,4 @@
+# Yamale schema for architecture.yaml
+# Validates project architecture configuration
+
+architecture: str()
