@@ -14,7 +14,7 @@ type ViperConfig struct {
 func NewViperConfig() (*ViperConfig, error) {
 	viperInstance := viper.New()
 
-	viperInstance.SetConfigFile("./bmad-cli.yaml")
+	viperInstance.SetConfigFile("./bdd-cli/bmad-cli.yaml")
 	viperInstance.SetConfigType("yaml")
 
 	err := viperInstance.ReadInConfig()
