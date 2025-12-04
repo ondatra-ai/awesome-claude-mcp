@@ -2,3 +2,5 @@
 # Validates project architecture configuration
 
 architecture: str()
+
+services: list(map(str(), str()))
