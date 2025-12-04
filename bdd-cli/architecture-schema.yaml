@@ -13,4 +13,35 @@ service:
   path: str()
   language: str()
   frameworks: list(str())
+  patterns: map(str(), include('pattern'))
+  quality_gate: include('quality_gate')
   dependencies: list(str())
+
+---
+pattern:
+  description: str()
+  rules: list(str())
+
+---
+quality_gate:
+  code: list(include('code_check'))
+  tests: include('tests_config')
+
+---
+code_check:
+  name: str()
+  config: str(required=False)
+  command: str(required=False)
+
+---
+tests_config:
+  e2e: include('test_config')
+  integration: include('test_config')
+  unit: include('test_config')
+
+---
+test_config:
+  path: str()
+  framework: str()
+  config: str(required=False)
+  pattern: str(required=False)
