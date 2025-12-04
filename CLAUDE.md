@@ -227,3 +227,4 @@ type DataCache struct { /* caching complexity */ }
 - Environment variables should be stored in .env files (excluded from git)
 - Never Update @services/frontend/.eslintrc.json and @.golangci.yaml without my permission
 - **CRITICAL**: NEVER merge pull requests without explicit user command to merge
+- **CRITICAL**: NEVER use `git commit --amend` or `git push --force`/`--force-with-lease`. Always create new commits.
