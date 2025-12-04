@@ -5,4 +5,11 @@ architecture: include('architecture_def')
 
 ---
 architecture_def:
-  services: list(map(str(), str()))
+  services: list(include('service'))
+
+---
+service:
+  name: str()
+  path: str()
+  language: str()
+  frameworks: list(str())
