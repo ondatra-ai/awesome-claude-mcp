@@ -1,6 +1,8 @@
 # Yamale schema for architecture.yaml
 # Validates project architecture configuration
 
-architecture: str()
+architecture: include('architecture_def')
 
-services: list(map(str(), str()))
+---
+architecture_def:
+  services: list(map(str(), str()))

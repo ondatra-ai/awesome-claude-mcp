@@ -1,5 +1,5 @@
-architecture: ""
-
-services:
-  - frontend: ""
-  - backend: ""
+architecture:
+  services:
+    - frontend: "Next.js 14 App Router frontend with React 18, TypeScript, TailwindCSS"
+    - backend: "Go Fiber 2.x API service with zerolog for structured logging"
+    - mcp-service: "MCP Protocol server with HTTP+SSE transport for Google Docs editing"
