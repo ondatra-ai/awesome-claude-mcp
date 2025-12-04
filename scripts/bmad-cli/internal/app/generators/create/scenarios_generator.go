@@ -1,4 +1,4 @@
-package generators
+package create
 
 import (
 	"bmad-cli/internal/domain/ports"
