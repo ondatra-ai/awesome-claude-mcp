@@ -1,11 +1,11 @@
-package app
+package bootstrap
 
 import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
-	"bmad-cli/internal/application/commands"
-	"bmad-cli/internal/application/factories"
-	"bmad-cli/internal/application/prompt_builders"
+	"bmad-cli/internal/app/commands"
+	"bmad-cli/internal/app/factories"
+	"bmad-cli/internal/app/prompt_builders"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"bmad-cli/internal/application/generators"
+	"bmad-cli/internal/app/generators"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"

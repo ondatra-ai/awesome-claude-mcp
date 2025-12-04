@@ -1,6 +1,8 @@
-package app
+package bootstrap
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -69,10 +71,50 @@ func configureLogging() {
 	consoleHandler := slog.NewTextHandler(os.Stdout, consoleOpts)
 
 	// Create multi-handler that writes to both file and console
-	multiHandler := &MultiHandler{
+	multiHandler := &multiHandler{
 		fileHandler:    fileHandler,
 		consoleHandler: consoleHandler,
 	}
 
 	slog.SetDefault(slog.New(multiHandler))
+}
+
+// multiHandler writes to both file and console with different levels.
+type multiHandler struct {
+	fileHandler    slog.Handler
+	consoleHandler slog.Handler
+}
+
+func (h *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.fileHandler.Enabled(ctx, level) || h.consoleHandler.Enabled(ctx, level)
+}
+
+func (h *multiHandler) Handle(ctx context.Context, record slog.Record) error {
+	// Always write to file
+	_ = h.fileHandler.Handle(ctx, record)
+	// Don't fail if file write fails, continue to console
+
+	// Write to console only for info and above
+	if record.Level >= slog.LevelInfo {
+		err := h.consoleHandler.Handle(ctx, record)
+		if err != nil {
+			return fmt.Errorf("console handler failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (h *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &multiHandler{
+		fileHandler:    h.fileHandler.WithAttrs(attrs),
+		consoleHandler: h.consoleHandler.WithAttrs(attrs),
+	}
+}
+
+func (h *multiHandler) WithGroup(name string) slog.Handler {
+	return &multiHandler{
+		fileHandler:    h.fileHandler.WithGroup(name),
+		consoleHandler: h.consoleHandler.WithGroup(name),
+	}
 }

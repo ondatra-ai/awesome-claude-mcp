@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bmad-cli/internal/app"
+	"bmad-cli/internal/app/bootstrap"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-func NewPRCommand(container *app.Container) *cobra.Command {
+func NewPRCommand(container *bootstrap.Container) *cobra.Command {
 	prCmd := &cobra.Command{
 		Use:   "pr",
 		Short: "Pull request commands",
