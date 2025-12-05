@@ -1,0 +1,153 @@
+# User Story Principles & Validation Checklist
+# Based on INVEST criteria and agile best practices
+# Use these prompts to validate each user story before approval
+
+principles:
+  - id: independent
+    name: "Independent"
+    description: "User stories should be self-contained and not depend on other stories"
+    validation_prompts:
+      - "Can this story be developed without waiting for another story to complete?"
+      - "Can this story be deployed independently?"
+      - "Does the story avoid referencing other story IDs or outcomes?"
+      - "If removed from the backlog, would other stories still make sense?"
+
+  - id: negotiable
+    name: "Negotiable"
+    description: "Stories are not contracts - details can be discussed and refined"
+    validation_prompts:
+      - "Is the story written at a high enough level that implementation details can be negotiated?"
+      - "Does the story avoid prescribing specific technical solutions?"
+      - "Can the team discuss alternative ways to achieve the goal?"
+      - "Is there room for the developer to propose better approaches?"
+
+  - id: valuable
+    name: "Valuable"
+    description: "Every story must deliver value to end users or customers"
+    validation_prompts:
+      - "Does the story describe something a real user would want?"
+      - "Can you explain the user benefit without mentioning technical details?"
+      - "Would a user notice if this story was NOT implemented?"
+      - "Is the 'so that' clause focused on user benefit, not system behavior?"
+
+  - id: estimable
+    name: "Estimable"
+    description: "The team should be able to estimate the effort required"
+    validation_prompts:
+      - "Is the scope clear enough to estimate?"
+      - "Are there any unknowns that would prevent estimation?"
+      - "Does the team understand what 'done' looks like?"
+      - "Can the acceptance criteria be verified without ambiguity?"
+
+  - id: small
+    name: "Small"
+    description: "Stories should be completable within a single sprint/iteration"
+    validation_prompts:
+      - "Can this story be completed in 1-5 days of work?"
+      - "Does the story focus on a single capability or feature?"
+      - "If the story feels too big, can it be split into smaller stories?"
+      - "Does each acceptance criterion add significant scope?"
+
+  - id: testable
+    name: "Testable"
+    description: "Stories must have clear acceptance criteria that can be verified"
+    validation_prompts:
+      - "Can each acceptance criterion be tested by a user action?"
+      - "Are acceptance criteria written as 'When I do X, then Y happens'?"
+      - "Would a QA engineer know exactly what to test?"
+      - "Are criteria objective (not subjective like 'fast' or 'user-friendly')?"
+
+  - id: user_focused
+    name: "User Focused"
+    description: "Stories should describe user goals, not technical tasks"
+    validation_prompts:
+      - "Is the 'As a' role an actual human who interacts with the system?"
+      - "Does the 'I want' describe a goal, not a technical solution?"
+      - "Would a non-technical stakeholder understand this story?"
+      - "Does the story avoid implementation language (API, database, cache, etc.)?"
+
+  - id: behavioral_criteria
+    name: "Behavioral Acceptance Criteria"
+    description: "Acceptance criteria should describe observable behaviors, not implementation"
+    validation_prompts:
+      - "Does each criterion describe what the user sees or experiences?"
+      - "Are criteria free of technical terms (Redis, OAuth, tokens, endpoints)?"
+      - "Can criteria be demonstrated to a stakeholder without showing code?"
+      - "Do criteria avoid words like 'implemented', 'created', 'configured'?"
+
+anti_patterns:
+  - id: technical_task_disguised
+    name: "Technical Task Disguised as User Story"
+    description: "Infrastructure or setup work written in story format"
+    detection_prompts:
+      - "Is the role 'Developer/Maintainer' instead of an end user?"
+      - "Are acceptance criteria a checklist of technical items?"
+      - "Would completing this story have no visible effect to end users?"
+      - "Does the story describe HOW rather than WHAT?"
+    examples:
+      - bad: "As a Developer, I want to configure Redis cache so that tokens are stored"
+      - good: "As a User, I want to stay logged in for 30 days so that I don't have to re-authenticate frequently"
+
+  - id: mixed_criteria
+    name: "Mixed Technical and Behavioral Criteria"
+    description: "Acceptance criteria that mix user behaviors with implementation details"
+    detection_prompts:
+      - "Do some criteria describe user actions while others describe technical setup?"
+      - "Would a developer and a user interpret the criteria differently?"
+      - "Are there criteria that can only be verified by reading code?"
+    examples:
+      - bad: |
+          - OAuth initiation endpoint created
+          - Google consent screen displayed
+          - Authorization code exchange implemented
+      - good: |
+          - When I click 'Connect Google', I see Google's permission screen
+          - After I approve permissions, I'm returned to the app logged in
+          - If I deny permissions, I see a helpful message explaining what I'll miss
+
+  - id: solution_prescription
+    name: "Solution Prescription"
+    description: "Story that dictates implementation instead of describing need"
+    detection_prompts:
+      - "Does the story mention specific technologies or approaches?"
+      - "Could there be multiple valid ways to implement this?"
+      - "Is the 'I want' actually a solution rather than a goal?"
+    examples:
+      - bad: "As a User, I want OAuth 2.0 authentication so that I can log in securely"
+      - good: "As a User, I want to log in with my Google account so that I don't need another password"
+
+  - id: epic_in_disguise
+    name: "Epic in Disguise"
+    description: "Story that's actually multiple stories bundled together"
+    detection_prompts:
+      - "Does the story have more than 5-6 acceptance criteria?"
+      - "Do acceptance criteria span multiple user workflows?"
+      - "Would you need multiple test scenarios to cover all criteria?"
+      - "Can the acceptance criteria be grouped into distinct themes?"
+    examples:
+      - bad: "As a User, I want to manage my account (login, logout, settings, profile, notifications)"
+      - good: "As a User, I want to update my notification preferences so that I only receive relevant alerts"
+
+validation_workflow:
+  steps:
+    - name: "Check INVEST"
+      description: "Run through each INVEST principle's validation prompts"
+      fail_action: "Rewrite story to address failing criteria"
+
+    - name: "Detect Anti-patterns"
+      description: "Check for common anti-patterns using detection prompts"
+      fail_action: "Refactor story or split into appropriate artifacts"
+
+    - name: "User Perspective Test"
+      description: "Read story aloud as if you're the user"
+      validation_prompts:
+        - "Does it sound like something a real person would say they want?"
+        - "Is the benefit clear and compelling?"
+        - "Would you understand this without technical context?"
+
+    - name: "Acceptance Criteria Review"
+      description: "Review each criterion individually"
+      validation_prompts:
+        - "Can this criterion be demonstrated in a UI or API response?"
+        - "Is there exactly one way to interpret 'done' for this criterion?"
+        - "Does this criterion belong to this story or a different one?"
