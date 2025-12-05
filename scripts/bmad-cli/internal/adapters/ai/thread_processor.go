@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"bmad-cli/internal/application/prompt_builders"
+	"bmad-cli/internal/app/prompt_builders"
 	"bmad-cli/internal/domain/models"
 	"bmad-cli/internal/pkg/errors"
 )

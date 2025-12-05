@@ -2140,3 +2140,13 @@ func ErrParseResultYAMLFailed(cause error) error {
 		Cause:    errors.Join(ErrParseResultYAML, cause),
 	}
 }
+
+// ErrImplementFailed wraps implementation errors.
+func ErrImplementFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FAILED",
+		Message:  "implementation failed",
+		Cause:    cause,
+	}
+}

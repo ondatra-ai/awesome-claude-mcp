@@ -3,7 +3,7 @@ package prompt_builders_test
 import (
 	"testing"
 
-	"bmad-cli/internal/application/prompt_builders"
+	"bmad-cli/internal/app/prompt_builders"
 )
 
 func TestItemsParserBuilderSuccess(t *testing.T) {

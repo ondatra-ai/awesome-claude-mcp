@@ -4,12 +4,12 @@ import (
 	"log"
 	"os"
 
-	"bmad-cli/internal/app"
+	"bmad-cli/internal/app/bootstrap"
 	"github.com/spf13/cobra"
 )
 
 func Execute() {
-	container, err := app.NewContainer()
+	container, err := bootstrap.NewContainer()
 	if err != nil {
 		log.Fatalf("Failed to initialize container: %v", err)
 	}

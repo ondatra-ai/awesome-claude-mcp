@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 
-	"bmad-cli/internal/application/factories"
+	"bmad-cli/internal/app/factories"
 	"bmad-cli/internal/infrastructure/template"
 	"bmad-cli/internal/infrastructure/validation"
 	pkgerrors "bmad-cli/internal/pkg/errors"

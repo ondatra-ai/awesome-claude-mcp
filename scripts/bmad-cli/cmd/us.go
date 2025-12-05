@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"bmad-cli/internal/app"
+	"bmad-cli/internal/app/bootstrap"
 	"github.com/spf13/cobra"
 )
 
-func NewUSCommand(container *app.Container) *cobra.Command {
+func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 	usCmd := &cobra.Command{
 		Use:   "us",
 		Short: "User story commands",

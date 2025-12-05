@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"bmad-cli/internal/application/generators"
+	"bmad-cli/internal/app/generators/create"
 	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
@@ -94,11 +94,11 @@ func (f *StoryFactory) CreateStory(ctx context.Context, storyNumber string) (*st
 	}
 
 	// Create generators
-	taskGenerator := generators.NewTaskGenerator(f.aiClient, f.config)
-	devNotesGenerator := generators.NewDevNotesGenerator(f.aiClient, f.config)
-	testingGenerator := generators.NewAITestingGenerator(f.aiClient, f.config)
-	scenariosGenerator := generators.NewAIScenariosGenerator(f.aiClient, f.config)
-	qaResultsGenerator := generators.NewAIQAAssessmentGenerator(f.aiClient, f.config)
+	taskGenerator := create.NewTaskGenerator(f.aiClient, f.config)
+	devNotesGenerator := create.NewDevNotesGenerator(f.aiClient, f.config)
+	testingGenerator := create.NewAITestingGenerator(f.aiClient, f.config)
+	scenariosGenerator := create.NewAIScenariosGenerator(f.aiClient, f.config)
+	qaResultsGenerator := create.NewAIQAAssessmentGenerator(f.aiClient, f.config)
 
 	// Get run directory path for passing to generators
 	runDirPath := f.runDirectory.GetTmpOutPath()

@@ -1,9 +1,10 @@
-package app
+package bootstrap
 
 import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
-	"bmad-cli/internal/application/commands"
+	"bmad-cli/internal/app/commands"
+	"bmad-cli/internal/app/factories"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
@@ -62,7 +63,15 @@ func NewContainer() (*Container, error) {
 	gitService := git.NewGitService(shellExec)
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
-	usImplementCmd := commands.NewUSImplementCommand(branchManager, storyLoader, claudeClient, cfg, runDir, shellExec)
+	implementFactory := factories.NewImplementFactory(
+		branchManager,
+		storyLoader,
+		claudeClient,
+		cfg,
+		runDir,
+		shellExec,
+	)
+	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
 	return &Container{
 		Config:         cfg,
