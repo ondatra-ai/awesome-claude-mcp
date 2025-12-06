@@ -1,153 +1,291 @@
 # User Story Principles & Validation Checklist
-# Based on INVEST criteria and agile best practices
+# Based on agile best practices from Kent Beck, Ron Jeffries, Bill Wake, Mike Cohn, Jeff Patton
 # Use these prompts to validate each user story before approval
 
-principles:
-  - id: independent
-    name: "Independent"
-    description: "User stories should be self-contained and not depend on other stories"
-    validation_prompts:
-      - "Can this story be developed without waiting for another story to complete?"
-      - "Can this story be deployed independently?"
-      - "Does the story avoid referencing other story IDs or outcomes?"
-      - "If removed from the backlog, would other stories still make sense?"
+# =============================================================================
+# PHILOSOPHY: Stories are conversation starters, not requirements documents
+# =============================================================================
 
-  - id: negotiable
-    name: "Negotiable"
-    description: "Stories are not contracts - details can be discussed and refined"
-    validation_prompts:
-      - "Is the story written at a high enough level that implementation details can be negotiated?"
-      - "Does the story avoid prescribing specific technical solutions?"
-      - "Can the team discuss alternative ways to achieve the goal?"
-      - "Is there room for the developer to propose better approaches?"
+philosophy:
+  core_insight: "User stories are conversation starters, not requirements documents"
+  origin: "Kent Beck created user stories as an 'antidote to requirements' - the term 'requirement' implied absolutism and permanence"
 
-  - id: valuable
-    name: "Valuable"
-    description: "Every story must deliver value to end users or customers"
-    validation_prompts:
-      - "Does the story describe something a real user would want?"
-      - "Can you explain the user benefit without mentioning technical details?"
-      - "Would a user notice if this story was NOT implemented?"
-      - "Is the 'so that' clause focused on user benefit, not system behavior?"
+  three_cs:
+    description: "Ron Jeffries' Three Cs (2001) - the foundation of user story practice"
+    card:
+      purpose: "Just enough text to identify the requirement and remind everyone what it's about"
+      validation_prompts:
+        - "Is this concise enough to fit on a 3x5 index card?"
+        - "Does it identify the requirement without specifying implementation?"
+        - "Is it a placeholder for conversation, not a complete specification?"
+    conversation:
+      purpose: "Where the real requirements emerge through dialogue between customers, developers, and testers"
+      validation_prompts:
+        - "Has this story been discussed with the team?"
+        - "Do developers and stakeholders have shared understanding?"
+        - "Have alternative implementations been considered?"
+    confirmation:
+      purpose: "Acceptance criteria that verify the story's objectives have been achieved"
+      validation_prompts:
+        - "Are acceptance criteria specific and testable?"
+        - "Do criteria capture what was agreed in conversation?"
+        - "Can criteria be verified with pass/fail answers?"
 
-  - id: estimable
-    name: "Estimable"
-    description: "The team should be able to estimate the effort required"
-    validation_prompts:
-      - "Is the scope clear enough to estimate?"
-      - "Are there any unknowns that would prevent estimation?"
-      - "Does the team understand what 'done' looks like?"
-      - "Can the acceptance criteria be verified without ambiguity?"
+# =============================================================================
+# STORY TEMPLATE: As a [who], I want [what], so that [why]
+# =============================================================================
 
-  - id: small
-    name: "Small"
-    description: "Stories should be completable within a single sprint/iteration"
-    validation_prompts:
-      - "Can this story be completed in 1-5 days of work?"
-      - "Does the story focus on a single capability or feature?"
-      - "If the story feels too big, can it be split into smaller stories?"
-      - "Does each acceptance criterion add significant scope?"
+template:
+  format: "As a [type of user], I want [some goal] so that [some reason]"
+  origin: "Originated at Connextra (UK, 2001) through agile coach Rachel Davies"
 
-  - id: testable
-    name: "Testable"
-    description: "Stories must have clear acceptance criteria that can be verified"
-    validation_prompts:
-      - "Can each acceptance criterion be tested by a user action?"
-      - "Are acceptance criteria written as 'When I do X, then Y happens'?"
-      - "Would a QA engineer know exactly what to test?"
-      - "Are criteria objective (not subjective like 'fast' or 'user-friendly')?"
+  components:
+    who:
+      description: "The user role - must be an actual human who interacts with the system"
+      validation_prompts:
+        - "Is this a real person, not a system or component?"
+        - "Is the persona specific enough to guide prioritization?"
+        - "Would 'marketing manager' or 'first-time visitor' be more useful than generic 'user'?"
+      anti_pattern:
+        name: "Generic User Persona"
+        detection: "Using 'user' or 'customer' when a specific persona would provide better guidance"
+        example_bad: "As a user, I want to search products"
+        example_good: "As a bargain hunter, I want to filter by discount percentage"
 
-  - id: user_focused
-    name: "User Focused"
-    description: "Stories should describe user goals, not technical tasks"
-    validation_prompts:
-      - "Is the 'As a' role an actual human who interacts with the system?"
-      - "Does the 'I want' describe a goal, not a technical solution?"
-      - "Would a non-technical stakeholder understand this story?"
-      - "Does the story avoid implementation language (API, database, cache, etc.)?"
+    what:
+      description: "The goal - what the user wants to accomplish, not how"
+      validation_prompts:
+        - "Does this describe a goal, not a solution?"
+        - "Is this written in user language, not technical language?"
+        - "Could there be multiple valid implementations?"
+      anti_pattern:
+        name: "Solution Prescription"
+        detection: "The 'I want' describes implementation rather than need"
+        example_bad: "As a User, I want OAuth 2.0 authentication"
+        example_good: "As a User, I want to log in with my Google account"
 
-  - id: behavioral_criteria
-    name: "Behavioral Acceptance Criteria"
-    description: "Acceptance criteria should describe observable behaviors, not implementation"
-    validation_prompts:
-      - "Does each criterion describe what the user sees or experiences?"
-      - "Are criteria free of technical terms (Redis, OAuth, tokens, endpoints)?"
-      - "Can criteria be demonstrated to a stakeholder without showing code?"
-      - "Do criteria avoid words like 'implemented', 'created', 'configured'?"
+    why:
+      description: "The reason - understanding WHY shapes HOW teams implement"
+      importance: "Critical - without knowing why, teams may implement the wrong solution"
+      validation_prompts:
+        - "Does the 'so that' explain the real benefit?"
+        - "Would understanding this why change how you implement?"
+        - "Is the benefit about the user, not the system?"
+      anti_pattern:
+        name: "Missing So That"
+        detection: "Story lacks the 'so that' clause or has a meaningless one"
+        example_bad: "As a user, I want to check spelling"
+        example_good: "As a power user, I want real-time spell checking so that I don't worry about typos while writing"
+      cohn_example:
+        context: "Spell checker - without knowing WHY, team might build wrong solution"
+        bad_implementation: "Check-spelling button"
+        good_implementation: "Real-time autocorrection"
+        insight: "The WHY revealed the user doesn't want to think about spelling at all"
+
+# =============================================================================
+# INVEST CRITERIA: Quality checklist by Bill Wake (2003)
+# =============================================================================
+
+invest:
+  origin: "Bill Wake created INVEST in August 2003 after working through dozens of potential attributes"
+
+  criteria:
+    - id: independent
+      name: "Independent"
+      description: "Stories can be scheduled and implemented in any order, enabling flexible prioritization"
+      validation_prompts:
+        - "Can this story be developed without waiting for another story?"
+        - "Can this story be deployed independently?"
+        - "If removed from backlog, would other stories still make sense?"
+      guidance: "When stories are tightly coupled, combine them rather than managing complex dependencies"
+
+    - id: negotiable
+      name: "Negotiable"
+      description: "Stories capture essence rather than details - implementation emerges through conversation"
+      validation_prompts:
+        - "Is this written at a high enough level for implementation details to be negotiated?"
+        - "Does this avoid prescribing specific technical solutions?"
+        - "Is there room for the developer to propose better approaches?"
+      guidance: "Leave room for developers to propose better solutions during conversation"
+
+    - id: valuable
+      name: "Valuable"
+      description: "Stories deliver clear benefit to the customer"
+      validation_prompts:
+        - "Does this describe something a real user would want?"
+        - "Can you explain the benefit without mentioning technical details?"
+        - "Would a user notice if this was NOT implemented?"
+      guidance: "Slice vertically through all layers (like cake) rather than serving one layer at a time"
+      wake_metaphor: "A database without a UI delivers no user value - always slice vertically"
+
+    - id: estimable
+      name: "Estimable"
+      description: "Stories are understood well enough for the team to size them reasonably"
+      validation_prompts:
+        - "Is the scope clear enough to estimate?"
+        - "Are there unknowns that would prevent estimation?"
+        - "Does the team understand what 'done' looks like?"
+      guidance: "If a story can't be estimated, it needs splitting or a research spike"
+
+    - id: small
+      name: "Small"
+      description: "Stories fit comfortably within a sprint"
+      validation_prompts:
+        - "Can this be completed in 1-5 days of work?"
+        - "Does this focus on a single capability?"
+        - "If too big, can it be split while maintaining value?"
+      guidance: "At most a few person-weeks of work - smaller enables faster feedback"
+
+    - id: testable
+      name: "Testable"
+      description: "Stories come with an implicit promise that acceptance criteria can be defined"
+      validation_prompts:
+        - "Can acceptance criteria be written immediately?"
+        - "Would a QA engineer know exactly what to test?"
+        - "Are criteria objective, not subjective?"
+      guidance: "If customer cannot articulate how to test, the story isn't clear enough"
+
+# =============================================================================
+# ANTI-PATTERNS: Common mistakes that undermine story effectiveness
+# =============================================================================
 
 anti_patterns:
   - id: technical_task_disguised
     name: "Technical Task Disguised as User Story"
     description: "Infrastructure or setup work written in story format"
     detection_prompts:
-      - "Is the role 'Developer/Maintainer' instead of an end user?"
+      - "Is the role 'Developer', 'System', or 'Database' instead of an end user?"
       - "Are acceptance criteria a checklist of technical items?"
-      - "Would completing this story have no visible effect to end users?"
-      - "Does the story describe HOW rather than WHAT?"
+      - "Would completing this have no visible effect to end users?"
+      - "Does this describe HOW rather than WHAT?"
+    guidance: "Technical work belongs as tasks under user-facing stories, or framed around who benefits"
     examples:
-      - bad: "As a Developer, I want to configure Redis cache so that tokens are stored"
-      - good: "As a User, I want to stay logged in for 30 days so that I don't have to re-authenticate frequently"
+      bad: "As a database, I want to be upgraded to version X.Y"
+      good: "As a user, I want faster search results so I can find products quickly"
+      note: "Databases perceive no value - only humans do"
+
+  - id: developer_perspective
+    name: "Developer-Perspective Story"
+    description: "Story written from developer's viewpoint rather than user's"
+    detection_prompts:
+      - "Is the role a technical team member?"
+      - "Does the story describe building something rather than using something?"
+    examples:
+      bad: "As a frontend engineer, I want an API to list users"
+      good: "As an admin, I want to see all users so I can manage their permissions"
+    note: "The API alone delivers nothing to real users"
 
   - id: mixed_criteria
     name: "Mixed Technical and Behavioral Criteria"
     description: "Acceptance criteria that mix user behaviors with implementation details"
     detection_prompts:
       - "Do some criteria describe user actions while others describe technical setup?"
-      - "Would a developer and a user interpret the criteria differently?"
+      - "Would a developer and a user interpret criteria differently?"
       - "Are there criteria that can only be verified by reading code?"
     examples:
-      - bad: |
-          - OAuth initiation endpoint created
-          - Google consent screen displayed
-          - Authorization code exchange implemented
-      - good: |
-          - When I click 'Connect Google', I see Google's permission screen
-          - After I approve permissions, I'm returned to the app logged in
-          - If I deny permissions, I see a helpful message explaining what I'll miss
+      bad: |
+        - OAuth initiation endpoint created
+        - Google consent screen displayed
+        - Authorization code exchange implemented
+      good: |
+        - When I click 'Connect Google', I see Google's permission screen
+        - After I approve permissions, I'm returned to the app logged in
+        - If I deny permissions, I see a message explaining what I'll miss
 
   - id: solution_prescription
     name: "Solution Prescription"
     description: "Story that dictates implementation instead of describing need"
     detection_prompts:
-      - "Does the story mention specific technologies or approaches?"
-      - "Could there be multiple valid ways to implement this?"
-      - "Is the 'I want' actually a solution rather than a goal?"
+      - "Does the story mention specific technologies?"
+      - "Could there be multiple valid implementations?"
+      - "Is the 'I want' a solution rather than a goal?"
     examples:
-      - bad: "As a User, I want OAuth 2.0 authentication so that I can log in securely"
-      - good: "As a User, I want to log in with my Google account so that I don't need another password"
+      bad: "As a User, I want OAuth 2.0 authentication so that I can log in securely"
+      good: "As a User, I want to log in with my Google account so that I don't need another password"
 
   - id: epic_in_disguise
     name: "Epic in Disguise"
     description: "Story that's actually multiple stories bundled together"
     detection_prompts:
-      - "Does the story have more than 5-6 acceptance criteria?"
+      - "Does the story have more than 10-15 acceptance criteria?"
       - "Do acceptance criteria span multiple user workflows?"
       - "Would you need multiple test scenarios to cover all criteria?"
-      - "Can the acceptance criteria be grouped into distinct themes?"
+      - "Does the story contain words like 'manage' or lists of actions?"
     examples:
-      - bad: "As a User, I want to manage my account (login, logout, settings, profile, notifications)"
-      - good: "As a User, I want to update my notification preferences so that I only receive relevant alerts"
+      bad: "As a User, I want to manage my account (login, logout, settings, profile, notifications)"
+      good: "As a User, I want to update my notification preferences so that I only receive relevant alerts"
 
-validation_workflow:
-  steps:
-    - name: "Check INVEST"
-      description: "Run through each INVEST principle's validation prompts"
-      fail_action: "Rewrite story to address failing criteria"
+  - id: generic_user
+    name: "Generic User Persona"
+    description: "Using vague 'user' when specific persona would provide better guidance"
+    detection_prompts:
+      - "Is the role just 'user' or 'customer'?"
+      - "Would a more specific persona change prioritization decisions?"
+      - "Do different user types have different needs for this feature?"
+    examples:
+      bad: "As a user, I want to search products"
+      good: "As a bargain hunter, I want to filter by discount percentage"
 
-    - name: "Detect Anti-patterns"
-      description: "Check for common anti-patterns using detection prompts"
-      fail_action: "Refactor story or split into appropriate artifacts"
+  - id: missing_so_that
+    name: "Missing or Meaningless 'So That'"
+    description: "Story lacks the reason clause or has a trivial one"
+    detection_prompts:
+      - "Is the 'so that' clause missing entirely?"
+      - "Does 'so that' just restate the 'I want'?"
+      - "Would knowing the WHY change implementation approach?"
+    examples:
+      bad: "As a user, I want to reset my password"
+      bad_with_trivial: "As a user, I want to reset my password so that my password is reset"
+      good: "As a user, I want to reset my password so that I can regain access when I forget it"
 
-    - name: "User Perspective Test"
-      description: "Read story aloud as if you're the user"
-      validation_prompts:
-        - "Does it sound like something a real person would say they want?"
-        - "Is the benefit clear and compelling?"
-        - "Would you understand this without technical context?"
+  - id: horizontal_split
+    name: "Horizontal Layer Split"
+    description: "Story split by technical layer rather than user value"
+    detection_prompts:
+      - "Does this story only cover database/API/UI without end-to-end value?"
+      - "Does completing this story require other stories to deliver user value?"
+      - "Is this a 'layer' rather than a 'slice'?"
+    examples:
+      bad_split:
+        - "Create user table in database"
+        - "Build user API endpoints"
+        - "Create user registration UI"
+      good_split:
+        - "User can register with email"
+        - "User can register with Google"
+        - "User can register with phone number"
 
-    - name: "Acceptance Criteria Review"
-      description: "Review each criterion individually"
-      validation_prompts:
-        - "Can this criterion be demonstrated in a UI or API response?"
-        - "Is there exactly one way to interpret 'done' for this criterion?"
-        - "Does this criterion belong to this story or a different one?"
+# =============================================================================
+# STORY HIERARCHY: Strategic context for stories
+# =============================================================================
+
+hierarchy:
+  description: "Work flows from strategic intent through tactical planning to executable delivery"
+  levels:
+    - name: "Theme"
+      description: "Major areas of investment aligned with organizational strategy"
+      timeframe: "Quarters to years"
+      example: "Improve customer self-service capabilities"
+
+    - name: "Initiative"
+      description: "Collection of related epics driving toward a common goal"
+      timeframe: "Multiple quarters"
+      example: "Launch customer portal"
+
+    - name: "Epic"
+      description: "Large user story too big to complete in a single sprint"
+      timeframe: "Weeks to months"
+      example: "Customer account management"
+      note: "Cohn: An epic is simply 'a big user story' - no magic threshold"
+
+    - name: "User Story"
+      description: "Implementable requirement completable within a sprint"
+      timeframe: "Days"
+      example: "User can update email address"
+
+    - name: "Task"
+      description: "Smallest work unit - implementation steps"
+      timeframe: "Hours"
+      example: "Add email validation to form"
+
+  key_principle: "Epics should be kept as context when decomposed, not deleted - the epic provides meaning individual stories lack"
