@@ -1,0 +1,125 @@
+# Acceptance Criteria & Story Splitting Guidelines
+# Extracted from user-story-principles.yaml for detailed reference
+
+note: |
+  For LLM teams, "Conversation" in Three Cs works differently than for humans:
+  - Humans: PO writes vague card → Dev asks questions → PO clarifies → QA probes edge cases → Requirements emerge through dialogue
+  - LLMs: Story + Context documents (architecture docs, existing patterns) replace conversation. LLM uses context to fill gaps autonomously.
+  The acceptance criteria (Confirmation) and splitting patterns below help ensure stories are complete enough for LLM implementation without human back-and-forth.
+
+# =============================================================================
+# ACCEPTANCE CRITERIA: The Confirmation in Three Cs
+# =============================================================================
+
+acceptance_criteria:
+  description: "Testable conditions that verify a story is complete - bridges conversation and implementation"
+
+  formats:
+    given_when_then:
+      name: "Given-When-Then (BDD Format)"
+      description: "Structured, executable specifications from Behavior-Driven Development"
+      structure: "Given [precondition], When [action], Then [expected result]"
+      example: |
+        Given a registered user is on the login page
+        When the user enters valid credentials and clicks login
+        Then the user should be redirected to the dashboard
+      benefits:
+        - "Directly translates to automated tests"
+        - "Forces clear thinking about preconditions and outcomes"
+        - "Creates shared language between business and technical teams"
+
+    checklist:
+      name: "Checklist Format"
+      description: "Simpler bulleted list of conditions that can be marked complete"
+      example: |
+        - Search returns results within 3 seconds
+        - Maximum 20 results per page with pagination
+        - Empty state shows helpful message when no results
+      benefits:
+        - "Simpler and more flexible"
+        - "Easy to verify during review"
+        - "Good for non-behavioral requirements"
+
+  quality_characteristics:
+    - name: "Specific"
+      good: "Page loads in under 3 seconds"
+      bad: "Page loads quickly"
+    - name: "Measurable"
+      good: "Display maximum 10 items per page"
+      bad: "Display appropriate number of items"
+    - name: "Testable"
+      good: "Error message appears when email is invalid"
+      bad: "Form validates properly"
+    - name: "Independent"
+      description: "Each criterion should be verifiable on its own"
+    - name: "Outcome-focused"
+      description: "Focus on what happens, not how it's implemented"
+
+  ceiling_rule:
+    threshold: "10-15 acceptance criteria maximum"
+    action: "When a story accumulates more than 10-15 criteria, split the story"
+    reason: "Too many criteria signals the story is actually an epic in disguise"
+
+  vs_definition_of_done:
+    acceptance_criteria: "What THIS SPECIFIC feature should do"
+    definition_of_done: "Quality standards ALL work must meet"
+
+# =============================================================================
+# STORY SPLITTING: Vertical slices, not horizontal layers
+# =============================================================================
+
+splitting:
+  core_principle: "Each resulting piece must still pass INVEST criteria, especially Value"
+
+  anti_pattern:
+    name: "Horizontal Slicing"
+    description: "Breaking stories by technical layer (database, API, UI) rather than user-facing functionality"
+    why_bad:
+      - "Neither a completed backend nor a standalone UI delivers user value"
+      - "Creates dependencies between stories"
+      - "Violates the 'Valuable' criterion of INVEST"
+    detection_prompts:
+      - "Does each split piece deliver value to an end user?"
+      - "Can each piece be deployed and used independently?"
+      - "Are you splitting by technical layer rather than user workflow?"
+
+  lawrence_patterns:
+    source: "Richard Lawrence's Story Splitting Flowchart"
+    patterns:
+      - name: "Workflow Steps"
+        description: "Break complex processes into beginning, middle, and end"
+        example: "Split 'checkout process' into 'add to cart', 'enter shipping', 'process payment'"
+
+      - name: "Operations (CRUD)"
+        description: "Separate Create, Read, Update, Delete when stories use 'manage'"
+        example: "Split 'manage users' into 'create user', 'view user list', 'edit user', 'delete user'"
+
+      - name: "Business Rules"
+        description: "Different rules often warrant different stories"
+        example: "Split 'apply discount' into 'percentage discount', 'fixed amount discount', 'buy-one-get-one'"
+
+      - name: "Data Variations"
+        description: "Handle complexity from different data types or sources"
+        example: "Split 'import contacts' into 'import from CSV', 'import from Google', 'import from Outlook'"
+
+      - name: "Interface"
+        description: "Separate complexity from UI elements"
+        example: "Split 'responsive dashboard' into 'desktop dashboard', 'mobile dashboard'"
+
+      - name: "Simple/Complex"
+        description: "Start with simplest version, add sophistication later"
+        example: "Split 'search products' into 'basic keyword search', 'add filters', 'add sorting'"
+
+  spidr_method:
+    source: "Mike Cohn"
+    acronym:
+      S: "Spike - research unknowns first (use as last resort)"
+      P: "Paths - split by user workflow choices"
+      I: "Interfaces - split by device or UI complexity"
+      D: "Data - split by data types"
+      R: "Rules - relax rules initially, add constraints in subsequent stories"
+
+  evaluation_criteria:
+    - "Can some resulting pieces be deprioritized or discarded? (reveals less valuable functionality)"
+    - "Are pieces roughly equal-sized? (four 2-point stories beat one 5-point + one 3-point)"
+    - "Does each piece pass INVEST criteria independently?"
