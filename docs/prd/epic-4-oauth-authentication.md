@@ -2,9 +2,22 @@
 
 **Goal:** Implement complete Google OAuth 2.0 authentication flow with multi-account support
 
+**Context:** Story 4.1 provides MVP authentication via Service Account for shared documents. Stories 4.2-4.6 extend to full user OAuth for personal document access.
+
 ## User Stories
 
-### Story 4.1: OAuth Configuration
+### Story 4.1: Shared Document Editing
+**As a** Claude User
+**I want** Claude to edit Google Docs that I've shared with the service
+**So that** I can update my documents through natural conversation without manual copy-paste
+
+**Acceptance Criteria:**
+- When I share a Google Doc with the service account, Claude can modify it
+- When I ask Claude to update shared document content, the changes appear in Google Docs
+- When I try to edit an unshared document, I receive a clear message explaining how to share it
+- The service account email is visible so I know what to share with
+
+### Story 4.2: OAuth Configuration
 **As a** Developer/Maintainer
 **I want** to configure Google OAuth application
 **So that** users can authenticate with Google
@@ -17,7 +30,7 @@
 - Credentials stored as Railway environment variables (or external secret manager if required)
 - Environment variables configured
 
-### Story 4.2: OAuth Flow Implementation
+### Story 4.3: OAuth Flow Implementation
 **As a** Claude User
 **I want** to authenticate with my Google account
 **So that** the service can access my documents
@@ -30,7 +43,7 @@
 - Error handling for auth failures
 - Success redirect to settings page
 
-### Story 4.3: Token Management
+### Story 4.4: Token Management
 **As a** Developer/Maintainer
 **I want** to securely manage OAuth tokens
 **So that** user sessions remain valid
@@ -43,7 +56,7 @@
 - Token retrieval by user ID
 - Secure token deletion capability
 
-### Story 4.4: Multi-Account Support
+### Story 4.5: Multi-Account Support
 **As a** Claude User
 **I want** to connect multiple Google accounts
 **So that** I can edit documents from different accounts
@@ -56,7 +69,7 @@
 - Remove account functionality
 - Default account designation
 
-### Story 4.5: Authentication Error Handling
+### Story 4.6: Authentication Error Handling
 **As a** Claude User
 **I want** clear authentication error messages
 **So that** I can resolve authentication issues
@@ -68,3 +81,9 @@
 - Guidance for resolution steps
 - Logging of auth errors
 - Immediate error return without retry
+
+## Technical Notes
+
+- Story 4.1 uses Service Account for MVP - no user OAuth flow required
+- Service Account requires documents to be explicitly shared by user
+- Migration to OAuth (4.2-4.6) uses same Google Docs API calls - only auth layer changes

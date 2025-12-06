@@ -2,10 +2,55 @@
 # Extracted from user-story-principles.yaml for detailed reference
 
 note: |
-  For LLM teams, "Conversation" in Three Cs works differently than for humans:
-  - Humans: PO writes vague card → Dev asks questions → PO clarifies → QA probes edge cases → Requirements emerge through dialogue
-  - LLMs: Story + Context documents (architecture docs, existing patterns) replace conversation. LLM uses context to fill gaps autonomously.
-  The acceptance criteria (Confirmation) and splitting patterns below help ensure stories are complete enough for LLM implementation without human back-and-forth.
+  Three Cs (Ron Jeffries, 2001) - the foundation of user story practice:
+
+  1. Card - The written story itself. Just enough text to identify and remind what it's about. Fits on a 3x5 index card.
+  2. Conversation - Where real requirements emerge through dialogue. The card is just a placeholder - details come from discussion.
+  3. Confirmation - Acceptance criteria that verify the story is done. How you know objectives were achieved.
+
+  The key insight: the story card is NOT the requirement - it's a reminder to have a conversation. The real requirement emerges from that conversation, and confirmation proves it was met.
+
+  For an LLM team, "Conversation" doesn't quite apply the same way. Should I remove or adapt the Three Cs section?
+
+  > LEt's rather think how conversation should happen for LLMs? How it usually happens for humans?
+
+  Good question. Let me think through this:
+
+  How Conversation Works for Humans
+
+  1. PO writes card → vague, incomplete
+  2. Dev asks questions → "What happens if X?", "Do we need Y?"
+  3. PO clarifies → "Oh good point, let's handle X this way"
+  4. QA probes edge cases → "What about invalid input?"
+  5. Requirements emerge → through back-and-forth dialogue
+  6. AC gets refined → based on conversation
+
+  The card is intentionally incomplete - it's a reminder to have this conversation.
+
+  How It Could Work for LLMs
+
+  Option A: LLM fills gaps autonomously
+  - LLM reads card → generates questions internally → answers them using context/docs → produces complete story
+  - No human in the loop
+  - Risk: LLM assumptions may be wrong
+
+  Option B: LLM asks human clarifying questions
+  - LLM reads card → identifies ambiguities → asks human
+  - Human answers → LLM refines story
+  - More accurate but slower
+
+  Option C: Multi-agent conversation
+  - Agent 1 (PO perspective) writes card
+  - Agent 2 (Dev perspective) asks clarifying questions
+  - Agent 3 (QA perspective) probes edge cases
+  - They "converse" → refined story emerges
+
+  Option D: Story + Context documents
+  - Human provides card + architecture docs + existing patterns
+  - LLM uses context to fill gaps (no conversation needed)
+  - Context replaces conversation
+
+  What approach fits your workflow? This will shape how we adapt Three Cs for LLM use.
 
 # =============================================================================
 # ACCEPTANCE CRITERIA: The Confirmation in Three Cs
