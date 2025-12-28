@@ -1,0 +1,447 @@
+# User Story Validation Checklist
+# Based on agile best practices from Kent Beck, Ron Jeffries, Bill Wake, Mike Cohn
+# Each prompt has Q (question) and A (expected answer) with measurable criteria
+#
+# Sources:
+# - Ron Jeffries Three Cs: https://ronjeffries.com/xprog/articles/expcardconversationconfirmation/
+# - Bill Wake INVEST: https://agilealliance.org/glossary/invest/
+# - Mike Cohn User Stories: https://www.mountaingoatsoftware.com/agile/user-stories
+# - Mike Cohn SPIDR: https://www.mountaingoatsoftware.com/blog/five-simple-but-powerful-ways-to-split-user-stories
+# - Fibonacci Estimation: https://www.mountaingoatsoftware.com/blog/why-the-fibonacci-sequence-works-well-for-estimating
+# - Definition of Ready: https://www.atlassian.com/agile/project-management/definition-of-ready
+
+version: "2.0"
+last_updated: "2025-12-06"
+
+# =============================================================================
+# STORY TEMPLATE: As a [who], I want [what], so that [why]
+# Incorporates Ron Jeffries' Card concept from Three Cs
+# =============================================================================
+
+template:
+  format: "As a [type of user], I want [some goal] so that [some reason]"
+  origin: "Connextra (UK, 2001) via Rachel Davies"
+  source: "https://www.mountaingoatsoftware.com/blog/why-the-three-part-user-story-template-works-so-well"
+
+  card:
+    description: "Just enough text to identify the requirement (Ron Jeffries' Card)"
+    validation_prompts:
+      - Q: "Count total words in the user story statement (As a... I want... So that...). Answer as integer."
+        A: "≤50"
+        rationale: "Must fit on 3x5 index card. Typically 20-50 words maximum."
+
+      - Q: "Count the number of technical implementation terms (API, database, OAuth, endpoint, etc.). Answer as integer."
+        A: "0"
+        rationale: "Card should describe WHAT user needs, not HOW to implement."
+
+      - Q: "Does the story prescribe a specific solution or describe a user need? Answer: need/solution"
+        A: "need"
+        rationale: "Stories are placeholders for conversation, not specifications."
+
+  components:
+    who:
+      description: "The user role - must be an actual human who interacts with the system"
+      validation_prompts:
+        - Q: "Is the role a human persona (not system, database, API, service)? Answer: yes/no"
+          A: "yes"
+          rationale: "Only humans perceive value. 'As a database' is meaningless."
+
+        - Q: "Is the persona more specific than generic 'user' or 'customer'? Answer: yes/no"
+          A: "yes"
+          rationale: "Specific personas (admin, first-time visitor, power user) guide prioritization."
+
+        - Q: "Count distinct user types that would use this feature differently. Answer as integer."
+          A: "1"
+          rationale: "If multiple user types, consider splitting into separate stories."
+
+    what:
+      description: "The goal - what the user wants to accomplish, not how"
+      validation_prompts:
+        - Q: "Does 'I want' describe a goal or a technical solution? Answer: goal/solution"
+          A: "goal"
+          rationale: "'Log in with Google account' (goal) vs 'OAuth 2.0 authentication' (solution)."
+
+        - Q: "Count technology-specific terms in the 'I want' clause. Answer as integer."
+          A: "0"
+          rationale: "User language, not technical language."
+
+        - Q: "How many valid implementation approaches exist for this goal? Answer as integer."
+          A: "≥2"
+          rationale: "If only one approach, story may be over-specified."
+
+    why:
+      description: "The reason - understanding WHY shapes HOW teams implement"
+      source: "https://www.mountaingoatsoftware.com/blog/short-answers-to-your-big-questions-about-user-stories"
+      validation_prompts:
+        - Q: "Is the 'so that' clause present? Answer: yes/no"
+          A: "yes"
+          rationale: "Without WHY, teams may implement wrong solution."
+
+        - Q: "Does 'so that' describe user/business benefit (not system behavior)? Answer: yes/no"
+          A: "yes"
+          rationale: "'So that I save time' (benefit) vs 'so that data is stored' (system behavior)."
+
+        - Q: "Does 'so that' just restate 'I want' in different words? Answer: yes/no"
+          A: "no"
+          rationale: "'Reset password so password is reset' adds no value."
+
+        - Q: "Would knowing this WHY change implementation approach? Answer: yes/no"
+          A: "yes"
+          rationale: "If WHY doesn't inform HOW, it's not a meaningful benefit clause."
+
+# =============================================================================
+# INVEST CRITERIA: Bill Wake (2003)
+# =============================================================================
+
+invest:
+  origin: "Bill Wake, August 2003"
+  source: "https://agilealliance.org/glossary/invest/"
+
+  criteria:
+    - id: independent
+      name: "Independent"
+      description: "Stories can be scheduled and implemented in any order"
+      validation_prompts:
+        - Q: "Count blocking dependencies on other incomplete stories. Answer as integer."
+          A: "0"
+          rationale: "Dependencies prevent flexible prioritization."
+
+        - Q: "Can this story be deployed to production alone? Answer: yes/no"
+          A: "yes"
+          rationale: "Independent stories enable incremental delivery."
+
+        - Q: "If this story is removed from backlog, do other stories break? Answer: yes/no"
+          A: "no"
+          rationale: "Coupled stories should be combined."
+
+    - id: negotiable
+      name: "Negotiable"
+      description: "Implementation details emerge through conversation"
+      validation_prompts:
+        - Q: "Count specific technology/framework names in story or ACs. Answer as integer."
+          A: "0"
+          rationale: "Technology choices are negotiable during conversation."
+
+        - Q: "Does the story describe WHAT (outcome) or HOW (implementation)? Answer: what/how"
+          A: "what"
+          rationale: "Leave HOW for developers to propose."
+
+        - Q: "Could a developer propose a different approach that still satisfies ACs? Answer: yes/no"
+          A: "yes"
+          rationale: "Stories should allow creative solutions."
+
+    - id: valuable
+      name: "Valuable"
+      description: "Stories deliver clear benefit to the customer"
+      source: "Bill Wake's cake metaphor - slice vertically, not horizontally"
+      validation_prompts:
+        - Q: "Does completing this story alone deliver usable value to end user? Answer: yes/no"
+          A: "yes"
+          rationale: "Vertical slice through all layers, not horizontal layer."
+
+        - Q: "Would a user notice if this feature was NOT implemented? Answer: yes/no"
+          A: "yes"
+          rationale: "If invisible to users, it's infrastructure, not a story."
+
+        - Q: "Rate business value on scale 1-5 (1=nice-to-have, 5=critical). Answer as integer 1-5."
+          A: "≥3"
+          rationale: "Low-value stories should be deprioritized or cut."
+
+        - Q: "Is this a vertical slice (end-to-end) or horizontal layer (DB only, API only, UI only)? Answer: vertical/horizontal"
+          A: "vertical"
+          rationale: "A database without UI delivers no user value."
+
+    - id: testable
+      name: "Testable"
+      description: "Acceptance criteria can be verified objectively"
+      validation_prompts:
+        - Q: "Count acceptance criteria. Answer as integer."
+          A: "3-7"
+          rationale: "Fewer than 3: underspecified. More than 7: epic in disguise."
+
+        - Q: "Could QA write test cases from ACs without asking questions? Answer: yes/no"
+          A: "yes"
+          rationale: "If QA needs clarification, ACs aren't clear enough."
+
+        - Q: "Count ACs that specify exact expected output (status code, message text, behavior). Answer as integer."
+          A: "= total AC count"
+          rationale: "Every AC must have measurable expected result."
+
+        - Q: "Do ACs cover happy path, error cases, and edge cases? Answer as percentage covered."
+          A: "≥80%"
+          rationale: "Missing scenarios lead to bugs."
+
+# =============================================================================
+# DEPENDENCIES & RISKS
+# =============================================================================
+
+dependencies_risks:
+  description: "External factors that could block or derail the story"
+  source: "https://dzone.com/articles/assumptions-risks-and-dependencies-in-user-stories"
+
+  validation_prompts:
+    - Q: "Count dependencies on other stories/teams/systems. Answer as integer."
+      A: "0-2"
+      rationale: "Many dependencies = not Independent. Consider combining stories."
+
+    - Q: "Are all dependencies in 'Done' or 'Ready' status? Answer: yes/no"
+      A: "yes"
+      rationale: "Blocked dependencies make story NOT ready for sprint."
+
+    - Q: "Count documented risks with likelihood and impact scores. Answer as integer."
+      A: "≥1"
+      rationale: "Every story has risks. Zero means risks aren't considered."
+
+    - Q: "For each risk, is mitigation strategy documented? Answer as percentage of risks with mitigation."
+      A: "100%"
+      rationale: "Risks without mitigation are unmanaged."
+
+    - Q: "Count assumptions that are not yet validated. Answer as integer."
+      A: "0"
+      rationale: "Unvalidated assumptions become surprises mid-sprint."
+
+    - Q: "Have external parties (APIs, vendors, other teams) confirmed availability? Answer: yes/no"
+      A: "yes"
+      rationale: "External dependencies need confirmation before sprint."
+
+  risk_scoring:
+    format: "likelihood (1-5) × impact (1-5) = risk score"
+    thresholds:
+      low: "1-6"
+      medium: "7-14"
+      high: "15-25"
+    validation_prompts:
+      - Q: "Calculate highest risk score (likelihood × impact). Answer as integer 1-25."
+        A: "≤14"
+        rationale: "High-risk stories (>14) need mitigation before sprint."
+
+# =============================================================================
+# ACCEPTANCE CRITERIA QUALITY
+# =============================================================================
+
+acceptance_criteria:
+  description: "Testable conditions that define 'done' (incorporates Ron Jeffries' Confirmation)"
+  source: "https://www.altexsoft.com/blog/acceptance-criteria-purposes-formats-and-best-practices/"
+
+  validation_prompts:
+    - Q: "Count total acceptance criteria. Answer as integer."
+      A: "3-7"
+      rationale: "<3: underspecified. >7: likely an epic that should be split."
+
+    - Q: "Count ACs that follow Given-When-Then or equivalent testable format. Answer as integer."
+      A: "= total AC count"
+      rationale: "All ACs must be in testable format."
+
+    - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.). Answer as integer."
+      A: "0"
+      rationale: "Vague words cannot be tested objectively."
+
+    - Q: "Count ACs that describe implementation (endpoint created, database updated) vs behavior (user sees, system responds). Answer implementation count as integer."
+      A: "0"
+      rationale: "ACs describe observable behavior, not technical implementation."
+
+    - Q: "Does AC set cover: happy path + at least 2 error scenarios? Answer: yes/no"
+      A: "yes"
+      rationale: "Missing error handling leads to production issues."
+
+    - Q: "Count ACs with specific measurable criteria (status codes, exact messages, timeouts in ms). Answer as integer."
+      A: "≥50% of total"
+      rationale: "Measurable criteria enable automated testing."
+
+    - Q: "Count acceptance criteria that have binary pass/fail outcomes. Answer as integer."
+      A: "= total AC count"
+      rationale: "Every AC must be objectively testable."
+
+    - Q: "Count acceptance criteria containing subjective words (properly, correctly, appropriately, user-friendly). Answer as integer."
+      A: "0"
+      rationale: "Subjective criteria cannot be consistently tested."
+
+    - Q: "Can each AC be converted to an automated test? Answer as percentage of ACs."
+      A: "≥80%"
+      rationale: "Confirmation means testable verification."
+
+    - Q: "Story points assigned using Fibonacci (1,2,3,5,8)? Answer: yes/no"
+      A: "yes"
+      rationale: "Fibonacci sequence reflects estimation uncertainty at larger sizes."
+
+    - Q: "Estimate is ≤5 points? Answer: yes/no"
+      A: "yes"
+      rationale: "Stories >5 points have higher estimation uncertainty and should be split."
+
+    - Q: "Team provided estimate without caveats? Answer: yes/no"
+      A: "yes"
+      rationale: "Caveats indicate unresolved unknowns that need conversation."
+
+# =============================================================================
+# ANTI-PATTERNS DETECTION
+# =============================================================================
+
+anti_patterns:
+  - id: technical_task_disguised
+    name: "Technical Task Disguised as User Story"
+    validation_prompts:
+      - Q: "Is the role a technical entity (Developer, System, Database, API)? Answer: yes/no"
+        A: "no"
+        rationale: "Technical entities don't perceive value."
+
+      - Q: "Would completing this have visible effect to end users? Answer: yes/no"
+        A: "yes"
+        rationale: "Invisible changes are tasks, not stories."
+
+  - id: epic_in_disguise
+    name: "Epic in Disguise"
+    validation_prompts:
+      - Q: "Count acceptance criteria. Answer as integer."
+        A: "≤10"
+        rationale: ">10 ACs usually means multiple stories bundled."
+
+      - Q: "Count distinct user workflows in this story. Answer as integer."
+        A: "1"
+        rationale: "Multiple workflows = multiple stories."
+
+      - Q: "Story points estimate. Answer using Fibonacci."
+        A: "≤8"
+        rationale: ">8 points suggests story should be split."
+
+      - Q: "Does story contain words like 'manage', 'handle', or lists of actions? Answer: yes/no"
+        A: "no"
+        rationale: "'Manage' often hides multiple behaviors."
+
+  - id: horizontal_split
+    name: "Horizontal Layer Split"
+    validation_prompts:
+      - Q: "Does story only cover one layer (database/API/UI)? Answer: yes/no"
+        A: "no"
+        rationale: "Vertical slices deliver value; horizontal layers don't."
+
+      - Q: "Does completing this story require other stories to deliver user value? Answer: yes/no"
+        A: "no"
+        rationale: "Coupled stories should be combined into vertical slice."
+
+  - id: solution_prescription
+    name: "Solution Prescription"
+    validation_prompts:
+      - Q: "Count specific technology names in story statement. Answer as integer."
+        A: "0"
+        rationale: "'OAuth 2.0' is implementation; 'log in with Google' is goal."
+
+      - Q: "Could story be satisfied by multiple technical approaches? Answer: yes/no"
+        A: "yes"
+        rationale: "Prescribed solutions eliminate negotiation."
+
+# =============================================================================
+# DEFINITION OF READY - FINAL CHECKLIST
+# =============================================================================
+
+definition_of_ready:
+  description: "Pre-flight checklist before story enters sprint"
+  source: "https://www.atlassian.com/agile/project-management/definition-of-ready"
+
+  checklist:
+    acceptance_criteria:
+      - Q: "AC count is between 3-7? Answer: yes/no"
+        A: "yes"
+      - Q: "All ACs are testable with pass/fail outcome? Answer: yes/no"
+        A: "yes"
+      - Q: "Happy path and error cases covered? Answer: yes/no"
+        A: "yes"
+
+    dependencies:
+      - Q: "All dependencies identified? Answer: yes/no"
+        A: "yes"
+      - Q: "All blocking dependencies resolved? Answer: yes/no"
+        A: "yes"
+      - Q: "External parties confirmed availability? Answer: yes/no"
+        A: "yes"
+
+    team_readiness:
+      - Q: "Team discussed in refinement? Answer: yes/no"
+        A: "yes"
+      - Q: "Team confirms understanding (fist of five ≥4)? Answer: yes/no"
+        A: "yes"
+      - Q: "No open questions remain? Answer: yes/no"
+        A: "yes"
+
+    invest_check:
+      - Q: "Independent (0 blocking dependencies)? Answer: yes/no"
+        A: "yes"
+      - Q: "Negotiable (no technology prescribed)? Answer: yes/no"
+        A: "yes"
+      - Q: "Valuable (vertical slice with user value)? Answer: yes/no"
+        A: "yes"
+      - Q: "Estimable (≥70% confidence)? Answer: yes/no"
+        A: "yes"
+      - Q: "Small (≤3 person-days)? Answer: yes/no"
+        A: "yes"
+      - Q: "Testable (QA can write tests from ACs)? Answer: yes/no"
+        A: "yes"
+
+  scoring:
+    method: "Count 'yes' answers"
+    total_questions: 18
+    thresholds:
+      ready: "18/18 (100%)"
+      needs_refinement: "15-17 (83-94%)"
+      not_ready: "<15 (<83%)"
+
+# =============================================================================
+# STORY SPLITTING GUIDANCE (SPIDR)
+# =============================================================================
+
+splitting:
+  description: "When story is too large, use SPIDR to split"
+  source: "https://www.mountaingoatsoftware.com/blog/five-simple-but-powerful-ways-to-split-user-stories"
+
+  when_to_split:
+    - Q: "Story points >8? Answer: yes/no"
+      A: "no"
+      action_if_yes: "Split using SPIDR"
+
+    - Q: "More than 7 acceptance criteria? Answer: yes/no"
+      A: "no"
+      action_if_yes: "Split using SPIDR"
+
+    - Q: "Completion time >5 person-days? Answer: yes/no"
+      A: "no"
+      action_if_yes: "Split using SPIDR"
+
+  spidr_techniques:
+    S_spike:
+      description: "Research activity to reduce unknowns"
+      trigger: "Too many unknowns to estimate"
+      validation:
+        - Q: "Count unresolved technical unknowns. Answer as integer."
+          A: "0"
+          action_if_fail: "Create time-boxed spike (≤2 days)"
+
+    P_paths:
+      description: "Split by different user paths/workflows"
+      trigger: "Multiple choices or steps in workflow"
+      validation:
+        - Q: "Count distinct user paths through this feature. Answer as integer."
+          A: "1"
+          action_if_fail: "Split into one story per path"
+
+    I_interfaces:
+      description: "Split by device type or interface"
+      trigger: "Feature works on multiple devices/platforms"
+      validation:
+        - Q: "Count device types/interfaces covered. Answer as integer."
+          A: "1"
+          action_if_fail: "Split into one story per interface"
+
+    D_data:
+      description: "Split by data types or subsets"
+      trigger: "Feature handles multiple data types"
+      validation:
+        - Q: "Count distinct data types/entities handled. Answer as integer."
+          A: "1-2"
+          action_if_fail: "Split by data type"
+
+    R_rules:
+      description: "Split by business rules"
+      trigger: "Multiple business rules apply"
+      validation:
+        - Q: "Count distinct business rules in this story. Answer as integer."
+          A: "1-2"
+          action_if_fail: "Implement core behavior first, add rules in follow-up stories"
