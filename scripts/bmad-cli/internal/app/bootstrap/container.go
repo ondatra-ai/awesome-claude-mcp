@@ -5,6 +5,8 @@ import (
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/app/commands"
 	"bmad-cli/internal/app/factories"
+	"bmad-cli/internal/app/generators/validate"
+	"bmad-cli/internal/infrastructure/checklist"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
@@ -20,6 +22,7 @@ type Container struct {
 	PRTriageCmd    *commands.PRTriageCommand
 	USCreateCmd    *commands.USCreateCommand
 	USImplementCmd *commands.USImplementCommand
+	USChecklistCmd *commands.USChecklistCommand
 	RunDir         *fs.RunDirectory
 }
 
@@ -73,11 +76,24 @@ func NewContainer() (*Container, error) {
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
+	// Setup user story checklist command
+	checklistLoader := checklist.NewChecklistLoader(cfg)
+	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
+	tableRenderer := commands.NewTableRenderer()
+	usChecklistCmd := commands.NewUSChecklistCommand(
+		epicLoader,
+		checklistLoader,
+		checklistEvaluator,
+		tableRenderer,
+		runDir,
+	)
+
 	return &Container{
 		Config:         cfg,
 		PRTriageCmd:    prTriageCmd,
 		USCreateCmd:    usCreateCmd,
 		USImplementCmd: usImplementCmd,
+		USChecklistCmd: usChecklistCmd,
 		RunDir:         runDir,
 	}, nil
 }

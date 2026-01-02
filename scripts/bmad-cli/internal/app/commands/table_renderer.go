@@ -1,0 +1,149 @@
+package commands
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+	"text/tabwriter"
+
+	"bmad-cli/internal/domain/models/checklist"
+)
+
+const (
+	maxQuestionLen    = 40
+	separatorLine     = "================================================================================"
+	percentMultiplier = 100
+	minTruncateLen    = 3
+)
+
+// TableRenderer renders checklist reports as ASCII tables.
+type TableRenderer struct {
+	writer io.Writer
+}
+
+// NewTableRenderer creates a new table renderer writing to stdout.
+func NewTableRenderer() *TableRenderer {
+	return &TableRenderer{
+		writer: os.Stdout,
+	}
+}
+
+// NewTableRendererWithWriter creates a new table renderer with a custom writer.
+func NewTableRendererWithWriter(w io.Writer) *TableRenderer {
+	return &TableRenderer{
+		writer: w,
+	}
+}
+
+// RenderReport renders a checklist report as an ASCII table.
+func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport) {
+	r.renderHeader(report)
+	r.renderTable(report)
+	r.renderSummary(report)
+}
+
+// renderHeader renders the report header.
+func (r *TableRenderer) renderHeader(report *checklist.ChecklistReport) {
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintf(r.writer, "USER STORY CHECKLIST VALIDATION - Story %s: %s\n",
+		report.StoryNumber, report.StoryTitle)
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintln(r.writer)
+}
+
+// renderTable renders the results table.
+func (r *TableRenderer) renderTable(report *checklist.ChecklistReport) {
+	const (
+		columnPadding = 2
+		answerMaxLen  = 12
+	)
+
+	tabWriter := tabwriter.NewWriter(r.writer, 0, 0, columnPadding, ' ', 0)
+
+	// Header
+	_, _ = fmt.Fprintln(tabWriter, "SECTION\tQUESTION\tEXPECTED\tACTUAL\tSTATUS")
+	_, _ = fmt.Fprintln(tabWriter, "-------\t--------\t--------\t------\t------")
+
+	// Results
+	for _, result := range report.Results {
+		question := truncateString(result.Question, maxQuestionLen)
+		expected := truncateString(result.ExpectedAnswer, answerMaxLen)
+		actual := truncateString(result.ActualAnswer, answerMaxLen)
+		status := r.formatStatus(result.Status)
+
+		_, _ = fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\n",
+			result.SectionPath,
+			question,
+			expected,
+			actual,
+			status,
+		)
+	}
+
+	_ = tabWriter.Flush()
+	_, _ = fmt.Fprintln(r.writer)
+}
+
+// renderSummary renders the report summary.
+func (r *TableRenderer) renderSummary(report *checklist.ChecklistReport) {
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintln(r.writer, "SUMMARY")
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintf(r.writer, "Total Prompts: %d\n", report.Summary.TotalPrompts)
+	_, _ = fmt.Fprintf(r.writer, "PASS: %d (%.1f%%)\n",
+		report.Summary.PassCount,
+		r.calculatePercentage(report.Summary.PassCount, report.Summary.TotalPrompts))
+	_, _ = fmt.Fprintf(r.writer, "WARN: %d (%.1f%%)\n",
+		report.Summary.WarnCount,
+		r.calculatePercentage(report.Summary.WarnCount, report.Summary.TotalPrompts))
+	_, _ = fmt.Fprintf(r.writer, "FAIL: %d (%.1f%%)\n",
+		report.Summary.FailCount,
+		r.calculatePercentage(report.Summary.FailCount, report.Summary.TotalPrompts))
+	_, _ = fmt.Fprintf(r.writer, "SKIP: %d\n", report.Summary.SkipCount)
+	_, _ = fmt.Fprintln(r.writer)
+	_, _ = fmt.Fprintf(r.writer, "Overall: %s\n", report.GetOverallStatus())
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+}
+
+// formatStatus formats the status with visual indicators.
+func (r *TableRenderer) formatStatus(status checklist.Status) string {
+	switch status {
+	case checklist.StatusPass:
+		return "PASS"
+	case checklist.StatusWarn:
+		return "WARN"
+	case checklist.StatusFail:
+		return "FAIL"
+	case checklist.StatusSkip:
+		return "SKIP"
+	default:
+		return string(status)
+	}
+}
+
+// calculatePercentage calculates percentage safely.
+func (r *TableRenderer) calculatePercentage(count, total int) float64 {
+	if total == 0 {
+		return 0
+	}
+
+	return float64(count) / float64(total) * percentMultiplier
+}
+
+// truncateString truncates a string to maxLen, adding "..." if needed.
+func truncateString(input string, maxLen int) string {
+	// Remove newlines and extra whitespace
+	cleaned := strings.ReplaceAll(input, "\n", " ")
+	cleaned = strings.Join(strings.Fields(cleaned), " ")
+
+	if len(cleaned) <= maxLen {
+		return cleaned
+	}
+
+	if maxLen <= minTruncateLen {
+		return cleaned[:maxLen]
+	}
+
+	return cleaned[:maxLen-minTruncateLen] + "..."
+}

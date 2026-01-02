@@ -26,6 +26,8 @@ templates:
     validate_tests_system: "./scripts/bmad-cli/templates/us-implement.3.validate-tests.system.prompt.tpl"
     implement_feature: "./scripts/bmad-cli/templates/us-implement.4.implement-feature.prompt.tpl"
     implement_feature_system: "./scripts/bmad-cli/templates/us-implement.4.implement-feature.system.prompt.tpl"
+    checklist: "./scripts/bmad-cli/templates/us-checklist.prompt.tpl"
+    checklist_system: "./scripts/bmad-cli/templates/us-checklist.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
@@ -37,6 +39,7 @@ paths:
   tmp_glob: "./tmp/**"
   qa_gates: "docs/qa/gates"
   stories_dir: "docs/stories"
+  checklist: "./bdd-cli/user-story-description-checklist.yaml"
 
 testing:
   command: "make test-e2e"
@@ -47,3 +50,6 @@ documents:
   coding_standards: "./docs/architecture/coding-standards.md"
   source_tree: "./docs/architecture/source-tree.md"
   tech_stack: "./docs/architecture/tech-stack.md"
+  prd: "./docs/prd.md"
+  user_roles: "./docs/prd/user-roles.md"
+  architecture_yaml: "./bdd-cli/architecture.yaml"
