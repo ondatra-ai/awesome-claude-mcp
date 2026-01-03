@@ -101,6 +101,8 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 lint-docs: ## Validate YAML files against Yamale schemas
 	@echo "🔍 Validating architecture.yaml against schema (strict mode)..."
 	yamale -s bdd-cli/architecture-schema.yaml bdd-cli/architecture.yaml
+	@echo "🔍 Validating user-story-description-checklist.yaml against schema..."
+	yamale -s bdd-cli/user-story-description-checklist-schema.yaml bdd-cli/user-story-description-checklist.yaml
 	@echo "🔍 Validating requirements.yaml against schema (strict mode)..."
 	yamale -s docs/requirements-schema.yaml docs/requirements.yaml
 	@echo "🔍 Validating epic YAML files against schema (strict mode)..."
