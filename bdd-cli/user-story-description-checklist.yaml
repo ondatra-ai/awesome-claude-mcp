@@ -100,7 +100,7 @@ template:
             - user_roles
             - architecture_yaml
 
-        - Q: "Count technology-specific terms in the 'I want' clause. Answer as integer."
+        - Q: "Count internal implementation terms in the 'I want' clause. Internal implementation terms are OUR technical decisions: SDK, REST, GraphQL, database, endpoint, WebSocket, JWT, microservice, cache, API (when referring to our API). NOT implementation terms: (1) Product names users interact with (Google Docs, Gmail, Slack); (2) 3rd-party authentication methods users perform (OAuth, service account, API key) - these describe USER actions with external services, not our implementation. First explain your reasoning, then answer as integer."
           A: "0"
           rationale: "User language, not technical language."
           docs:
