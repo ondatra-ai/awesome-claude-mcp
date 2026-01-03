@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/domain/models/checklist"
 	"bmad-cli/internal/domain/models/story"
@@ -42,9 +44,11 @@ func getDocKeyToConfigPath() map[string]string {
 
 // ChecklistPromptData represents data needed for checklist validation prompts.
 type ChecklistPromptData struct {
-	Story    *story.Story
-	Question string
-	Docs     map[string]*docs.ArchitectureDoc
+	Story      *story.Story
+	Question   string
+	Rationale  string
+	ResultPath string
+	Docs       map[string]*docs.ArchitectureDoc
 }
 
 // ChecklistEvaluator evaluates user stories against validation prompts using AI.
@@ -88,14 +92,14 @@ func (e *ChecklistEvaluator) Evaluate(
 		Results:     make([]checklist.ValidationResult, 0, len(prompts)),
 	}
 
-	for i, promptCtx := range prompts {
+	for promptIndex, promptCtx := range prompts {
 		slog.Info("Evaluating prompt",
-			"index", i+1,
+			"index", promptIndex+1,
 			"total", len(prompts),
 			"section", promptCtx.GetFullSectionPath(),
 		)
 
-		result, err := e.evaluatePrompt(ctx, storyData, promptCtx)
+		result, err := e.evaluatePrompt(ctx, storyData, promptCtx, promptIndex+1)
 		if err != nil {
 			slog.Error("Failed to evaluate prompt", "error", err)
 			// Continue with other prompts, mark this one as failed
@@ -122,9 +126,16 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	ctx context.Context,
 	storyData *story.Story,
 	promptCtx checklist.PromptWithContext,
+	promptIndex int,
 ) (checklist.ValidationResult, error) {
 	// Load requested documents for this prompt (uses prompt-specific or defaults)
 	requestedDocs := e.loadRequestedDocs(promptCtx.GetEffectiveDocs())
+
+	// Build result file path for FILE_START/FILE_END pattern
+	sectionPath := promptCtx.GetFullSectionPath()
+	safeSectionPath := strings.ReplaceAll(sectionPath, "/", "-")
+	resultPath := fmt.Sprintf("%s/%02d-%s-checklist-%s-result.yaml",
+		e.tmpDir, promptIndex, e.storyID, safeSectionPath)
 
 	// Load system prompt template (uses cached loader)
 	systemPrompt, err := e.systemLoader.LoadTemplate(ChecklistPromptData{})
@@ -134,9 +145,11 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 
 	// Load user prompt template with data (uses cached loader)
 	promptData := ChecklistPromptData{
-		Story:    storyData,
-		Question: promptCtx.Prompt.Question,
-		Docs:     requestedDocs,
+		Story:      storyData,
+		Question:   promptCtx.Prompt.Question,
+		Rationale:  promptCtx.Prompt.Rationale,
+		ResultPath: resultPath,
+		Docs:       requestedDocs,
 	}
 
 	userPrompt, err := e.userLoader.LoadTemplate(promptData)
@@ -145,9 +158,8 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	}
 
 	// Save prompts to tmp for debugging
-	sectionPath := promptCtx.GetFullSectionPath()
-	e.savePromptFile(sectionPath, "system", systemPrompt)
-	e.savePromptFile(sectionPath, "user", userPrompt)
+	e.savePromptFile(sectionPath, promptIndex, "system", systemPrompt)
+	e.savePromptFile(sectionPath, promptIndex, "user", userPrompt)
 
 	// Use think mode - allows Read, Glob, Grep tools for accessing reference docs
 	mode := e.modeFactory.GetThinkMode()
@@ -158,10 +170,10 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	}
 
 	// Save response to tmp
-	e.savePromptFile(sectionPath, "response", response)
+	e.savePromptFile(sectionPath, promptIndex, "response", response)
 
-	// Parse the answer from response
-	actualAnswer := e.parseAnswer(response)
+	// Parse the answer from result file (extracted from FILE_START/FILE_END in response)
+	actualAnswer := e.parseResultFile(response, resultPath)
 
 	// Compare with expected
 	status := e.compareAnswers(promptCtx.Prompt.Answer, actualAnswer, storyData)
@@ -176,17 +188,60 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	}, nil
 }
 
-// parseAnswer extracts the answer from AI response.
-func (e *ChecklistEvaluator) parseAnswer(response string) string {
-	// Clean up the response - take first line, trim whitespace
-	response = strings.TrimSpace(response)
+// resultYAML represents the structure of the result file.
+type resultYAML struct {
+	Answer string `yaml:"answer"`
+}
 
-	lines := strings.Split(response, "\n")
-	if len(lines) > 0 {
-		return strings.TrimSpace(lines[0])
+// parseResultFile extracts FILE_START/FILE_END content from response, saves to file, and parses.
+func (e *ChecklistEvaluator) parseResultFile(response, path string) string {
+	// Extract content between FILE_START and FILE_END markers
+	content := e.extractFileContent(response, path)
+	if content == "" {
+		slog.Warn("No FILE_START/FILE_END content found in response", "path", path)
+
+		return ""
 	}
 
-	return response
+	// Save the extracted content to file
+	err := os.WriteFile(path, []byte(content), filePermissions)
+	if err != nil {
+		slog.Warn("Failed to save result file", "path", path, "error", err)
+	} else {
+		slog.Info("Result file saved", "file", path)
+	}
+
+	// Parse the YAML
+	var result resultYAML
+
+	err = yaml.Unmarshal([]byte(content), &result)
+	if err != nil {
+		slog.Warn("Failed to parse result YAML", "path", path, "error", err)
+
+		return ""
+	}
+
+	return strings.TrimSpace(result.Answer)
+}
+
+// extractFileContent extracts content between FILE_START and FILE_END markers.
+func (e *ChecklistEvaluator) extractFileContent(response, path string) string {
+	startMarker := fmt.Sprintf("=== FILE_START: %s ===", path)
+	endMarker := fmt.Sprintf("=== FILE_END: %s ===", path)
+
+	startIdx := strings.Index(response, startMarker)
+	if startIdx == -1 {
+		return ""
+	}
+
+	contentStart := startIdx + len(startMarker)
+	endIdx := strings.Index(response[contentStart:], endMarker)
+
+	if endIdx == -1 {
+		return ""
+	}
+
+	return strings.TrimSpace(response[contentStart : contentStart+endIdx])
 }
 
 // compareAnswers compares actual answer to expected and returns status.
@@ -440,14 +495,14 @@ func (e *ChecklistEvaluator) loadRequestedDocs(keys []string) map[string]*docs.A
 }
 
 // savePromptFile saves a prompt to a file in the tmp directory.
-func (e *ChecklistEvaluator) savePromptFile(sectionPath, suffix, content string) {
+func (e *ChecklistEvaluator) savePromptFile(sectionPath string, promptIndex int, suffix, content string) {
 	if e.tmpDir == "" {
 		return
 	}
 
 	// Replace slashes in section path with dashes for filename
 	safeSectionPath := strings.ReplaceAll(sectionPath, "/", "-")
-	filePath := fmt.Sprintf("%s/%s-checklist-%s-%s.txt", e.tmpDir, e.storyID, safeSectionPath, suffix)
+	filePath := fmt.Sprintf("%s/%02d-%s-checklist-%s-%s.txt", e.tmpDir, promptIndex, e.storyID, safeSectionPath, suffix)
 
 	err := os.WriteFile(filePath, []byte(content), filePermissions)
 	if err != nil {
