@@ -9,8 +9,8 @@ stories:
   - id: "4.1"
     title: "Shared Document Editing"
     as_a: "Claude User"
-    i_want: "Claude to edit Google Docs that I've shared with the service"
-    so_that: "I can update my documents through natural conversation without manual copy-paste"
+    i_want: "Claude to edit Google Docs that I've shared with provided service account"
+    so_that: "I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth"
     status: "PLANNED"
     acceptance_criteria:
       - id: AC-1
