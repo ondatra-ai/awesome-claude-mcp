@@ -2150,3 +2150,37 @@ func ErrImplementFailed(cause error) error {
 		Cause:    cause,
 	}
 }
+
+// Checklist Validation Errors.
+var (
+	ErrLoadChecklistSystemPrompt = errors.New("failed to load checklist system prompt")
+	ErrLoadChecklistUserPrompt   = errors.New("failed to load checklist user prompt")
+	ErrChecklistAIEvaluation     = errors.New("AI evaluation failed")
+)
+
+func ErrLoadChecklistSystemPromptFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "LOAD_CHECKLIST_SYSTEM_PROMPT_FAILED",
+		Message:  "failed to load checklist system prompt template",
+		Cause:    errors.Join(ErrLoadChecklistSystemPrompt, cause),
+	}
+}
+
+func ErrLoadChecklistUserPromptFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "LOAD_CHECKLIST_USER_PROMPT_FAILED",
+		Message:  "failed to load checklist user prompt template",
+		Cause:    errors.Join(ErrLoadChecklistUserPrompt, cause),
+	}
+}
+
+func ErrChecklistAIEvaluationFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "CHECKLIST_AI_EVALUATION_FAILED",
+		Message:  "AI evaluation of checklist prompt failed",
+		Cause:    errors.Join(ErrChecklistAIEvaluation, cause),
+	}
+}

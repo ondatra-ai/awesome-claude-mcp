@@ -354,8 +354,8 @@ The development will proceed through 10 distinct epics, each delivering deployab
 
 #### Story 4.1: Shared Document Editing
 **As a** Claude User
-**I want** Claude to edit Google Docs that I've shared with the service
-**So that** I can update my documents through natural conversation without manual copy-paste
+**I want** Claude to edit Google Docs that I've shared with provided service account
+**So that** I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth
 
 **Acceptance Criteria:**
 - When I share a Google Doc with the service account, Claude can modify it

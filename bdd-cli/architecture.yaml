@@ -124,3 +124,40 @@ architecture:
 
       dependencies:
         - backend
+
+documentation:
+  prd:
+    - path: docs/prd.md
+      description: "Main Product Requirements Document"
+    - path: docs/brief.md
+      description: "Project brief and overview"
+    - path: docs/prd/requirements.md
+      description: "Detailed requirements specification"
+    - path: docs/prd/user-roles.md
+      description: "User roles and personas"
+    - path: docs/prd/goals-and-background-context.md
+      description: "Goals and background context"
+    - path: docs/prd/epic-list.md
+      description: "List of all epics"
+
+  architecture:
+    - path: docs/architecture.md
+      description: "Main architecture document"
+    - path: docs/frontend-architecture.md
+      description: "Frontend architecture details"
+    - path: docs/architecture/tech-stack.md
+      description: "Technology stack specification"
+    - path: docs/architecture/coding-standards.md
+      description: "Coding standards and conventions"
+    - path: docs/architecture/source-tree.md
+      description: "Source code structure"
+    - path: docs/architecture/bdd-guidelines.md
+      description: "BDD scenario writing guidelines"
+
+  epics:
+    path: docs/epics/jsons
+    description: "Epic YAML files with user stories"
+
+  stories:
+    path: docs/stories
+    description: "Generated story files"
