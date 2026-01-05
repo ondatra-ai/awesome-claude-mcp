@@ -7,6 +7,8 @@ import (
 	"regexp"
 
 	"bmad-cli/internal/app/generators/validate"
+	checklistmodels "bmad-cli/internal/domain/models/checklist"
+	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/infrastructure/checklist"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
@@ -18,6 +20,7 @@ type USChecklistCommand struct {
 	epicLoader         *epic.EpicLoader
 	checklistLoader    *checklist.ChecklistLoader
 	checklistEvaluator *validate.ChecklistEvaluator
+	fixPromptGenerator *validate.FixPromptGenerator
 	tableRenderer      *TableRenderer
 	runDir             *fs.RunDirectory
 }
@@ -27,6 +30,7 @@ func NewUSChecklistCommand(
 	epicLoader *epic.EpicLoader,
 	checklistLoader *checklist.ChecklistLoader,
 	evaluator *validate.ChecklistEvaluator,
+	fixPromptGen *validate.FixPromptGenerator,
 	renderer *TableRenderer,
 	runDir *fs.RunDirectory,
 ) *USChecklistCommand {
@@ -34,6 +38,7 @@ func NewUSChecklistCommand(
 		epicLoader:         epicLoader,
 		checklistLoader:    checklistLoader,
 		checklistEvaluator: evaluator,
+		fixPromptGenerator: fixPromptGen,
 		tableRenderer:      renderer,
 		runDir:             runDir,
 	}
@@ -79,7 +84,61 @@ func (c *USChecklistCommand) Execute(ctx context.Context, storyNumber string) er
 	// 5. Render results as table
 	c.tableRenderer.RenderReport(report)
 
+	// 6. Generate fix prompts for each failed validation
+	c.generateFixPrompts(ctx, storyData, report, tmpDir)
+
 	return nil
+}
+
+// generateFixPrompts generates a fix prompt for each failed validation.
+func (c *USChecklistCommand) generateFixPrompts(
+	ctx context.Context,
+	storyData *story.Story,
+	report *checklistmodels.ChecklistReport,
+	tmpDir string,
+) {
+	// Collect failed checks with fix prompts
+	failedChecks := c.collectFailedChecks(report)
+	if len(failedChecks) == 0 {
+		return
+	}
+
+	slog.Info("Generating fix prompts", "failedChecks", len(failedChecks))
+
+	// Generate a fix prompt for each failed check using its original prompt index
+	for _, failedCheck := range failedChecks {
+		params := validate.GenerateParams{
+			StoryData:   storyData,
+			FailedCheck: failedCheck,
+			TmpDir:      tmpDir,
+		}
+
+		_, err := c.fixPromptGenerator.Generate(ctx, params)
+		if err != nil {
+			slog.Error("Failed to generate fix prompt",
+				"promptIndex", failedCheck.PromptIndex,
+				"section", failedCheck.SectionPath,
+				"error", err,
+			)
+
+			continue
+		}
+	}
+}
+
+// collectFailedChecks returns validation results that failed and have fix prompts.
+func (c *USChecklistCommand) collectFailedChecks(
+	report *checklistmodels.ChecklistReport,
+) []checklistmodels.ValidationResult {
+	var failedChecks []checklistmodels.ValidationResult
+
+	for _, result := range report.Results {
+		if result.Status == checklistmodels.StatusFail && result.FixPrompt != "" {
+			failedChecks = append(failedChecks, result)
+		}
+	}
+
+	return failedChecks
 }
 
 // validateStoryNumber validates the story number format (X.Y).

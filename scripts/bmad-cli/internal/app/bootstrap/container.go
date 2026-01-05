@@ -79,11 +79,13 @@ func NewContainer() (*Container, error) {
 	// Setup user story checklist command
 	checklistLoader := checklist.NewChecklistLoader(cfg)
 	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
+	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
 	tableRenderer := commands.NewTableRenderer()
 	usChecklistCmd := commands.NewUSChecklistCommand(
 		epicLoader,
 		checklistLoader,
 		checklistEvaluator,
+		fixPromptGenerator,
 		tableRenderer,
 		runDir,
 	)

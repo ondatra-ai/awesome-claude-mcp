@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	maxQuestionLen    = 40
-	separatorLine     = "================================================================================"
-	percentMultiplier = 100
-	minTruncateLen    = 3
+	maxQuestionLen        = 40
+	maxQuestionLenFixList = 80 // Longer question display for fix prompts list
+	separatorLine         = "================================================================================"
+	percentMultiplier     = 100
+	minTruncateLen        = 3
 )
 
 // TableRenderer renders checklist reports as ASCII tables.
@@ -41,6 +42,7 @@ func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport) {
 	r.renderHeader(report)
 	r.renderTable(report)
 	r.renderSummary(report)
+	r.renderFixPrompts(report)
 }
 
 // renderHeader renders the report header.
@@ -129,6 +131,36 @@ func (r *TableRenderer) calculatePercentage(count, total int) float64 {
 	}
 
 	return float64(count) / float64(total) * percentMultiplier
+}
+
+// renderFixPrompts renders fix prompts for failed validations.
+func (r *TableRenderer) renderFixPrompts(report *checklist.ChecklistReport) {
+	// Collect results with fix prompts
+	var fixes []checklist.ValidationResult
+
+	for _, result := range report.Results {
+		if result.Status == checklist.StatusFail && result.FixPrompt != "" {
+			fixes = append(fixes, result)
+		}
+	}
+
+	if len(fixes) == 0 {
+		return
+	}
+
+	_, _ = fmt.Fprintln(r.writer)
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintln(r.writer, "FIX PROMPTS")
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+
+	for i, fix := range fixes {
+		_, _ = fmt.Fprintf(r.writer, "\n### Fix %d: %s\n", i+1, fix.SectionPath)
+		_, _ = fmt.Fprintf(r.writer, "Question: %s\n", truncateString(fix.Question, maxQuestionLenFixList))
+		_, _ = fmt.Fprintln(r.writer)
+		_, _ = fmt.Fprintln(r.writer, fix.FixPrompt)
+	}
+
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
 }
 
 // truncateString truncates a string to maxLen, adding "..." if needed.

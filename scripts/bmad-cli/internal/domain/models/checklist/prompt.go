@@ -15,6 +15,7 @@ type Prompt struct {
 	ActionIfYes  string   // Action if answer is yes
 	ActionIfFail string   // Action if validation fails
 	Docs         []string // Document keys to inject into prompt
+	FixTemplate  string   // Template for generating fix prompt when validation fails (F in YAML)
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling for Prompt.
@@ -34,6 +35,7 @@ func (p *Prompt) UnmarshalYAML(node *yaml.Node) error {
 	p.ActionIfYes = getStringFromMap(raw, "action_if_yes")
 	p.ActionIfFail = getStringFromMap(raw, "action_if_fail")
 	p.Docs = getStringSliceFromMap(raw, "docs")
+	p.FixTemplate = getStringFromMap(raw, "F")
 
 	return nil
 }

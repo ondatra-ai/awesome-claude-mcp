@@ -39,16 +39,18 @@ func getDocKeyToConfigPath() map[string]string {
 		"prd":                   "documents.prd",
 		"user_roles":            "documents.user_roles",
 		"architecture_yaml":     "documents.architecture_yaml",
+		"bdd_guidelines":        "documents.bdd_guidelines",
 	}
 }
 
 // ChecklistPromptData represents data needed for checklist validation prompts.
 type ChecklistPromptData struct {
-	Story      *story.Story
-	Question   string
-	Rationale  string
-	ResultPath string
-	Docs       map[string]*docs.ArchitectureDoc
+	Story       *story.Story
+	Question    string
+	Rationale   string
+	ResultPath  string
+	Docs        map[string]*docs.ArchitectureDoc
+	FixTemplate string // Template for generating fix prompt when validation fails
 }
 
 // ChecklistEvaluator evaluates user stories against validation prompts using AI.
@@ -110,6 +112,7 @@ func (e *ChecklistEvaluator) Evaluate(
 				ActualAnswer:   "ERROR: " + err.Error(),
 				Status:         checklist.StatusFail,
 				Rationale:      promptCtx.Prompt.Rationale,
+				PromptIndex:    promptIndex + 1,
 			}
 		}
 
@@ -145,11 +148,12 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 
 	// Load user prompt template with data (uses cached loader)
 	promptData := ChecklistPromptData{
-		Story:      storyData,
-		Question:   promptCtx.Prompt.Question,
-		Rationale:  promptCtx.Prompt.Rationale,
-		ResultPath: resultPath,
-		Docs:       requestedDocs,
+		Story:       storyData,
+		Question:    promptCtx.Prompt.Question,
+		Rationale:   promptCtx.Prompt.Rationale,
+		ResultPath:  resultPath,
+		Docs:        requestedDocs,
+		FixTemplate: promptCtx.Prompt.FixTemplate,
 	}
 
 	userPrompt, err := e.userLoader.LoadTemplate(promptData)
@@ -173,34 +177,49 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	e.savePromptFile(sectionPath, promptIndex, "response", response)
 
 	// Parse the answer from result file (extracted from FILE_START/FILE_END in response)
-	actualAnswer := e.parseResultFile(response, resultPath)
+	parsedResult := e.parseResultFile(response, resultPath)
 
 	// Compare with expected
-	status := e.compareAnswers(promptCtx.Prompt.Answer, actualAnswer, storyData)
+	status := e.compareAnswers(promptCtx.Prompt.Answer, parsedResult.Answer, storyData)
+
+	// Only include fix prompt if validation failed
+	fixPrompt := ""
+	if status == checklist.StatusFail && parsedResult.FixPrompt != "" {
+		fixPrompt = parsedResult.FixPrompt
+	}
 
 	return checklist.ValidationResult{
 		SectionPath:    promptCtx.GetFullSectionPath(),
 		Question:       promptCtx.Prompt.Question,
 		ExpectedAnswer: promptCtx.Prompt.Answer,
-		ActualAnswer:   actualAnswer,
+		ActualAnswer:   parsedResult.Answer,
 		Status:         status,
 		Rationale:      promptCtx.Prompt.Rationale,
+		FixPrompt:      fixPrompt,
+		PromptIndex:    promptIndex,
 	}, nil
 }
 
 // resultYAML represents the structure of the result file.
 type resultYAML struct {
-	Answer string `yaml:"answer"`
+	Answer    string `yaml:"answer"`
+	FixPrompt string `yaml:"fix_prompt,omitempty"`
+}
+
+// ParsedResult contains the parsed answer and optional fix prompt.
+type ParsedResult struct {
+	Answer    string
+	FixPrompt string
 }
 
 // parseResultFile extracts FILE_START/FILE_END content from response, saves to file, and parses.
-func (e *ChecklistEvaluator) parseResultFile(response, path string) string {
+func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult {
 	// Extract content between FILE_START and FILE_END markers
 	content := e.extractFileContent(response, path)
 	if content == "" {
 		slog.Warn("No FILE_START/FILE_END content found in response", "path", path)
 
-		return ""
+		return ParsedResult{}
 	}
 
 	// Save the extracted content to file
@@ -218,10 +237,13 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) string {
 	if err != nil {
 		slog.Warn("Failed to parse result YAML", "path", path, "error", err)
 
-		return ""
+		return ParsedResult{}
 	}
 
-	return strings.TrimSpace(result.Answer)
+	return ParsedResult{
+		Answer:    strings.TrimSpace(result.Answer),
+		FixPrompt: strings.TrimSpace(result.FixPrompt),
+	}
 }
 
 // extractFileContent extracts content between FILE_START and FILE_END markers.

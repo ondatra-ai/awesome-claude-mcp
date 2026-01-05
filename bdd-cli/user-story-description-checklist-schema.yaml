@@ -42,6 +42,7 @@ validation_prompt:
   docs: list(str(), required=False)
   action_if_yes: str(required=False)
   action_if_fail: str(required=False)
+  F: str(required=False)
 
 ---
 dependencies_risks_def:

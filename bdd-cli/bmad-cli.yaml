@@ -28,6 +28,8 @@ templates:
     implement_feature_system: "./scripts/bmad-cli/templates/us-implement.4.implement-feature.system.prompt.tpl"
     checklist: "./scripts/bmad-cli/templates/us-checklist.prompt.tpl"
     checklist_system: "./scripts/bmad-cli/templates/us-checklist.system.prompt.tpl"
+    fix_generator: "./scripts/bmad-cli/templates/us-checklist.fix-generator.prompt.tpl"
+    fix_generator_system: "./scripts/bmad-cli/templates/us-checklist.fix-generator.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:
@@ -53,3 +55,4 @@ documents:
   prd: "./docs/prd.md"
   user_roles: "./docs/prd/user-roles.md"
   architecture_yaml: "./bdd-cli/architecture.yaml"
+  bdd_guidelines: "./docs/architecture/bdd-guidelines.md"

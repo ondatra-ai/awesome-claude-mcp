@@ -25,6 +25,8 @@ type ValidationResult struct {
 	ActualAnswer   string // The actual answer from AI evaluation
 	Status         Status // PASS, WARN, FAIL, or SKIP
 	Rationale      string // Why this criterion matters
+	FixPrompt      string // Generated fix prompt when validation fails (optional)
+	PromptIndex    int    // Index of the prompt (1-based) for file naming
 }
 
 // ChecklistReport represents the complete validation report.

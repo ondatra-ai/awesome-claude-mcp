@@ -396,7 +396,6 @@ acceptance_criteria:
     - Q: "Count total acceptance criteria. Answer as integer."
       A: "3-7"
       rationale: "<3: underspecified. >7: likely an epic that should be split."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -405,25 +404,63 @@ acceptance_criteria:
     - Q: "Count ACs that follow Given-When-Then or equivalent testable format. Answer as integer."
       A: "= total AC count"
       rationale: "All ACs must be in testable format."
-      skip: "skip"
       docs:
         - prd
         - user_roles
         - architecture_yaml
+        - bdd_guidelines
+      F: |
+        Using bdd-guidelines.md rules, rewrite each non-compliant AC as a Gherkin scenario.
+        Rules from bdd-guidelines.md:
+        - Third person perspective ("User does" not "I do")
+        - Active voice ("Claude displays" not "is displayed")
+        - Observable outcome (what user sees/experiences)
+        - No vague words (properly, correctly, clear, appropriate)
+        - Each step under 120 characters
+
+        Output format (YAML list):
+        ```yaml
+        - original: "<the failing AC text verbatim>"
+          issue: "Not in Given-When-Then format"
+          rewritten:
+            scenario: "<descriptive behavior name>"
+            given: "<precondition/context>"
+            when: "<user action or trigger>"
+            then: "<observable outcome with measurable criteria>"
+        ```
 
     - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.). Answer as integer."
       A: "0"
       rationale: "Vague words cannot be tested objectively."
-      skip: "skip"
       docs:
         - prd
         - user_roles
         - architecture_yaml
+        - bdd_guidelines
+      F: |
+        Replace each vague word with specific, measurable criteria.
+
+        Common vague words and their replacements:
+        - "clear" → specify exact message text or format
+        - "fast" → specify time in ms (e.g., "within 200ms")
+        - "properly" → specify exact behavior/state
+        - "correctly" → specify expected output/result
+        - "appropriate" → specify exact criteria
+        - "user-friendly" → specify exact UI behavior
+        - "easy" → specify number of steps or time
+        - "intuitive" → specify exact interaction pattern
+
+        Output format (YAML list):
+        ```yaml
+        - original: "<AC text with vague word>"
+          vague_word: "<the vague word>"
+          issue: "Cannot be tested objectively"
+          rewritten: "<AC with specific measurable criteria>"
+        ```
 
     - Q: "Count ACs that describe implementation (endpoint created, database updated) vs behavior (user sees, system responds). Answer implementation count as integer."
       A: "0"
       rationale: "ACs describe observable behavior, not technical implementation."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -432,7 +469,6 @@ acceptance_criteria:
     - Q: "Does AC set cover: happy path + at least 2 error scenarios? Answer: yes/no"
       A: "yes"
       rationale: "Missing error handling leads to production issues."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -441,7 +477,6 @@ acceptance_criteria:
     - Q: "Count ACs with specific measurable criteria (status codes, exact messages, timeouts in ms). Answer as integer."
       A: "≥50% of total"
       rationale: "Measurable criteria enable automated testing."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -450,7 +485,6 @@ acceptance_criteria:
     - Q: "Count acceptance criteria that have binary pass/fail outcomes. Answer as integer."
       A: "= total AC count"
       rationale: "Every AC must be objectively testable."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -459,7 +493,6 @@ acceptance_criteria:
     - Q: "Count acceptance criteria containing subjective words (properly, correctly, appropriately, user-friendly). Answer as integer."
       A: "0"
       rationale: "Subjective criteria cannot be consistently tested."
-      skip: "skip"
       docs:
         - prd
         - user_roles
@@ -468,7 +501,6 @@ acceptance_criteria:
     - Q: "Can each AC be converted to an automated test? Answer as percentage of ACs."
       A: "≥80%"
       rationale: "Confirmation means testable verification."
-      skip: "skip"
       docs:
         - prd
         - user_roles
