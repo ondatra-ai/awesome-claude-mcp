@@ -14,6 +14,11 @@ When reference documentation is provided in the prompt:
 3. Read all referenced files first, then evaluate the story against them
 4. Base your answer on BOTH the story content AND the reference documentation
 
+**Terminology (CRITICAL):**
+When generating fix_prompt examples:
+- Use the EXACT role from the story's "As a" clause (e.g., "Claude User", not generic "User")
+- The story shows the role in "as_a:" field - use that exact text in Given/When/Then examples
+
 **Workflow:**
 1. If reference docs are listed → Use Read tool to read each file
 2. Analyze the story content

@@ -1,37 +1,26 @@
 # Yamale schema for user-story-description-checklist.yaml
 # Validates user story validation checklist configuration
+# Structure: stages[] -> sections[] -> validation_prompts[]
 
 version: str()
 last_updated: str()
-
-template: include('template_def')
-invest: include('invest_def')
-dependencies_risks: include('dependencies_risks_def')
-acceptance_criteria: include('acceptance_criteria_def')
-anti_patterns: list(include('anti_pattern'))
-definition_of_ready: include('definition_of_ready_def')
-splitting: include('splitting_def')
+default_docs: list(str(), required=False)
+stages: list(include('stage'))
 
 ---
-template_def:
-  origin: str()
-  source: str()
-  description: str()
-  criteria: list(include('criterion'))
-
----
-invest_def:
-  origin: str()
-  source: str()
-  criteria: list(include('criterion'))
-
----
-criterion:
+stage:
   id: str()
   name: str()
-  description: str()
-  validation_prompts: list(include('validation_prompt'))
+  description: str(required=False)
+  sections: list(include('section'))
+
+---
+section:
+  id: str()
+  name: str()
+  description: str(required=False)
   source: str(required=False)
+  validation_prompts: list(include('validation_prompt'))
 
 ---
 validation_prompt:
@@ -43,53 +32,3 @@ validation_prompt:
   action_if_yes: str(required=False)
   action_if_fail: str(required=False)
   F: str(required=False)
-
----
-dependencies_risks_def:
-  description: str()
-  source: str()
-  validation_prompts: list(include('validation_prompt'))
-  risk_scoring: include('risk_scoring_def')
-
----
-risk_scoring_def:
-  format: str()
-  thresholds: map(str(), str())
-  validation_prompts: list(include('validation_prompt'))
-
----
-acceptance_criteria_def:
-  description: str()
-  source: str()
-  validation_prompts: list(include('validation_prompt'))
-
----
-anti_pattern:
-  id: str()
-  name: str()
-  validation_prompts: list(include('validation_prompt'))
-
----
-definition_of_ready_def:
-  description: str()
-  source: str()
-  checklist: map(str(), list(include('validation_prompt')))
-  scoring: include('scoring_def')
-
----
-scoring_def:
-  method: str()
-  note: str()
-
----
-splitting_def:
-  description: str()
-  source: str()
-  when_to_split: list(include('validation_prompt'))
-  spidr_techniques: map(str(), include('spidr_technique'))
-
----
-spidr_technique:
-  description: str()
-  trigger: str()
-  validation: list(include('validation_prompt'))

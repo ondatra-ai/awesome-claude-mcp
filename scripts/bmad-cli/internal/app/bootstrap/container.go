@@ -12,6 +12,7 @@ import (
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
+	"bmad-cli/internal/infrastructure/input"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -80,12 +81,16 @@ func NewContainer() (*Container, error) {
 	checklistLoader := checklist.NewChecklistLoader(cfg)
 	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
 	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
+	fixApplier := validate.NewFixApplier(claudeClient, cfg)
+	userInputCollector := input.NewUserInputCollector()
 	tableRenderer := commands.NewTableRenderer()
 	usChecklistCmd := commands.NewUSChecklistCommand(
 		epicLoader,
 		checklistLoader,
 		checklistEvaluator,
 		fixPromptGenerator,
+		fixApplier,
+		userInputCollector,
 		tableRenderer,
 		runDir,
 	)
