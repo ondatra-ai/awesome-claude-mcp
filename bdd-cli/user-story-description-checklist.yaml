@@ -1,0 +1,746 @@
+# User Story Validation Checklist
+# Based on agile best practices from Kent Beck, Ron Jeffries, Bill Wake, Mike Cohn
+# Each prompt has Q (question) and A (expected answer) with measurable criteria
+#
+# Sources:
+# - Ron Jeffries Three Cs: https://ronjeffries.com/xprog/articles/expcardconversationconfirmation/
+# - Bill Wake INVEST: https://agilealliance.org/glossary/invest/
+# - Mike Cohn User Stories: https://www.mountaingoatsoftware.com/agile/user-stories
+# - Mike Cohn SPIDR: https://www.mountaingoatsoftware.com/blog/five-simple-but-powerful-ways-to-split-user-stories
+# - Fibonacci Estimation: https://www.mountaingoatsoftware.com/blog/why-the-fibonacci-sequence-works-well-for-estimating
+# - Definition of Ready: https://www.atlassian.com/agile/project-management/definition-of-ready
+
+version: "3.0"
+last_updated: "2026-01-07"
+
+# =============================================================================
+# STAGES: Validation pipeline in order (ARRAY - order matters!)
+#
+# Story Creation → Refinement → Architecture → Ready Gate
+#      (PM)          (Team)      (Architect)    (Final)
+# =============================================================================
+
+stages:
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 1: STORY CREATION (PM)
+  # PM writes initial story - format and structure validation
+  # ─────────────────────────────────────────────────────────────────────────
+  - id: story_creation
+    name: "Story Creation"
+    description: "PM writes initial story - format and structure validation"
+
+    sections:
+      - id: format
+        name: "Story Format"
+        description: "Overall story statement quality"
+        validation_prompts:
+          - Q: "Does the story follow the format 'As a [type of user], I want [some goal] so that [some reason]'? Answer: yes/no"
+            A: "yes"
+            rationale: "Standard user story format ensures clarity and consistency."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count total words in the user story statement (As a... I want... So that...). Answer as integer."
+            A: "≤50"
+            rationale: "Must fit on 3x5 index card. Typically 20-50 words maximum."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count internal implementation terms in the story statement (As a... I want... So that...). Internal implementation terms are OUR technical decisions: SDK, REST, GraphQL, database, endpoint, WebSocket, JWT, microservice, cache, API (when referring to our API). NOT implementation terms: (1) Product names users interact with (Google Docs, Gmail, Slack); (2) 3rd-party authentication methods users perform (OAuth, service account, API key) - these describe USER actions with external services, not our implementation. First explain your reasoning, then answer as integer."
+            A: "0"
+            rationale: "Card should describe WHAT user needs, not HOW to implement."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does the story prescribe a specific solution or describe a user need? A solution prescription dictates OUR internal architecture: specific frameworks, database schemas, API designs, caching strategies. NOT solution prescription: (1) Product names users interact with (Google Docs, Gmail, Slack) - these define the product domain; (2) 3rd-party authentication methods users perform (OAuth, service account, API key) - these describe user actions with external services. First explain your reasoning, then answer: need/solution"
+            A: "need"
+            rationale: "Stories are placeholders for conversation, not specifications."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: who
+        name: "User Role"
+        description: "The user role - must be an actual human who interacts with the system"
+        validation_prompts:
+          - Q: "Is the role a human persona (not system, database, API, service)? Answer: yes/no"
+            A: "yes"
+            rationale: "Only humans perceive value. 'As a database' is meaningless."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Is the persona more specific than generic 'user' or 'customer'? Answer: yes/no"
+            A: "yes"
+            rationale: "Specific personas (admin, first-time visitor, power user) guide prioritization."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: what
+        name: "User Goal"
+        description: "The goal - what the user wants to accomplish, not how"
+        validation_prompts:
+          - Q: "Does 'I want' describe a goal or a technical solution? A technical solution dictates OUR internal architecture: specific frameworks, database schemas, API designs. NOT technical solutions: (1) Product names users interact with (Google Docs, Gmail); (2) 3rd-party authentication methods users perform (OAuth, service account) - these describe user context, not our implementation. First explain your reasoning, then answer: goal/solution"
+            A: "goal"
+            rationale: "'Log in with Google account' (goal) vs 'OAuth 2.0 authentication' (solution)."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count internal implementation terms in the 'I want' clause. Internal implementation terms are OUR technical decisions: SDK, REST, GraphQL, database, endpoint, WebSocket, JWT, microservice, cache, API (when referring to our API). NOT implementation terms: (1) Product names users interact with (Google Docs, Gmail, Slack); (2) 3rd-party authentication methods users perform (OAuth, service account, API key) - these describe USER actions with external services, not our implementation. First explain your reasoning, then answer as integer."
+            A: "0"
+            rationale: "User language, not technical language."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: why
+        name: "Business Value"
+        description: "The reason - understanding WHY shapes HOW teams implement"
+        source: "https://www.mountaingoatsoftware.com/blog/short-answers-to-your-big-questions-about-user-stories"
+        validation_prompts:
+          - Q: "Is the 'so that' clause present? Answer: yes/no"
+            A: "yes"
+            rationale: "Without WHY, teams may implement wrong solution."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does 'so that' describe user/business benefit (not system behavior)? Answer: yes/no"
+            A: "yes"
+            rationale: "'So that I save time' (benefit) vs 'so that data is stored' (system behavior)."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does 'so that' just restate 'I want' in different words? Answer: yes/no"
+            A: "no"
+            rationale: "'Reset password so password is reset' adds no value."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Would knowing this WHY change implementation approach? Answer: yes/no"
+            A: "yes"
+            rationale: "If WHY doesn't inform HOW, it's not a meaningful benefit clause."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 2: REFINEMENT (Team)
+  # Team discusses and adds details
+  # ─────────────────────────────────────────────────────────────────────────
+  - id: refinement
+    name: "Refinement"
+    description: "Team discusses and adds details"
+
+    sections:
+      - id: who_details
+        name: "User Role Details"
+        description: "Additional user role validation requiring team discussion"
+        validation_prompts:
+          - Q: "Count distinct user types that would use this feature differently. Answer as integer."
+            A: "1"
+            rationale: "If multiple user types, consider splitting into separate stories."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: what_details
+        name: "Goal Details"
+        description: "Additional goal validation requiring team discussion"
+        validation_prompts:
+          - Q: "How many valid implementation approaches exist for this goal? First list each valid approach briefly (one line each), then provide the final count as integer."
+            A: "≥2"
+            rationale: "If only one approach, story may be over-specified."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: invest
+        name: "INVEST Criteria"
+        description: "Bill Wake's INVEST criteria (2003)"
+        source: "https://agilealliance.org/glossary/invest/"
+        validation_prompts:
+          # Independent
+          - Q: "Count blocking dependencies on other incomplete stories. Answer as integer."
+            A: "0"
+            rationale: "Dependencies prevent flexible prioritization."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Can this story be deployed to production alone? Answer: yes/no"
+            A: "yes"
+            rationale: "Independent stories enable incremental delivery."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "If this story is removed from backlog, do other stories break? Answer: yes/no"
+            A: "no"
+            rationale: "Coupled stories should be combined."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Negotiable
+          - Q: "Count specific technology/framework names in story or ACs. Answer as integer."
+            A: "0"
+            rationale: "Technology choices are negotiable during conversation."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does the story describe WHAT (outcome) or HOW (implementation)? Answer: what/how"
+            A: "what"
+            rationale: "Leave HOW for developers to propose."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Could a developer propose a different approach that still satisfies ACs? Answer: yes/no"
+            A: "yes"
+            rationale: "Stories should allow creative solutions."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Valuable
+          - Q: "Does completing this story alone deliver usable value to end user? Answer: yes/no"
+            A: "yes"
+            rationale: "Vertical slice through all layers, not horizontal layer."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Would a user notice if this feature was NOT implemented? Answer: yes/no"
+            A: "yes"
+            rationale: "If invisible to users, it's infrastructure, not a story."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Rate business value on scale 1-5 (1=nice-to-have, 5=critical). Answer as integer 1-5."
+            A: "≥3"
+            rationale: "Low-value stories should be deprioritized or cut."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Is this a vertical slice (end-to-end) or horizontal layer (DB only, API only, UI only)? Answer: vertical/horizontal"
+            A: "vertical"
+            rationale: "A database without UI delivers no user value."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Testable
+          - Q: "Count acceptance criteria. Answer as integer."
+            A: "3-7"
+            rationale: "Fewer than 3: underspecified. More than 7: epic in disguise."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Could QA write test cases from ACs without asking questions? Answer: yes/no"
+            A: "yes"
+            rationale: "If QA needs clarification, ACs aren't clear enough."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count ACs that specify exact expected output (status code, message text, behavior). Answer as integer."
+            A: "= total AC count"
+            rationale: "Every AC must have measurable expected result."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Do ACs cover happy path, error cases, and edge cases? Answer as percentage covered."
+            A: "≥80%"
+            rationale: "Missing scenarios lead to bugs."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: acceptance_criteria
+        name: "Acceptance Criteria Quality"
+        description: "Testable conditions that define 'done' (incorporates Ron Jeffries' Confirmation)"
+        source: "https://www.altexsoft.com/blog/acceptance-criteria-purposes-formats-and-best-practices/"
+        validation_prompts:
+          - Q: "Count total acceptance criteria. Answer as integer."
+            A: "3-7"
+            rationale: "<3: underspecified. >7: likely an epic that should be split."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count ACs that follow Given-When-Then or equivalent testable format. Answer as integer."
+            A: "= total AC count"
+            rationale: "All ACs must be in testable format."
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+              - bdd_guidelines
+            F: |
+              Using bdd-guidelines.md rules, rewrite each non-compliant AC as a Gherkin scenario.
+              Rules from bdd-guidelines.md:
+              - Third person perspective using EXACT role from story's "as_a:" field (NOT generic "User")
+              - Active voice ("Claude displays" not "is displayed")
+              - Observable outcome (what user sees/experiences)
+              - No vague words (properly, correctly, clear, appropriate)
+              - Each step under 120 characters
+
+              Output format (YAML list):
+              ```yaml
+              - original: "<the failing AC text verbatim>"
+                issue: "Not in Given-When-Then format"
+                rewritten:
+                  scenario: "<descriptive behavior name>"
+                  given: "<precondition/context using role from story>"
+                  when: "<role from story> <action or trigger>"
+                  then: "<observable outcome with measurable criteria>"
+              ```
+
+          - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.). Answer as integer."
+            A: "0"
+            rationale: "Vague words cannot be tested objectively."
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+              - bdd_guidelines
+            F: |
+              Replace each vague word with specific, measurable criteria.
+
+              Common vague words and their replacements:
+              - "clear" → specify exact message text or format
+              - "fast" → specify time in ms (e.g., "within 200ms")
+              - "properly" → specify exact behavior/state
+              - "correctly" → specify expected output/result
+              - "appropriate" → specify exact criteria
+              - "user-friendly" → specify exact UI behavior
+              - "easy" → specify number of steps or time
+              - "intuitive" → specify exact interaction pattern
+
+              Output format (YAML list):
+              ```yaml
+              - original: "<AC text with vague word>"
+                vague_word: "<the vague word>"
+                issue: "Cannot be tested objectively"
+                rewritten: "<AC with specific measurable criteria>"
+              ```
+
+          - Q: "Count ACs that describe implementation (endpoint created, database updated) vs behavior (user sees, system responds). Answer implementation count as integer."
+            A: "0"
+            rationale: "ACs describe observable behavior, not technical implementation."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does AC set cover: happy path + at least 2 error scenarios? Answer: yes/no"
+            A: "yes"
+            rationale: "Missing error handling leads to production issues."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count ACs with specific measurable criteria (status codes, exact messages, timeouts in ms). Answer as integer."
+            A: "≥50% of total"
+            rationale: "Measurable criteria enable automated testing."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count acceptance criteria that have binary pass/fail outcomes. Answer as integer."
+            A: "= total AC count"
+            rationale: "Every AC must be objectively testable."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count acceptance criteria containing subjective words (properly, correctly, appropriately, user-friendly). Answer as integer."
+            A: "0"
+            rationale: "Subjective criteria cannot be consistently tested."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Can each AC be converted to an automated test? Answer as percentage of ACs."
+            A: "≥80%"
+            rationale: "Confirmation means testable verification."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: anti_patterns
+        name: "Anti-Pattern Detection"
+        description: "Common story anti-patterns to avoid"
+        validation_prompts:
+          # Technical Task Disguised as User Story
+          - Q: "Is the role a technical entity (Developer, System, Database, API)? Answer: yes/no"
+            A: "no"
+            rationale: "Technical entities don't perceive value."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Would completing this have visible effect to end users? Answer: yes/no"
+            A: "yes"
+            rationale: "Invisible changes are tasks, not stories."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Epic in Disguise
+          - Q: "Count acceptance criteria. Answer as integer."
+            A: "≤10"
+            rationale: ">10 ACs usually means multiple stories bundled."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count distinct user workflows in this story. Answer as integer."
+            A: "1"
+            rationale: "Multiple workflows = multiple stories."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Story points estimate. Answer using Fibonacci."
+            A: "≤8"
+            rationale: ">8 points suggests story should be split."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does story contain words like 'manage', 'handle', or lists of actions? Answer: yes/no"
+            A: "no"
+            rationale: "'Manage' often hides multiple behaviors."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Horizontal Layer Split
+          - Q: "Does story only cover one layer (database/API/UI)? Answer: yes/no"
+            A: "no"
+            rationale: "Vertical slices deliver value; horizontal layers don't."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Does completing this story require other stories to deliver user value? Answer: yes/no"
+            A: "no"
+            rationale: "Coupled stories should be combined into vertical slice."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # Solution Prescription
+          - Q: "Count specific technology names in story statement. Answer as integer."
+            A: "0"
+            rationale: "'OAuth 2.0' is implementation; 'log in with Google' is goal."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Could story be satisfied by multiple technical approaches? Answer: yes/no"
+            A: "yes"
+            rationale: "Prescribed solutions eliminate negotiation."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: splitting
+        name: "Story Splitting (SPIDR)"
+        description: "When story is too large, use SPIDR to split"
+        source: "https://www.mountaingoatsoftware.com/blog/five-simple-but-powerful-ways-to-split-user-stories"
+        validation_prompts:
+          # When to split
+          - Q: "Story points >8? Answer: yes/no"
+            A: "no"
+            action_if_yes: "Split using SPIDR"
+            skip: "skip"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "More than 7 acceptance criteria? Answer: yes/no"
+            A: "no"
+            skip: "skip"
+            action_if_yes: "Split using SPIDR"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Completion time >5 person-days? Answer: yes/no"
+            A: "no"
+            skip: "skip"
+            action_if_yes: "Split using SPIDR"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          # SPIDR techniques
+          - Q: "Count unresolved technical unknowns. Answer as integer."
+            A: "0"
+            skip: "skip"
+            action_if_fail: "Create time-boxed spike (≤2 days)"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count distinct user paths through this feature. Answer as integer."
+            A: "1"
+            skip: "skip"
+            action_if_fail: "Split into one story per path"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count device types/interfaces covered. Answer as integer."
+            A: "1"
+            skip: "skip"
+            action_if_fail: "Split into one story per interface"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count distinct data types/entities handled. Answer as integer."
+            A: "1-2"
+            skip: "skip"
+            action_if_fail: "Split by data type"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count distinct business rules in this story. Answer as integer."
+            A: "1-2"
+            skip: "skip"
+            action_if_fail: "Implement core behavior first, add rules in follow-up stories"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 3: ARCHITECTURE (Architect)
+  # Architect ensures technical decisions are documented
+  # ─────────────────────────────────────────────────────────────────────────
+  - id: architecture
+    name: "Architecture"
+    description: "Architect ensures technical decisions are documented"
+    sections: []  # Empty for now - to be added later
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # STAGE 4: READY GATE (Final)
+  # Final checklist before sprint
+  # ─────────────────────────────────────────────────────────────────────────
+  - id: ready_gate
+    name: "Ready Gate"
+    description: "Final checklist before sprint"
+
+    sections:
+      - id: dependencies
+        name: "Dependencies Ready"
+        description: "External factors that could block or derail the story"
+        source: "https://dzone.com/articles/assumptions-risks-and-dependencies-in-user-stories"
+        validation_prompts:
+          - Q: "Count dependencies on other stories/teams/systems. Answer as integer."
+            A: "0-2"
+            rationale: "Many dependencies = not Independent. Consider combining stories."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Are all dependencies in 'Done' or 'Ready' status? Answer: yes/no"
+            A: "yes"
+            rationale: "Blocked dependencies make story NOT ready for sprint."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count documented risks with likelihood and impact scores. Answer as integer."
+            A: "≥1"
+            rationale: "Every story has risks. Zero means risks aren't considered."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "For each risk, is mitigation strategy documented? Answer as percentage of risks with mitigation."
+            A: "100%"
+            rationale: "Risks without mitigation are unmanaged."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Count assumptions that are not yet validated. Answer as integer."
+            A: "0"
+            rationale: "Unvalidated assumptions become surprises mid-sprint."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Have external parties (APIs, vendors, other teams) confirmed availability? Answer: yes/no"
+            A: "yes"
+            rationale: "External dependencies need confirmation before sprint."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Calculate highest risk score (likelihood × impact). Answer as integer 1-25."
+            A: "≤14"
+            rationale: "High-risk stories (>14) need mitigation before sprint."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+      - id: definition_of_ready
+        name: "Definition of Ready"
+        description: "Pre-flight checklist before story enters sprint"
+        source: "https://www.atlassian.com/agile/project-management/definition-of-ready"
+        validation_prompts:
+          - Q: "Team discussed in refinement? Answer: yes/no"
+            A: "yes"
+            rationale: "Stories need team discussion before sprint commitment."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Team confirms understanding (fist of five ≥4)? Answer: yes/no"
+            A: "yes"
+            rationale: "Low confidence indicates need for more refinement."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml
+
+          - Q: "Estimable (≥70% confidence)? Answer: yes/no"
+            A: "yes"
+            rationale: "Team must be confident enough to commit to delivery."
+            skip: "not testing fix generation"
+            docs:
+              - prd
+              - user_roles
+              - architecture_yaml

@@ -36,7 +36,7 @@ awesome-claude-mcp/
 │       └── Dockerfile     # Production Docker build
 ├── tests/
 │   └── e2e/              # Playwright E2E tests
-├── docker-compose.yml    # Local development stack
+├── docker-compose.yaml    # Local development stack
 ├── playwright.config.ts  # E2E testing configuration
 └── README.md
 ```
@@ -125,7 +125,7 @@ make init
 
 2. **Deploy with production configuration:**
 ```bash
-docker compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yaml up -d
 ```
 
 ## ⚙️ Configuration
@@ -141,7 +141,7 @@ docker compose -f docker-compose.yml up -d
 - `NODE_ENV`: Environment (development, production)
 
 ### Docker Environment
-Environment variables are configured in `docker-compose.yml`:
+Environment variables are configured in `docker-compose.yaml`:
 - Backend connects to frontend via Docker network
 - CORS configured for cross-service communication
 - Health checks ensure service reliability

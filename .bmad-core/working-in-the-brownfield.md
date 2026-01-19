@@ -346,7 +346,7 @@ The Test Architect addresses unique brownfield complexities:
 # Performs: Deep analysis + active refactoring
 # Outputs:
 #   - QA Results in story file
-#   - Gate file: docs/qa/gates/{epic}.{story}-{slug}.yml
+#   - Gate file: docs/qa/gates/{epic}.{story}-{slug}.yaml
 ```
 
 The review specifically analyzes:
@@ -364,7 +364,7 @@ The review specifically analyzes:
 # 6. GATE STATUS UPDATE (After addressing issues)
 @qa *gate {brownfield-story}
 # Updates: Quality gate decision after fixes
-# Output: docs/qa/gates/{epic}.{story}-{slug}.yml
+# Output: docs/qa/gates/{epic}.{story}-{slug}.yaml
 # Brownfield Considerations:
 #   - May WAIVE certain legacy code issues
 #   - Documents technical debt acceptance

@@ -5,7 +5,7 @@ template:
   version: 1.0
   output:
     format: yaml
-    filename: qa.qaLocation/gates/{{epic_num}}.{{story_num}}-{{story_slug}}.yml
+    filename: qa.qaLocation/gates/{{epic_num}}.{{story_num}}-{{story_slug}}.yaml
     title: "Quality Gate: {{epic_num}}.{{story_num}}"
 
 # Required fields (keep these first)

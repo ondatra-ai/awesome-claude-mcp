@@ -1,0 +1,170 @@
+# Acceptance Criteria & Story Splitting Guidelines
+# Extracted from user-story-principles.yaml for detailed reference
+
+note: |
+  Three Cs (Ron Jeffries, 2001) - the foundation of user story practice:
+
+  1. Card - The written story itself. Just enough text to identify and remind what it's about. Fits on a 3x5 index card.
+  2. Conversation - Where real requirements emerge through dialogue. The card is just a placeholder - details come from discussion.
+  3. Confirmation - Acceptance criteria that verify the story is done. How you know objectives were achieved.
+
+  The key insight: the story card is NOT the requirement - it's a reminder to have a conversation. The real requirement emerges from that conversation, and confirmation proves it was met.
+
+  For an LLM team, "Conversation" doesn't quite apply the same way. Should I remove or adapt the Three Cs section?
+
+  > LEt's rather think how conversation should happen for LLMs? How it usually happens for humans?
+
+  Good question. Let me think through this:
+
+  How Conversation Works for Humans
+
+  1. PO writes card → vague, incomplete
+  2. Dev asks questions → "What happens if X?", "Do we need Y?"
+  3. PO clarifies → "Oh good point, let's handle X this way"
+  4. QA probes edge cases → "What about invalid input?"
+  5. Requirements emerge → through back-and-forth dialogue
+  6. AC gets refined → based on conversation
+
+  The card is intentionally incomplete - it's a reminder to have this conversation.
+
+  How It Could Work for LLMs
+
+  Option A: LLM fills gaps autonomously
+  - LLM reads card → generates questions internally → answers them using context/docs → produces complete story
+  - No human in the loop
+  - Risk: LLM assumptions may be wrong
+
+  Option B: LLM asks human clarifying questions
+  - LLM reads card → identifies ambiguities → asks human
+  - Human answers → LLM refines story
+  - More accurate but slower
+
+  Option C: Multi-agent conversation
+  - Agent 1 (PO perspective) writes card
+  - Agent 2 (Dev perspective) asks clarifying questions
+  - Agent 3 (QA perspective) probes edge cases
+  - They "converse" → refined story emerges
+
+  Option D: Story + Context documents
+  - Human provides card + architecture docs + existing patterns
+  - LLM uses context to fill gaps (no conversation needed)
+  - Context replaces conversation
+
+  What approach fits your workflow? This will shape how we adapt Three Cs for LLM use.
+
+# =============================================================================
+# ACCEPTANCE CRITERIA: The Confirmation in Three Cs
+# =============================================================================
+
+acceptance_criteria:
+  description: "Testable conditions that verify a story is complete - bridges conversation and implementation"
+
+  formats:
+    given_when_then:
+      name: "Given-When-Then (BDD Format)"
+      description: "Structured, executable specifications from Behavior-Driven Development"
+      structure: "Given [precondition], When [action], Then [expected result]"
+      example: |
+        Given a registered user is on the login page
+        When the user enters valid credentials and clicks login
+        Then the user should be redirected to the dashboard
+      benefits:
+        - "Directly translates to automated tests"
+        - "Forces clear thinking about preconditions and outcomes"
+        - "Creates shared language between business and technical teams"
+
+    checklist:
+      name: "Checklist Format"
+      description: "Simpler bulleted list of conditions that can be marked complete"
+      example: |
+        - Search returns results within 3 seconds
+        - Maximum 20 results per page with pagination
+        - Empty state shows helpful message when no results
+      benefits:
+        - "Simpler and more flexible"
+        - "Easy to verify during review"
+        - "Good for non-behavioral requirements"
+
+  quality_characteristics:
+    - name: "Specific"
+      good: "Page loads in under 3 seconds"
+      bad: "Page loads quickly"
+    - name: "Measurable"
+      good: "Display maximum 10 items per page"
+      bad: "Display appropriate number of items"
+    - name: "Testable"
+      good: "Error message appears when email is invalid"
+      bad: "Form validates properly"
+    - name: "Independent"
+      description: "Each criterion should be verifiable on its own"
+    - name: "Outcome-focused"
+      description: "Focus on what happens, not how it's implemented"
+
+  ceiling_rule:
+    threshold: "10-15 acceptance criteria maximum"
+    action: "When a story accumulates more than 10-15 criteria, split the story"
+    reason: "Too many criteria signals the story is actually an epic in disguise"
+
+  vs_definition_of_done:
+    acceptance_criteria: "What THIS SPECIFIC feature should do"
+    definition_of_done: "Quality standards ALL work must meet"
+
+# =============================================================================
+# STORY SPLITTING: Vertical slices, not horizontal layers
+# =============================================================================
+
+splitting:
+  core_principle: "Each resulting piece must still pass INVEST criteria, especially Value"
+
+  anti_pattern:
+    name: "Horizontal Slicing"
+    description: "Breaking stories by technical layer (database, API, UI) rather than user-facing functionality"
+    why_bad:
+      - "Neither a completed backend nor a standalone UI delivers user value"
+      - "Creates dependencies between stories"
+      - "Violates the 'Valuable' criterion of INVEST"
+    detection_prompts:
+      - "Does each split piece deliver value to an end user?"
+      - "Can each piece be deployed and used independently?"
+      - "Are you splitting by technical layer rather than user workflow?"
+
+  lawrence_patterns:
+    source: "Richard Lawrence's Story Splitting Flowchart"
+    patterns:
+      - name: "Workflow Steps"
+        description: "Break complex processes into beginning, middle, and end"
+        example: "Split 'checkout process' into 'add to cart', 'enter shipping', 'process payment'"
+
+      - name: "Operations (CRUD)"
+        description: "Separate Create, Read, Update, Delete when stories use 'manage'"
+        example: "Split 'manage users' into 'create user', 'view user list', 'edit user', 'delete user'"
+
+      - name: "Business Rules"
+        description: "Different rules often warrant different stories"
+        example: "Split 'apply discount' into 'percentage discount', 'fixed amount discount', 'buy-one-get-one'"
+
+      - name: "Data Variations"
+        description: "Handle complexity from different data types or sources"
+        example: "Split 'import contacts' into 'import from CSV', 'import from Google', 'import from Outlook'"
+
+      - name: "Interface"
+        description: "Separate complexity from UI elements"
+        example: "Split 'responsive dashboard' into 'desktop dashboard', 'mobile dashboard'"
+
+      - name: "Simple/Complex"
+        description: "Start with simplest version, add sophistication later"
+        example: "Split 'search products' into 'basic keyword search', 'add filters', 'add sorting'"
+
+  spidr_method:
+    source: "Mike Cohn"
+    acronym:
+      S: "Spike - research unknowns first (use as last resort)"
+      P: "Paths - split by user workflow choices"
+      I: "Interfaces - split by device or UI complexity"
+      D: "Data - split by data types"
+      R: "Rules - relax rules initially, add constraints in subsequent stories"
+
+  evaluation_criteria:
+    - "Can some resulting pieces be deprioritized or discarded? (reveals less valuable functionality)"
+    - "Are pieces roughly equal-sized? (four 2-point stories beat one 5-point + one 3-point)"
+    - "Does each piece pass INVEST criteria independently?"

@@ -1,0 +1,96 @@
+services:
+  backend:
+    extends:
+      file: docker-compose.yaml
+      service: backend
+    container_name: mcp-backend-test
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=info
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: "no"
+
+  mcp-service:
+    extends:
+      file: docker-compose.yaml
+      service: mcp-service
+    container_name: mcp-service-test
+    environment:
+      - MCP_PORT=8081
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: "no"
+
+  frontend:
+    extends:
+      file: docker-compose.yaml
+      service: frontend
+    container_name: mcp-frontend-test
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
+      mcp-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: "no"
+
+  playwright-test:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    container_name: mcp-playwright-test
+    environment:
+      - CI=true
+    network_mode: host
+    depends_on:
+      backend:
+        condition: service_healthy
+      mcp-service:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    volumes:
+      # Cache Node.js modules for faster test builds
+      - playwright-node-modules:/app/node_modules
+      # Mount test results and reports
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+
+
+volumes:
+  # Inherit volumes from base compose file
+  go-mod-cache:
+    name: mcp-go-mod-cache
+  go-build-cache:
+    name: mcp-go-build-cache
+  frontend-node-modules:
+    name: mcp-frontend-node-modules
+  frontend-next-cache:
+    name: mcp-frontend-next-cache
+  # Test caching volumes
+  playwright-node-modules:
+    name: mcp-playwright-node-modules

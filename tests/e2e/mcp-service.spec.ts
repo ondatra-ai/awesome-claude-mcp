@@ -111,7 +111,7 @@ test.describe('MCP Service E2E Tests', () => {
   /**
    * E2E-016: Initialize handshake returns server metadata and capabilities
    *
-   * Source: docs/requirements.yml - E2E-016
+   * Source: docs/requirements.yaml - E2E-016
    * Tests that MCP server responds to initialize handshake with proper metadata
    */
   test('E2E-016: Initialize handshake returns server metadata and capabilities', async () => {
@@ -147,7 +147,7 @@ test.describe('MCP Service E2E Tests', () => {
   /**
    * E2E-017: Tool catalog discovery includes Google Docs operations
    *
-   * Source: docs/requirements.yml - E2E-017
+   * Source: docs/requirements.yaml - E2E-017
    * Tests that MCP server provides complete tool catalog with Google Docs operations
    */
   test('E2E-017: Tool catalog discovery includes Google Docs operations', async () => {
@@ -215,7 +215,7 @@ test.describe('MCP Service E2E Tests', () => {
   /**
    * E2E-019: Complete Claude to MCP flow completes within 2 seconds
    *
-   * Source: docs/requirements.yml - E2E-019
+   * Source: docs/requirements.yaml - E2E-019
    * Tests that the complete end-to-end flow from initialize to tool execution
    * completes within the 2-second SLA requirement.
    */
@@ -272,7 +272,7 @@ test.describe('MCP Service E2E Tests', () => {
   /**
    * E2E-018: replaceAll operation executes with document preview and metrics
    *
-   * Source: docs/requirements.yml - E2E-018
+   * Source: docs/requirements.yaml - E2E-018
    * Tests that replaceAll tool execution returns confirmation with document
    * preview URL and execution metrics.
    */
@@ -392,7 +392,7 @@ Refer to the API documentation for detailed usage instructions.
   /**
    * E2E-020: MCP server logs complete operation trace with metadata
    *
-   * Source: docs/requirements.yml - E2E-020
+   * Source: docs/requirements.yaml - E2E-020
    * Tests that MCP server captures structured logs for operations with
    * request IDs, operation types, and execution time.
    *

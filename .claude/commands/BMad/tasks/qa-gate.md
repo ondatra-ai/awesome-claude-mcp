@@ -134,7 +134,7 @@ waiver:
 2. **ALWAYS** append this exact format to story's QA Results section:
 
    ```text
-   Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+   Gate: {STATUS} → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
    ```
 
 3. Keep status_reason to 1-2 sentences maximum
@@ -155,7 +155,7 @@ After creating gate file, append to story's QA Results section:
 
 ### Gate Status
 
-Gate: CONCERNS → qa.qaLocation/gates/{epic}.{story}-{slug}.yml
+Gate: CONCERNS → qa.qaLocation/gates/{epic}.{story}-{slug}.yaml
 ```
 
 ## Key Principles

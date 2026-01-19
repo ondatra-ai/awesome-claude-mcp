@@ -351,7 +351,7 @@ test('EE_00007_06: should fetch and display backend version', async ({ page }) =
 
 **Cross-References:**
 - Complete naming conventions: `docs/test-naming.md`
-- Requirements mapping and scenarios: `docs/requirements.yml`
+- Requirements mapping and scenarios: `docs/requirements.yaml`
 
 **Test Structure (AAA Pattern):**
 ```go
@@ -740,7 +740,7 @@ Requirements are considered automatable if they meet ALL of these criteria:
 - External service configuration requirements
 
 **Test Scenario Traceability:**
-All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.yml` and `docs/test-naming.md` for complete traceability mapping.
+All E2E tests must follow the scenario ID system defined in the main Testing Standards section above. See `docs/requirements.yaml` and `docs/test-naming.md` for complete traceability mapping.
 
 **Detailed Test Organization:**
 ```
@@ -790,7 +790,7 @@ test.describe('Backend API Endpoints', () => {
 **Quality Gates:**
 - All tests must use Scenario ID system or be marked as ORPHAN
 - Test names must include Scenario ID for bidirectional traceability
-- All Scenario IDs must exist in `docs/requirements.yml`
+- All Scenario IDs must exist in `docs/requirements.yaml`
 - Performance tests must validate timing requirements (e.g., 2-second load times)
 - Tests must be executable in CI environment without manual setup
 - Orphan tests should be minimized and regularly reviewed
@@ -1057,7 +1057,7 @@ test:
     go tool cover -html=coverage.out -o coverage.html
 
 lint:
-    golangci-lint run --config .golangci.yml  # Runs 70+ linters including cyclop, funlen, gosec
+    golangci-lint run --config .golangci.yaml  # Runs 70+ linters including cyclop, funlen, gosec
 
 deploy: build
     sam deploy --guided
@@ -1163,8 +1163,8 @@ func PerformHealthCheck() *HealthCheck {
 ### Quality Metrics
 
 **Automated Quality Gates (Go):**
-- **Cyclomatic complexity**: ≤15 per function (configured in .golangci.yml cyclop linter)
-- **Function length**: ≤80 lines / ≤40 statements (configured in .golangci.yml funlen linter)
+- **Cyclomatic complexity**: ≤15 per function (configured in .golangci.yaml cyclop linter)
+- **Function length**: ≤80 lines / ≤40 statements (configured in .golangci.yaml funlen linter)
 - **No critical security vulnerabilities**: gosec linter enabled
 - **All linting rules pass**: 70+ linters in golangci-lint configuration
 

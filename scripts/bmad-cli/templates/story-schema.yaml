@@ -1,5 +1,5 @@
 # Yamale schema for story template validation
-# Validates story templates like 3.1.mcp-server-implementation.yml
+# Validates story templates like 3.1.mcp-server-implementation.yaml
 
 story:
   id: str()
@@ -90,7 +90,7 @@ qa_review:
   reviewed_by: str()
   assessment: include('assessment')
   gate_status: enum('PASS', 'CONCERNS', 'FAIL', 'WAIVED')
-  gate_reference: regex(r'^docs/qa/gates/.*\.yml$')
+  gate_reference: regex(r'^docs/qa/gates/.*\.yaml$')
 
 assessment:
   summary: str()

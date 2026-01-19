@@ -93,7 +93,7 @@ This document captures the current technology stack after migrating from the leg
 |----------|-------------------|---------|-------|
 | Hosting | Railway | Managed container runtime, TLS, custom domains | Project ID `801ad5e0-95bf-4ce6-977e-6f2fa37529fd` |
 | Environments | Railway environments | `development`, `staging`, `production` | Services: `frontend[-dev|-staging]`, `backend[-dev|-staging]` |
-| CI/CD | GitHub Actions | Workflow `.github/workflows/deploy_to_railway.yml` | Branch-driven environment selection |
+| CI/CD | GitHub Actions | Workflow `.github/workflows/deploy_to_railway.yaml` | Branch-driven environment selection |
 | CLI | Railway CLI (`@railway/cli`) | Local deployments, CI commands | `railway login`, `railway up --service ... --path-as-root ...` |
 | Config | `railway.toml`, `service.toml` | Service definitions & defaults | Maintained at repo root |
 | Secrets | Railway env vars | API URLs, OAuth secrets | Managed per service/environment |

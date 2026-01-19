@@ -1,0 +1,34 @@
+# Yamale schema for user-story-description-checklist.yaml
+# Validates user story validation checklist configuration
+# Structure: stages[] -> sections[] -> validation_prompts[]
+
+version: str()
+last_updated: str()
+default_docs: list(str(), required=False)
+stages: list(include('stage'))
+
+---
+stage:
+  id: str()
+  name: str()
+  description: str(required=False)
+  sections: list(include('section'))
+
+---
+section:
+  id: str()
+  name: str()
+  description: str(required=False)
+  source: str(required=False)
+  validation_prompts: list(include('validation_prompt'))
+
+---
+validation_prompt:
+  Q: str()
+  A: str()
+  rationale: str(required=False)
+  skip: str(required=False)
+  docs: list(str(), required=False)
+  action_if_yes: str(required=False)
+  action_if_fail: str(required=False)
+  F: str(required=False)

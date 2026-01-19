@@ -16,14 +16,14 @@ type TestGenerationData struct {
 	RequirementsFile string      // Path to requirements file to update
 }
 
-// MergedSteps represents the Given-When-Then structure from requirements.yml.
+// MergedSteps represents the Given-When-Then structure from requirements.yaml.
 type MergedSteps struct {
 	Given []string
 	When  []string
 	Then  []string
 }
 
-// NewTestGenerationData creates a new TestGenerationData instance from requirements.yml entry.
+// NewTestGenerationData creates a new TestGenerationData instance from requirements.yaml entry.
 func NewTestGenerationData(
 	scenarioID string,
 	description string,

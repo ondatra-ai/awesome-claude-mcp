@@ -35,8 +35,8 @@ The Test Architect (Quinn) provides comprehensive quality assurance throughout t
 |                          | `*design`   | Create test strategy for dev            | `docs/qa/assessments/{epic}.{story}-test-design-{YYYYMMDD}.md`  | High for new features       |
 | **During Development**   | `*trace`    | Verify test coverage                    | `docs/qa/assessments/{epic}.{story}-trace-{YYYYMMDD}.md`        | Medium                      |
 |                          | `*nfr`      | Validate quality attributes             | `docs/qa/assessments/{epic}.{story}-nfr-{YYYYMMDD}.md`          | High for critical features  |
-| **After Development**    | `*review`   | Comprehensive assessment                | QA Results in story + `docs/qa/gates/{epic}.{story}-{slug}.yml` | **Required**                |
-| **Post-Review**          | `*gate`     | Update quality decision                 | Updated `docs/qa/gates/{epic}.{story}-{slug}.yml`               | As needed                   |
+| **After Development**    | `*review`   | Comprehensive assessment                | QA Results in story + `docs/qa/gates/{epic}.{story}-{slug}.yaml` | **Required**                |
+| **Post-Review**          | `*gate`     | Update quality decision                 | Updated `docs/qa/gates/{epic}.{story}-{slug}.yaml`               | As needed                   |
 
 ### Stage 1: After Story Creation (Before Dev Starts)
 
@@ -116,7 +116,7 @@ The Test Architect (Quinn) provides comprehensive quality assurance throughout t
    - Regression test adequacy
 
 4. **Gate Decision**
-   - Creates: `docs/qa/gates/{epic}.{story}-{slug}.yml`
+   - Creates: `docs/qa/gates/{epic}.{story}-{slug}.yaml`
    - Adds: QA Results section to story file
    - Status: PASS/CONCERNS/FAIL/WAIVED
 

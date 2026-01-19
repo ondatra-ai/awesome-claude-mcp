@@ -33,7 +33,7 @@ init: ## Install dependencies and build Docker images with caching
 	@echo "📦 Installing test dependencies..."
 	npm install --prefix tests
 	@echo "🐳 Building all Docker images with cached dependencies..."
-	docker compose -f docker-compose.test.yml build --parallel
+	docker compose -f docker-compose.test.yaml build --parallel
 	@echo "✅ All dependencies and Docker images ready with caching optimized!"
 
 dev: ## Start all services with Docker Compose
@@ -56,21 +56,21 @@ test-unit: ## Run unit tests for both services (via Docker)
 test-e2e: ## Run E2E tests (default local; append environment name e.g. `make test-e2e dev`)
 	@E2E_ENV=$(E2E_ENV); \
 	printf "🚀 Starting E2E Test Pipeline for '%s'...\n" "$$E2E_ENV"; \
-	docker compose -f docker-compose.test.yml down --remove-orphans >/dev/null 2>&1 || true; \
+	docker compose -f docker-compose.test.yaml down --remove-orphans >/dev/null 2>&1 || true; \
 	if [ "$$E2E_ENV" = "local" ]; then \
 		echo "🔧 Starting backend and frontend services..."; \
 		echo "⏳ Waiting for services to be healthy (docker compose --wait)..."; \
-		docker compose -f docker-compose.test.yml up -d --wait backend frontend; \
+		docker compose -f docker-compose.test.yaml up -d --wait backend frontend; \
 	else \
 		echo "🌐 Using remote endpoints; skipping local service startup."; \
 	fi; \
 	echo "🧪 Running E2E tests..."; \
-	docker compose -f docker-compose.test.yml run --build --no-deps --rm \
+	docker compose -f docker-compose.test.yaml run --build --no-deps --rm \
 		-e E2E_ENV=$$E2E_ENV \
 		playwright-test; \
 	TEST_EXIT_CODE=$$?; \
 	echo "🧹 Cleaning up containers..."; \
-	docker compose -f docker-compose.test.yml down --remove-orphans >/dev/null 2>&1 || true; \
+	docker compose -f docker-compose.test.yaml down --remove-orphans >/dev/null 2>&1 || true; \
 	if [ $$TEST_EXIT_CODE -eq 0 ]; then \
 		echo "✅ All tests passed!"; \
 	else \
@@ -98,9 +98,13 @@ lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	cd scripts/bmad-cli && golangci-lint run --fix ./...
 	@echo "✅ Scripts linting completed!"
 
-lint-docs: ## Validate requirements.yml and epic YAML files against Yamale schemas
-	@echo "🔍 Validating requirements.yml against schema (strict mode)..."
-	yamale -s docs/requirements-schema.yaml docs/requirements.yml
+lint-docs: ## Validate YAML files against Yamale schemas
+	@echo "🔍 Validating architecture.yaml against schema (strict mode)..."
+	yamale -s bdd-cli/architecture-schema.yaml bdd-cli/architecture.yaml
+	@echo "🔍 Validating user-story-description-checklist.yaml against schema..."
+	yamale -s bdd-cli/user-story-description-checklist-schema.yaml bdd-cli/user-story-description-checklist.yaml
+	@echo "🔍 Validating requirements.yaml against schema (strict mode)..."
+	yamale -s docs/requirements-schema.yaml docs/requirements.yaml
 	@echo "🔍 Validating epic YAML files against schema (strict mode)..."
 	yamale -s docs/epics/jsons/epics-schema.yaml docs/epics/jsons/epic-*.yaml
 	@echo "✅ Documentation validation completed!"

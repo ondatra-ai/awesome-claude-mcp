@@ -91,7 +91,7 @@ stories:
     status: "COMPLETE"
     acceptance_criteria:
       - id: AC-1
-        description: "GitHub Actions workflow (`deploy_to_railway.yml`) configured for all environments"
+        description: "GitHub Actions workflow (`deploy_to_railway.yaml`) configured for all environments"
       - id: AC-2
         description: "Railway CLI installed and authenticated via GitHub secret (`RAILWAY_GITHUB_ACTIONS`)"
       - id: AC-3
@@ -119,7 +119,7 @@ stories:
       - id: AC-3
         description: "✅ E2E test framework ready (Playwright for frontend workflows)"
       - id: AC-4
-        description: "✅ Docker Compose for local testing environment (docker-compose.test.yml)"
+        description: "✅ Docker Compose for local testing environment (docker-compose.test.yaml)"
       - id: AC-5
         description: "⚠️ Test coverage reporting enabled for all services (moved to Epic 2: Story 2.2)"
       - id: AC-6

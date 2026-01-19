@@ -378,7 +378,7 @@ var (
 	ErrLoadUserPromptFailed           = errors.New("failed to load user prompt")
 	ErrLoadSystemPromptFailed         = errors.New("failed to load system prompt")
 	ErrCreateOutputDirectory          = errors.New("failed to create directory")
-	ErrReadRequirementsFile           = errors.New("failed to read requirements.yml")
+	ErrReadRequirementsFile           = errors.New("failed to read requirements.yaml")
 	ErrWriteOutputFile                = errors.New("failed to write output file")
 	ErrReadOriginalFile               = errors.New("failed to read original")
 	ErrCreateBackupFile               = errors.New("failed to create backup")
@@ -1610,7 +1610,7 @@ func ErrReadRequirementsFileFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
 		Code:     "READ_REQUIREMENTS_FILE_FAILED",
-		Message:  "failed to read requirements.yml",
+		Message:  "failed to read requirements.yaml",
 		Cause:    errors.Join(ErrReadRequirementsFile, cause),
 	}
 }
@@ -2138,5 +2138,89 @@ func ErrParseResultYAMLFailed(cause error) error {
 		Code:     "PARSE_RESULT_YAML_FAILED",
 		Message:  "failed to parse result YAML",
 		Cause:    errors.Join(ErrParseResultYAML, cause),
+	}
+}
+
+// ErrImplementFailed wraps implementation errors.
+func ErrImplementFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "IMPLEMENT_FAILED",
+		Message:  "implementation failed",
+		Cause:    cause,
+	}
+}
+
+// Checklist Validation Errors.
+var (
+	ErrLoadChecklistSystemPrompt = errors.New("failed to load checklist system prompt")
+	ErrLoadChecklistUserPrompt   = errors.New("failed to load checklist user prompt")
+	ErrChecklistAIEvaluation     = errors.New("AI evaluation failed")
+	ErrFixApplierNoContent       = errors.New("no FILE_START/FILE_END content found")
+	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
+	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
+	ErrSaveStoryVersion          = errors.New("failed to save story version")
+)
+
+func ErrLoadChecklistSystemPromptFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "LOAD_CHECKLIST_SYSTEM_PROMPT_FAILED",
+		Message:  "failed to load checklist system prompt template",
+		Cause:    errors.Join(ErrLoadChecklistSystemPrompt, cause),
+	}
+}
+
+func ErrLoadChecklistUserPromptFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "LOAD_CHECKLIST_USER_PROMPT_FAILED",
+		Message:  "failed to load checklist user prompt template",
+		Cause:    errors.Join(ErrLoadChecklistUserPrompt, cause),
+	}
+}
+
+func ErrChecklistAIEvaluationFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "CHECKLIST_AI_EVALUATION_FAILED",
+		Message:  "AI evaluation of checklist prompt failed",
+		Cause:    errors.Join(ErrChecklistAIEvaluation, cause),
+	}
+}
+
+func ErrFixApplierNoContentFound(resultPath string) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_APPLIER_NO_CONTENT",
+		Message:  "no FILE_START/FILE_END content found for path: " + resultPath,
+		Cause:    ErrFixApplierNoContent,
+	}
+}
+
+func ErrFixPromptGenerationFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_PROMPT_GENERATION_FAILED",
+		Message:  "fix prompt generation failed",
+		Cause:    errors.Join(ErrFixPromptGeneration, cause),
+	}
+}
+
+func ErrFixPromptRefinementFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_PROMPT_REFINEMENT_FAILED",
+		Message:  "fix prompt refinement failed",
+		Cause:    errors.Join(ErrFixPromptRefinement, cause),
+	}
+}
+
+func ErrSaveStoryVersionFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "SAVE_STORY_VERSION_FAILED",
+		Message:  "failed to save story version",
+		Cause:    errors.Join(ErrSaveStoryVersion, cause),
 	}
 }

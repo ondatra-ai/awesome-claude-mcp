@@ -60,7 +60,7 @@
 **So that** code changes are safely deployed
 
 **Acceptance Criteria:**
-- GitHub Actions workflow (`deploy_to_railway.yml`) configured for all environments
+- GitHub Actions workflow (`deploy_to_railway.yaml`) configured for all environments
 - Railway CLI installed and authenticated via GitHub secret (`RAILWAY_GITHUB_ACTIONS`)
 - Automated tests run on pull requests for each service
 - Successful builds deploy targeted services to Railway environments based on branch naming
@@ -77,7 +77,7 @@
 - ✅ Unit test framework configured (testify for Go services, Jest for Next.js)
 - ✅ Integration test environment setup for service-to-service communication
 - ✅ E2E test framework ready (Playwright for frontend workflows)
-- ✅ Docker Compose for local testing environment (docker-compose.test.yml)
+- ✅ Docker Compose for local testing environment (docker-compose.test.yaml)
 - ⚠️ Test coverage reporting enabled for all services (moved to Epic 2: Story 2.2)
 - ✅ Container-based testing for deployment validation
 - ✅ Pre-commit hooks for testing all services (.pre-commit-config.yaml)

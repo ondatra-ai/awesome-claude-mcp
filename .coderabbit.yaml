@@ -10,8 +10,8 @@ reviews:
     # Include only these specific paths
     - "services/**"
     - "tests/**"
-    - "docker-compose.yml"
-    - "docker-compose.test.yml"
+    - "docker-compose.yaml"
+    - "docker-compose.test.yaml"
     - "Makefile"
     - ".github/**"
     # Exclude these paths for extra clarity

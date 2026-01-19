@@ -1,0 +1,65 @@
+# Yamale schema for architecture.yaml
+# Validates project architecture configuration
+
+architecture: include('architecture_def')
+documentation: include('documentation_def', required=False)
+
+---
+architecture_def:
+  services: list(include('service'))
+
+---
+service:
+  name: str()
+  path: str()
+  language: str()
+  frameworks: list(str())
+  patterns: map(str(), include('pattern'))
+  quality_gate: include('quality_gate')
+  dependencies: list(str())
+
+---
+pattern:
+  description: str()
+  rules: list(str())
+
+---
+quality_gate:
+  code: list(include('code_check'))
+  tests: include('tests_config')
+
+---
+code_check:
+  name: str()
+  config: str(required=False)
+  command: str(required=False)
+
+---
+tests_config:
+  e2e: include('test_config')
+  integration: include('test_config')
+  unit: include('test_config')
+
+---
+test_config:
+  path: str()
+  framework: str()
+  config: str(required=False)
+  pattern: str(required=False)
+
+---
+documentation_def:
+  prd: list(include('doc_entry'), required=False)
+  architecture: list(include('doc_entry'), required=False)
+  epics: include('doc_dir', required=False)
+  stories: include('doc_dir', required=False)
+
+---
+doc_entry:
+  path: str()
+  description: str()
+
+---
+doc_dir:
+  path: str()
+  description: str()

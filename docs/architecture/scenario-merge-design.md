@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures the design decisions for merging scenarios from user stories into `requirements.yml` during the `us implement` command.
+This document captures the design decisions for merging scenarios from user stories into `requirements.yaml` during the `us implement` command.
 
 ---
 
@@ -14,7 +14,7 @@ This document captures the design decisions for merging scenarios from user stor
 
 ```
 1. Story Created (e.g., 3.1) → Contains scenarios with story-centric IDs
-2. Implementation Starts → Merge story scenarios into requirements.yml
+2. Implementation Starts → Merge story scenarios into requirements.yaml
    - New scenarios: Append with requirement-centric IDs
    - Existing scenarios: Amend/update (story takes priority)
 3. Implement Tests → Write code for all scenarios
@@ -27,7 +27,7 @@ This document captures the design decisions for merging scenarios from user stor
 
 ### 1. Workflow Direction
 **Decision**: Stories → Requirements
-**Rationale**: Stories are created first, then scenarios are merged into requirements.yml during implementation.
+**Rationale**: Stories are created first, then scenarios are merged into requirements.yaml during implementation.
 
 ### 2. ID Format Strategy
 **Decision**: Requirement-centric IDs (`INT-00015-01`)
@@ -49,16 +49,16 @@ This document captures the design decisions for merging scenarios from user stor
 - File paths are implementation details, determined during implementation
 
 ### 4. Merging Approach
-**Decision**: Append or amend existing scenarios in requirements.yml
+**Decision**: Append or amend existing scenarios in requirements.yaml
 **Strategy**:
 - New scenarios → Append with new FR-XXXXX
 - Updated scenarios → Amend existing FR-XXXXX (story takes priority)
 - Scenario changes → Reset `implementation_status` to `pending`
 
-### 5. Requirements.yml Ownership
+### 5. Requirements.yaml Ownership
 **Decision**: Auto-generated during user story implementation
 **Process**:
-1. First step: Merge scenarios from user story into requirements.yml
+1. First step: Merge scenarios from user story into requirements.yaml
 2. Second step: Implement tests (code all scenarios)
 3. Third step: Implement features (make tests pass)
 
@@ -98,7 +98,7 @@ scenarios:
 
 ### Requirements Scenarios (Target - Implementation State)
 
-**File**: `docs/requirements.yml`
+**File**: `docs/requirements.yaml`
 
 ```yaml
 scenarios:
@@ -136,7 +136,7 @@ scenarios:
 
 ## Merge Scenarios
 
-### Case 1: New Scenario (Not in requirements.yml)
+### Case 1: New Scenario (Not in requirements.yaml)
 
 **Input**: Story 3.1 has new scenario
 ```yaml
@@ -323,7 +323,7 @@ $ bmad-cli us implement 3.1
 Step 1: Analyzing story scenarios...
   Found 10 scenarios in Story 3.1
 
-Step 2: Matching scenarios to requirements.yml...
+Step 2: Matching scenarios to requirements.yaml...
   - 3.1-INT-001: No match found → Will create FR-00015
   - 3.1-INT-002: Matched to FR-00008 (98% similar) → Will update
   - 3.1-E2E-001: No match found → Will create FR-00016
@@ -334,7 +334,7 @@ Step 3: Merging scenarios...
      ⚠️  Implementation status reset to 'pending'
   ✅ Created FR-00016 (E2E_00016_01) from 3.1-E2E-001
 
-Step 4: Updated requirements.yml
+Step 4: Updated requirements.yaml
   - 2 new requirements created
   - 1 requirement updated
   - 8 scenarios marked as pending
@@ -356,7 +356,7 @@ Next: Run test generation for pending scenarios
 
 ## Related Documents
 
-- `docs/requirements.yml` - Current requirements structure
+- `docs/requirements.yaml` - Current requirements structure
 - `docs/stories/*.yaml` - User story format
 - `docs/architecture/bdd-guidelines.md` - BDD scenario standards
 - `docs/test-naming.md` - Test naming conventions
@@ -397,7 +397,7 @@ scenarios:
       priority: "P0"
 ```
 
-#### Requirements Structure (requirements.yml)
+#### Requirements Structure (requirements.yaml)
 ```yaml
 requirements:
   FR-00001:
@@ -673,7 +673,7 @@ Analyzing scenario 3.1-INT-005:
   Category: backend
   Level: integration
 
-Found potential matches in requirements.yml:
+Found potential matches in requirements.yaml:
 
   [1] FR-00015 - "WebSocket connection establishment" (85% match)
       INT_00015_01 - tests/integration/mcp-server.test.ts
@@ -777,7 +777,7 @@ change_history:
 ```
 
 **Pros**: Full audit trail, can see exact changes
-**Cons**: Very verbose, requirements.yml becomes huge
+**Cons**: Very verbose, requirements.yaml becomes huge
 
 **Use case**: Regulatory compliance, detailed auditing
 
@@ -800,7 +800,7 @@ last_updated: "2025-10-08"
 #### Recommendation: Lightweight + Git Integration
 
 ```yaml
-# In requirements.yml
+# In requirements.yaml
 change_history:
   - date: "2025-10-06"
     story_id: "3.1"
@@ -812,12 +812,12 @@ change_history:
     commit: "e4f5g6h"  # Git commit SHA
 ```
 
-**Rationale**: Lightweight in requirements.yml, detailed diffs available via git
+**Rationale**: Lightweight in requirements.yaml, detailed diffs available via git
 
 **Access pattern**:
 ```bash
 # View what changed
-git diff a1b2c3d e4f5g6h -- docs/requirements.yml
+git diff a1b2c3d e4f5g6h -- docs/requirements.yaml
 ```
 
 ---
@@ -990,7 +990,7 @@ INT_00015_01:
 #### Recommendation: Convention with Override
 
 ```yaml
-# In bmad-cli.yml config
+# In bmad-cli.yaml config
 test_file_conventions:
   integration:
     backend: "tests/integration/{story}-mcp.test.go"

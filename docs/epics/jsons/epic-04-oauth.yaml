@@ -3,10 +3,26 @@ epic:
   name: "OAuth Authentication"
   status: "PLANNED"
   goal: "Implement complete Google OAuth 2.0 authentication flow with multi-account support"
-  context: ""
+  context: "Story 4.1 provides MVP authentication via Service Account for shared documents. Stories 4.2-4.6 extend to full user OAuth for personal document access."
 
 stories:
   - id: "4.1"
+    title: "Shared Document Editing"
+    as_a: "Claude User"
+    i_want: "Claude to edit Google Docs that I've shared with provided service account"
+    so_that: "I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth"
+    status: "PLANNED"
+    acceptance_criteria:
+      - id: AC-1
+        description: "When I share a Google Doc with the service account, Claude can modify it"
+      - id: AC-2
+        description: "When I ask Claude to update shared document content, the changes appear in Google Docs"
+      - id: AC-3
+        description: "When I try to edit an unshared document, I receive a clear message explaining how to share it"
+      - id: AC-4
+        description: "The service account email is visible so I know what to share with"
+
+  - id: "4.2"
     title: "OAuth Configuration"
     as_a: "Developer/Maintainer"
     i_want: "to configure Google OAuth application"
@@ -26,7 +42,7 @@ stories:
       - id: AC-6
         description: "Environment variables configured"
 
-  - id: "4.2"
+  - id: "4.3"
     title: "OAuth Flow Implementation"
     as_a: "Claude User"
     i_want: "to authenticate with my Google account"
@@ -46,7 +62,7 @@ stories:
       - id: AC-6
         description: "Success redirect to settings page"
 
-  - id: "4.3"
+  - id: "4.4"
     title: "Token Management"
     as_a: "Developer/Maintainer"
     i_want: "to securely manage OAuth tokens"
@@ -66,7 +82,7 @@ stories:
       - id: AC-6
         description: "Secure token deletion capability"
 
-  - id: "4.4"
+  - id: "4.5"
     title: "Multi-Account Support"
     as_a: "Claude User"
     i_want: "to connect multiple Google accounts"
@@ -86,7 +102,7 @@ stories:
       - id: AC-6
         description: "Default account designation"
 
-  - id: "4.5"
+  - id: "4.6"
     title: "Authentication Error Handling"
     as_a: "Claude User"
     i_want: "clear authentication error messages"
@@ -110,4 +126,7 @@ dependencies: []
 
 success_criteria: []
 
-technical_notes: []
+technical_notes:
+  - "Story 4.1 uses Service Account for MVP - no user OAuth flow required"
+  - "Service Account requires documents to be explicitly shared by user"
+  - "Migration to OAuth (4.2-4.6) uses same Google Docs API calls - only auth layer changes"
