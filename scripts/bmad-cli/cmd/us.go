@@ -83,7 +83,7 @@ func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
 }
 
 func newUSChecklistCmd(container *bootstrap.Container) *cobra.Command {
-	return &cobra.Command{
+	checklistCmd := &cobra.Command{
 		Use:   "checklist [story-number]",
 		Short: "Validate user story against checklist",
 		Long: `Validate a user story against the validation checklist using AI.
@@ -92,14 +92,16 @@ Each validation prompt from the checklist will be evaluated against the story,
 and results will be displayed as a table with PASS/WARN/FAIL status.
 
 Example:
-  bmad-cli us checklist 4.1`,
+  bmad-cli us checklist 4.1
+  bmad-cli us checklist 4.1 --fix`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, stop := signal.NotifyContext(context.Background(),
 				os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
-			err := container.USChecklistCmd.Execute(ctx, args[0])
+			fix, _ := cmd.Flags().GetBool("fix")
+			err := container.USChecklistCmd.Execute(ctx, args[0], fix)
 
 			stop()
 
@@ -110,4 +112,9 @@ Example:
 			return nil
 		},
 	}
+
+	checklistCmd.Flags().Bool("fix", false,
+		"Enable interactive fix mode to resolve failed checks")
+
+	return checklistCmd
 }
