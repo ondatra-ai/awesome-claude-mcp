@@ -188,6 +188,29 @@ type DataCache struct { /* caching complexity */ }
 - **Result**: Eliminated 200+ lines of unnecessary abstraction code
 - **Verification**: Story generation still works perfectly with much simpler code
 
+## Go Output Conventions
+
+### Logging vs Terminal UI Output
+
+**Rule**: Use `slog` for application logging, use `console` package for terminal UI output.
+
+| Use Case | Package | Example |
+|----------|---------|---------|
+| Debug/info logs | `slog` | `slog.Info("Processing story", "id", storyID)` |
+| Error logging | `slog` | `slog.Error("Failed to load", "error", err)` |
+| User prompts | `console` | `console.Print("Your choice: ")` |
+| Status messages | `console` | `console.Println("ALL CHECKS PASSED!")` |
+| Visual separators | `console` | `console.Separator("=", 80)` |
+| Section headers | `console` | `console.Header("RESULTS", 80)` |
+
+**Why separate?**
+- `slog` produces structured logs with timestamps/levels (for debugging, monitoring)
+- `console` produces clean terminal output (for CLI user interface)
+
+**Location**: `internal/pkg/console/console.go`
+
+**Linter**: The `console` package is excluded from `forbidigo` linter in `.golangci.yaml`
+
 ## Go File Naming Convention
 
 ### Single Entity Single File Principle
