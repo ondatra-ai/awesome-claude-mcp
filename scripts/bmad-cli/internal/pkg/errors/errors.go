@@ -2156,6 +2156,10 @@ var (
 	ErrLoadChecklistSystemPrompt = errors.New("failed to load checklist system prompt")
 	ErrLoadChecklistUserPrompt   = errors.New("failed to load checklist user prompt")
 	ErrChecklistAIEvaluation     = errors.New("AI evaluation failed")
+	ErrFixApplierNoContent       = errors.New("no FILE_START/FILE_END content found")
+	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
+	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
+	ErrSaveStoryVersion          = errors.New("failed to save story version")
 )
 
 func ErrLoadChecklistSystemPromptFailed(cause error) error {
@@ -2182,5 +2186,41 @@ func ErrChecklistAIEvaluationFailed(cause error) error {
 		Code:     "CHECKLIST_AI_EVALUATION_FAILED",
 		Message:  "AI evaluation of checklist prompt failed",
 		Cause:    errors.Join(ErrChecklistAIEvaluation, cause),
+	}
+}
+
+func ErrFixApplierNoContentFound(resultPath string) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_APPLIER_NO_CONTENT",
+		Message:  "no FILE_START/FILE_END content found for path: " + resultPath,
+		Cause:    ErrFixApplierNoContent,
+	}
+}
+
+func ErrFixPromptGenerationFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_PROMPT_GENERATION_FAILED",
+		Message:  "fix prompt generation failed",
+		Cause:    errors.Join(ErrFixPromptGeneration, cause),
+	}
+}
+
+func ErrFixPromptRefinementFailed(cause error) error {
+	return &AppError{
+		Category: CategoryAI,
+		Code:     "FIX_PROMPT_REFINEMENT_FAILED",
+		Message:  "fix prompt refinement failed",
+		Cause:    errors.Join(ErrFixPromptRefinement, cause),
+	}
+}
+
+func ErrSaveStoryVersionFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "SAVE_STORY_VERSION_FAILED",
+		Message:  "failed to save story version",
+		Cause:    errors.Join(ErrSaveStoryVersion, cause),
 	}
 }

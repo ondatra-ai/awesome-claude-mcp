@@ -2,10 +2,13 @@ package validate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/domain/models/checklist"
@@ -23,6 +26,9 @@ type FixPromptData struct {
 	Story       *story.Story
 	FailedCheck checklist.ValidationResult
 	ResultPath  string
+	UserAnswers map[string]string // Answers from user (nil if first iteration)
+	Iteration   int               // Current iteration number
+	DocPaths    map[string]string // Maps doc key to file path (e.g., "prd" -> "docs/prd.md")
 }
 
 // GenerateParams contains parameters for fix prompt generation.
@@ -30,7 +36,8 @@ type GenerateParams struct {
 	StoryData   *story.Story
 	FailedCheck checklist.ValidationResult // Single failed check to generate fix for
 	TmpDir      string
-	// Note: PromptIndex is taken from FailedCheck.PromptIndex
+	UserAnswers map[string]string // Answers from previous clarification round (nil on first call)
+	Iteration   int               // Current iteration (1-based, for logging/file naming)
 }
 
 // FixPromptGenerator generates complete, actionable fix prompts for failed checklist validations.
@@ -56,53 +63,100 @@ func NewFixPromptGenerator(aiClient ports.AIPort, cfg *config.ViperConfig) *FixP
 	}
 }
 
-// Generate creates a complete, actionable fix prompt for a single failed validation.
+// Generate creates a fix prompt OR returns questions if clarification is needed.
 func (g *FixPromptGenerator) Generate(
 	ctx context.Context,
 	params GenerateParams,
-) (string, error) {
-	// Use PromptIndex from the failed check
+) (checklist.GenerateResult, error) {
 	promptIndex := params.FailedCheck.PromptIndex
 	if promptIndex == 0 {
 		slog.Warn("FailedCheck has no PromptIndex, skipping fix generation")
 
-		return "", nil
+		return checklist.GenerateResult{}, nil
 	}
 
+	iteration := params.Iteration
+	if iteration == 0 {
+		iteration = 1
+	}
+
+	g.logGenerationStart(params, promptIndex, iteration)
+
+	resultPath := fmt.Sprintf("%s/%02d-%s-fix-prompts.md", params.TmpDir, promptIndex, params.StoryData.ID)
+	promptData := g.buildPromptData(params, resultPath, iteration)
+
+	response, err := g.executeAIGeneration(ctx, params, promptData, promptIndex, iteration)
+	if err != nil {
+		return checklist.GenerateResult{}, err
+	}
+
+	return g.parseAndSaveResponse(response, resultPath)
+}
+
+func (g *FixPromptGenerator) logGenerationStart(params GenerateParams, promptIndex, iteration int) {
 	slog.Info("Generating fix prompt",
 		"story", params.StoryData.ID,
 		"promptIndex", promptIndex,
 		"section", params.FailedCheck.SectionPath,
+		"iteration", iteration,
+		"hasUserAnswers", len(params.UserAnswers) > 0,
 	)
+}
 
-	// Build result file path with naming convention: XX-<storyID>-fix-prompts.md
-	resultPath := fmt.Sprintf("%s/%02d-%s-fix-prompts.md",
-		params.TmpDir, promptIndex, params.StoryData.ID)
+func (g *FixPromptGenerator) buildPromptData(params GenerateParams, resultPath string, iteration int) FixPromptData {
+	// Resolve doc keys to file paths
+	docPaths := g.resolveDocPaths(params.FailedCheck.Docs)
 
-	// Build prompt data with full story context
-	promptData := FixPromptData{
+	return FixPromptData{
 		Story:       params.StoryData,
 		FailedCheck: params.FailedCheck,
 		ResultPath:  resultPath,
+		UserAnswers: params.UserAnswers,
+		Iteration:   iteration,
+		DocPaths:    docPaths,
+	}
+}
+
+// resolveDocPaths converts doc keys to file paths using config.
+func (g *FixPromptGenerator) resolveDocPaths(docKeys []string) map[string]string {
+	docPaths := make(map[string]string, len(docKeys))
+	docKeyMapping := getDocKeyToConfigPath()
+
+	for _, key := range docKeys {
+		configPath, ok := docKeyMapping[key]
+		if !ok {
+			continue
+		}
+
+		filePath := g.config.GetString(configPath)
+		if filePath != "" {
+			docPaths[key] = filePath
+		}
 	}
 
-	// Load system prompt template
+	return docPaths
+}
+
+func (g *FixPromptGenerator) executeAIGeneration(
+	ctx context.Context,
+	params GenerateParams,
+	promptData FixPromptData,
+	promptIndex, iteration int,
+) (string, error) {
 	systemPrompt, err := g.systemLoader.LoadTemplate(promptData)
 	if err != nil {
 		return "", pkgerrors.ErrLoadChecklistSystemPromptFailed(err)
 	}
 
-	// Load user prompt template with data
 	userPrompt, err := g.userLoader.LoadTemplate(promptData)
 	if err != nil {
 		return "", pkgerrors.ErrLoadChecklistUserPromptFailed(err)
 	}
 
-	// Save prompts to tmp for debugging with naming convention
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, "fix-system", systemPrompt)
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, "fix-user", userPrompt)
+	suffix := fmt.Sprintf("fix-iter%d", iteration)
+	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-system", systemPrompt)
+	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-user", userPrompt)
 
-	// Use think mode - allows Read tool for accessing BDD guidelines
 	mode := g.modeFactory.GetThinkMode()
 
 	response, err := g.aiClient.ExecutePromptWithSystem(ctx, systemPrompt, userPrompt, "", mode)
@@ -110,26 +164,38 @@ func (g *FixPromptGenerator) Generate(
 		return "", pkgerrors.ErrChecklistAIEvaluationFailed(err)
 	}
 
-	// Save response to tmp
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, "fix-response", response)
+	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-response", response)
 
-	// Extract fix prompt from FILE_START/FILE_END markers
+	return response, nil
+}
+
+func (g *FixPromptGenerator) parseAndSaveResponse(response, resultPath string) (checklist.GenerateResult, error) {
+	if g.hasQuestions(response) {
+		questions, parseErr := g.parseQuestions(response)
+		if parseErr != nil {
+			slog.Warn("Failed to parse questions, treating as fix prompt", "error", parseErr)
+		} else {
+			slog.Info("AI needs clarification", "questionCount", len(questions))
+
+			return checklist.GenerateResult{Questions: questions}, nil
+		}
+	}
+
 	fixPrompt := g.extractFixPrompt(response, resultPath)
 	if fixPrompt == "" {
 		slog.Warn("No fix prompt content found in response")
 
-		return "", nil
+		return checklist.GenerateResult{}, nil
 	}
 
-	// Save the extracted fix prompt to file
-	err = os.WriteFile(resultPath, []byte(fixPrompt), fixPromptFilePermissions)
+	err := os.WriteFile(resultPath, []byte(fixPrompt), fixPromptFilePermissions)
 	if err != nil {
 		slog.Warn("Failed to save fix prompt file", "path", resultPath, "error", err)
 	} else {
 		slog.Info("Fix prompt saved", "file", resultPath)
 	}
 
-	return fixPrompt, nil
+	return checklist.GenerateResult{FixPrompt: fixPrompt}, nil
 }
 
 // extractFixPrompt extracts content between FILE_START and FILE_END markers.
@@ -167,4 +233,48 @@ func (g *FixPromptGenerator) savePromptFile(tmpDir, storyID string, promptIndex 
 	} else {
 		slog.Info("Prompt saved", "file", filePath)
 	}
+}
+
+const (
+	questionsStartMarker = "=== QUESTIONS_START ==="
+	questionsEndMarker   = "=== QUESTIONS_END ==="
+)
+
+var (
+	errQuestionsStartMarkerNotFound = errors.New("no questions start marker found")
+	errQuestionsEndMarkerNotFound   = errors.New("no questions end marker found")
+)
+
+// hasQuestions checks if response contains questions.
+func (g *FixPromptGenerator) hasQuestions(response string) bool {
+	return strings.Contains(response, questionsStartMarker)
+}
+
+// parseQuestions extracts questions from response.
+func (g *FixPromptGenerator) parseQuestions(response string) ([]checklist.ClarifyQuestion, error) {
+	startIdx := strings.Index(response, questionsStartMarker)
+	if startIdx == -1 {
+		return nil, errQuestionsStartMarkerNotFound
+	}
+
+	contentStart := startIdx + len(questionsStartMarker)
+	endIdx := strings.Index(response[contentStart:], questionsEndMarker)
+
+	if endIdx == -1 {
+		return nil, errQuestionsEndMarkerNotFound
+	}
+
+	yamlContent := strings.TrimSpace(response[contentStart : contentStart+endIdx])
+
+	// Parse YAML structure
+	var wrapper struct {
+		Questions []checklist.ClarifyQuestion `yaml:"questions"`
+	}
+
+	err := yaml.Unmarshal([]byte(yamlContent), &wrapper)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse questions YAML: %w", err)
+	}
+
+	return wrapper.Questions, nil
 }

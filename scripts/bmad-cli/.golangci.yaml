@@ -170,3 +170,7 @@ linters:
       - path: _test\.go
         linters:
           - err113
+      # Allow fmt.Print in console package - it wraps fmt for terminal UI output
+      - path: internal/pkg/console/.*\.go
+        linters:
+          - forbidigo

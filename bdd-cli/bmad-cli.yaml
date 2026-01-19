@@ -30,6 +30,8 @@ templates:
     checklist_system: "./scripts/bmad-cli/templates/us-checklist.system.prompt.tpl"
     fix_generator: "./scripts/bmad-cli/templates/us-checklist.fix-generator.prompt.tpl"
     fix_generator_system: "./scripts/bmad-cli/templates/us-checklist.fix-generator.system.prompt.tpl"
+    fix_applier: "./scripts/bmad-cli/templates/us-checklist.fix-applier.prompt.tpl"
+    fix_applier_system: "./scripts/bmad-cli/templates/us-checklist.fix-applier.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
   story:

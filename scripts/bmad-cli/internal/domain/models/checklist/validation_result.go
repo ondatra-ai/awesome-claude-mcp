@@ -19,14 +19,15 @@ func (s Status) String() string {
 
 // ValidationResult represents the result of a single prompt validation.
 type ValidationResult struct {
-	SectionPath    string // e.g., "template/who" or "invest/valuable"
-	Question       string // The question that was asked
-	ExpectedAnswer string // The expected answer from checklist
-	ActualAnswer   string // The actual answer from AI evaluation
-	Status         Status // PASS, WARN, FAIL, or SKIP
-	Rationale      string // Why this criterion matters
-	FixPrompt      string // Generated fix prompt when validation fails (optional)
-	PromptIndex    int    // Index of the prompt (1-based) for file naming
+	SectionPath    string   // e.g., "template/who" or "invest/valuable"
+	Question       string   // The question that was asked
+	ExpectedAnswer string   // The expected answer from checklist
+	ActualAnswer   string   // The actual answer from AI evaluation
+	Status         Status   // PASS, WARN, FAIL, or SKIP
+	Rationale      string   // Why this criterion matters
+	FixPrompt      string   // Generated fix prompt when validation fails (optional)
+	PromptIndex    int      // Index of the prompt (1-based) for file naming
+	Docs           []string // Document keys for this validation (e.g., "prd", "user_roles")
 }
 
 // ChecklistReport represents the complete validation report.
@@ -84,4 +85,9 @@ func (r *ChecklistReport) GetOverallStatus() string {
 	}
 
 	return "PASSED"
+}
+
+// AllPassed returns true if all evaluated prompts passed (no failures).
+func (r *ChecklistReport) AllPassed() bool {
+	return r.Summary.FailCount == 0
 }

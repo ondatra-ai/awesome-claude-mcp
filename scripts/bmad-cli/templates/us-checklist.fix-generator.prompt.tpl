@@ -1,7 +1,11 @@
 # Generate Fix Prompt for User Story
 
 ## Reference Documentation
-- Read(`docs/architecture/bdd-guidelines.md`) - BDD Guidelines
+
+Read the following documents to understand context before generating fixes:
+{{- range $key, $path := .DocPaths }}
+- Read(`{{ $path }}`) - {{ $key }}
+{{- end }}
 
 ## Original User Story
 
@@ -28,21 +32,51 @@ The following check failed and needs to be fixed:
 **Expected:** {{ .FailedCheck.ExpectedAnswer }}
 **Actual:** {{ .FailedCheck.ActualAnswer }}
 
-**Suggested Fix:**
+**Suggested Fix Template:**
 {{ .FailedCheck.FixPrompt }}
 
-## Task
+{{- if .UserAnswers }}
 
-Generate a complete fix prompt that:
-1. Lists the original story and ALL acceptance criteria
-2. Clearly identifies which ACs need to change (by ID/number)
-3. Provides the complete rewritten ACs (not just fragments)
-4. Includes any NEW ACs that should be added (e.g., edge cases)
-5. Shows the final complete AC list after fixes
+## User Clarifications (from previous questions)
 
-## Output Format
+The user provided the following clarifications:
+{{- range $id, $answer := .UserAnswers }}
+{{- if ne $id "_user_refinement" }}
+- **{{ $id }}**: {{ $answer }}
+{{- end }}
+{{- end }}
 
-Output using this exact format:
+Use these answers to generate a confident fix. Do not ask these questions again.
+{{- end }}
+
+{{- if index .UserAnswers "_user_refinement" }}
+
+## ⚠️ REFINEMENT MODE - User Feedback (CRITICAL)
+
+The user has reviewed your PREVIOUS fix prompt and is providing feedback to CORRECT IT:
+
+> {{ index .UserAnswers "_user_refinement" }}
+
+**CRITICAL INSTRUCTIONS FOR REFINEMENT:**
+1. **DO NOT ask more questions** - The user is giving you a directive, not asking for options
+2. **Address the specific issue** - Fix exactly what the user pointed out
+3. **Keep everything else** - Preserve parts of your previous fix that weren't criticized
+4. **Output a fix prompt** - You MUST output FILE_START/FILE_END, NEVER QUESTIONS_START/QUESTIONS_END
+
+If the user's feedback is unclear, make your best interpretation and fix it. DO NOT ask for clarification.
+{{- end }}
+
+## Your Task
+
+{{- if index .UserAnswers "_user_refinement" }}
+**REFINEMENT MODE**: The user has provided feedback on your previous fix. Apply their feedback and regenerate the fix prompt. DO NOT ask questions.
+{{- else if .UserAnswers }}
+Using the user's clarifications above, generate a complete fix prompt.
+{{- else }}
+Analyze if you have enough context to generate a confident fix.
+{{- end }}
+
+**If you can generate a confident fix**, output:
 
 === FILE_START: {{.ResultPath}} ===
 # Fix Prompt for Story {{.Story.ID}}: {{.Story.Title}}
@@ -56,8 +90,6 @@ Apply the following changes to the acceptance criteria for this story.
 {{- end }}
 
 ## Required Changes
-
-<For each AC that needs to change, show:>
 
 ### Change #N: [AC-ID]
 **Before:** <original description>
@@ -86,3 +118,41 @@ Scenario: <scenario name>
    ...
 
 === FILE_END: {{.ResultPath}} ===
+
+**If you need clarification first**, output:
+
+=== QUESTIONS_START ===
+questions:
+  - id: q1
+    question: "<your question>"
+    context: "<why you need this information>"
+    options:
+      - "<option 1>"
+      - "<option 2>"
+      - "<option 3>"
+  - id: q2
+    question: "<another question if needed>"
+    context: "<context>"
+    options:
+      - "<option>"
+=== QUESTIONS_END ===
+
+**Important:**
+- Output EXACTLY ONE block (either FILE_START/FILE_END or QUESTIONS_START/QUESTIONS_END)
+- Never output both
+- Questions must have unique IDs (q1, q2, etc.)
+- Each question should have 2-4 suggested options
+
+**When to ASK vs GENERATE:**
+{{- if index .UserAnswers "_user_refinement" }}
+- **REFINEMENT MODE ACTIVE** - You MUST generate a fix prompt (FILE_START/FILE_END). DO NOT ask questions.
+{{- else }}
+- **ASK** when:
+  - AC implies a user-facing feature with multiple interaction patterns
+  - Two or more ACs appear to describe the same behavior (ask before merging)
+  - Adding or removing ACs
+- **GENERATE** when just converting format:
+  - First person → third person (use EXACT role: "{{.Story.AsA}}")
+  - Vague words → specific outcomes
+  - Adding missing Given/When/Then structure
+{{- end }}

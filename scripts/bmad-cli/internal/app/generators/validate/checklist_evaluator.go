@@ -85,6 +85,28 @@ func (e *ChecklistEvaluator) Evaluate(
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 ) (*checklist.ChecklistReport, error) {
+	return e.evaluatePrompts(ctx, storyData, prompts, tmpDir, false)
+}
+
+// EvaluateUntilFailure evaluates prompts sequentially and stops at the first FAIL status.
+// This is used for the iterative fix workflow where we want to fix one issue at a time.
+func (e *ChecklistEvaluator) EvaluateUntilFailure(
+	ctx context.Context,
+	storyData *story.Story,
+	prompts []checklist.PromptWithContext,
+	tmpDir string,
+) (*checklist.ChecklistReport, error) {
+	return e.evaluatePrompts(ctx, storyData, prompts, tmpDir, true)
+}
+
+// evaluatePrompts is the shared implementation for Evaluate and EvaluateUntilFailure.
+func (e *ChecklistEvaluator) evaluatePrompts(
+	ctx context.Context,
+	storyData *story.Story,
+	prompts []checklist.PromptWithContext,
+	tmpDir string,
+	stopOnFailure bool,
+) (*checklist.ChecklistReport, error) {
 	e.tmpDir = tmpDir
 	e.storyID = storyData.ID
 
@@ -113,10 +135,21 @@ func (e *ChecklistEvaluator) Evaluate(
 				Status:         checklist.StatusFail,
 				Rationale:      promptCtx.Prompt.Rationale,
 				PromptIndex:    promptIndex + 1,
+				Docs:           promptCtx.GetEffectiveDocs(),
 			}
 		}
 
 		report.Results = append(report.Results, result)
+
+		// Stop at first failure if requested
+		if stopOnFailure && result.Status == checklist.StatusFail {
+			slog.Info("Stopping evaluation at first failure",
+				"section", promptCtx.GetFullSectionPath(),
+				"promptIndex", promptIndex+1,
+			)
+
+			break
+		}
 	}
 
 	report.CalculateSummary()
@@ -197,6 +230,7 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 		Rationale:      promptCtx.Prompt.Rationale,
 		FixPrompt:      fixPrompt,
 		PromptIndex:    promptIndex,
+		Docs:           promptCtx.GetEffectiveDocs(),
 	}, nil
 }
 
