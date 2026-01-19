@@ -12,7 +12,11 @@ import (
 	"bmad-cli/internal/pkg/errors"
 )
 
-const expectedParts = 2
+const (
+	expectedParts        = 2
+	graphQLBaseArgsCount = 4 // "api", "graphql", "-f", "query=..."
+	argsPerVariable      = 2 // "-F", "key=value"
+)
 
 type GitHubCLIClient struct {
 	shell *shell.CommandRunner
@@ -78,7 +82,9 @@ func (c *GitHubCLIClient) ExecuteGraphQL(
 	query string,
 	variables map[string]string,
 ) (string, error) {
-	args := []string{"api", "graphql", "-f", "query=" + query}
+	args := make([]string, 0, graphQLBaseArgsCount+argsPerVariable*len(variables))
+	args = append(args, "api", "graphql", "-f", "query="+query)
+
 	for key, value := range variables {
 		args = append(args, "-F", key+"="+value)
 	}
