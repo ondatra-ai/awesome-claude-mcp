@@ -38,11 +38,15 @@ func NewTableRendererWithWriter(w io.Writer) *TableRenderer {
 }
 
 // RenderReport renders a checklist report as an ASCII table.
-func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport) {
+// If showFixPrompts is true, fix prompts for failed checks are displayed.
+func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport, showFixPrompts bool) {
 	r.renderHeader(report)
 	r.renderTable(report)
 	r.renderSummary(report)
-	r.renderFixPrompts(report)
+
+	if showFixPrompts {
+		r.renderFixPrompts(report)
+	}
 }
 
 // renderHeader renders the report header.

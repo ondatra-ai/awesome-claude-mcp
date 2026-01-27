@@ -69,13 +69,14 @@ type validationContext struct {
 }
 
 // Execute runs the iterative checklist validation for the specified story.
-func (c *USChecklistCommand) Execute(ctx context.Context, storyNumber string) error {
+// If fix is true, the command enters interactive fix mode when validation fails.
+func (c *USChecklistCommand) Execute(ctx context.Context, storyNumber string, fix bool) error {
 	valCtx, err := c.initializeValidation(storyNumber)
 	if err != nil {
 		return err
 	}
 
-	return c.runValidationLoop(ctx, valCtx)
+	return c.runValidationLoop(ctx, valCtx, fix)
 }
 
 // initializeValidation sets up the validation context.
@@ -121,11 +122,15 @@ func (c *USChecklistCommand) initializeValidation(storyNumber string) (*validati
 // runValidationLoop executes the main validation loop.
 //
 
-func (c *USChecklistCommand) runValidationLoop(ctx context.Context, valCtx *validationContext) error {
+func (c *USChecklistCommand) runValidationLoop(
+	ctx context.Context,
+	valCtx *validationContext,
+	fix bool,
+) error {
 	for {
 		valCtx.iteration++
 
-		shouldContinue, err := c.runSingleIteration(ctx, valCtx)
+		shouldContinue, err := c.runSingleIteration(ctx, valCtx, fix)
 		if err != nil {
 			return err
 		}
@@ -137,21 +142,34 @@ func (c *USChecklistCommand) runValidationLoop(ctx context.Context, valCtx *vali
 }
 
 // runSingleIteration runs one iteration of validation and returns whether to continue.
-func (c *USChecklistCommand) runSingleIteration(ctx context.Context, valCtx *validationContext) (bool, error) {
+func (c *USChecklistCommand) runSingleIteration(
+	ctx context.Context,
+	valCtx *validationContext,
+	fix bool,
+) (bool, error) {
 	currentStory, err := valCtx.versionMgr.LoadLatest()
 	if err != nil {
 		return false, fmt.Errorf("failed to load story version: %w", err)
 	}
 
-	report, err := c.checklistEvaluator.EvaluateUntilFailure(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
+	var report *checklistmodels.ChecklistReport
+
+	if fix {
+		// In fix mode: stop at first failure for iterative fixing
+		report, err = c.checklistEvaluator.EvaluateUntilFailure(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
+	} else {
+		// In report mode: evaluate ALL items for complete report
+		report, err = c.checklistEvaluator.Evaluate(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
+	}
+
 	if err != nil {
 		return false, fmt.Errorf("failed to evaluate checklist: %w", err)
 	}
 
-	c.tableRenderer.RenderReport(report)
+	c.tableRenderer.RenderReport(report, fix)
 
 	if report.AllPassed() {
-		c.handleAllPassed(valCtx.versionMgr)
+		c.handleAllPassed(valCtx.versionMgr, fix)
 
 		return false, nil
 	}
@@ -164,6 +182,14 @@ func (c *USChecklistCommand) runSingleIteration(ctx context.Context, valCtx *val
 	}
 
 	c.displayFailureInfo(failedCheck)
+
+	// Only enter fix loop if --fix flag is set
+	if !fix {
+		console.BlankLine()
+		console.Println("Validation failed. Use --fix flag to enter interactive fix mode.")
+
+		return false, nil
+	}
 
 	// Generate initial fix prompt and enter the fix prompt loop
 	return c.runFixPromptLoop(ctx, valCtx, currentStory, *failedCheck)
@@ -387,18 +413,20 @@ func (c *USChecklistCommand) applyFix(
 }
 
 // handleAllPassed handles the case when all checks have passed.
-func (c *USChecklistCommand) handleAllPassed(versionMgr *fs.StoryVersionManager) {
+func (c *USChecklistCommand) handleAllPassed(versionMgr *fs.StoryVersionManager, fix bool) {
 	console.Header("ALL CHECKS PASSED!", separatorWidth)
 	console.Printf("Latest version: %s\n", versionMgr.GetLatestPath())
 
 	// Display the final story content
 	c.displayFinalStory(versionMgr)
 
-	// Ask if user wants to copy to original
-	if c.userInputCollector.AskCopyToOriginal() {
-		// Copy to original not yet available - show manual instructions
-		console.Println("\nCopy to original not yet available.")
-		console.Printf("Please manually copy from: %s\n", versionMgr.GetLatestPath())
+	// Only ask about copying if we were in fix mode (changes might have been made)
+	if fix {
+		if c.userInputCollector.AskCopyToOriginal() {
+			// Copy to original not yet available - show manual instructions
+			console.Println("\nCopy to original not yet available.")
+			console.Printf("Please manually copy from: %s\n", versionMgr.GetLatestPath())
+		}
 	}
 }
 
