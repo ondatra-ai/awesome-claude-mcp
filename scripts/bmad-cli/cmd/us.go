@@ -17,34 +17,10 @@ func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 		Short: "User story commands",
 	}
 
-	usCmd.AddCommand(newUSCreateCmd(container))
 	usCmd.AddCommand(newUSImplementCmd(container))
 	usCmd.AddCommand(newUSChecklistCmd(container))
 
 	return usCmd
-}
-
-func newUSCreateCmd(container *bootstrap.Container) *cobra.Command {
-	return &cobra.Command{
-		Use:   "create [story-number]",
-		Short: "Create user story",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, stop := signal.NotifyContext(context.Background(),
-				os.Interrupt, syscall.SIGTERM)
-			defer stop()
-
-			err := container.USCreateCmd.Execute(ctx, args[0])
-
-			stop()
-
-			if err != nil {
-				return fmt.Errorf("us create command failed: %w", err)
-			}
-
-			return nil
-		},
-	}
 }
 
 func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
