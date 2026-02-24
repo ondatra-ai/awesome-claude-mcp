@@ -8,7 +8,6 @@ import (
 	"bmad-cli/internal/app/generators/validate"
 	"bmad-cli/internal/infrastructure/checklist"
 	"bmad-cli/internal/infrastructure/config"
-	"bmad-cli/internal/infrastructure/docs"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
@@ -21,7 +20,6 @@ import (
 type Container struct {
 	Config         *config.ViperConfig
 	PRTriageCmd    *commands.PRTriageCommand
-	USCreateCmd    *commands.USCreateCommand
 	USImplementCmd *commands.USImplementCommand
 	USChecklistCmd *commands.USChecklistCommand
 	RunDir         *fs.RunDirectory
@@ -45,20 +43,13 @@ func NewContainer() (*Container, error) {
 
 	githubService := github.NewGitHubService(shellExec)
 
-	// Setup user story creation dependencies
 	epicLoader := epic.NewEpicLoader(cfg)
 
-	// Setup architecture document loader
-	architectureLoader := docs.NewArchitectureLoader(cfg)
-
-	// Setup AI task generation - required for operation
+	// Setup AI client - required for operation
 	claudeClient, err := ai.NewClaudeClient()
 	if err != nil {
 		return nil, pkgerrors.ErrCreateAIClientFailed(err)
 	}
-
-	// Setup user story creation command - required for operation
-	usCreateCmd := createUSCreateCommand(epicLoader, claudeClient, cfg, architectureLoader, runDir)
 
 	// Setup PR triage command - required for operation
 	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
@@ -98,7 +89,6 @@ func NewContainer() (*Container, error) {
 	return &Container{
 		Config:         cfg,
 		PRTriageCmd:    prTriageCmd,
-		USCreateCmd:    usCreateCmd,
 		USImplementCmd: usImplementCmd,
 		USChecklistCmd: usChecklistCmd,
 		RunDir:         runDir,

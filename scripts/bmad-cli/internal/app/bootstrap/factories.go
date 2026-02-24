@@ -4,33 +4,9 @@ import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/app/commands"
-	"bmad-cli/internal/app/factories"
 	"bmad-cli/internal/app/prompt_builders"
 	"bmad-cli/internal/infrastructure/config"
-	"bmad-cli/internal/infrastructure/docs"
-	"bmad-cli/internal/infrastructure/epic"
-	"bmad-cli/internal/infrastructure/fs"
-	"bmad-cli/internal/infrastructure/template"
-	"bmad-cli/internal/infrastructure/validation"
 )
-
-func createUSCreateCommand(
-	epicLoader *epic.EpicLoader,
-	claudeClient *ai.ClaudeClient,
-	cfg *config.ViperConfig,
-	architectureLoader *docs.ArchitectureLoader,
-	runDir *fs.RunDirectory,
-) *commands.USCreateCommand {
-	storyFactory := factories.NewStoryFactory(
-		epicLoader, claudeClient, cfg, architectureLoader, runDir,
-	)
-	storyTemplateLoader := template.NewTemplateLoader[*template.FlattenedStoryData](
-		cfg.GetString("templates.story.template"),
-	)
-	yamaleValidator := validation.NewYamaleValidator(cfg.GetString("templates.story.schema"))
-
-	return commands.NewUSCreateCommand(storyFactory, storyTemplateLoader, yamaleValidator)
-}
 
 func createPRTriageCommand(
 	githubService *github.GitHubService,
