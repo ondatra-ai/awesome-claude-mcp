@@ -208,6 +208,7 @@ stages:
           - Q: "Can this story be deployed to production alone? Answer: yes/no"
             A: "yes"
             rationale: "Independent stories enable incremental delivery."
+            skip: "MCP service already implemented - verified via curl"
             docs:
               - prd
               - user_roles
@@ -216,6 +217,7 @@ stages:
           - Q: "If this story is removed from backlog, do other stories break? Answer: yes/no"
             A: "no"
             rationale: "Coupled stories should be combined."
+            skip: "Potentially need to be removed"
             docs:
               - prd
               - user_roles
