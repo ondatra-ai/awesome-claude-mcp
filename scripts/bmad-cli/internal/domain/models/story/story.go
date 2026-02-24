@@ -7,5 +7,6 @@ type Story struct {
 	IWant              string                `json:"i_want"              yaml:"i_want"`
 	SoThat             string                `json:"so_that"             yaml:"so_that"`
 	Status             string                `json:"status"              yaml:"status"`
+	Stage              string                `json:"stage,omitempty"     yaml:"stage,omitempty"`
 	AcceptanceCriteria []AcceptanceCriterion `json:"acceptance_criteria" yaml:"acceptance_criteria"`
 }

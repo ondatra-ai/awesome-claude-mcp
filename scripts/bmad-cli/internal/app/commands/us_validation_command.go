@@ -34,11 +34,12 @@ const (
 
 // StageConfig defines the configuration for a stage-specific validation command.
 type StageConfig struct {
-	StageID      string   // Stage to validate (e.g., "story_creation", "refinement", "ready_gate")
-	GateStageIDs []string // Prior stage IDs to gate-check before running validation
-	LoadFromEpic bool     // true: load from epic (create), false: load from story file (refine/ready)
-	StageName    string   // Human-readable name (e.g., "Story Creation")
-	CommandName  string   // CLI command name for error messages (e.g., "us create")
+	StageID       string // Stage to validate (e.g., "story_creation", "refinement", "ready_gate")
+	RequiredStage string // Stage the story must be at to proceed ("" = no check, for us create)
+	NextStage     string // Stage to set when all checks pass
+	LoadFromEpic  bool   // true: load from epic (create), false: load from story file (refine/ready)
+	StageName     string // Human-readable name (e.g., "Story Creation")
+	CommandName   string // CLI command name for error messages (e.g., "us create")
 }
 
 // USValidationCommand validates user stories against stage-specific validation checklists.
@@ -104,15 +105,40 @@ func (c *USValidationCommand) Execute(
 		return err
 	}
 
-	// Gate enforcement: verify prior stages pass before running this stage
-	if len(config.GateStageIDs) > 0 {
-		err = c.enforceGates(ctx, valCtx)
-		if err != nil {
-			return err
-		}
+	return c.runValidationLoop(ctx, valCtx, fix)
+}
+
+// AdvanceStage checks the required stage and advances to the next stage without running validation prompts.
+// Used for stages with no automated checks (e.g., architecture).
+func (c *USValidationCommand) AdvanceStage(storyNumber string, config StageConfig) error {
+	err := c.validateStoryNumber(storyNumber)
+	if err != nil {
+		return fmt.Errorf("invalid story number: %w", err)
 	}
 
-	return c.runValidationLoop(ctx, valCtx, fix)
+	storyData, err := c.loadStoryFromFile(storyNumber)
+	if err != nil {
+		return err
+	}
+
+	err = c.checkRequiredStage(storyData, config)
+	if err != nil {
+		return err
+	}
+
+	console.Header(fmt.Sprintf("%s — Story %s", strings.ToUpper(config.StageName), storyNumber), separatorWidth)
+	console.Println("No automated checks defined for this stage.")
+
+	storyData.Stage = config.NextStage
+
+	storyPath, err := c.updateStoryFile(storyNumber, storyData)
+	if err != nil {
+		return fmt.Errorf("failed to update story file: %w", err)
+	}
+
+	console.Printf("Stage advanced to %q. Story saved to: %s\n", config.NextStage, storyPath)
+
+	return nil
 }
 
 // initializeValidation sets up the validation context.
@@ -147,6 +173,11 @@ func (c *USValidationCommand) initializeValidation(
 	}
 
 	slog.Info("Story loaded", "id", originalStory.ID, "title", originalStory.Title)
+
+	err = c.checkRequiredStage(originalStory, config)
+	if err != nil {
+		return nil, err
+	}
 
 	tmpDir := c.runDir.GetTmpOutPath()
 	versionMgr := fs.NewStoryVersionManager(c.runDir, storyNumber)
@@ -205,106 +236,17 @@ func (c *USValidationCommand) loadStoryFromFile(storyNumber string) (*story.Stor
 	return &doc.Story, nil
 }
 
-// enforceGates checks that all prior stage validations pass.
-func (c *USValidationCommand) enforceGates(
-	ctx context.Context,
-	valCtx *validationContext,
-) error {
-	console.Header("GATE CHECK", separatorWidth)
-	console.Printf("Verifying prior stages pass before %s...\n", valCtx.stageConfig.StageName)
-
-	checklistData, err := c.checklistLoader.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load checklist for gate check: %w", err)
-	}
-
-	gatePrompts := c.checklistLoader.ExtractPromptsForStages(checklistData, valCtx.stageConfig.GateStageIDs)
-	if len(gatePrompts) == 0 {
-		slog.Info("No gate prompts found, skipping gate check")
-
+// checkRequiredStage verifies the story is at the required stage to proceed.
+func (c *USValidationCommand) checkRequiredStage(storyData *story.Story, config StageConfig) error {
+	if config.RequiredStage == "" {
 		return nil
 	}
 
-	slog.Info("Running gate check", "gateStages", valCtx.stageConfig.GateStageIDs, "promptCount", len(gatePrompts))
-
-	currentStory, err := valCtx.versionMgr.LoadLatest()
-	if err != nil {
-		return fmt.Errorf("failed to load story for gate check: %w", err)
+	if storyData.Stage != config.RequiredStage {
+		return pkgerrors.ErrStageMismatchError(storyData.ID, storyData.Stage, config.CommandName, config.RequiredStage)
 	}
 
-	report, err := c.checklistEvaluator.Evaluate(ctx, currentStory, gatePrompts, valCtx.tmpDir)
-	if err != nil {
-		return fmt.Errorf("gate check evaluation failed: %w", err)
-	}
-
-	if report.AllPassed() {
-		console.Println("Gate check passed. Proceeding to validation.")
-		console.BlankLine()
-
-		return nil
-	}
-
-	// Gate failed — display report and instruct user
-	c.tableRenderer.RenderReport(report, false)
-
-	// Determine which prior stage command to suggest
-	failedStageName := c.findFailedStageName(report, valCtx.stageConfig.GateStageIDs)
-
-	console.BlankLine()
-	console.Header(fmt.Sprintf("GATE CHECK FAILED — %s stage has failures", failedStageName), separatorWidth)
-	console.Printf("Run `bmad-cli %s %s --fix` to resolve before proceeding to %s.\n",
-		c.gateStageToCommand(failedStageName),
-		valCtx.storyNumber,
-		strings.ToLower(valCtx.stageConfig.StageName),
-	)
-
-	return pkgerrors.ErrGateCheckFailedError(failedStageName)
-}
-
-// findFailedStageName finds the name of the first stage with failures.
-func (c *USValidationCommand) findFailedStageName(
-	report *checklistmodels.ChecklistReport,
-	gateStageIDs []string,
-) string {
-	for _, result := range report.Results {
-		if result.Status == checklistmodels.StatusFail {
-			return result.SectionPath
-		}
-	}
-
-	if len(gateStageIDs) > 0 {
-		return gateStageIDs[0]
-	}
-
-	return "prior"
-}
-
-// gateStageToCommand maps a stage name to its CLI command.
-func (c *USValidationCommand) gateStageToCommand(stageName string) string {
-	stageMap := map[string]string{
-		"Story Creation": "us create",
-		"story_creation": "us create",
-		"Refinement":     "us refine",
-		"refinement":     "us refine",
-		"Ready Gate":     "us ready",
-		"ready_gate":     "us ready",
-	}
-
-	if cmd, ok := stageMap[stageName]; ok {
-		return cmd
-	}
-
-	// Try matching by section path prefix
-	lower := strings.ToLower(stageName)
-	if strings.Contains(lower, "creation") || strings.Contains(lower, "format") || strings.Contains(lower, "who") {
-		return "us create"
-	}
-
-	if strings.Contains(lower, "refine") || strings.Contains(lower, "invest") {
-		return "us refine"
-	}
-
-	return "us create"
+	return nil
 }
 
 // runValidationLoop executes the main validation loop.
@@ -598,6 +540,8 @@ func (c *USValidationCommand) handleAllPassed(valCtx *validationContext) {
 		return
 	}
 
+	latestStory.Stage = valCtx.stageConfig.NextStage
+
 	var storyPath string
 
 	if valCtx.stageConfig.LoadFromEpic {
@@ -628,11 +572,12 @@ func (c *USValidationCommand) writeNewStoryFile(storyData *story.Story) (string,
 		return "", pkgerrors.ErrWriteStoryFileFailed(err)
 	}
 
-	doc := story.StoryDocument{
-		Story: *storyData,
-	}
+	// Write only the story portion (no tasks/dev_notes/testing scaffolding)
+	wrapper := struct {
+		Story story.Story `yaml:"story"`
+	}{Story: *storyData}
 
-	data, err := yaml.Marshal(doc)
+	data, err := yaml.Marshal(wrapper)
 	if err != nil {
 		return "", pkgerrors.ErrWriteStoryFileFailed(err)
 	}

@@ -159,7 +159,7 @@ stages:
           - Q: "Count distinct user types that would use this feature differently. Answer as integer."
             A: "1"
             rationale: "If multiple user types, consider splitting into separate stories."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -172,7 +172,7 @@ stages:
           - Q: "How many valid implementation approaches exist for this goal? First list each valid approach briefly (one line each), then provide the final count as integer."
             A: "≥2"
             rationale: "If only one approach, story may be over-specified."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -187,7 +187,7 @@ stages:
           - Q: "Count blocking dependencies on other incomplete stories. Answer as integer."
             A: "0"
             rationale: "Dependencies prevent flexible prioritization."
-            skip: "MCP service already implemented - verified via curl"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -196,7 +196,7 @@ stages:
           - Q: "Can this story be deployed to production alone? Answer: yes/no"
             A: "yes"
             rationale: "Independent stories enable incremental delivery."
-            skip: "MCP service already implemented - verified via curl"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -205,7 +205,7 @@ stages:
           - Q: "If this story is removed from backlog, do other stories break? Answer: yes/no"
             A: "no"
             rationale: "Coupled stories should be combined."
-            skip: "Potentially need to be removed"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -215,6 +215,7 @@ stages:
           - Q: "Count specific technology/framework names in story or ACs. Answer as integer."
             A: "0"
             rationale: "Technology choices are negotiable during conversation."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -223,6 +224,7 @@ stages:
           - Q: "Does the story describe WHAT (outcome) or HOW (implementation)? Answer: what/how"
             A: "what"
             rationale: "Leave HOW for developers to propose."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -231,6 +233,7 @@ stages:
           - Q: "Could a developer propose a different approach that still satisfies ACs? Answer: yes/no"
             A: "yes"
             rationale: "Stories should allow creative solutions."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -240,6 +243,7 @@ stages:
           - Q: "Does completing this story alone deliver usable value to end user? Answer: yes/no"
             A: "yes"
             rationale: "Vertical slice through all layers, not horizontal layer."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -248,6 +252,7 @@ stages:
           - Q: "Would a user notice if this feature was NOT implemented? Answer: yes/no"
             A: "yes"
             rationale: "If invisible to users, it's infrastructure, not a story."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -256,6 +261,7 @@ stages:
           - Q: "Rate business value on scale 1-5 (1=nice-to-have, 5=critical). Answer as integer 1-5."
             A: "≥3"
             rationale: "Low-value stories should be deprioritized or cut."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -264,6 +270,7 @@ stages:
           - Q: "Is this a vertical slice (end-to-end) or horizontal layer (DB only, API only, UI only)? Answer: vertical/horizontal"
             A: "vertical"
             rationale: "A database without UI delivers no user value."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -273,6 +280,7 @@ stages:
           - Q: "Count acceptance criteria. Answer as integer."
             A: "3-7"
             rationale: "Fewer than 3: underspecified. More than 7: epic in disguise."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -281,6 +289,7 @@ stages:
           - Q: "Could QA write test cases from ACs without asking questions? Answer: yes/no"
             A: "yes"
             rationale: "If QA needs clarification, ACs aren't clear enough."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -289,6 +298,7 @@ stages:
           - Q: "Count ACs that specify exact expected output (status code, message text, behavior). Answer as integer."
             A: "= total AC count"
             rationale: "Every AC must have measurable expected result."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -297,6 +307,7 @@ stages:
           - Q: "Do ACs cover happy path, error cases, and edge cases? Answer as percentage covered."
             A: "≥80%"
             rationale: "Missing scenarios lead to bugs."
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -310,7 +321,7 @@ stages:
           - Q: "Count total acceptance criteria. Answer as integer."
             A: "3-7"
             rationale: "<3: underspecified. >7: likely an epic that should be split."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -319,7 +330,7 @@ stages:
           - Q: "Count ACs that follow Given-When-Then or equivalent testable format. Answer as integer."
             A: "= total AC count"
             rationale: "All ACs must be in testable format."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -348,7 +359,7 @@ stages:
           - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.). Answer as integer."
             A: "0"
             rationale: "Vague words cannot be tested objectively."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -378,7 +389,7 @@ stages:
           - Q: "Count ACs that describe implementation (endpoint created, database updated) vs behavior (user sees, system responds). Answer implementation count as integer."
             A: "0"
             rationale: "ACs describe observable behavior, not technical implementation."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -387,7 +398,7 @@ stages:
           - Q: "Does AC set cover: happy path + at least 2 error scenarios? Answer: yes/no"
             A: "yes"
             rationale: "Missing error handling leads to production issues."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -396,7 +407,7 @@ stages:
           - Q: "Count ACs with specific measurable criteria (status codes, exact messages, timeouts in ms). Answer as integer."
             A: "≥50% of total"
             rationale: "Measurable criteria enable automated testing."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -405,7 +416,7 @@ stages:
           - Q: "Count acceptance criteria that have binary pass/fail outcomes. Answer as integer."
             A: "= total AC count"
             rationale: "Every AC must be objectively testable."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -414,7 +425,7 @@ stages:
           - Q: "Count acceptance criteria containing subjective words (properly, correctly, appropriately, user-friendly). Answer as integer."
             A: "0"
             rationale: "Subjective criteria cannot be consistently tested."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -423,7 +434,7 @@ stages:
           - Q: "Can each AC be converted to an automated test? Answer as percentage of ACs."
             A: "≥80%"
             rationale: "Confirmation means testable verification."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -437,7 +448,7 @@ stages:
           - Q: "Is the role a technical entity (Developer, System, Database, API)? Answer: yes/no"
             A: "no"
             rationale: "Technical entities don't perceive value."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -446,7 +457,7 @@ stages:
           - Q: "Would completing this have visible effect to end users? Answer: yes/no"
             A: "yes"
             rationale: "Invisible changes are tasks, not stories."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -456,7 +467,7 @@ stages:
           - Q: "Count acceptance criteria. Answer as integer."
             A: "≤10"
             rationale: ">10 ACs usually means multiple stories bundled."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -465,7 +476,7 @@ stages:
           - Q: "Count distinct user workflows in this story. Answer as integer."
             A: "1"
             rationale: "Multiple workflows = multiple stories."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -474,7 +485,7 @@ stages:
           - Q: "Story points estimate. Answer using Fibonacci."
             A: "≤8"
             rationale: ">8 points suggests story should be split."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -483,7 +494,7 @@ stages:
           - Q: "Does story contain words like 'manage', 'handle', or lists of actions? Answer: yes/no"
             A: "no"
             rationale: "'Manage' often hides multiple behaviors."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -493,7 +504,7 @@ stages:
           - Q: "Does story only cover one layer (database/API/UI)? Answer: yes/no"
             A: "no"
             rationale: "Vertical slices deliver value; horizontal layers don't."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -502,7 +513,7 @@ stages:
           - Q: "Does completing this story require other stories to deliver user value? Answer: yes/no"
             A: "no"
             rationale: "Coupled stories should be combined into vertical slice."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -512,7 +523,7 @@ stages:
           - Q: "Count specific technology names in story statement. Answer as integer."
             A: "0"
             rationale: "'OAuth 2.0' is implementation; 'log in with Google' is goal."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -521,7 +532,7 @@ stages:
           - Q: "Could story be satisfied by multiple technical approaches? Answer: yes/no"
             A: "yes"
             rationale: "Prescribed solutions eliminate negotiation."
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -536,7 +547,7 @@ stages:
           - Q: "Story points >8? Answer: yes/no"
             A: "no"
             action_if_yes: "Split using SPIDR"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -545,7 +556,7 @@ stages:
           - Q: "More than 7 acceptance criteria? Answer: yes/no"
             A: "no"
             action_if_yes: "Split using SPIDR"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -554,7 +565,7 @@ stages:
           - Q: "Completion time >5 person-days? Answer: yes/no"
             A: "no"
             action_if_yes: "Split using SPIDR"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -564,7 +575,7 @@ stages:
           - Q: "Count unresolved technical unknowns. Answer as integer."
             A: "0"
             action_if_fail: "Create time-boxed spike (≤2 days)"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -573,7 +584,7 @@ stages:
           - Q: "Count distinct user paths through this feature. Answer as integer."
             A: "1"
             action_if_fail: "Split into one story per path"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -582,7 +593,7 @@ stages:
           - Q: "Count device types/interfaces covered. Answer as integer."
             A: "1"
             action_if_fail: "Split into one story per interface"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -591,7 +602,7 @@ stages:
           - Q: "Count distinct data types/entities handled. Answer as integer."
             A: "1-2"
             action_if_fail: "Split by data type"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -600,7 +611,7 @@ stages:
           - Q: "Count distinct business rules in this story. Answer as integer."
             A: "1-2"
             action_if_fail: "Implement core behavior first, add rules in follow-up stories"
-            skip: "focus on invest"
+            skip: "focus on acceptance criteria"
             docs:
               - prd
               - user_roles
@@ -632,7 +643,7 @@ stages:
           - Q: "Count dependencies on other stories/teams/systems. Answer as integer."
             A: "0-2"
             rationale: "Many dependencies = not Independent. Consider combining stories."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -641,7 +652,7 @@ stages:
           - Q: "Are all dependencies in 'Done' or 'Ready' status? Answer: yes/no"
             A: "yes"
             rationale: "Blocked dependencies make story NOT ready for sprint."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -650,7 +661,7 @@ stages:
           - Q: "Count documented risks with likelihood and impact scores. Answer as integer."
             A: "≥1"
             rationale: "Every story has risks. Zero means risks aren't considered."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -659,7 +670,7 @@ stages:
           - Q: "For each risk, is mitigation strategy documented? Answer as percentage of risks with mitigation."
             A: "100%"
             rationale: "Risks without mitigation are unmanaged."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -668,7 +679,7 @@ stages:
           - Q: "Count assumptions that are not yet validated. Answer as integer."
             A: "0"
             rationale: "Unvalidated assumptions become surprises mid-sprint."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -677,7 +688,7 @@ stages:
           - Q: "Have external parties (APIs, vendors, other teams) confirmed availability? Answer: yes/no"
             A: "yes"
             rationale: "External dependencies need confirmation before sprint."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -686,7 +697,7 @@ stages:
           - Q: "Calculate highest risk score (likelihood × impact). Answer as integer 1-25."
             A: "≤14"
             rationale: "High-risk stories (>14) need mitigation before sprint."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -700,7 +711,7 @@ stages:
           - Q: "Team discussed in refinement? Answer: yes/no"
             A: "yes"
             rationale: "Stories need team discussion before sprint commitment."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -709,7 +720,7 @@ stages:
           - Q: "Team confirms understanding (fist of five ≥4)? Answer: yes/no"
             A: "yes"
             rationale: "Low confidence indicates need for more refinement."
-            skip: "focus on invest"
+
             docs:
               - prd
               - user_roles
@@ -717,7 +728,7 @@ stages:
 
           - Q: "Estimable (≥70% confidence)? Answer: yes/no"
             A: "yes"
-            skip: "focus on invest"
+
             rationale: "Team must be confident enough to commit to delivery."
             docs:
               - prd

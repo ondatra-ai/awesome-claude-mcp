@@ -1852,7 +1852,7 @@ var (
 	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
 	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
 	ErrSaveStoryVersion          = errors.New("failed to save story version")
-	ErrGateCheckFailed           = errors.New("gate check failed")
+	ErrStageMismatch             = errors.New("story stage mismatch")
 	ErrWriteStoryFile            = errors.New("failed to write story file")
 	ErrNoPromptsForStage         = errors.New("no prompts found for stage")
 )
@@ -1920,12 +1920,15 @@ func ErrSaveStoryVersionFailed(cause error) error {
 	}
 }
 
-func ErrGateCheckFailedError(stageName string) error {
+func ErrStageMismatchError(storyID, currentStage, commandName, requiredStage string) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
-		Code:     "GATE_CHECK_FAILED",
-		Message:  stageName + " stage has failures",
-		Cause:    ErrGateCheckFailed,
+		Code:     "STAGE_MISMATCH",
+		Message: fmt.Sprintf(
+			"story %s is at stage %q, but %s requires stage %q — run the previous stage command first",
+			storyID, currentStage, commandName, requiredStage,
+		),
+		Cause: ErrStageMismatch,
 	}
 }
 

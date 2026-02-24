@@ -81,29 +81,6 @@ func (l *ChecklistLoader) ExtractPromptsForStage(
 	return nil
 }
 
-// ExtractPromptsForStages extracts prompts from multiple stages by their IDs.
-func (l *ChecklistLoader) ExtractPromptsForStages(
-	chkList *checklist.Checklist,
-	stageIDs []string,
-) []checklist.PromptWithContext {
-	stageSet := make(map[string]bool, len(stageIDs))
-	for _, id := range stageIDs {
-		stageSet[id] = true
-	}
-
-	prompts := make([]checklist.PromptWithContext, 0)
-
-	for _, stage := range chkList.Stages {
-		if stageSet[stage.ID] {
-			prompts = append(prompts, l.extractPromptsFromStage(chkList, stage)...)
-		}
-	}
-
-	slog.Debug("Extracted prompts for stages", "stageIDs", stageIDs, "count", len(prompts))
-
-	return prompts
-}
-
 // extractPromptsFromStage extracts prompts from a single stage.
 func (l *ChecklistLoader) extractPromptsFromStage(
 	chkList *checklist.Checklist,

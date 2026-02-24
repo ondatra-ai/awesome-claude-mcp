@@ -1,0 +1,17 @@
+story:
+    id: "4.1"
+    title: Shared Document Editing
+    as_a: Claude User
+    i_want: Claude to edit Google Docs that I've shared with provided service account
+    so_that: I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth
+    status: PLANNED
+    stage: refinement
+    acceptance_criteria:
+        - id: AC-1
+          description: When I share a Google Doc with the service account, Claude can modify it
+        - id: AC-2
+          description: When I ask Claude to update shared document content, the changes appear in Google Docs
+        - id: AC-3
+          description: When I try to edit an unshared document, I receive a clear message explaining how to share it
+        - id: AC-4
+          description: The service account email is visible so I know what to share with
