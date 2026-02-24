@@ -51,28 +51,82 @@ func (l *ChecklistLoader) Load() (*checklist.Checklist, error) {
 // Iterates through stages → sections → prompts.
 // Prompts with Skip field set are excluded.
 func (l *ChecklistLoader) ExtractAllPrompts(chkList *checklist.Checklist) []checklist.PromptWithContext {
-	prompts := make([]checklist.PromptWithContext, 0)
+	prompts := make([]checklist.PromptWithContext, 0, len(chkList.Stages))
 
 	for _, stage := range chkList.Stages {
-		for _, section := range stage.Sections {
-			for _, prompt := range section.ValidationPrompts {
-				if prompt.ShouldSkip() {
-					continue
-				}
-
-				prompts = append(prompts, checklist.PromptWithContext{
-					SectionID:     stage.ID,
-					SectionName:   stage.Name,
-					CriterionID:   section.ID,
-					CriterionName: section.Name,
-					DefaultDocs:   chkList.DefaultDocs,
-					Prompt:        prompt,
-				})
-			}
-		}
+		prompts = append(prompts, l.extractPromptsFromStage(chkList, stage)...)
 	}
 
 	slog.Debug("Extracted prompts from checklist", "count", len(prompts))
+
+	return prompts
+}
+
+// ExtractPromptsForStage extracts prompts from a specific stage by ID.
+func (l *ChecklistLoader) ExtractPromptsForStage(
+	chkList *checklist.Checklist,
+	stageID string,
+) []checklist.PromptWithContext {
+	for _, stage := range chkList.Stages {
+		if stage.ID == stageID {
+			prompts := l.extractPromptsFromStage(chkList, stage)
+			slog.Debug("Extracted prompts for stage", "stageID", stageID, "count", len(prompts))
+
+			return prompts
+		}
+	}
+
+	slog.Warn("Stage not found in checklist", "stageID", stageID)
+
+	return nil
+}
+
+// ExtractPromptsForStages extracts prompts from multiple stages by their IDs.
+func (l *ChecklistLoader) ExtractPromptsForStages(
+	chkList *checklist.Checklist,
+	stageIDs []string,
+) []checklist.PromptWithContext {
+	stageSet := make(map[string]bool, len(stageIDs))
+	for _, id := range stageIDs {
+		stageSet[id] = true
+	}
+
+	prompts := make([]checklist.PromptWithContext, 0)
+
+	for _, stage := range chkList.Stages {
+		if stageSet[stage.ID] {
+			prompts = append(prompts, l.extractPromptsFromStage(chkList, stage)...)
+		}
+	}
+
+	slog.Debug("Extracted prompts for stages", "stageIDs", stageIDs, "count", len(prompts))
+
+	return prompts
+}
+
+// extractPromptsFromStage extracts prompts from a single stage.
+func (l *ChecklistLoader) extractPromptsFromStage(
+	chkList *checklist.Checklist,
+	stage checklist.Stage,
+) []checklist.PromptWithContext {
+	prompts := make([]checklist.PromptWithContext, 0)
+
+	for _, section := range stage.Sections {
+		for _, prompt := range section.ValidationPrompts {
+			if prompt.ShouldSkip() {
+				continue
+			}
+
+			prompts = append(prompts, checklist.PromptWithContext{
+				SectionID:     stage.ID,
+				SectionName:   stage.Name,
+				CriterionID:   section.ID,
+				CriterionName: section.Name,
+				DefaultDocs:   chkList.DefaultDocs,
+				Prompt:        prompt,
+			})
+		}
+	}
 
 	return prompts
 }

@@ -1852,6 +1852,9 @@ var (
 	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
 	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
 	ErrSaveStoryVersion          = errors.New("failed to save story version")
+	ErrGateCheckFailed           = errors.New("gate check failed")
+	ErrWriteStoryFile            = errors.New("failed to write story file")
+	ErrNoPromptsForStage         = errors.New("no prompts found for stage")
 )
 
 func ErrLoadChecklistSystemPromptFailed(cause error) error {
@@ -1914,5 +1917,32 @@ func ErrSaveStoryVersionFailed(cause error) error {
 		Code:     "SAVE_STORY_VERSION_FAILED",
 		Message:  "failed to save story version",
 		Cause:    errors.Join(ErrSaveStoryVersion, cause),
+	}
+}
+
+func ErrGateCheckFailedError(stageName string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "GATE_CHECK_FAILED",
+		Message:  stageName + " stage has failures",
+		Cause:    ErrGateCheckFailed,
+	}
+}
+
+func ErrWriteStoryFileFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "WRITE_STORY_FILE_FAILED",
+		Message:  "failed to write story file",
+		Cause:    errors.Join(ErrWriteStoryFile, cause),
+	}
+}
+
+func ErrNoPromptsForStageFailed(stageID string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "NO_PROMPTS_FOR_STAGE",
+		Message:  "no prompts found for stage: " + stageID,
+		Cause:    ErrNoPromptsForStage,
 	}
 }
