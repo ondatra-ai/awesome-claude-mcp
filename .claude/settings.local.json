@@ -27,7 +27,14 @@
       "Bash(curl:*)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(go build:*)",
+      "Bash(scripts/bmad-cli/bmad-cli us checklist:*)",
+      "Bash(find:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr checks:*)"
     ],
     "deny": [],
     "ask": []
