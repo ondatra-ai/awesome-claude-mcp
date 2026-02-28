@@ -58,7 +58,7 @@ func (d *TestGenerationData) FormatSteps() string {
 		result.WriteString("Given:\n")
 
 		for _, step := range d.MergedSteps.Given {
-			result.WriteString(fmt.Sprintf("  - %s\n", step))
+			fmt.Fprintf(&result, "  - %s\n", step)
 		}
 	}
 
@@ -66,7 +66,7 @@ func (d *TestGenerationData) FormatSteps() string {
 		result.WriteString("When:\n")
 
 		for _, step := range d.MergedSteps.When {
-			result.WriteString(fmt.Sprintf("  - %s\n", step))
+			fmt.Fprintf(&result, "  - %s\n", step)
 		}
 	}
 
@@ -74,7 +74,7 @@ func (d *TestGenerationData) FormatSteps() string {
 		result.WriteString("Then:\n")
 
 		for _, step := range d.MergedSteps.Then {
-			result.WriteString(fmt.Sprintf("  - %s\n", step))
+			fmt.Fprintf(&result, "  - %s\n", step)
 		}
 	}
 

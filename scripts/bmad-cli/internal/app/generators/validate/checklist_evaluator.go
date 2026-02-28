@@ -25,6 +25,7 @@ const (
 	minRegexMatchLen = 2     // Minimum matches for regex capture groups
 	rangeParts       = 2     // Number of parts in a range like "3-7"
 	warnThresholdPct = 10    // Warning threshold for percentage comparisons
+	percentBase      = 100   // Base for percentage calculations
 	filePermissions  = 0o644 // File permissions for saved prompts
 )
 
@@ -332,6 +333,11 @@ func (e *ChecklistEvaluator) trySpecializedComparison(
 		return e.compareToACCount(expected, actual, storyData), true
 	}
 
+	// Handle percentage comparisons BEFORE generic ≥/≤ to catch "≥50% of total"
+	if strings.Contains(expected, "%") {
+		return e.comparePercentage(expected, actual, storyData), true
+	}
+
 	// Handle comparison operators
 	if e.isGreaterOrEqualComparison(expected) {
 		return e.compareGreaterOrEqual(expected, actual), true
@@ -344,11 +350,6 @@ func (e *ChecklistEvaluator) trySpecializedComparison(
 	// Handle ranges like "3-7" or "0-2"
 	if e.isRangeComparison(expected) {
 		return e.compareRange(expected, actual), true
-	}
-
-	// Handle percentage comparisons
-	if strings.Contains(expected, "%") {
-		return e.comparePercentage(expected, actual), true
 	}
 
 	return checklist.StatusFail, false
@@ -463,44 +464,79 @@ func (e *ChecklistEvaluator) compareRange(expected, actual string) checklist.Sta
 }
 
 // comparePercentage handles percentage comparisons.
-func (e *ChecklistEvaluator) comparePercentage(expected, actual string) checklist.Status {
-	// Extract percentage from expected (e.g., ">=80%" -> 80)
-	re := regexp.MustCompile(`[>=≥]*\s*(\d+)%`)
-
-	expectedMatches := re.FindStringSubmatch(expected)
-	if len(expectedMatches) < minRegexMatchLen {
+// When expected contains "of total" (e.g., "≥50% of total"), the actual answer is treated
+// as a count and converted to a percentage using the story's AC count as the denominator.
+// Otherwise the actual answer is treated directly as a percentage.
+func (e *ChecklistEvaluator) comparePercentage(expected, actual string, storyData *story.Story) checklist.Status {
+	expectedPct, parsed := extractPercentageThreshold(expected)
+	if !parsed {
 		return checklist.StatusFail
 	}
 
-	expectedPct, err := strconv.Atoi(expectedMatches[1])
-	if err != nil {
+	actualPct, resolved := resolveActualPercentage(expected, actual, storyData)
+	if !resolved {
 		return checklist.StatusFail
 	}
 
-	// Extract percentage from actual
-	actualPctRe := regexp.MustCompile(`(\d+)%?`)
+	return comparePercentageValues(expected, actualPct, expectedPct)
+}
 
-	actualMatches := actualPctRe.FindStringSubmatch(actual)
-	if len(actualMatches) < minRegexMatchLen {
-		return checklist.StatusFail
-	}
-
-	actualPct, err := strconv.Atoi(actualMatches[1])
-	if err != nil {
-		return checklist.StatusFail
-	}
-
+// comparePercentageValues compares actual vs expected percentage with ≥ operator support.
+func comparePercentageValues(expected string, actualPct, expectedPct int) checklist.Status {
 	if strings.Contains(expected, ">=") || strings.Contains(expected, "≥") {
 		if actualPct >= expectedPct {
 			return checklist.StatusPass
 		}
-		// Within threshold = warning
+
 		if actualPct >= expectedPct-warnThresholdPct {
 			return checklist.StatusWarn
 		}
 	}
 
 	return checklist.StatusFail
+}
+
+// extractPercentageThreshold extracts the numeric threshold from an expected percentage string.
+func extractPercentageThreshold(expected string) (int, bool) {
+	re := regexp.MustCompile(`[>=≥]*\s*(\d+)%`)
+
+	matches := re.FindStringSubmatch(expected)
+	if len(matches) < minRegexMatchLen {
+		return 0, false
+	}
+
+	val, err := strconv.Atoi(matches[1])
+
+	return val, err == nil
+}
+
+// resolveActualPercentage extracts the actual percentage value from the AI answer.
+// When expected contains "of total", converts a count to percentage using AC count.
+func resolveActualPercentage(expected, actual string, storyData *story.Story) (int, bool) {
+	actualPctRe := regexp.MustCompile(`(\d+)%?`)
+
+	actualMatches := actualPctRe.FindStringSubmatch(actual)
+	if len(actualMatches) < minRegexMatchLen {
+		return 0, false
+	}
+
+	actualNum, err := strconv.Atoi(actualMatches[1])
+	if err != nil {
+		return 0, false
+	}
+
+	// When expected says "of total", the AI answers with a count (not a percentage).
+	// Convert count to percentage using the story's AC count as denominator.
+	if strings.Contains(expected, "of total") {
+		acCount := len(storyData.AcceptanceCriteria)
+		if acCount == 0 {
+			return 0, false
+		}
+
+		return (actualNum * percentBase) / acCount, true
+	}
+
+	return actualNum, true
 }
 
 // compareToACCount handles "= total AC count" comparisons.

@@ -915,7 +915,8 @@ var (
 	ErrProcessNotRunning         = errors.New("process not running")
 	ErrInterruptNotSupported     = errors.New("interrupt not supported by windows")
 	ErrTransportRequired         = errors.New("transport is required")
-	ErrClaudeStreamNilMessage    = errors.New("claude stream returned nil message")
+	ErrClaudeStreamClosed        = errors.New("claude stream closed before receiving messages")
+	ErrClaudeStreamNoOutput      = errors.New("claude process produced no output")
 )
 
 func ErrWorkingDirectoryDoesNotExist(path string) error {

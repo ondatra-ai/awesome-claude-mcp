@@ -22,6 +22,11 @@ import (
 )
 
 const (
+	// maxStderrReadSize limits stderr reads to prevent memory issues.
+	maxStderrReadSize = 10 * 1024 // 10KB
+)
+
+const (
 	// channelBufferSize is the buffer size for message and error channels.
 	channelBufferSize = 10
 	// terminationTimeoutSeconds is the timeout for graceful process termination.
@@ -298,11 +303,14 @@ func (t *Transport) handleStdout() {
 	// Build handler chain
 	chain := t.buildStdoutHandlerChain()
 	scanner := t.createStdoutScanner()
+	linesRead := 0
 
 	for scanner.Scan() {
 		if t.isDone() {
 			return
 		}
+
+		linesRead++
 
 		ctx := &ProcessContext{Line: scanner.Text()}
 		if !chain.Handle(ctx, t) {
@@ -311,6 +319,17 @@ func (t *Transport) handleStdout() {
 	}
 
 	t.handleScannerError(scanner.Err())
+
+	// If no lines were read, the process likely exited with an error.
+	// Read stderr and send it as a ProcessError so callers get the real error.
+	if linesRead == 0 {
+		stderr := t.readStderr()
+		if stderr != "" {
+			t.sendError(shared.NewProcessError(
+				"claude process exited without output", 0, stderr,
+			))
+		}
+	}
 }
 
 // buildStdoutHandlerChain creates the chain of responsibility for processing stdout.
@@ -508,6 +527,26 @@ func (t *Transport) setupIOPipes() error {
 	t.cmd.Stderr = t.stderr
 
 	return nil
+}
+
+// readStderr reads and returns the content of the stderr temp file.
+// Must be called before cleanup() which removes the file.
+func (t *Transport) readStderr() string {
+	if t.stderr == nil {
+		return ""
+	}
+
+	_, seekErr := t.stderr.Seek(0, io.SeekStart)
+	if seekErr != nil {
+		return ""
+	}
+
+	content, err := io.ReadAll(io.LimitReader(t.stderr, maxStderrReadSize))
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(string(content))
 }
 
 // cleanup cleans up all resources.
