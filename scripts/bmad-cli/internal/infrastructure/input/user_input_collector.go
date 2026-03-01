@@ -2,6 +2,7 @@ package input
 
 import (
 	"bufio"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -36,6 +37,12 @@ func (c *UserInputCollector) AskQuestions(questions []checklist.ClarifyQuestion)
 		userInput := c.readUserInput()
 		userInput = c.mapOptionToText(userInput, question.Options)
 
+		slog.Info("User answered clarification question",
+			"questionID", question.ID,
+			"question", question.Question,
+			"answer", userInput,
+		)
+
 		answers[question.ID] = userInput
 
 		console.Printf("    Recorded: %s\n", userInput)
@@ -69,16 +76,22 @@ func (c *UserInputCollector) AskApplyRefineOrExit() ActionChoice {
 	console.Separator("=", separatorWidth)
 	console.Print("Your choice (1/2/3): ")
 
-	input := c.readUserInput()
+	rawInput := c.readUserInput()
 
-	switch input {
+	var action ActionChoice
+
+	switch rawInput {
 	case "1", "apply":
-		return ActionApply
+		action = ActionApply
 	case "2", "refine":
-		return ActionRefine
+		action = ActionRefine
 	default:
-		return ActionExit
+		action = ActionExit
 	}
+
+	slog.Info("User chose fix action", "rawInput", rawInput, "action", string(action))
+
+	return action
 }
 
 // AskRefinementFeedback asks user for feedback to refine the fix prompt.
@@ -101,7 +114,11 @@ func (c *UserInputCollector) AskRefinementFeedback() string {
 		lines = append(lines, line)
 	}
 
-	return strings.Join(lines, "\n")
+	feedback := strings.Join(lines, "\n")
+
+	slog.Info("User provided refinement feedback", "feedbackLength", len(feedback), "feedback", feedback)
+
+	return feedback
 }
 
 // AskCopyToOriginal asks user if they want to copy the fixed story to original location.
@@ -111,9 +128,12 @@ func (c *UserInputCollector) AskCopyToOriginal() bool {
 	console.Separator("=", separatorWidth)
 	console.Print("Copy fixed story to original location? (y/n): ")
 
-	input := strings.ToLower(c.readUserInput())
+	rawInput := strings.ToLower(c.readUserInput())
+	accepted := rawInput == "y" || rawInput == "yes"
 
-	return input == "y" || input == "yes"
+	slog.Info("User chose copy to original", "rawInput", rawInput, "accepted", accepted)
+
+	return accepted
 }
 
 // Private methods (must come after all exported methods per funcorder lint rule)

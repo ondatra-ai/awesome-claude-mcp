@@ -547,7 +547,8 @@ func (c *USValidationCommand) handleAllPassed(valCtx *validationContext) {
 	if valCtx.stageConfig.LoadFromEpic {
 		storyPath, err = c.writeNewStoryFile(latestStory)
 	} else {
-		storyPath, err = c.updateStoryFile(valCtx.storyNumber, latestStory)
+		scenarios := c.generateScenariosFromACs(latestStory)
+		storyPath, err = c.updateStoryFileWithScenarios(valCtx.storyNumber, latestStory, scenarios)
 	}
 
 	if err != nil {
@@ -558,6 +559,24 @@ func (c *USValidationCommand) handleAllPassed(valCtx *validationContext) {
 	}
 
 	console.Printf("Story saved to: %s\n", storyPath)
+}
+
+// generateScenariosFromACs builds TestScenario entries from acceptance criteria steps.
+func (c *USValidationCommand) generateScenariosFromACs(storyData *story.Story) []story.TestScenario {
+	parser := &story.GherkinParser{}
+
+	scenarios, err := parser.GenerateScenarios(storyData.ID, storyData.AcceptanceCriteria)
+	if err != nil {
+		slog.Warn("Could not generate scenarios from ACs", "error", err)
+
+		return nil
+	}
+
+	if len(scenarios) > 0 {
+		slog.Info("Generated test scenarios from ACs", "count", len(scenarios))
+	}
+
+	return scenarios
 }
 
 // writeNewStoryFile creates a new story file in docs/stories/.
@@ -594,6 +613,15 @@ func (c *USValidationCommand) writeNewStoryFile(storyData *story.Story) (string,
 
 // updateStoryFile updates an existing story file in docs/stories/.
 func (c *USValidationCommand) updateStoryFile(storyNumber string, updatedStory *story.Story) (string, error) {
+	return c.updateStoryFileWithScenarios(storyNumber, updatedStory, nil)
+}
+
+// updateStoryFileWithScenarios updates an existing story file and optionally populates test scenarios.
+func (c *USValidationCommand) updateStoryFileWithScenarios(
+	storyNumber string,
+	updatedStory *story.Story,
+	scenarios []story.TestScenario,
+) (string, error) {
 	pattern := filepath.Join(c.storiesDir, storyNumber+"-*.yaml")
 
 	matches, err := filepath.Glob(pattern)
@@ -621,8 +649,13 @@ func (c *USValidationCommand) updateStoryFile(storyNumber string, updatedStory *
 		return "", pkgerrors.ErrWriteStoryFileFailed(err)
 	}
 
-	// Update only the story portion
+	// Update the story portion
 	doc.Story = *updatedStory
+
+	// Populate test scenarios if provided
+	if len(scenarios) > 0 {
+		doc.Scenarios.TestScenarios = scenarios
+	}
 
 	newData, err := yaml.Marshal(doc)
 	if err != nil {

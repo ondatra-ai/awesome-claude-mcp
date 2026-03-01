@@ -327,9 +327,41 @@ stages:
               - user_roles
               - architecture_yaml
 
-          - Q: "Count ACs that follow Given-When-Then or equivalent testable format. Answer as integer."
+          - Q: "Count ACs whose description violates rule-based format (contains Gherkin Given/When/Then text, missing must/should keyword, or exceeds one sentence). Answer as integer."
+            A: "0"
+            rationale: "AC descriptions must be concise rule-based statements with must/should keywords. Gherkin steps belong in the steps field."
+
+            docs:
+              - prd
+              - user_roles
+              - bdd_guidelines
+            F: |
+              Rewrite each AC description as a one-line rule-based statement.
+
+              Template: "[Subject] must/should [behavior] when [condition]"
+
+              Keyword selection (per bdd-guidelines.md):
+              - "must": core functionality, data integrity, security — failure = story not done
+              - "should": UX, error messaging, non-critical — story can ship without in edge cases
+
+              Rules from bdd-guidelines.md:
+              - One sentence, under 200 characters
+              - Always include "must" or "should" — no ambiguous "can", "will", "may"
+              - Capture both the behavior AND the condition/trigger
+              - No Given/When/Then keywords in description
+              - No vague words (properly, correctly, appropriate)
+              - No implementation details
+
+              Output format (YAML list):
+              ```yaml
+              - original: "<the current AC description verbatim>"
+                issue: "Contains Gherkin text / Too vague / Missing must/should"
+                rewritten: "<one-line rule-based statement with must/should>"
+              ```
+
+          - Q: "Count ACs that have structured Given-When-Then steps in their 'steps' field. Answer as integer."
             A: "= total AC count"
-            rationale: "All ACs must be in testable format."
+            rationale: "All ACs must have testable Gherkin steps."
 
             docs:
               - prd
@@ -337,9 +369,11 @@ stages:
               - architecture_yaml
               - bdd_guidelines
             F: |
-              Using bdd-guidelines.md rules, rewrite each non-compliant AC as a Gherkin scenario.
+              Using bdd-guidelines.md rules, generate Gherkin steps for each AC missing them.
+              Use the AC description as the behavior to be tested.
+
               Rules from bdd-guidelines.md:
-              - Third person perspective using EXACT role from story's "as_a:" field (NOT generic "User")
+              - Third person perspective using EXACT role from story's "as_a:" field
               - Active voice ("Claude displays" not "is displayed")
               - Observable outcome (what user sees/experiences)
               - No vague words (properly, correctly, clear, appropriate)
@@ -347,16 +381,19 @@ stages:
 
               Output format (YAML list):
               ```yaml
-              - original: "<the failing AC text verbatim>"
-                issue: "Not in Given-When-Then format"
-                rewritten:
-                  scenario: "<descriptive behavior name>"
-                  given: "<precondition/context using role from story>"
-                  when: "<role from story> <action or trigger>"
-                  then: "<observable outcome with measurable criteria>"
+              - ac_id: "<AC id>"
+                description: "<the AC description>"
+                steps:
+                  - given:
+                      - "<precondition using role from story>"
+                  - when:
+                      - "<role from story> <action or trigger>"
+                  - then:
+                      - "<observable outcome with measurable criteria>"
+                      - and: "<additional outcome if needed>"
               ```
 
-          - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.). Answer as integer."
+          - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.) in their description or steps. Answer as integer."
             A: "0"
             rationale: "Vague words cannot be tested objectively."
 
@@ -416,15 +453,6 @@ stages:
           - Q: "Count acceptance criteria that have binary pass/fail outcomes. Answer as integer."
             A: "= total AC count"
             rationale: "Every AC must be objectively testable."
-
-            docs:
-              - prd
-              - user_roles
-              - architecture_yaml
-
-          - Q: "Count acceptance criteria containing subjective words (properly, correctly, appropriately, user-friendly). Answer as integer."
-            A: "0"
-            rationale: "Subjective criteria cannot be consistently tested."
 
             docs:
               - prd

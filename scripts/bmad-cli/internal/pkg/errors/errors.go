@@ -673,6 +673,7 @@ var (
 	ErrInvalidModifier      = errors.New("invalid modifier type")
 	ErrEmptyCoverage        = errors.New("coverage value cannot be empty")
 	ErrInvalidCoverage      = errors.New("coverage value should be a percentage")
+	ErrACMissingSteps       = errors.New("acceptance criterion has no steps")
 )
 
 // Filesystem Errors.
@@ -1545,6 +1546,15 @@ func ErrNoStepsError(scenarioID string) error {
 		Code:     "NO_STEPS",
 		Message:  fmt.Sprintf("scenario %s: must have at least one step", scenarioID),
 		Cause:    ErrNoSteps,
+	}
+}
+
+func ErrACMissingStepsError(acID string) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "AC_MISSING_STEPS",
+		Message:  fmt.Sprintf("AC %s has no steps", acID),
+		Cause:    ErrACMissingSteps,
 	}
 }
 

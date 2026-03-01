@@ -31,7 +31,7 @@ When reference documentation is provided in the prompt:
 2. **FIX PROMPT** - If you have enough context to generate a complete fix:
    - All acceptance criteria listed
    - Clear before/after for each change
-   - Complete Gherkin scenarios ready to copy-paste
+   - Complete acceptance criteria with description and steps fields ready to copy-paste
    - Output format: FILE_START/FILE_END markers
 
 **REFINEMENT MODE (CRITICAL):**
