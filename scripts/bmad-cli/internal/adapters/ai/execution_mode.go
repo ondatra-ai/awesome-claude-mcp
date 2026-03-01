@@ -36,22 +36,3 @@ func (f *ModeFactory) GetThinkMode() ExecutionMode {
 		},
 	}
 }
-
-// GetFullAccessMode returns FullAccessMode (paths don't affect this mode).
-func (f *ModeFactory) GetFullAccessMode() ExecutionMode {
-	return ExecutionMode{
-		[]string{
-			"Read(**)",
-			"Write(**)",
-			"Edit(**)",
-			"MultiEdit(**)",
-			"Glob(**)",
-			"Grep(**)",
-			"Bash",
-			"WebFetch",
-			"WebSearch",
-			"Task",
-		},
-		[]string{}, // No disallowed tools
-	}
-}

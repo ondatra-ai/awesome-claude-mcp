@@ -121,21 +121,6 @@ func (c *UserInputCollector) AskRefinementFeedback() string {
 	return feedback
 }
 
-// AskCopyToOriginal asks user if they want to copy the fixed story to original location.
-func (c *UserInputCollector) AskCopyToOriginal() bool {
-	console.Println("\n" + strings.Repeat("=", separatorWidth))
-	console.Println("ALL CHECKS PASSED!")
-	console.Separator("=", separatorWidth)
-	console.Print("Copy fixed story to original location? (y/n): ")
-
-	rawInput := strings.ToLower(c.readUserInput())
-	accepted := rawInput == "y" || rawInput == "yes"
-
-	slog.Info("User chose copy to original", "rawInput", rawInput, "accepted", accepted)
-
-	return accepted
-}
-
 // Private methods (must come after all exported methods per funcorder lint rule)
 
 func (c *UserInputCollector) printHeader() {

@@ -47,21 +47,6 @@ func (l *ChecklistLoader) Load() (*checklist.Checklist, error) {
 	return &parsedChecklist, nil
 }
 
-// ExtractAllPrompts extracts all prompts from the checklist with their context.
-// Iterates through stages → sections → prompts.
-// Prompts with Skip field set are excluded.
-func (l *ChecklistLoader) ExtractAllPrompts(chkList *checklist.Checklist) []checklist.PromptWithContext {
-	prompts := make([]checklist.PromptWithContext, 0, len(chkList.Stages))
-
-	for _, stage := range chkList.Stages {
-		prompts = append(prompts, l.extractPromptsFromStage(chkList, stage)...)
-	}
-
-	slog.Debug("Extracted prompts from checklist", "count", len(prompts))
-
-	return prompts
-}
-
 // ExtractPromptsForStage extracts prompts from a specific stage by ID.
 func (l *ChecklistLoader) ExtractPromptsForStage(
 	chkList *checklist.Checklist,
