@@ -5,44 +5,13 @@ story:
     i_want: Claude to edit Google Docs that I've shared with provided service account
     so_that: I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth
     status: PLANNED
-    stage: architecture
+    stage: refinement
     acceptance_criteria:
         - id: AC-1
-          description: The system must allow Claude to modify a Google Doc when the Claude User has shared it with the service account
-          steps:
-            - given:
-                - The Claude User has shared a Google Doc with the service account
-            - when:
-                - The Claude User asks Claude to edit the document content
-            - then:
-                - The system successfully modifies the Google Doc content as requested
+          description: When I share a Google Doc with the service account, Claude can modify it
         - id: AC-2
-          description: Changes must appear in Google Docs when the Claude User asks Claude to update shared document content
-          steps:
-            - given:
-                - The Claude User has a Google Doc shared with the service account
-            - when:
-                - The Claude User asks Claude to update the shared document content
-            - then:
-                - The updated content is visible in Google Docs
+          description: When I ask Claude to update shared document content, the changes appear in Google Docs
         - id: AC-3
-          description: The system must return an error response containing an accessibility statement, step-by-step sharing instructions, and the service account email when the Claude User tries to edit a document not shared with the service account
-          steps:
-            - given:
-                - The Claude User has NOT shared a Google Doc with the service account
-            - when:
-                - The Claude User asks Claude to edit the document
-            - then:
-                - The system returns an error message stating the document is not accessible
-                - The error message includes step-by-step instructions on how to share the document with the service account
-                - The error message includes the service account email address
+          description: When I try to edit an unshared document, I receive a clear message explaining how to share it
         - id: AC-4
-          description: The system must return a DOCUMENT_NOT_FOUND error with an explanation when the Claude User tries to edit a document that no longer exists
-          steps:
-            - given:
-                - The Claude User references a Google Doc URL that has been deleted or does not exist
-            - when:
-                - The Claude User asks Claude to edit the document
-            - then:
-                - The system returns a DOCUMENT_NOT_FOUND error
-                - The error response includes an explanation that the document was not found or has been deleted
+          description: The service account email is visible so I know what to share with
