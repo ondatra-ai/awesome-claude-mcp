@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -118,7 +117,7 @@ func (a *FixApplier) Apply(
 
 // parseUpdatedACs extracts and parses updated acceptance criteria from AI response.
 func (a *FixApplier) parseUpdatedACs(response, resultPath string) ([]story.AcceptanceCriterion, error) {
-	content := a.extractFileContent(response, resultPath)
+	content := ExtractFileContent(response, resultPath)
 	if content == "" {
 		return nil, pkgerrors.ErrFixApplierNoContentFound(resultPath)
 	}
@@ -138,26 +137,6 @@ func (a *FixApplier) parseUpdatedACs(response, resultPath string) ([]story.Accep
 	}
 
 	return acs, nil
-}
-
-// extractFileContent extracts content between FILE_START and FILE_END markers.
-func (a *FixApplier) extractFileContent(response, path string) string {
-	startMarker := fmt.Sprintf("=== FILE_START: %s ===", path)
-	endMarker := fmt.Sprintf("=== FILE_END: %s ===", path)
-
-	startIdx := strings.Index(response, startMarker)
-	if startIdx == -1 {
-		return ""
-	}
-
-	contentStart := startIdx + len(startMarker)
-	endIdx := strings.Index(response[contentStart:], endMarker)
-
-	if endIdx == -1 {
-		return ""
-	}
-
-	return strings.TrimSpace(response[contentStart : contentStart+endIdx])
 }
 
 // savePromptFile saves a prompt file for debugging.

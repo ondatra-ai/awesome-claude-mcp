@@ -250,7 +250,7 @@ type ParsedResult struct {
 // parseResultFile extracts FILE_START/FILE_END content from response, saves to file, and parses.
 func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult {
 	// Extract content between FILE_START and FILE_END markers
-	content := e.extractFileContent(response, path)
+	content := ExtractFileContent(response, path)
 	if content == "" {
 		slog.Warn("No FILE_START/FILE_END content found in response", "path", path)
 
@@ -279,26 +279,6 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult
 		Answer:    strings.TrimSpace(result.Answer),
 		FixPrompt: strings.TrimSpace(result.FixPrompt),
 	}
-}
-
-// extractFileContent extracts content between FILE_START and FILE_END markers.
-func (e *ChecklistEvaluator) extractFileContent(response, path string) string {
-	startMarker := fmt.Sprintf("=== FILE_START: %s ===", path)
-	endMarker := fmt.Sprintf("=== FILE_END: %s ===", path)
-
-	startIdx := strings.Index(response, startMarker)
-	if startIdx == -1 {
-		return ""
-	}
-
-	contentStart := startIdx + len(startMarker)
-	endIdx := strings.Index(response[contentStart:], endMarker)
-
-	if endIdx == -1 {
-		return ""
-	}
-
-	return strings.TrimSpace(response[contentStart : contentStart+endIdx])
 }
 
 // compareAnswers compares actual answer to expected and returns status.

@@ -200,22 +200,7 @@ func (g *FixPromptGenerator) parseAndSaveResponse(response, resultPath string) (
 
 // extractFixPrompt extracts content between FILE_START and FILE_END markers.
 func (g *FixPromptGenerator) extractFixPrompt(response, path string) string {
-	startMarker := fmt.Sprintf("=== FILE_START: %s ===", path)
-	endMarker := fmt.Sprintf("=== FILE_END: %s ===", path)
-
-	startIdx := strings.Index(response, startMarker)
-	if startIdx == -1 {
-		return ""
-	}
-
-	contentStart := startIdx + len(startMarker)
-	endIdx := strings.Index(response[contentStart:], endMarker)
-
-	if endIdx == -1 {
-		return ""
-	}
-
-	return strings.TrimSpace(response[contentStart : contentStart+endIdx])
+	return ExtractFileContent(response, path)
 }
 
 // savePromptFile saves a prompt to a file in the tmp directory with naming convention.
@@ -250,6 +235,21 @@ func (g *FixPromptGenerator) hasQuestions(response string) bool {
 	return strings.Contains(response, questionsStartMarker)
 }
 
+// stripMarkdownCodeFences removes leading ```yaml/``` fences from YAML content.
+func stripMarkdownCodeFences(content string) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) >= 2 && strings.HasPrefix(strings.TrimSpace(lines[0]), "```") {
+		// Remove first line (```yaml or ```)
+		lines = lines[1:]
+		// Remove last line if it's a closing fence
+		if len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "```" {
+			lines = lines[:len(lines)-1]
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
 // parseQuestions extracts questions from response.
 func (g *FixPromptGenerator) parseQuestions(response string) ([]checklist.ClarifyQuestion, error) {
 	startIdx := strings.Index(response, questionsStartMarker)
@@ -264,7 +264,7 @@ func (g *FixPromptGenerator) parseQuestions(response string) ([]checklist.Clarif
 		return nil, errQuestionsEndMarkerNotFound
 	}
 
-	yamlContent := strings.TrimSpace(response[contentStart : contentStart+endIdx])
+	yamlContent := stripMarkdownCodeFences(strings.TrimSpace(response[contentStart : contentStart+endIdx]))
 
 	// Parse YAML structure
 	var wrapper struct {
