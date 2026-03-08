@@ -64,7 +64,7 @@ This document defines BDD best practices for writing Given-When-Then scenarios i
 
 ### Structure Rules
 - **Given**: State/preconditions (present tense, third person)
-- **When**: Action/event trigger (present tense, third person)
+- **When**: Action/event trigger (present tense, third person) — prefer using terms defined in the terms reference
 - **Then**: Expected outcome (present tense, third person)
 
 ### Writing Style
@@ -192,6 +192,8 @@ then: "Server accepts connections up to configured limit"
 ---
 
 ## ✅ Allowed Terms
+
+Prefer using terms defined in the terms reference (`bdd-cli/terms.yaml`).
 
 ### Actors
 - Client, User, System, Server

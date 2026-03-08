@@ -38,7 +38,7 @@ func getDocKeyToConfigPath() map[string]string {
 		"source_tree":           "documents.source_tree",
 		"tech_stack":            "documents.tech_stack",
 		"prd":                   "documents.prd",
-		"user_roles":            "documents.user_roles",
+		"terms":                 "documents.terms",
 		"architecture_yaml":     "documents.architecture_yaml",
 		"bdd_guidelines":        "documents.bdd_guidelines",
 	}
