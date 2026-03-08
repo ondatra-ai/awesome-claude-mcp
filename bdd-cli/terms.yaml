@@ -2,15 +2,6 @@
 # Defines allowed and forbidden terms for acceptance criteria and BDD scenarios.
 # Referenced by bdd-guidelines.md and validation checklist prompts.
 
-actors:
-  allowed:
-    - Client
-    - User
-    - System
-    - Server
-    - Administrator
-    - External System
-
 roles:
   - name: Claude User
     definition: "An individual who uses Claude Desktop or Claude Web App and wants to edit their Google Docs through natural language commands"
@@ -28,74 +19,5 @@ roles:
       - "Focused on system reliability, security, and performance"
 
 actions:
-  allowed:
-    conversational:  # actor ↔ AI/assistant
-      - asks
-      - tells
-      - requests
-      - instructs
-      - prompts
-    ui:  # actor ↔ interface
-      - clicks
-      - navigates to
-      - opens
-      - selects
-      - enters
-      - submits
-      - scrolls
-    observation:  # actor perceives outcome
-      - sees
-      - receives
-      - reads
-      - views
-    system:  # system ↔ system
-      - connects
-      - sends
-      - returns
-      - responds
-      - displays
-      - redirects
-      - stores
-      - rejects
-      - authenticates
-      - authorizes
-  forbidden:
-    - looks for    # ambiguous: HOW?
-    - searches for # ambiguous: WHERE?
-    - finds        # ambiguous: WHERE?
-    - discovers    # ambiguous: HOW?
-    - checks       # ambiguous: BY DOING WHAT?
-    - verifies     # ambiguous: BY DOING WHAT?
-    - ensures      # meta-action, not reproducible
-    - makes sure   # meta-action, not reproducible
-    - knows        # internal state, not observable
-    - understands  # internal state, not observable
-    - is aware of  # internal state, not observable
-
-artifacts:
-  allowed:
-    - connection
-    - message
-    - request
-    - response
-    - page
-    - button
-    - form
-    - dialog
-    - error
-    - result
-    - data
-
-qualifiers:
-  forbidden:
-    - properly
-    - correctly
-    - specific
-    - appropriate
-    - suitable
-    - valid  # (without criteria)
-    - clear
-    - user-friendly
-    - fast
-    - easy
-    - intuitive
+  - name: "ask Claude"
+    means: "write a prompt in Claude chat"
