@@ -21,3 +21,5 @@ roles:
 actions:
   - name: "ask Claude"
     means: "write a prompt in Claude chat"
+  - name: "navigates to <page>"
+    means: "opens or browses to a specific page in the web app"
