@@ -133,8 +133,6 @@ documentation:
       description: "Project brief and overview"
     - path: docs/prd/requirements.md
       description: "Detailed requirements specification"
-    - path: docs/prd/user-roles.md
-      description: "User roles and personas"
     - path: docs/prd/goals-and-background-context.md
       description: "Goals and background context"
     - path: docs/prd/epic-list.md
