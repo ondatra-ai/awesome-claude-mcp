@@ -94,12 +94,15 @@ Apply the following changes to the acceptance criteria for this story.
 ### Change #N: [AC-ID]
 **Before:** <original description>
 **Issue:** <what's wrong with it>
-**After:**
-```gherkin
-Scenario: <scenario name>
-  Given <context>
-  When <action>
-  Then <observable outcome>
+**After (description):** <one-line rule-based statement with must/should>
+**After (steps):**
+```yaml
+- given:
+    - "<precondition>"
+- when:
+    - "<action>"
+- then:
+    - "<outcome>"
 ```
 
 <Also add any NEW ACs needed for edge cases or missing coverage>
@@ -108,14 +111,27 @@ Scenario: <scenario name>
 
 <List ALL ACs after applying changes, ready to copy-paste into story file>
 
-1. AC-1:
-   Scenario: <name>
-     Given <context>
-     When <action>
-     Then <outcome>
+```yaml
+- ac_id: AC-1
+  description: "<one-line rule-based statement>"
+  steps:
+    - given:
+        - "<precondition>"
+    - when:
+        - "<action>"
+    - then:
+        - "<outcome>"
 
-2. AC-2:
-   ...
+- ac_id: AC-2
+  description: "<one-line rule-based statement>"
+  steps:
+    - given:
+        - "<precondition>"
+    - when:
+        - "<action>"
+    - then:
+        - "<outcome>"
+```
 
 === FILE_END: {{.ResultPath}} ===
 

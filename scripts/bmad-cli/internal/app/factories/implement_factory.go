@@ -91,11 +91,6 @@ func (f *ImplementFactory) Execute(
 	return nil
 }
 
-// GetTmpDirPath returns the run-specific temporary directory path.
-func (f *ImplementFactory) GetTmpDirPath() string {
-	return f.runDir.GetTmpOutPath()
-}
-
 // executePreparationSteps runs non-AI preparation steps (validate, branch).
 func (f *ImplementFactory) executePreparationSteps(
 	storyNumber string,

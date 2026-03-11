@@ -30,13 +30,6 @@ func NewTableRenderer() *TableRenderer {
 	}
 }
 
-// NewTableRendererWithWriter creates a new table renderer with a custom writer.
-func NewTableRendererWithWriter(w io.Writer) *TableRenderer {
-	return &TableRenderer{
-		writer: w,
-	}
-}
-
 // RenderReport renders a checklist report as an ASCII table.
 // If showFixPrompts is true, fix prompts for failed checks are displayed.
 func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport, showFixPrompts bool) {

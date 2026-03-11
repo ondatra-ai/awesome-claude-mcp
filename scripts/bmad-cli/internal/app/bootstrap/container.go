@@ -18,11 +18,11 @@ import (
 )
 
 type Container struct {
-	Config         *config.ViperConfig
-	PRTriageCmd    *commands.PRTriageCommand
-	USImplementCmd *commands.USImplementCommand
-	USChecklistCmd *commands.USChecklistCommand
-	RunDir         *fs.RunDirectory
+	Config          *config.ViperConfig
+	PRTriageCmd     *commands.PRTriageCommand
+	USImplementCmd  *commands.USImplementCommand
+	USValidationCmd *commands.USValidationCommand
+	RunDir          *fs.RunDirectory
 }
 
 func NewContainer() (*Container, error) {
@@ -68,15 +68,17 @@ func NewContainer() (*Container, error) {
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
-	// Setup user story checklist command
+	// Setup user story validation command (replaces checklist command)
 	checklistLoader := checklist.NewChecklistLoader(cfg)
 	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
 	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
 	fixApplier := validate.NewFixApplier(claudeClient, cfg)
 	userInputCollector := input.NewUserInputCollector()
 	tableRenderer := commands.NewTableRenderer()
-	usChecklistCmd := commands.NewUSChecklistCommand(
+	storiesDir := cfg.GetString("paths.stories_dir")
+	usValidationCmd := commands.NewUSValidationCommand(
 		epicLoader,
+		storyLoader,
 		checklistLoader,
 		checklistEvaluator,
 		fixPromptGenerator,
@@ -84,13 +86,14 @@ func NewContainer() (*Container, error) {
 		userInputCollector,
 		tableRenderer,
 		runDir,
+		storiesDir,
 	)
 
 	return &Container{
-		Config:         cfg,
-		PRTriageCmd:    prTriageCmd,
-		USImplementCmd: usImplementCmd,
-		USChecklistCmd: usChecklistCmd,
-		RunDir:         runDir,
+		Config:          cfg,
+		PRTriageCmd:     prTriageCmd,
+		USImplementCmd:  usImplementCmd,
+		USValidationCmd: usValidationCmd,
+		RunDir:          runDir,
 	}, nil
 }

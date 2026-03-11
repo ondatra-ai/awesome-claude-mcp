@@ -1,6 +1,10 @@
 package subprocess
 
-import "bmad-cli/claudecode/internal/shared"
+import (
+	"os"
+
+	"bmad-cli/claudecode/internal/shared"
+)
 
 // NewTestTransportWithChannels creates a Transport with initialized channels for testing.
 // This helper allows black-box tests to verify channel behavior without accessing unexported fields.
@@ -27,4 +31,14 @@ func GetTestTransportErrChan(t *Transport) <-chan error {
 // GetTestTransportMsgChan returns the message channel from a Transport for testing.
 func GetTestTransportMsgChan(t *Transport) <-chan shared.Message {
 	return t.msgChan
+}
+
+// SetTestTransportStderr sets a stderr file on a test Transport for readStderr testing.
+func SetTestTransportStderr(t *Transport, f *os.File) {
+	t.stderr = f
+}
+
+// ReadStderrForTest exposes readStderr for testing.
+func ReadStderrForTest(t *Transport) string {
+	return t.readStderr()
 }

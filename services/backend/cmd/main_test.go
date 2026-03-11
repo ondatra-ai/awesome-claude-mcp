@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ func TestORPHAN_CreateFiberApp_ReturnsConfiguredApp(t *testing.T) {
 	// Assert
 	assert.NotNil(t, app)
 	// Test that the app is configured with correct settings
-	req := httptest.NewRequest(http.MethodGet, "/nonexistent", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/nonexistent", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
 

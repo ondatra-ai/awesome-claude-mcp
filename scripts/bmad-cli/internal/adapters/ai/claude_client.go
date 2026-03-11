@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -121,35 +122,39 @@ func (c *ClaudeClient) streamMessages(ctx context.Context, client claudecode.Cli
 
 	slog.Debug("Starting message stream")
 
-	msgChan := client.ReceiveMessages(ctx)
+	iter := client.ReceiveResponse(ctx)
+	if iter == nil {
+		return "", pkgerrors.ErrClaudeStreamClosed
+	}
+
+	defer func() { _ = iter.Close() }()
+
 	messageCount := 0
 
 	for {
-		select {
-		case message := <-msgChan:
-			messageCount++
-			slog.Debug("Message received", "count", messageCount, "type", fmt.Sprintf("%T", message))
-
-			if message == nil {
-				slog.Error("Received nil message from Claude stream")
-
-				return "", pkgerrors.ErrClaudeStreamNilMessage
-			}
-
-			done, err := c.processMessage(message, &result)
-			if err != nil {
-				return "", err
-			}
-
-			if done {
+		message, err := iter.Next(ctx)
+		if err != nil {
+			if errors.Is(err, claudecode.ErrNoMoreMessages) {
+				if messageCount == 0 {
+					return "", pkgerrors.ErrClaudeStreamNoOutput
+				}
+				// Stream ended without ResultMessage but we got some messages
 				return result.String(), nil
 			}
-		case <-ctx.Done():
-			partialResult := result.String()
-			slog.Warn("Timeout reached", "error", ctx.Err(), "partial_result_length", len(partialResult))
 
-			// Return partial result even on timeout so we can save it for debugging
-			return partialResult, fmt.Errorf("context cancelled: %w", ctx.Err())
+			return result.String(), fmt.Errorf("stream error: %w", err)
+		}
+
+		messageCount++
+		slog.Debug("Message received", "count", messageCount, "type", fmt.Sprintf("%T", message))
+
+		done, processErr := c.processMessage(message, &result)
+		if processErr != nil {
+			return result.String(), processErr
+		}
+
+		if done {
+			return result.String(), nil
 		}
 	}
 }

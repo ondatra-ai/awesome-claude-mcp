@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
+	"unicode"
 
 	"gopkg.in/yaml.v3"
 
@@ -15,6 +19,7 @@ import (
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/input"
+	storyinfra "bmad-cli/internal/infrastructure/story"
 	"bmad-cli/internal/pkg/console"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
@@ -23,11 +28,24 @@ const (
 	maxClarificationIterations = 5
 	maxRefinementIterations    = 3
 	separatorWidth             = 80
+	storyFilePermissions       = 0o644
+	storyDirPermissions        = 0o755
 )
 
-// USChecklistCommand validates user stories against the validation checklist.
-type USChecklistCommand struct {
+// StageConfig defines the configuration for a stage-specific validation command.
+type StageConfig struct {
+	StageID       string // Stage to validate (e.g., "story_creation", "refinement", "ready_gate")
+	RequiredStage string // Stage the story must be at to proceed ("" = no check, for us create)
+	NextStage     string // Stage to set when all checks pass
+	LoadFromEpic  bool   // true: load from epic (create), false: load from story file (refine/ready)
+	StageName     string // Human-readable name (e.g., "Story Creation")
+	CommandName   string // CLI command name for error messages (e.g., "us create")
+}
+
+// USValidationCommand validates user stories against stage-specific validation checklists.
+type USValidationCommand struct {
 	epicLoader         *epic.EpicLoader
+	storyLoader        *storyinfra.StoryLoader
 	checklistLoader    *checklist.ChecklistLoader
 	checklistEvaluator *validate.ChecklistEvaluator
 	fixPromptGenerator *validate.FixPromptGenerator
@@ -35,11 +53,13 @@ type USChecklistCommand struct {
 	userInputCollector *input.UserInputCollector
 	tableRenderer      *TableRenderer
 	runDir             *fs.RunDirectory
+	storiesDir         string
 }
 
-// NewUSChecklistCommand creates a new checklist validation command.
-func NewUSChecklistCommand(
+// NewUSValidationCommand creates a new stage-aware validation command.
+func NewUSValidationCommand(
 	epicLoader *epic.EpicLoader,
+	storyLoader *storyinfra.StoryLoader,
 	checklistLoader *checklist.ChecklistLoader,
 	evaluator *validate.ChecklistEvaluator,
 	fixPromptGen *validate.FixPromptGenerator,
@@ -47,9 +67,11 @@ func NewUSChecklistCommand(
 	inputCollector *input.UserInputCollector,
 	renderer *TableRenderer,
 	runDir *fs.RunDirectory,
-) *USChecklistCommand {
-	return &USChecklistCommand{
+	storiesDir string,
+) *USValidationCommand {
+	return &USValidationCommand{
 		epicLoader:         epicLoader,
+		storyLoader:        storyLoader,
 		checklistLoader:    checklistLoader,
 		checklistEvaluator: evaluator,
 		fixPromptGenerator: fixPromptGen,
@@ -57,21 +79,28 @@ func NewUSChecklistCommand(
 		userInputCollector: inputCollector,
 		tableRenderer:      renderer,
 		runDir:             runDir,
+		storiesDir:         storiesDir,
 	}
 }
 
 // validationContext holds the context for a validation run.
 type validationContext struct {
-	versionMgr *fs.StoryVersionManager
-	prompts    []checklistmodels.PromptWithContext
-	tmpDir     string
-	iteration  int
+	versionMgr  *fs.StoryVersionManager
+	prompts     []checklistmodels.PromptWithContext
+	tmpDir      string
+	iteration   int
+	stageConfig StageConfig
+	storyNumber string
 }
 
-// Execute runs the iterative checklist validation for the specified story.
-// If fix is true, the command enters interactive fix mode when validation fails.
-func (c *USChecklistCommand) Execute(ctx context.Context, storyNumber string, fix bool) error {
-	valCtx, err := c.initializeValidation(storyNumber)
+// Execute runs stage-specific validation for the specified story.
+func (c *USValidationCommand) Execute(
+	ctx context.Context,
+	storyNumber string,
+	fix bool,
+	config StageConfig,
+) error {
+	valCtx, err := c.initializeValidation(storyNumber, config)
 	if err != nil {
 		return err
 	}
@@ -79,21 +108,76 @@ func (c *USChecklistCommand) Execute(ctx context.Context, storyNumber string, fi
 	return c.runValidationLoop(ctx, valCtx, fix)
 }
 
+// AdvanceStage checks the required stage and advances to the next stage without running validation prompts.
+// Used for stages with no automated checks (e.g., architecture).
+func (c *USValidationCommand) AdvanceStage(storyNumber string, config StageConfig) error {
+	err := c.validateStoryNumber(storyNumber)
+	if err != nil {
+		return fmt.Errorf("invalid story number: %w", err)
+	}
+
+	storyData, err := c.loadStoryFromFile(storyNumber)
+	if err != nil {
+		return err
+	}
+
+	err = c.checkRequiredStage(storyData, config)
+	if err != nil {
+		return err
+	}
+
+	console.Header(fmt.Sprintf("%s — Story %s", strings.ToUpper(config.StageName), storyNumber), separatorWidth)
+	console.Println("No automated checks defined for this stage.")
+
+	storyData.Stage = config.NextStage
+
+	storyPath, err := c.updateStoryFile(storyNumber, storyData)
+	if err != nil {
+		return fmt.Errorf("failed to update story file: %w", err)
+	}
+
+	console.Printf("Stage advanced to %q. Story saved to: %s\n", config.NextStage, storyPath)
+
+	return nil
+}
+
 // initializeValidation sets up the validation context.
-func (c *USChecklistCommand) initializeValidation(storyNumber string) (*validationContext, error) {
+func (c *USValidationCommand) initializeValidation(
+	storyNumber string,
+	config StageConfig,
+) (*validationContext, error) {
 	err := c.validateStoryNumber(storyNumber)
 	if err != nil {
 		return nil, fmt.Errorf("invalid story number: %w", err)
 	}
 
-	slog.Info("Starting checklist validation", "story", storyNumber)
+	slog.Info("Starting validation",
+		"story", storyNumber,
+		"stage", config.StageID,
+		"stageName", config.StageName,
+	)
 
-	originalStory, err := c.epicLoader.LoadStoryFromEpic(storyNumber)
+	console.Header(fmt.Sprintf("%s VALIDATION — Story %s", strings.ToUpper(config.StageName), storyNumber), separatorWidth)
+
+	// Load story based on config
+	var originalStory *story.Story
+
+	if config.LoadFromEpic {
+		originalStory, err = c.loadFromEpic(storyNumber)
+	} else {
+		originalStory, err = c.loadStoryFromFile(storyNumber)
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to load story: %w", pkgerrors.ErrLoadStoryFromEpicFailed(err))
+		return nil, err
 	}
 
 	slog.Info("Story loaded", "id", originalStory.ID, "title", originalStory.Title)
+
+	err = c.checkRequiredStage(originalStory, config)
+	if err != nil {
+		return nil, err
+	}
 
 	tmpDir := c.runDir.GetTmpOutPath()
 	versionMgr := fs.NewStoryVersionManager(c.runDir, storyNumber)
@@ -103,26 +187,70 @@ func (c *USChecklistCommand) initializeValidation(storyNumber string) (*validati
 		return nil, fmt.Errorf("failed to save initial story version: %w", err)
 	}
 
+	// Load checklist and extract stage-specific prompts
 	checklistData, err := c.checklistLoader.Load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load checklist: %w", err)
 	}
 
-	prompts := c.checklistLoader.ExtractAllPrompts(checklistData)
-	slog.Info("Extracted prompts", "count", len(prompts))
+	prompts := c.checklistLoader.ExtractPromptsForStage(checklistData, config.StageID)
+	slog.Info("Extracted prompts for stage", "stage", config.StageID, "count", len(prompts))
+
+	if len(prompts) == 0 {
+		console.Println("No validation prompts found for this stage.")
+
+		return nil, pkgerrors.ErrNoPromptsForStageFailed(config.StageID)
+	}
 
 	return &validationContext{
-		versionMgr: versionMgr,
-		prompts:    prompts,
-		tmpDir:     tmpDir,
-		iteration:  0,
+		versionMgr:  versionMgr,
+		prompts:     prompts,
+		tmpDir:      tmpDir,
+		iteration:   0,
+		stageConfig: config,
+		storyNumber: storyNumber,
 	}, nil
 }
 
-// runValidationLoop executes the main validation loop.
-//
+// loadFromEpic loads a story from its epic.
+func (c *USValidationCommand) loadFromEpic(storyNumber string) (*story.Story, error) {
+	console.Header("LOADING STORY FROM EPIC", separatorWidth)
 
-func (c *USChecklistCommand) runValidationLoop(
+	originalStory, err := c.epicLoader.LoadStoryFromEpic(storyNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load story: %w", pkgerrors.ErrLoadStoryFromEpicFailed(err))
+	}
+
+	c.displayStory(originalStory, "STORY FROM EPIC")
+
+	return originalStory, nil
+}
+
+// loadStoryFromFile loads a story from the docs/stories/ directory.
+func (c *USValidationCommand) loadStoryFromFile(storyNumber string) (*story.Story, error) {
+	doc, err := c.storyLoader.Load(storyNumber)
+	if err != nil {
+		return nil, fmt.Errorf("story file not found — run `bmad-cli us create %s` first: %w", storyNumber, err)
+	}
+
+	return &doc.Story, nil
+}
+
+// checkRequiredStage verifies the story is at the required stage to proceed.
+func (c *USValidationCommand) checkRequiredStage(storyData *story.Story, config StageConfig) error {
+	if config.RequiredStage == "" {
+		return nil
+	}
+
+	if storyData.Stage != config.RequiredStage {
+		return pkgerrors.ErrStageMismatchError(storyData.ID, storyData.Stage, config.CommandName, config.RequiredStage)
+	}
+
+	return nil
+}
+
+// runValidationLoop executes the main validation loop.
+func (c *USValidationCommand) runValidationLoop(
 	ctx context.Context,
 	valCtx *validationContext,
 	fix bool,
@@ -142,7 +270,7 @@ func (c *USChecklistCommand) runValidationLoop(
 }
 
 // runSingleIteration runs one iteration of validation and returns whether to continue.
-func (c *USChecklistCommand) runSingleIteration(
+func (c *USValidationCommand) runSingleIteration(
 	ctx context.Context,
 	valCtx *validationContext,
 	fix bool,
@@ -155,10 +283,8 @@ func (c *USChecklistCommand) runSingleIteration(
 	var report *checklistmodels.ChecklistReport
 
 	if fix {
-		// In fix mode: stop at first failure for iterative fixing
 		report, err = c.checklistEvaluator.EvaluateUntilFailure(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
 	} else {
-		// In report mode: evaluate ALL items for complete report
 		report, err = c.checklistEvaluator.Evaluate(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
 	}
 
@@ -169,7 +295,7 @@ func (c *USChecklistCommand) runSingleIteration(
 	c.tableRenderer.RenderReport(report, fix)
 
 	if report.AllPassed() {
-		c.handleAllPassed(valCtx.versionMgr, fix)
+		c.handleAllPassed(valCtx)
 
 		return false, nil
 	}
@@ -183,22 +309,18 @@ func (c *USChecklistCommand) runSingleIteration(
 
 	c.displayFailureInfo(failedCheck)
 
-	// Only enter fix loop if --fix flag is set
 	if !fix {
 		console.BlankLine()
-		console.Println("Validation failed. Use --fix flag to enter interactive fix mode.")
+		console.Printf("Validation failed. Use --fix flag to enter interactive fix mode.\n")
 
 		return false, nil
 	}
 
-	// Generate initial fix prompt and enter the fix prompt loop
 	return c.runFixPromptLoop(ctx, valCtx, currentStory, *failedCheck)
 }
 
 // runFixPromptLoop handles the fix prompt generation and refinement loop.
-//
-
-func (c *USChecklistCommand) runFixPromptLoop(
+func (c *USValidationCommand) runFixPromptLoop(
 	ctx context.Context,
 	valCtx *validationContext,
 	currentStory *story.Story,
@@ -207,7 +329,6 @@ func (c *USChecklistCommand) runFixPromptLoop(
 	userAnswers := make(map[string]string)
 	refinementCount := 0
 
-	// Generate initial fix prompt
 	fixPrompt, answers, err := c.generateFixPromptWithAnswers(ctx, currentStory, failedCheck, valCtx.tmpDir, userAnswers)
 	if err != nil {
 		return false, fmt.Errorf("failed to generate fix prompt: %w", err)
@@ -221,7 +342,6 @@ func (c *USChecklistCommand) runFixPromptLoop(
 		return false, nil
 	}
 
-	// Fix prompt loop: display, ask action, handle refinement
 	for {
 		c.displayFixPrompt(fixPrompt)
 
@@ -266,9 +386,7 @@ func (c *USChecklistCommand) runFixPromptLoop(
 }
 
 // refineFixPrompt collects user feedback and regenerates the fix prompt.
-//
-
-func (c *USChecklistCommand) refineFixPrompt(
+func (c *USValidationCommand) refineFixPrompt(
 	ctx context.Context,
 	currentStory *story.Story,
 	failedCheck checklistmodels.ValidationResult,
@@ -276,7 +394,6 @@ func (c *USChecklistCommand) refineFixPrompt(
 	existingAnswers map[string]string,
 	refinementIteration int,
 ) (string, map[string]string, error) {
-	// Get user feedback
 	feedback := c.userInputCollector.AskRefinementFeedback()
 	if feedback == "" {
 		return "", existingAnswers, nil
@@ -288,16 +405,14 @@ func (c *USChecklistCommand) refineFixPrompt(
 		"feedbackLength", len(feedback),
 	)
 
-	// Add feedback to answers map with special key
 	existingAnswers["_user_refinement"] = feedback
 
-	// Regenerate fix prompt with feedback
 	params := validate.GenerateParams{
 		StoryData:   currentStory,
 		FailedCheck: failedCheck,
 		TmpDir:      tmpDir,
 		UserAnswers: existingAnswers,
-		Iteration:   refinementIteration + maxClarificationIterations, // Offset for unique file names
+		Iteration:   refinementIteration + maxClarificationIterations,
 	}
 
 	result, err := c.fixPromptGenerator.Generate(ctx, params)
@@ -322,7 +437,7 @@ func (c *USChecklistCommand) refineFixPrompt(
 }
 
 // generateFixPromptWithAnswers generates fix prompt and returns accumulated user answers.
-func (c *USChecklistCommand) generateFixPromptWithAnswers(
+func (c *USValidationCommand) generateFixPromptWithAnswers(
 	ctx context.Context,
 	storyData *story.Story,
 	failedCheck checklistmodels.ValidationResult,
@@ -388,9 +503,7 @@ func (c *USChecklistCommand) generateFixPromptWithAnswers(
 }
 
 // applyFix applies the fix prompt and saves a new version.
-//
-
-func (c *USChecklistCommand) applyFix(
+func (c *USValidationCommand) applyFix(
 	ctx context.Context,
 	valCtx *validationContext,
 	currentStory *story.Story,
@@ -413,25 +526,124 @@ func (c *USChecklistCommand) applyFix(
 }
 
 // handleAllPassed handles the case when all checks have passed.
-func (c *USChecklistCommand) handleAllPassed(versionMgr *fs.StoryVersionManager, fix bool) {
+func (c *USValidationCommand) handleAllPassed(valCtx *validationContext) {
 	console.Header("ALL CHECKS PASSED!", separatorWidth)
-	console.Printf("Latest version: %s\n", versionMgr.GetLatestPath())
+	console.Printf("Latest version: %s\n", valCtx.versionMgr.GetLatestPath())
 
-	// Display the final story content
-	c.displayFinalStory(versionMgr)
+	c.displayFinalStory(valCtx.versionMgr)
 
-	// Only ask about copying if we were in fix mode (changes might have been made)
-	if fix {
-		if c.userInputCollector.AskCopyToOriginal() {
-			// Copy to original not yet available - show manual instructions
-			console.Println("\nCopy to original not yet available.")
-			console.Printf("Please manually copy from: %s\n", versionMgr.GetLatestPath())
-		}
+	// Write story to docs/stories/
+	latestStory, err := valCtx.versionMgr.LoadLatest()
+	if err != nil {
+		slog.Warn("Could not load latest story for writing", "error", err)
+
+		return
 	}
+
+	latestStory.Stage = valCtx.stageConfig.NextStage
+
+	var storyPath string
+
+	if valCtx.stageConfig.LoadFromEpic {
+		storyPath, err = c.writeNewStoryFile(latestStory)
+	} else {
+		storyPath, err = c.updateStoryFile(valCtx.storyNumber, latestStory)
+	}
+
+	if err != nil {
+		slog.Warn("Could not write story file", "error", err)
+		console.Printf("Warning: Could not write story file: %v\n", err)
+
+		return
+	}
+
+	console.Printf("Story saved to: %s\n", storyPath)
+}
+
+// writeNewStoryFile creates a new story file in docs/stories/.
+func (c *USValidationCommand) writeNewStoryFile(storyData *story.Story) (string, error) {
+	slug := slugify(storyData.Title)
+	filename := fmt.Sprintf("%s-%s.yaml", storyData.ID, slug)
+	filePath := filepath.Join(c.storiesDir, filename)
+
+	// Ensure directory exists
+	err := os.MkdirAll(c.storiesDir, storyDirPermissions)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	// Write only the story portion (no tasks/dev_notes/testing scaffolding)
+	wrapper := struct {
+		Story story.Story `yaml:"story"`
+	}{Story: *storyData}
+
+	data, err := yaml.Marshal(wrapper)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	err = os.WriteFile(filePath, data, storyFilePermissions)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	slog.Info("Story file created", "path", filePath)
+
+	return filePath, nil
+}
+
+// updateStoryFile updates an existing story file in docs/stories/ with story-only format.
+func (c *USValidationCommand) updateStoryFile(storyNumber string, updatedStory *story.Story) (string, error) {
+	pattern := filepath.Join(c.storiesDir, storyNumber+"-*.yaml")
+
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	if len(matches) == 0 {
+		return c.writeNewStoryFile(updatedStory)
+	}
+
+	filePath := matches[0]
+
+	wrapper := struct {
+		Story story.Story `yaml:"story"`
+	}{Story: *updatedStory}
+
+	data, err := yaml.Marshal(wrapper)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	err = os.WriteFile(filePath, data, storyFilePermissions)
+	if err != nil {
+		return "", pkgerrors.ErrWriteStoryFileFailed(err)
+	}
+
+	slog.Info("Story file updated", "path", filePath)
+
+	return filePath, nil
+}
+
+// displayStory shows a story's content in the terminal.
+func (c *USValidationCommand) displayStory(storyData *story.Story, header string) {
+	console.BlankLine()
+	console.Header(header, separatorWidth)
+
+	yamlBytes, err := yaml.Marshal(storyData)
+	if err != nil {
+		slog.Warn("Could not marshal story to YAML", "error", err)
+
+		return
+	}
+
+	console.Println(string(yamlBytes))
+	console.Separator("=", separatorWidth)
 }
 
 // displayFinalStory loads and displays the final story version.
-func (c *USChecklistCommand) displayFinalStory(versionMgr *fs.StoryVersionManager) {
+func (c *USValidationCommand) displayFinalStory(versionMgr *fs.StoryVersionManager) {
 	storyData, err := versionMgr.LoadLatest()
 	if err != nil {
 		slog.Warn("Could not load final story for display", "error", err)
@@ -454,7 +666,7 @@ func (c *USChecklistCommand) displayFinalStory(versionMgr *fs.StoryVersionManage
 }
 
 // getFirstFailedCheck returns the first failed check from the report.
-func (c *USChecklistCommand) getFirstFailedCheck(
+func (c *USValidationCommand) getFirstFailedCheck(
 	report *checklistmodels.ChecklistReport,
 ) *checklistmodels.ValidationResult {
 	for _, result := range report.Results {
@@ -467,7 +679,7 @@ func (c *USChecklistCommand) getFirstFailedCheck(
 }
 
 // displayFailureInfo displays information about the failed check.
-func (c *USChecklistCommand) displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
+func (c *USValidationCommand) displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
 	console.BlankLine()
 	console.Separator("=", separatorWidth)
 	console.Printf("CHECK FAILED: %s\n", failedCheck.SectionPath)
@@ -482,7 +694,7 @@ func (c *USChecklistCommand) displayFailureInfo(failedCheck *checklistmodels.Val
 }
 
 // displayFixPrompt displays the generated fix prompt.
-func (c *USChecklistCommand) displayFixPrompt(fixPrompt string) {
+func (c *USValidationCommand) displayFixPrompt(fixPrompt string) {
 	console.BlankLine()
 	console.Header("FIX PROMPT GENERATED", separatorWidth)
 	console.Println(fixPrompt)
@@ -490,7 +702,7 @@ func (c *USChecklistCommand) displayFixPrompt(fixPrompt string) {
 }
 
 // validateStoryNumber validates the story number format (X.Y).
-func (c *USChecklistCommand) validateStoryNumber(storyNumber string) error {
+func (c *USValidationCommand) validateStoryNumber(storyNumber string) error {
 	matched, err := regexp.MatchString(`^\d+\.\d+$`, storyNumber)
 	if err != nil {
 		return fmt.Errorf("regex failed: %w", err)
@@ -501,4 +713,32 @@ func (c *USChecklistCommand) validateStoryNumber(storyNumber string) error {
 	}
 
 	return nil
+}
+
+// slugify converts a title string into a URL-friendly slug.
+func slugify(title string) string {
+	lower := strings.ToLower(title)
+
+	// Replace non-alphanumeric characters with hyphens
+	var builder strings.Builder
+
+	for _, r := range lower {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			builder.WriteRune(r)
+		} else {
+			builder.WriteRune('-')
+		}
+	}
+
+	slug := builder.String()
+
+	// Collapse multiple hyphens
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	// Trim leading/trailing hyphens
+	slug = strings.Trim(slug, "-")
+
+	return slug
 }

@@ -3,12 +3,23 @@ package parser
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
 	"bmad-cli/claudecode/internal/shared"
 	pkgerrors "bmad-cli/internal/pkg/errors"
+)
+
+// ErrSkippedMessage is returned when a message has an unknown type and should be skipped.
+var ErrSkippedMessage = errors.New("skipped unknown message type")
+
+// Sentinel errors for internal skip conditions.
+var (
+	errIncompleteJSON      = errors.New("incomplete JSON")
+	errSkippedContentBlock = errors.New("skipped unknown content block type")
 )
 
 const (
@@ -68,6 +79,11 @@ func (p *Parser) ProcessLine(line string) ([]shared.Message, error) {
 		// Process each JSON line with speculative parsing (unlocked version)
 		msg, err := p.processJSONLineUnlocked(jsonLine)
 		if err != nil {
+			// Incomplete JSON and unknown types are not real errors — skip silently
+			if errors.Is(err, errIncompleteJSON) || errors.Is(err, ErrSkippedMessage) {
+				continue
+			}
+
 			return messages, err
 		}
 
@@ -97,10 +113,9 @@ func (p *Parser) ParseMessage(data map[string]any) (shared.Message, error) {
 	case shared.MessageTypeResult:
 		return p.parseResultMessage(data)
 	default:
-		return nil, shared.NewMessageParseError(
-			"unknown message type: "+msgType,
-			data,
-		)
+		slog.Debug("skipping unknown message type", "type", msgType)
+
+		return nil, ErrSkippedMessage
 	}
 }
 
@@ -147,7 +162,7 @@ func (p *Parser) processJSONLineUnlocked(jsonLine string) (shared.Message, error
 	if err != nil {
 		// JSON is incomplete - continue accumulating
 		// This is NOT an error condition in speculative parsing!
-		return nil, fmt.Errorf("unmarshal JSON buffer: %w", err)
+		return nil, errIncompleteJSON
 	}
 
 	// Successfully parsed complete JSON - reset buffer and parse message
@@ -177,14 +192,19 @@ func (p *Parser) parseUserMessage(data map[string]any) (*shared.UserMessage, err
 		}, nil
 	case []any:
 		// Array of content blocks
-		blocks := make([]shared.ContentBlock, len(contentValue))
+		var blocks []shared.ContentBlock
+
 		for index, blockData := range contentValue {
 			block, err := p.parseContentBlock(blockData)
 			if err != nil {
+				if errors.Is(err, errSkippedContentBlock) {
+					continue
+				}
+
 				return nil, fmt.Errorf("parse content block failed: %w", pkgerrors.ErrParseContentBlockFailed(index, err))
 			}
 
-			blocks[index] = block
+			blocks = append(blocks, block)
 		}
 
 		return &shared.UserMessage{
@@ -212,14 +232,19 @@ func (p *Parser) parseAssistantMessage(data map[string]any) (*shared.AssistantMe
 		return nil, shared.NewMessageParseError("assistant message missing model field", data)
 	}
 
-	blocks := make([]shared.ContentBlock, len(contentArray))
+	var blocks []shared.ContentBlock
+
 	for index, blockData := range contentArray {
 		block, err := p.parseContentBlock(blockData)
 		if err != nil {
+			if errors.Is(err, errSkippedContentBlock) {
+				continue
+			}
+
 			return nil, fmt.Errorf("parse content block failed: %w", pkgerrors.ErrParseContentBlockFailed(index, err))
 		}
 
-		blocks[index] = block
+		blocks = append(blocks, block)
 	}
 
 	return &shared.AssistantMessage{
@@ -282,10 +307,9 @@ func (p *Parser) parseContentBlock(blockData any) (shared.ContentBlock, error) {
 	case shared.ContentBlockTypeToolResult:
 		return p.parseToolResultBlock(data)
 	default:
-		return nil, shared.NewMessageParseError(
-			"unknown content block type: "+blockType,
-			data,
-		)
+		slog.Debug("skipping unknown content block type", "type", blockType)
+
+		return nil, errSkippedContentBlock
 	}
 }
 

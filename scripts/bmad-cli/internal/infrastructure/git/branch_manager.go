@@ -1,10 +1,6 @@
 package git
 
 import (
-	"context"
-	"fmt"
-	"log/slog"
-
 	"bmad-cli/internal/infrastructure/git/handlers"
 )
 
@@ -50,31 +46,4 @@ func NewBranchManager(gitService *GitService) *BranchManager {
 	return &BranchManager{
 		chain: handlerList[0],
 	}
-}
-
-// EnsureBranch ensures the correct branch is checked out for the story.
-func (m *BranchManager) EnsureBranch(ctx context.Context, storyNumber, storySlug string, force bool) error {
-	expectedBranch := fmt.Sprintf("%s-%s", storyNumber, storySlug)
-
-	slog.Info("Ensuring branch for story",
-		"story_number", storyNumber,
-		"story_slug", storySlug,
-		"expected_branch", expectedBranch,
-		"force", force)
-
-	branchCtx := handlers.NewBranchContext(storyNumber, force)
-	branchCtx.ExpectedBranch = expectedBranch
-
-	err := m.chain.Handle(ctx, branchCtx)
-	if err != nil {
-		slog.Error("Failed to ensure branch", "error", err)
-
-		return fmt.Errorf("handle branch chain for %s: %w", expectedBranch, err)
-	}
-
-	slog.Info("Branch operation completed successfully",
-		"action", branchCtx.Action,
-		"branch", expectedBranch)
-
-	return nil
 }

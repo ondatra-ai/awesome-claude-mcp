@@ -42,6 +42,6 @@ documents:
   source_tree: "./docs/architecture/source-tree.md"
   tech_stack: "./docs/architecture/tech-stack.md"
   prd: "./docs/prd.md"
-  user_roles: "./docs/prd/user-roles.md"
   architecture_yaml: "./bdd-cli/architecture.yaml"
   bdd_guidelines: "./docs/architecture/bdd-guidelines.md"
+  terms: "./bdd-cli/terms.yaml"

@@ -240,6 +240,15 @@ type DataCache struct { /* caching complexity */ }
   - `internal/adapters/github/client.go` → `github_cli_client.go` (GitHubCLIClient)
   - `internal/adapters/github/queries.go` → `graphql_builder.go` (GraphQLBuilder)
 
+## Interactive Testing with Terminal MCP
+
+When testing the app, use the terminal MCP to create an interactive bash session.
+Before launching the app, unset `CLAUDECODE` so the app can spawn Claude Code as a subprocess:
+
+```bash
+env -u CLAUDECODE ./your-app
+```
+
 ## Notes
 
 - The .gitignore is configured for Go projects

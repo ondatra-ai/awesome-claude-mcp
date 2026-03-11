@@ -1,0 +1,58 @@
+story:
+    id: "4.1"
+    title: Shared Document Editing
+    as_a: Claude User
+    i_want: Claude to edit Google Docs that I've shared with provided service account
+    so_that: I can edit my documents conversationally by just sharing them, without needing OAuth logins or copy-pasting content back and forth
+    status: PLANNED
+    stage: architecture
+    acceptance_criteria:
+        - id: AC-1
+          description: Claude must apply the requested edit and respond with a success message containing the document URL when a Claude User asks Claude to edit a document shared with the service account with Editor access.
+          steps:
+            - given:
+                - a Claude User has shared a Google Doc with the service account with Editor access
+            - when:
+                - the Claude User asks Claude to edit that document
+            - then:
+                - Claude applies the requested edit to the document
+                - and: Claude responds with a success message containing the document URL
+        - id: AC-2
+          description: Claude must respond with a message that includes the service account email address and step-by-step instructions for granting Editor access when a Claude User asks Claude to edit a document that has not been shared with the service account.
+          steps:
+            - given:
+                - a Claude User has NOT shared a Google Doc with the service account
+            - when:
+                - the Claude User asks Claude to edit that document
+            - then:
+                - Claude responds with a message containing the service account email address
+                - and: the message includes step-by-step instructions for granting Editor access
+        - id: AC-3
+          description: Claude must respond with a message containing the service account email address when a Claude User asks Claude which account to share their Google Docs with.
+          steps:
+            - given:
+                - a Claude User wants to know which account to share their Google Docs with
+            - when:
+                - the Claude User asks Claude which account to share their Google Docs with
+            - then:
+                - Claude responds with a message containing the service account email address
+        - id: AC-4
+          description: Claude must respond with an error message containing the error code DOCUMENT_NOT_FOUND and a statement that the document does not exist or has been deleted when a Claude User asks Claude to edit a document that does not exist or has been deleted.
+          steps:
+            - given:
+                - a Google Doc that does not exist or has been deleted
+            - when:
+                - a Claude User asks Claude to edit that document
+            - then:
+                - Claude responds with an error message containing the error code DOCUMENT_NOT_FOUND
+                - and: the error message states that the document does not exist or has been deleted
+        - id: AC-5
+          description: Claude must respond with an error message containing the error code PERMISSION_DENIED and instructions to re-share with Editor access when a Claude User asks Claude to edit a document shared with the service account as Viewer only.
+          steps:
+            - given:
+                - a Claude User has shared a Google Doc with the service account as Viewer only
+            - when:
+                - the Claude User asks Claude to edit that document
+            - then:
+                - Claude responds with an error message containing the error code PERMISSION_DENIED
+                - and: the error message includes instructions to re-share the document with Editor access

@@ -40,7 +40,7 @@ func formatScenarioSteps(scenario storyModels.TestScenario) string {
 			result.WriteString("  Given:\n")
 
 			for _, g := range step.Given {
-				result.WriteString(fmt.Sprintf("    - %s\n", g))
+				fmt.Fprintf(&result, "    - %s\n", g)
 			}
 		}
 
@@ -48,7 +48,7 @@ func formatScenarioSteps(scenario storyModels.TestScenario) string {
 			result.WriteString("  When:\n")
 
 			for _, w := range step.When {
-				result.WriteString(fmt.Sprintf("    - %s\n", w))
+				fmt.Fprintf(&result, "    - %s\n", w)
 			}
 		}
 
@@ -56,7 +56,7 @@ func formatScenarioSteps(scenario storyModels.TestScenario) string {
 			result.WriteString("  Then:\n")
 
 			for _, t := range step.Then {
-				result.WriteString(fmt.Sprintf("    - %s\n", t))
+				fmt.Fprintf(&result, "    - %s\n", t)
 			}
 		}
 	}

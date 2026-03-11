@@ -71,102 +71,12 @@ func ErrEmptyClientOutput(clientName string) error {
 	}
 }
 
-func ErrCreateTmpDirectoryFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "CREATE_TMP_DIRECTORY_FAILED",
-		Message:  "failed to create tmp directory",
-		Cause:    errors.Join(ErrCreateTmpDirectory, cause),
-	}
-}
-
-func ErrLoadDataFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "LOAD_DATA_FAILED",
-		Message:  "failed to load data",
-		Cause:    errors.Join(ErrLoadData, cause),
-	}
-}
-
 func ErrLoadPromptsFailed(cause error) error {
 	return &AppError{
 		Category: CategoryAI,
 		Code:     "LOAD_PROMPTS_FAILED",
 		Message:  "failed to load prompts",
 		Cause:    errors.Join(ErrLoadPrompts, cause),
-	}
-}
-
-func ErrGenerateContentFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "GENERATE_CONTENT_FAILED",
-		Message:  "failed to generate content",
-		Cause:    errors.Join(ErrGenerateContent, cause),
-	}
-}
-
-func ErrGenerateContentWithSystemPromptFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "GENERATE_CONTENT_WITH_SYSTEM_PROMPT_FAILED",
-		Message:  "failed to generate content with system prompt",
-		Cause:    errors.Join(ErrGenerateContent, cause),
-	}
-}
-
-func ErrWriteResponseFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "WRITE_RESPONSE_FILE_FAILED",
-		Message:  "failed to write response file",
-		Cause:    errors.Join(ErrWriteResponseFile, cause),
-	}
-}
-
-func ErrParseResponseFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "PARSE_RESPONSE_FAILED",
-		Message:  "failed to parse response",
-		Cause:    errors.Join(ErrParseResponse, cause),
-	}
-}
-
-func ErrValidationFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "VALIDATION_FAILED",
-		Message:  "validation failed",
-		Cause:    errors.Join(ErrValidation, cause),
-	}
-}
-
-func ErrYAMLFileNotFound(filePrefix, filePath string) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "YAML_FILE_NOT_FOUND",
-		Message:  filePrefix + " file not found: " + filePath,
-		Cause:    ErrFileNotFound,
-	}
-}
-
-func ErrParseYAMLFailed(filePrefix string, cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "PARSE_YAML_FAILED",
-		Message:  "failed to parse " + filePrefix + " YAML",
-		Cause:    errors.Join(ErrParseYAML, cause),
-	}
-}
-
-func ErrYAMLKeyNotFound(yamlKey string) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "YAML_KEY_NOT_FOUND",
-		Message:  yamlKey + " key not found in YAML",
-		Cause:    ErrKeyNotFoundInYAML,
 	}
 }
 
@@ -375,57 +285,12 @@ var (
 	ErrInvalidStoryFilenameSlug = errors.New("invalid story filename: slug cannot be empty")
 )
 
-func ErrDocumentPathNotConfigured(key string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "DOCUMENT_NOT_CONFIGURED",
-		Message:  "document path not configured for key: " + key,
-		Cause:    ErrDocumentNotConfigured,
-	}
-}
-
-func ErrLoadDocumentFailed(configKey, filepath string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "LOAD_DOCUMENT_FAILED",
-		Message:  "failed to load required architecture document " + configKey + " (from " + filepath + ")",
-		Cause:    errors.Join(ErrLoadDocument, cause),
-	}
-}
-
-func ErrLoadArchitectureFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "LOAD_ARCHITECTURE_FAILED",
-		Message:  "failed to load architecture document",
-		Cause:    errors.Join(ErrLoadDocument, cause),
-	}
-}
-
 func ErrLoadTemplateFileFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
 		Code:     "LOAD_TEMPLATE_FILE_FAILED",
 		Message:  "failed to load template file",
 		Cause:    errors.Join(ErrLoadTemplateFile, cause),
-	}
-}
-
-func ErrDocumentNotFound(filepath string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "DOCUMENT_NOT_FOUND",
-		Message:  "document not found: " + filepath,
-		Cause:    ErrLoadDocument,
-	}
-}
-
-func ErrReadDocumentFailed(filepath string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_DOCUMENT_FAILED",
-		Message:  "failed to read document " + filepath,
-		Cause:    errors.Join(ErrLoadDocument, cause),
 	}
 }
 
@@ -453,15 +318,6 @@ func ErrNoEligibleThreads(prNumber int) error {
 		Code:     "NO_ELIGIBLE_THREADS",
 		Message:  fmt.Sprintf("no eligible review threads found for PR %d", prNumber),
 		Cause:    ErrNoEligibleReviewThreads,
-	}
-}
-
-func ErrNoCommentsInThread(threadID string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "NO_COMMENTS",
-		Message:  "no comments found in thread " + threadID,
-		Cause:    ErrNoComments,
 	}
 }
 
@@ -673,6 +529,7 @@ var (
 	ErrInvalidModifier      = errors.New("invalid modifier type")
 	ErrEmptyCoverage        = errors.New("coverage value cannot be empty")
 	ErrInvalidCoverage      = errors.New("coverage value should be a percentage")
+	ErrACMissingSteps       = errors.New("acceptance criterion has no steps")
 )
 
 // Filesystem Errors.
@@ -734,24 +591,6 @@ var (
 	ErrUnmarshalYAML = errors.New("failed to unmarshal from YAML")
 )
 
-func ErrMarshalToYAMLFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "MARSHAL_YAML_FAILED",
-		Message:  "failed to marshal to YAML",
-		Cause:    errors.Join(ErrMarshalYAML, cause),
-	}
-}
-
-func ErrUnmarshalFromYAMLFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "UNMARSHAL_YAML_FAILED",
-		Message:  "failed to unmarshal from YAML",
-		Cause:    errors.Join(ErrUnmarshalYAML, cause),
-	}
-}
-
 func ErrNegativeMaxThinkingTokens(value int) error {
 	return &AppError{
 		Category: CategoryParsing,
@@ -777,28 +616,6 @@ func ErrToolInBothLists(tool string) error {
 		Message:  fmt.Sprintf("tool '%s' cannot be in both AllowedTools and DisallowedTools", tool),
 		Cause:    ErrInvalidOptions,
 	}
-}
-
-// Helper functions for error checking.
-func IsCategory(err error, category Category) bool {
-	var appErr *AppError
-	if errors.As(err, &appErr) {
-		return appErr.Category == category
-	}
-
-	return false
-}
-
-func IsAIError(err error) bool {
-	return IsCategory(err, CategoryAI)
-}
-
-func IsGitHubError(err error) bool {
-	return IsCategory(err, CategoryGitHub)
-}
-
-func IsParsingError(err error) bool {
-	return IsCategory(err, CategoryParsing)
 }
 
 // Parser Errors (for claudecode/internal/parser).
@@ -915,7 +732,8 @@ var (
 	ErrProcessNotRunning         = errors.New("process not running")
 	ErrInterruptNotSupported     = errors.New("interrupt not supported by windows")
 	ErrTransportRequired         = errors.New("transport is required")
-	ErrClaudeStreamNilMessage    = errors.New("claude stream returned nil message")
+	ErrClaudeStreamClosed        = errors.New("claude stream closed before receiving messages")
+	ErrClaudeStreamNoOutput      = errors.New("claude process produced no output")
 )
 
 func ErrWorkingDirectoryDoesNotExist(path string) error {
@@ -1187,15 +1005,6 @@ func ErrParseEpicYAMLFailed(epicFilePath string, cause error) error {
 		Code:     "PARSE_EPIC_YAML_FAILED",
 		Message:  "failed to parse epic YAML from " + epicFilePath,
 		Cause:    errors.Join(ErrParseEpicYAML, cause),
-	}
-}
-
-func ErrRegexFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "REGEX_ERROR",
-		Message:  "regex error",
-		Cause:    errors.Join(ErrRegexError, cause),
 	}
 }
 
@@ -1519,187 +1328,12 @@ func ErrUnrelatedBranchError(currentBranch, storyNumber string) error {
 	}
 }
 
-// Validation constructor functions.
-func ErrEmptyScenarioIDError(index int) error {
+func ErrACMissingStepsError(acID string) error {
 	return &AppError{
 		Category: CategoryParsing,
-		Code:     "EMPTY_SCENARIO_ID",
-		Message:  fmt.Sprintf("scenario %d: ID cannot be empty", index),
-		Cause:    ErrEmptyScenarioID,
-	}
-}
-
-func ErrNoCriteriaError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_CRITERIA",
-		Message:  fmt.Sprintf("scenario %s: must reference at least one acceptance criterion", scenarioID),
-		Cause:    ErrNoCriteria,
-	}
-}
-
-func ErrNoStepsError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_STEPS",
-		Message:  fmt.Sprintf("scenario %s: must have at least one step", scenarioID),
-		Cause:    ErrNoSteps,
-	}
-}
-
-func ErrNoKeywordSetError(scenarioID string, stepIdx int) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_KEYWORD_SET",
-		Message:  fmt.Sprintf("scenario %s, step %d: step must have at least one keyword set", scenarioID, stepIdx),
-		Cause:    ErrNoKeywordSet,
-	}
-}
-
-func ErrMultipleKeywordsError(scenarioID string, stepIdx int) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "MULTIPLE_KEYWORDS",
-		Message:  fmt.Sprintf("scenario %s, step %d: step must have exactly one keyword set", scenarioID, stepIdx),
-		Cause:    ErrMultipleKeywords,
-	}
-}
-
-func ErrNoGivenStepError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_GIVEN_STEP",
-		Message:  fmt.Sprintf("scenario %s: must have at least one 'Given' step", scenarioID),
-		Cause:    ErrNoGivenStep,
-	}
-}
-
-func ErrNoWhenStepError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_WHEN_STEP",
-		Message:  fmt.Sprintf("scenario %s: must have at least one 'When' step", scenarioID),
-		Cause:    ErrNoWhenStep,
-	}
-}
-
-func ErrNoThenStepError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_THEN_STEP",
-		Message:  fmt.Sprintf("scenario %s: must have at least one 'Then' step", scenarioID),
-		Cause:    ErrNoThenStep,
-	}
-}
-
-func ErrNoExamplesError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_EXAMPLES",
-		Message:  fmt.Sprintf("scenario %s: scenario outline must have at least one example", scenarioID),
-		Cause:    ErrNoExamples,
-	}
-}
-
-func ErrInvalidLevelError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_LEVEL",
-		Message: fmt.Sprintf(
-			"scenario %s: level must be integration or e2e (unit scenarios are not allowed in BDD)",
-			scenarioID,
-		),
-		Cause: ErrInvalidLevel,
-	}
-}
-
-func ErrInvalidPriorityError(scenarioID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_PRIORITY",
-		Message:  fmt.Sprintf("scenario %s: priority must be P0, P1, P2, or P3", scenarioID),
-		Cause:    ErrInvalidPriority,
-	}
-}
-
-func ErrUncoveredCriterionError(acID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "UNCOVERED_CRITERION",
-		Message:  fmt.Sprintf("acceptance criterion %s is not covered by any test scenario", acID),
-		Cause:    ErrUncoveredCriterion,
-	}
-}
-
-func ErrNoStatementsError(scenarioID string, stepIdx int, keyword string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "NO_STATEMENTS",
-		Message: fmt.Sprintf(
-			"scenario %s, step %d: %s must have at least one statement",
-			scenarioID,
-			stepIdx,
-			keyword,
-		),
-		Cause: ErrNoStatements,
-	}
-}
-
-func ErrEmptyStatementError(
-	scenarioID string,
-	stepIdx int,
-	keyword string,
-	stmtIdx int,
-) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "EMPTY_STATEMENT",
-		Message: fmt.Sprintf(
-			"scenario %s, step %d: %s statement[%d] cannot be empty",
-			scenarioID,
-			stepIdx,
-			keyword,
-			stmtIdx,
-		),
-		Cause: ErrEmptyStatement,
-	}
-}
-
-func ErrInvalidFirstStmtError(
-	scenarioID string,
-	stepIdx int,
-	keyword string,
-) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_FIRST_STMT",
-		Message: fmt.Sprintf(
-			"scenario %s, step %d: %s first statement must be main (not 'and' or 'but')",
-			scenarioID,
-			stepIdx,
-			keyword,
-		),
-		Cause: ErrInvalidFirstStmt,
-	}
-}
-
-func ErrInvalidFollowingStmtError(
-	scenarioID string,
-	stepIdx int,
-	keyword string,
-	stmtIdx int,
-) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_FOLLOWING_STMT",
-		Message: fmt.Sprintf(
-			"scenario %s, step %d: %s statement[%d] must be 'and' or 'but'",
-			scenarioID,
-			stepIdx,
-			keyword,
-			stmtIdx,
-		),
-		Cause: ErrInvalidFollowingStmt,
+		Code:     "AC_MISSING_STEPS",
+		Message:  fmt.Sprintf("AC %s has no steps", acID),
+		Cause:    ErrACMissingSteps,
 	}
 }
 
@@ -1709,24 +1343,6 @@ func ErrInvalidModifierError(modifierType string) error {
 		Code:     "INVALID_MODIFIER",
 		Message:  fmt.Sprintf("invalid modifier type: %s (must be 'and' or 'but')", modifierType),
 		Cause:    ErrInvalidModifier,
-	}
-}
-
-func ErrEmptyCoverageError(key string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "EMPTY_COVERAGE",
-		Message:  "coverage value for " + key + " cannot be empty",
-		Cause:    ErrEmptyCoverage,
-	}
-}
-
-func ErrInvalidCoverageError(key string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_COVERAGE",
-		Message:  "coverage value for " + key + " should be a percentage",
-		Cause:    ErrInvalidCoverage,
 	}
 }
 
@@ -1815,24 +1431,6 @@ func ErrUnfixedTestIssuesError(count int) error {
 	}
 }
 
-func ErrReadResultFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_RESULT_FILE_FAILED",
-		Message:  "failed to read result file",
-		Cause:    errors.Join(ErrReadResultFile, cause),
-	}
-}
-
-func ErrParseResultYAMLFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "PARSE_RESULT_YAML_FAILED",
-		Message:  "failed to parse result YAML",
-		Cause:    errors.Join(ErrParseResultYAML, cause),
-	}
-}
-
 // ErrImplementFailed wraps implementation errors.
 func ErrImplementFailed(cause error) error {
 	return &AppError{
@@ -1852,6 +1450,9 @@ var (
 	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
 	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
 	ErrSaveStoryVersion          = errors.New("failed to save story version")
+	ErrStageMismatch             = errors.New("story stage mismatch")
+	ErrWriteStoryFile            = errors.New("failed to write story file")
+	ErrNoPromptsForStage         = errors.New("no prompts found for stage")
 )
 
 func ErrLoadChecklistSystemPromptFailed(cause error) error {
@@ -1914,5 +1515,35 @@ func ErrSaveStoryVersionFailed(cause error) error {
 		Code:     "SAVE_STORY_VERSION_FAILED",
 		Message:  "failed to save story version",
 		Cause:    errors.Join(ErrSaveStoryVersion, cause),
+	}
+}
+
+func ErrStageMismatchError(storyID, currentStage, commandName, requiredStage string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "STAGE_MISMATCH",
+		Message: fmt.Sprintf(
+			"story %s is at stage %q, but %s requires stage %q — run the previous stage command first",
+			storyID, currentStage, commandName, requiredStage,
+		),
+		Cause: ErrStageMismatch,
+	}
+}
+
+func ErrWriteStoryFileFailed(cause error) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "WRITE_STORY_FILE_FAILED",
+		Message:  "failed to write story file",
+		Cause:    errors.Join(ErrWriteStoryFile, cause),
+	}
+}
+
+func ErrNoPromptsForStageFailed(stageID string) error {
+	return &AppError{
+		Category: CategoryInfrastructure,
+		Code:     "NO_PROMPTS_FOR_STAGE",
+		Message:  "no prompts found for stage: " + stageID,
+		Cause:    ErrNoPromptsForStage,
 	}
 }

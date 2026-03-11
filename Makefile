@@ -104,9 +104,11 @@ lint-docs: ## Validate YAML files against Yamale schemas
 	@echo "🔍 Validating user-story-description-checklist.yaml against schema..."
 	yamale -s bdd-cli/user-story-description-checklist-schema.yaml bdd-cli/user-story-description-checklist.yaml
 	@echo "🔍 Validating requirements.yaml against schema (strict mode)..."
-	yamale -s docs/requirements-schema.yaml docs/requirements.yaml
+	yamale -s bdd-cli/requirements-schema.yaml docs/requirements.yaml
 	@echo "🔍 Validating epic YAML files against schema (strict mode)..."
-	yamale -s docs/epics/jsons/epics-schema.yaml docs/epics/jsons/epic-*.yaml
+	yamale -s bdd-cli/epics-schema.yaml docs/epics/jsons/epic-*.yaml
+	@echo "🔍 Validating story YAML files against schema..."
+	yamale -s bdd-cli/story-schema.yaml --no-strict docs/stories/*.yaml
 	@echo "✅ Documentation validation completed!"
 
 lint: lint-backend lint-frontend lint-scripts lint-docs ## Run all linting checks

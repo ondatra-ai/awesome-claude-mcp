@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "terminal": {
+      "command": "npx",
+      "args": ["-y", "mcp-interactive-terminal"]
+    }
+  }
+}

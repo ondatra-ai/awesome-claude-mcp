@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"bmad-cli/internal/app/bootstrap"
+	"bmad-cli/internal/app/commands"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,10 @@ func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 	}
 
 	usCmd.AddCommand(newUSImplementCmd(container))
-	usCmd.AddCommand(newUSChecklistCmd(container))
+	usCmd.AddCommand(newUSCreateCmd(container))
+	usCmd.AddCommand(newUSRefineCmd(container))
+	usCmd.AddCommand(newUSArchitectureCmd(container))
+	usCmd.AddCommand(newUSFinalCheckCmd(container))
 
 	return usCmd
 }
@@ -58,39 +62,138 @@ func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
 	return implementCmd
 }
 
-func newUSChecklistCmd(container *bootstrap.Container) *cobra.Command {
-	checklistCmd := &cobra.Command{
-		Use:   "checklist [story-number]",
-		Short: "Validate user story against checklist",
-		Long: `Validate a user story against the validation checklist using AI.
-
-Each validation prompt from the checklist will be evaluated against the story,
-and results will be displayed as a table with PASS/WARN/FAIL status.
-
-Example:
-  bmad-cli us checklist 4.1
-  bmad-cli us checklist 4.1 --fix`,
-		Args: cobra.ExactArgs(1),
+// newUSValidationCmd creates a validation subcommand with --fix flag and signal handling.
+func newUSValidationCmd(
+	container *bootstrap.Container,
+	use string,
+	short string,
+	long string,
+	config commands.StageConfig,
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   use,
+		Short: short,
+		Long:  long,
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, stop := signal.NotifyContext(context.Background(),
 				os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
 			fix, _ := cmd.Flags().GetBool("fix")
-			err := container.USChecklistCmd.Execute(ctx, args[0], fix)
+
+			err := container.USValidationCmd.Execute(ctx, args[0], fix, config)
 
 			stop()
 
 			if err != nil {
-				return fmt.Errorf("us checklist command failed: %w", err)
+				return fmt.Errorf("%s command failed: %w", config.CommandName, err)
 			}
 
 			return nil
 		},
 	}
 
-	checklistCmd.Flags().Bool("fix", false,
+	cmd.Flags().Bool("fix", false,
 		"Enable interactive fix mode to resolve failed checks")
 
-	return checklistCmd
+	return cmd
+}
+
+func newUSCreateCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSValidationCmd(
+		container,
+		"create [story-number]",
+		"Create and validate a user story (Stage 1: Story Creation)",
+		`Extract a story from its epic and validate against Stage 1 (Story Creation)
+checklist prompts.
+
+The story is saved to docs/stories/ upon passing all checks.
+
+Example:
+  bmad-cli us create 4.1
+  bmad-cli us create 4.1 --fix`,
+		commands.StageConfig{
+			StageID:       "story_creation",
+			RequiredStage: "",
+			NextStage:     "refinement",
+			LoadFromEpic:  true,
+			StageName:     "Story Creation",
+			CommandName:   "us create",
+		},
+	)
+}
+
+func newUSRefineCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSValidationCmd(
+		container,
+		"refine [story-number]",
+		"Refine a user story (Stage 2: Refinement)",
+		`Load a story from docs/stories/ and validate against Stage 2 (Refinement)
+checklist prompts. Requires story to be at stage "refinement" (set by us create).
+
+Example:
+  bmad-cli us refine 4.1
+  bmad-cli us refine 4.1 --fix`,
+		commands.StageConfig{
+			StageID:       "refinement",
+			RequiredStage: "refinement",
+			NextStage:     "architecture",
+			LoadFromEpic:  false,
+			StageName:     "Refinement",
+			CommandName:   "us refine",
+		},
+	)
+}
+
+func newUSArchitectureCmd(container *bootstrap.Container) *cobra.Command {
+	return &cobra.Command{
+		Use:   "architecture [story-number]",
+		Short: "Architecture review (Stage 3: Architecture)",
+		Long: `Architecture review stage. No automated checks are defined yet.
+Advances the story stage from "architecture" to "final_check".
+
+Example:
+  bmad-cli us architecture 4.1`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := commands.StageConfig{
+				StageID:       "architecture",
+				RequiredStage: "architecture",
+				NextStage:     "final_check",
+				LoadFromEpic:  false,
+				StageName:     "Architecture",
+				CommandName:   "us architecture",
+			}
+
+			err := container.USValidationCmd.AdvanceStage(args[0], config)
+			if err != nil {
+				return fmt.Errorf("us architecture command failed: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+func newUSFinalCheckCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSValidationCmd(
+		container,
+		"final_check [story-number]",
+		"Final check validation (Stage 4: Final Check)",
+		`Load a story from docs/stories/ and validate against Stage 4 (Final Check)
+checklist prompts. Requires story to be at stage "final_check" (set by us architecture).
+
+Example:
+  bmad-cli us final_check 4.1
+  bmad-cli us final_check 4.1 --fix`,
+		commands.StageConfig{
+			StageID:       "ready_gate",
+			RequiredStage: "final_check",
+			NextStage:     "ready",
+			LoadFromEpic:  false,
+			StageName:     "Final Check",
+			CommandName:   "us final_check",
+		},
+	)
 }

@@ -27,15 +27,6 @@ func NewTemplateLoader[T any](templateFilePath string) *TemplateLoader[T] {
 	}
 }
 
-// WithFunctions adds custom template functions to the loader.
-func (l *TemplateLoader[T]) WithFunctions(funcMap template.FuncMap) *TemplateLoader[T] {
-	for name, fn := range funcMap {
-		l.funcMap[name] = fn
-	}
-
-	return l
-}
-
 // getCommonTemplateFunctions returns commonly used template functions.
 func getCommonTemplateFunctions() template.FuncMap {
 	// Start with Sprig's comprehensive function map
