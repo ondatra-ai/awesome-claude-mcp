@@ -2,7 +2,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -109,21 +108,6 @@ func BuildCommand(cliPath string, options *shared.Options, closeStdin bool) []st
 		// Streaming mode (Client interface)
 		cmd = append(cmd, "--input-format", "stream-json")
 	}
-
-	// Add all configuration options as CLI flags
-	if options != nil {
-		cmd = addOptionsToCommand(cmd, options)
-	}
-
-	return cmd
-}
-
-// BuildCommandWithPrompt constructs the CLI command for one-shot queries with prompt as argument.
-func BuildCommandWithPrompt(cliPath string, options *shared.Options, prompt string) []string {
-	cmd := []string{cliPath}
-
-	// Base arguments - always include these
-	cmd = append(cmd, "--output-format", "stream-json", "--verbose", "--print", prompt)
 
 	// Add all configuration options as CLI flags
 	if options != nil {
@@ -241,20 +225,6 @@ func addExtraFlags(cmd []string, options *shared.Options) []string {
 	return cmd
 }
 
-// ValidateNodeJS checks if Node.js is available.
-func ValidateNodeJS() error {
-	_, err := exec.LookPath("node")
-	if err != nil {
-		return shared.NewCLINotFoundError("node",
-			"Node.js is required for Claude CLI but was not found.\n\n"+
-				"Install Node.js from: https://nodejs.org/\n\n"+
-				"After installing Node.js, install Claude Code:\n"+
-				"  npm install -g @anthropic-ai/claude-code")
-	}
-
-	return nil
-}
-
 // ValidateWorkingDirectory checks if the working directory exists and is valid.
 func ValidateWorkingDirectory(cwd string) error {
 	if cwd == "" {
@@ -281,23 +251,4 @@ func ValidateWorkingDirectory(cwd string) error {
 	}
 
 	return nil
-}
-
-// DetectCLIVersion detects the Claude CLI version for compatibility checks.
-func DetectCLIVersion(ctx context.Context, cliPath string) (string, error) {
-	cmd := exec.CommandContext(ctx, cliPath, "--version")
-
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("get CLI version failed: %w", pkgerrors.ErrGetCLIVersionFailed(err))
-	}
-
-	version := strings.TrimSpace(string(output))
-
-	// Basic version format validation
-	if !strings.Contains(version, ".") {
-		return "", fmt.Errorf("invalid version format: %w", pkgerrors.ErrInvalidVersionFormat(version))
-	}
-
-	return version, nil
 }

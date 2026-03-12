@@ -44,8 +44,7 @@ type Transport struct {
 	cliPath    string
 	options    *shared.Options
 	closeStdin bool
-	promptArg  *string // For one-shot queries, prompt passed as CLI argument
-	entrypoint string  // CLAUDE_CODE_ENTRYPOINT value (sdk-go or sdk-go-client)
+	entrypoint string // CLAUDE_CODE_ENTRYPOINT value (sdk-go or sdk-go-client)
 
 	// Connection state
 	connected bool
@@ -77,18 +76,6 @@ func New(cliPath string, options *shared.Options, closeStdin bool, entrypoint st
 		closeStdin: closeStdin,
 		entrypoint: entrypoint,
 		parser:     parser.New(),
-	}
-}
-
-// NewWithPrompt creates a new subprocess transport for one-shot queries with prompt as CLI argument.
-func NewWithPrompt(cliPath string, options *shared.Options, prompt string) *Transport {
-	return &Transport{
-		cliPath:    cliPath,
-		options:    options,
-		closeStdin: true,
-		entrypoint: "sdk-go", // Query mode uses sdk-go
-		parser:     parser.New(),
-		promptArg:  &prompt,
 	}
 }
 
@@ -162,12 +149,6 @@ func (t *Transport) Connect(ctx context.Context) error {
 func (t *Transport) SendMessage(ctx context.Context, message shared.StreamMessage) error {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-
-	// For one-shot queries with promptArg, the prompt is already passed as CLI argument
-	// so we don't need to send any messages via stdin
-	if t.promptArg != nil {
-		return nil // No-op for one-shot queries
-	}
 
 	if !t.connected || t.stdin == nil {
 		return fmt.Errorf("transport not connected: %w", pkgerrors.ErrTransportNotConnected)
@@ -478,14 +459,7 @@ func (t *Transport) handleProcessExit(err error) error {
 // setupCommand builds and configures the command with arguments and environment.
 func (t *Transport) setupCommand(ctx context.Context) {
 	// Build command with all options
-	var args []string
-	if t.promptArg != nil {
-		// One-shot query with prompt as CLI argument
-		args = cli.BuildCommandWithPrompt(t.cliPath, t.options, *t.promptArg)
-	} else {
-		// Streaming mode or regular one-shot
-		args = cli.BuildCommand(t.cliPath, t.options, t.closeStdin)
-	}
+	args := cli.BuildCommand(t.cliPath, t.options, t.closeStdin)
 	// Create command context - subprocess execution required for Claude CLI SDK
 	t.cmd = exec.CommandContext(ctx, args[0], args[1:]...)
 
@@ -504,12 +478,10 @@ func (t *Transport) setupCommand(ctx context.Context) {
 // setupIOPipes sets up stdin, stdout, and stderr pipes for the command.
 func (t *Transport) setupIOPipes() error {
 	var err error
-	if t.promptArg == nil {
-		// Only create stdin pipe if we need to send messages via stdin
-		t.stdin, err = t.cmd.StdinPipe()
-		if err != nil {
-			return fmt.Errorf("create stdin pipe failed: %w", pkgerrors.ErrCreateStdinPipeFailed(err))
-		}
+
+	t.stdin, err = t.cmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("create stdin pipe failed: %w", pkgerrors.ErrCreateStdinPipeFailed(err))
 	}
 
 	t.stdout, err = t.cmd.StdoutPipe()

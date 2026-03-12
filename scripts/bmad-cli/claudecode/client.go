@@ -2,6 +2,7 @@ package claudecode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -12,6 +13,9 @@ import (
 )
 
 const defaultSessionID = "default"
+
+// ErrNoMoreMessages indicates the message iterator has no more messages.
+var ErrNoMoreMessages = errors.New("no more messages")
 
 // Client provides bidirectional streaming communication with Claude Code CLI.
 type Client interface {
@@ -27,13 +31,12 @@ type Client interface {
 
 // ClientImpl implements the Client interface.
 type ClientImpl struct {
-	mu              sync.RWMutex
-	transport       Transport
-	customTransport Transport // For testing with WithTransport
-	options         *Options
-	connected       bool
-	msgChan         <-chan Message
-	errChan         <-chan error
+	mu        sync.RWMutex
+	transport Transport
+	options   *Options
+	connected bool
+	msgChan   <-chan Message
+	errChan   <-chan error
 }
 
 // NewClient creates a new Client with the given options.
@@ -44,16 +47,6 @@ func NewClient(opts ...Option) Client {
 	}
 
 	return client
-}
-
-// NewClientWithTransport creates a new Client with a custom transport (for testing).
-func NewClientWithTransport(transport Transport, opts ...Option) Client {
-	options := NewOptions(opts...)
-
-	return &ClientImpl{
-		customTransport: transport,
-		options:         options,
-	}
 }
 
 // WithClient provides Go-idiomatic resource management equivalent to Python SDK's async context manager.
@@ -126,48 +119,6 @@ func WithClient(ctx context.Context, callback func(Client) error, opts ...Option
 	return callback(client)
 }
 
-// WithClientTransport provides Go-idiomatic resource management with a custom transport for testing.
-// This is the testing-friendly version of WithClient that accepts an explicit transport parameter.
-//
-// Usage in tests:
-//
-//	transport := newClientMockTransport()
-//	err := WithClientTransport(ctx, transport, func(client claudecode.Client) error {
-//	    return client.Query(ctx, "What is 2+2?")
-//	}, opts...)
-//
-// Parameters:
-//   - ctx: Context for connection management and cancellation
-//   - transport: Custom transport to use (typically a mock for testing)
-//   - callback: Function to execute with the connected client
-//   - opts: Optional client configuration options
-//
-// Returns an error if connection fails or if callback returns an error.
-// Disconnect errors are handled gracefully without overriding the original error from callback.
-func WithClientTransport(ctx context.Context, transport Transport, callback func(Client) error, opts ...Option) error {
-	if ctx.Err() != nil {
-		return fmt.Errorf("context error before client connect with transport: %w", ctx.Err())
-	}
-
-	client := NewClientWithTransport(transport, opts...)
-
-	err := client.Connect(ctx)
-	if err != nil {
-		return pkgerrors.ErrConnectClientFailed(err)
-	}
-
-	defer func() {
-		// Following Go idiom: cleanup errors don't override the original error
-		disconnectErr := client.Disconnect()
-		if disconnectErr != nil {
-			// Log cleanup errors but don't return them to preserve the original error
-			_ = disconnectErr // Explicitly acknowledge we're ignoring this error
-		}
-	}()
-
-	return callback(client)
-}
-
 // Connect establishes a connection to the Claude Code CLI.
 func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 	// Check context before acquiring lock
@@ -189,19 +140,14 @@ func (c *ClientImpl) Connect(ctx context.Context, _ ...StreamMessage) error {
 		return pkgerrors.ErrInvalidConfigurationError(err)
 	}
 
-	// Use custom transport if provided, otherwise create default
-	if c.customTransport != nil {
-		c.transport = c.customTransport
-	} else {
-		// Create default subprocess transport directly (like Python SDK)
-		cliPath, err := cli.FindCLI()
-		if err != nil {
-			return pkgerrors.ErrCLINotFoundError(err)
-		}
-
-		// Create subprocess transport for streaming mode (closeStdin=false)
-		c.transport = subprocess.New(cliPath, c.options, false, "sdk-go-client")
+	// Create default subprocess transport directly (like Python SDK)
+	cliPath, err := cli.FindCLI()
+	if err != nil {
+		return pkgerrors.ErrCLINotFoundError(err)
 	}
+
+	// Create subprocess transport for streaming mode (closeStdin=false)
+	c.transport = subprocess.New(cliPath, c.options, false, "sdk-go-client")
 
 	// Connect the transport
 	err = c.transport.Connect(ctx)

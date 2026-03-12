@@ -46,15 +46,6 @@ func New() *Parser {
 	}
 }
 
-// NewWithStrategies creates a parser with custom field parsing strategies.
-func NewWithStrategies(required, optional FieldParsingStrategy) *Parser {
-	return &Parser{
-		maxBufferSize:    MaxBufferSize,
-		requiredStrategy: required,
-		optionalStrategy: optional,
-	}
-}
-
 // ProcessLine processes a line of JSON input with speculative parsing.
 // Handles multiple JSON objects on single line and embedded newlines.
 func (p *Parser) ProcessLine(line string) ([]shared.Message, error) {
@@ -378,22 +369,4 @@ func (p *Parser) parseToolResultBlock(data map[string]any) (shared.ContentBlock,
 		Content:   data["content"],
 		IsError:   isError,
 	}, nil
-}
-
-// ParseMessages is a convenience function to parse multiple JSON lines.
-func ParseMessages(lines []string) ([]shared.Message, error) {
-	parser := New()
-
-	var allMessages []shared.Message
-
-	for i, line := range lines {
-		messages, err := parser.ProcessLine(line)
-		if err != nil {
-			return allMessages, fmt.Errorf("parse line failed: %w", pkgerrors.ErrParseLineFailed(i, err))
-		}
-
-		allMessages = append(allMessages, messages...)
-	}
-
-	return allMessages, nil
 }

@@ -5,6 +5,7 @@ import (
 	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/app/commands"
 	"bmad-cli/internal/app/factories"
+	"bmad-cli/internal/app/generators/implement"
 	"bmad-cli/internal/app/generators/validate"
 	"bmad-cli/internal/infrastructure/checklist"
 	"bmad-cli/internal/infrastructure/config"
@@ -18,11 +19,12 @@ import (
 )
 
 type Container struct {
-	Config          *config.ViperConfig
-	PRTriageCmd     *commands.PRTriageCommand
-	USImplementCmd  *commands.USImplementCommand
-	USValidationCmd *commands.USValidationCommand
-	RunDir          *fs.RunDirectory
+	Config              *config.ViperConfig
+	PRTriageCmd         *commands.PRTriageCommand
+	USImplementCmd      *commands.USImplementCommand
+	USMergeScenariosCmd *commands.USMergeScenariosCommand
+	USValidationCmd     *commands.USValidationCommand
+	RunDir              *fs.RunDirectory
 }
 
 func NewContainer() (*Container, error) {
@@ -54,10 +56,17 @@ func NewContainer() (*Container, error) {
 	// Setup PR triage command - required for operation
 	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
 
-	// Setup user story implement command
+	// Setup user story commands
 	gitService := git.NewGitService(shellExec)
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
+
+	mergeScenariosGen := implement.NewMergeScenariosGenerator(claudeClient, cfg)
+	usValidateCmd := commands.NewUSValidateCommand(storyLoader)
+	usMergeScenariosCmd := commands.NewUSMergeScenariosCommand(
+		storyLoader, mergeScenariosGen, runDir,
+	)
+
 	implementFactory := factories.NewImplementFactory(
 		branchManager,
 		storyLoader,
@@ -65,6 +74,8 @@ func NewContainer() (*Container, error) {
 		cfg,
 		runDir,
 		shellExec,
+		usValidateCmd,
+		usMergeScenariosCmd,
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
@@ -90,10 +101,11 @@ func NewContainer() (*Container, error) {
 	)
 
 	return &Container{
-		Config:          cfg,
-		PRTriageCmd:     prTriageCmd,
-		USImplementCmd:  usImplementCmd,
-		USValidationCmd: usValidationCmd,
-		RunDir:          runDir,
+		Config:              cfg,
+		PRTriageCmd:         prTriageCmd,
+		USImplementCmd:      usImplementCmd,
+		USMergeScenariosCmd: usMergeScenariosCmd,
+		USValidationCmd:     usValidationCmd,
+		RunDir:              runDir,
 	}, nil
 }
