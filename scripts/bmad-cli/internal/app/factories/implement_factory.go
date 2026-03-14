@@ -17,11 +17,18 @@ import (
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
+// StoryValidator validates that a story exists.
+type StoryValidator interface {
+	Execute(storyNumber string) error
+}
+
+// ScenarioMerger merges scenarios into requirements.
+type ScenarioMerger interface {
+	Execute(ctx context.Context, storyNumber string) error
+}
+
 // File permission constants.
-const (
-	fileModeDirectory = 0o755
-	fileModeReadWrite = 0o644
-)
+const fileModeReadWrite = 0o644
 
 // ImplementFactory orchestrates the user story implementation workflow.
 // It coordinates generators for each step of the implementation process.
@@ -32,6 +39,10 @@ type ImplementFactory struct {
 	config        *config.ViperConfig
 	runDir        *fs.RunDirectory
 	shellExec     *shell.CommandRunner
+
+	// Delegated commands
+	validateCmd       StoryValidator
+	mergeScenariosCmd ScenarioMerger
 
 	// Generators
 	mergeScenariosGen *implement.MergeScenariosGenerator
@@ -48,6 +59,8 @@ func NewImplementFactory(
 	cfg *config.ViperConfig,
 	runDir *fs.RunDirectory,
 	shellExec *shell.CommandRunner,
+	validateCmd StoryValidator,
+	mergeScenariosCmd ScenarioMerger,
 ) *ImplementFactory {
 	return &ImplementFactory{
 		branchManager:     branchManager,
@@ -56,6 +69,8 @@ func NewImplementFactory(
 		config:            cfg,
 		runDir:            runDir,
 		shellExec:         shellExec,
+		validateCmd:       validateCmd,
+		mergeScenariosCmd: mergeScenariosCmd,
 		mergeScenariosGen: implement.NewMergeScenariosGenerator(claudeClient, cfg),
 		testCodeGen:       implement.NewTestCodeGenerator(claudeClient, cfg),
 		testValidatorGen:  implement.NewTestValidatorGenerator(claudeClient, cfg),
@@ -122,7 +137,7 @@ func (f *ImplementFactory) executeImplementationSteps(
 ) error {
 	tmpDir := f.runDir.GetTmpOutPath()
 
-	err := f.runMergeScenariosIfEnabled(ctx, storyNumber, tmpDir, steps)
+	err := f.runMergeScenariosIfEnabled(ctx, storyNumber, steps)
 	if err != nil {
 		return err
 	}
@@ -147,14 +162,14 @@ func (f *ImplementFactory) executeImplementationSteps(
 
 func (f *ImplementFactory) runMergeScenariosIfEnabled(
 	ctx context.Context,
-	storyNumber, tmpDir string,
+	storyNumber string,
 	steps *implement.ExecutionSteps,
 ) error {
 	if !steps.MergeScenarios {
 		return nil
 	}
 
-	return f.executeMergeScenarios(ctx, storyNumber, tmpDir)
+	return f.executeMergeScenarios(ctx, storyNumber)
 }
 
 func (f *ImplementFactory) runGenerateTestsIfEnabled(
@@ -204,12 +219,10 @@ func (f *ImplementFactory) runImplementFeatureIfEnabled(
 func (f *ImplementFactory) validateStory(storyNumber string) error {
 	slog.Info("Step 1: Validating story file")
 
-	storySlug, err := f.storyLoader.GetStorySlug(storyNumber)
+	err := f.validateCmd.Execute(storyNumber)
 	if err != nil {
-		return pkgerrors.ErrGetStorySlugFailed(err)
+		return fmt.Errorf("validate story: %w", err)
 	}
-
-	slog.Info("✓ Story validated successfully", "slug", storySlug)
 
 	return nil
 }
@@ -237,35 +250,12 @@ func (f *ImplementFactory) createBranch(storyNumber string, force bool) error {
 func (f *ImplementFactory) executeMergeScenarios(
 	ctx context.Context,
 	storyNumber string,
-	tmpDir string,
 ) error {
 	slog.Info("Step 3: Merging scenarios into requirements")
 
-	outputFile := filepath.Join(tmpDir, "requirements-merged.yaml")
-
-	err := f.cloneRequirements(outputFile)
+	err := f.mergeScenariosCmd.Execute(ctx, storyNumber)
 	if err != nil {
-		return pkgerrors.ErrCloneRequirementsFileFailed(err)
-	}
-
-	storyDoc, err := f.storyLoader.Load(storyNumber)
-	if err != nil {
-		return pkgerrors.ErrLoadStoryFailed(err)
-	}
-
-	status, err := f.mergeScenariosGen.MergeScenarios(ctx, storyDoc, outputFile, tmpDir)
-	if err != nil {
-		return pkgerrors.ErrMergeScenariosFailed(err)
-	}
-
-	slog.Info("✅ Scenario merge completed",
-		"scenarios", status.ItemsProcessed,
-		"story", storyNumber,
-	)
-
-	err = f.replaceRequirements(outputFile)
-	if err != nil {
-		return pkgerrors.ErrReplaceRequirementsFailed(err)
+		return fmt.Errorf("merge scenarios: %w", err)
 	}
 
 	return nil
@@ -372,68 +362,6 @@ func (f *ImplementFactory) executeImplementFeature(
 	}
 
 	return pkgerrors.ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts)
-}
-
-func (f *ImplementFactory) cloneRequirements(outputFile string) error {
-	slog.Info("Cloning requirements file for safe testing", "output", outputFile)
-
-	outputDir := filepath.Dir(outputFile)
-
-	err := os.MkdirAll(outputDir, fileModeDirectory)
-	if err != nil {
-		return pkgerrors.ErrCreateOutputDirectoryFailed(outputDir, err)
-	}
-
-	data, err := os.ReadFile("docs/requirements.yaml")
-	if err != nil {
-		return pkgerrors.ErrReadRequirementsFileFailed(err)
-	}
-
-	err = os.WriteFile(outputFile, data, fileModeReadWrite)
-	if err != nil {
-		return pkgerrors.ErrWriteOutputFileFailed(outputFile, err)
-	}
-
-	slog.Info("✓ Cloned requirements file", "destination", outputFile)
-
-	return nil
-}
-
-func (f *ImplementFactory) replaceRequirements(mergedFile string) error {
-	const (
-		requirementsPath = "docs/requirements.yaml"
-		backupPath       = "docs/requirements.yaml.backup"
-	)
-
-	slog.Info("Replacing requirements file", "source", mergedFile)
-
-	originalData, err := os.ReadFile(requirementsPath)
-	if err != nil {
-		return pkgerrors.ErrReadOriginalFileFailed(err)
-	}
-
-	err = os.WriteFile(backupPath, originalData, fileModeReadWrite)
-	if err != nil {
-		return pkgerrors.ErrCreateBackupFileFailed(err)
-	}
-
-	slog.Info("✓ Created backup", "path", backupPath)
-
-	mergedData, err := os.ReadFile(mergedFile)
-	if err != nil {
-		return pkgerrors.ErrReadMergedFileFailed(err)
-	}
-
-	err = os.WriteFile(requirementsPath, mergedData, fileModeReadWrite)
-	if err != nil {
-		_ = os.WriteFile(requirementsPath, originalData, fileModeReadWrite) // Restore
-
-		return pkgerrors.ErrReplaceFileFailed(err)
-	}
-
-	slog.Info("✓ Replaced requirements with merged scenarios", "path", requirementsPath)
-
-	return nil
 }
 
 func (f *ImplementFactory) runTests(ctx context.Context, phase string) (string, error) {

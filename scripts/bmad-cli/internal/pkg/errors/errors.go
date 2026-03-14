@@ -536,7 +536,6 @@ var (
 var (
 	ErrCreateDirectory       = errors.New("failed to create directory")
 	ErrCheckWorkingDirectory = errors.New("failed to check working directory")
-	ErrGetCLIVersion         = errors.New("failed to get CLI version")
 	ErrReadConfig            = errors.New("failed to read config")
 )
 
@@ -555,24 +554,6 @@ func ErrCheckWorkingDirectoryFailed(cause error) error {
 		Code:     "CHECK_WORKING_DIRECTORY_FAILED",
 		Message:  "failed to check working directory",
 		Cause:    errors.Join(ErrCheckWorkingDirectory, cause),
-	}
-}
-
-func ErrGetCLIVersionFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "GET_CLI_VERSION_FAILED",
-		Message:  "failed to get CLI version",
-		Cause:    errors.Join(ErrGetCLIVersion, cause),
-	}
-}
-
-func ErrInvalidVersionFormat(version string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "INVALID_VERSION_FORMAT",
-		Message:  "invalid version format: " + version,
-		Cause:    ErrGetCLIVersion,
 	}
 }
 
@@ -622,7 +603,6 @@ func ErrToolInBothLists(tool string) error {
 var (
 	ErrBufferOverflow    = errors.New("buffer overflow")
 	ErrParseContentBlock = errors.New("failed to parse content block")
-	ErrParseLine         = errors.New("failed to parse line")
 )
 
 func ErrBufferSizeExceeded(bufferSize, maxSize int) error {
@@ -640,15 +620,6 @@ func ErrParseContentBlockFailed(index int, cause error) error {
 		Code:     "PARSE_CONTENT_BLOCK_FAILED",
 		Message:  fmt.Sprintf("failed to parse content block %d", index),
 		Cause:    errors.Join(ErrParseContentBlock, cause),
-	}
-}
-
-func ErrParseLineFailed(lineIndex int, cause error) error {
-	return &AppError{
-		Category: CategoryParser,
-		Code:     "PARSE_LINE_FAILED",
-		Message:  fmt.Sprintf("error parsing line %d", lineIndex),
-		Cause:    errors.Join(ErrParseLine, cause),
 	}
 }
 
@@ -731,7 +702,6 @@ var (
 	ErrTransportNotConnected     = errors.New("transport not connected or stdin closed")
 	ErrProcessNotRunning         = errors.New("process not running")
 	ErrInterruptNotSupported     = errors.New("interrupt not supported by windows")
-	ErrTransportRequired         = errors.New("transport is required")
 	ErrClaudeStreamClosed        = errors.New("claude stream closed before receiving messages")
 	ErrClaudeStreamNoOutput      = errors.New("claude process produced no output")
 )
@@ -805,30 +775,6 @@ func ErrCloseTransportFailed(cause error) error {
 		Code:     "CLOSE_TRANSPORT_FAILED",
 		Message:  "failed to close transport",
 		Cause:    errors.Join(ErrCloseTransport, cause),
-	}
-}
-
-// Query Errors (for claudecode).
-var (
-	ErrCreateQueryTransport = errors.New("failed to create query transport")
-	ErrSendMessage          = errors.New("failed to send message")
-)
-
-func ErrCreateQueryTransportFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParser,
-		Code:     "CREATE_QUERY_TRANSPORT_FAILED",
-		Message:  "failed to create query transport",
-		Cause:    errors.Join(ErrCreateQueryTransport, cause),
-	}
-}
-
-func ErrSendMessageFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParser,
-		Code:     "SEND_MESSAGE_FAILED",
-		Message:  "failed to send message",
-		Cause:    errors.Join(ErrSendMessage, cause),
 	}
 }
 
