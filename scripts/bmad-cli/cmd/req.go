@@ -37,15 +37,7 @@ func newReqGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
 			fix, _ := cmd.Flags().GetBool("fix")
 			all, _ := cmd.Flags().GetBool("all")
 
-			var err error
-
-			if fix || all {
-				// Use checklist-based validation
-				err = container.ReqValidationCmd.Execute(ctx, requirements, fix, all)
-			} else {
-				// Use existing generate-only behavior
-				err = container.ReqGenerateTestsCmd.Execute(ctx, requirements)
-			}
+			err := container.ReqValidationCmd.Execute(ctx, requirements, fix, all)
 
 			stop()
 

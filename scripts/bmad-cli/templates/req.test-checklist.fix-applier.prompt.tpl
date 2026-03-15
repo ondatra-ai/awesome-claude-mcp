@@ -2,6 +2,7 @@
 
 **Scenario ID:** {{.SubjectID}}
 **Description:** {{.Subject.Description}}
+**Test File Path:** {{.Subject.TestFilePath}}
 
 ### Current Test Content
 {{- if .Subject.ArchitectureContent }}

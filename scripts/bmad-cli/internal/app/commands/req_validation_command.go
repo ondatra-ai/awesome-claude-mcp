@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 
 	"bmad-cli/internal/app/generators/validate"
 	checklistmodels "bmad-cli/internal/domain/models/checklist"
@@ -21,6 +23,7 @@ const (
 	reqMaxRefinementIterations    = 3
 	reqSeparatorWidth             = 80
 	testFilePermissions           = 0o644
+	testDirPermissions            = 0o755
 )
 
 // ReqValidationCommand validates generated tests against BDD scenarios using checklists.
@@ -381,10 +384,20 @@ func (c *ReqValidationCommand) applyTestFix(
 		return false, pkgerrors.ErrSaveStoryVersionFailed(err)
 	}
 
+	// Write to working directory
+	if scenario.TestFilePath != "" {
+		writeErr := writeTestFile(scenario.TestFilePath, content)
+		if writeErr != nil {
+			return false, fmt.Errorf("failed to write test file: %w", writeErr)
+		}
+
+		console.Printf("\nTest file written to: %s\n", scenario.TestFilePath)
+	}
+
 	// Update scenario content for next iteration
 	scenario.ArchitectureContent = content
 
-	console.Printf("\nFix applied. Saved as version %d.\n", versionMgr.GetCurrentVersion())
+	console.Printf("Fix applied. Saved as version %d.\n", versionMgr.GetCurrentVersion())
 	console.Println("Re-running validation...")
 
 	return true, nil
@@ -392,19 +405,49 @@ func (c *ReqValidationCommand) applyTestFix(
 
 // loadTestContent reads the existing test file content into the scenario.
 func (c *ReqValidationCommand) loadTestContent(scenario *template.TestGenerationData) {
-	if scenario.RequirementsFile == "" {
-		return
-	}
-
-	// Try to read from implementation_status.file_path if set
-	// For now, just leave ArchitectureContent empty if no file exists
 	if scenario.ArchitectureContent != "" {
 		return
 	}
 
-	// Try common test file paths based on scenario ID
-	// This is a best-effort read - if no file exists, we start with empty content
-	slog.Debug("No existing test content for scenario", "scenario_id", scenario.ScenarioID)
+	if scenario.TestFilePath == "" {
+		slog.Debug("No test file path for scenario", "scenario_id", scenario.ScenarioID)
+
+		return
+	}
+
+	data, err := os.ReadFile(scenario.TestFilePath)
+	if err != nil {
+		slog.Debug("No existing test file on disk",
+			"scenario_id", scenario.ScenarioID,
+			"path", scenario.TestFilePath,
+			"error", err,
+		)
+
+		return
+	}
+
+	scenario.ArchitectureContent = string(data)
+	slog.Info("Loaded existing test content",
+		"scenario_id", scenario.ScenarioID,
+		"path", scenario.TestFilePath,
+	)
+}
+
+// writeTestFile writes content to the test file path, creating directories as needed.
+func writeTestFile(filePath string, content string) error {
+	dir := filepath.Dir(filePath)
+
+	err := os.MkdirAll(dir, testDirPermissions)
+	if err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", dir, err)
+	}
+
+	err = os.WriteFile(filePath, []byte(content), testFilePermissions)
+	if err != nil {
+		return fmt.Errorf("failed to write file %s: %w", filePath, err)
+	}
+
+	return nil
 }
 
 func (c *ReqValidationCommand) getFirstFailedCheck(

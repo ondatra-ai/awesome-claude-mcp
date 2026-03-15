@@ -25,7 +25,6 @@ type Container struct {
 	USImplementCmd      *commands.USImplementCommand
 	USMergeScenariosCmd *commands.USMergeScenariosCommand
 	USValidationCmd     *commands.USValidationCommand
-	ReqGenerateTestsCmd *commands.ReqGenerateTestsCommand
 	ReqValidationCmd    *commands.ReqValidationCommand
 	RunDir              *fs.RunDirectory
 }
@@ -85,10 +84,6 @@ func NewContainer() (*Container, error) {
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
-	// Setup requirements commands
-	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg)
-	reqGenerateTestsCmd := commands.NewReqGenerateTestsCommand(testCodeGen, runDir)
-
 	usValidationCmd := createUSValidationCommand(
 		epicLoader, storyLoader, claudeClient, cfg, userInputCollector, runDir,
 	)
@@ -103,7 +98,6 @@ func NewContainer() (*Container, error) {
 		USImplementCmd:      usImplementCmd,
 		USMergeScenariosCmd: usMergeScenariosCmd,
 		USValidationCmd:     usValidationCmd,
-		ReqGenerateTestsCmd: reqGenerateTestsCmd,
 		ReqValidationCmd:    reqValidationCmd,
 		RunDir:              runDir,
 	}, nil

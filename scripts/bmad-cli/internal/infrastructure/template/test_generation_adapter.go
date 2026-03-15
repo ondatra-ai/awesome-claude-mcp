@@ -16,6 +16,7 @@ type TestGenerationData struct {
 	RequirementsFile    string      // Path to requirements file to update
 	ArchitectureContent string      // Current architecture.yaml content for validation
 	ResultPath          string      // Path for FILE_START/FILE_END output markers
+	TestFilePath        string      // Path where test file lives (e.g., "tests/e2e/E2E-021.spec.ts")
 }
 
 // TestArchUpdateData represents data needed for architecture update prompt templates.

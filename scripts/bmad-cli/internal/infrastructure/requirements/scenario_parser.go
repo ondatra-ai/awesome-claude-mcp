@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -82,6 +83,12 @@ func (p *ScenarioParser) ParseScenarios(
 			filePath,
 		)
 
+		if scenario.ImplementationStatus.FilePath != "" {
+			testData.TestFilePath = scenario.ImplementationStatus.FilePath
+		} else {
+			testData.TestFilePath = deriveTestFilePath(scenarioID, scenario.Level)
+		}
+
 		scenarios = append(scenarios, testData)
 
 		slog.Debug("Found scenario", "scenario_id", scenarioID)
@@ -93,6 +100,11 @@ func (p *ScenarioParser) ParseScenarios(
 	)
 
 	return scenarios, nil
+}
+
+// deriveTestFilePath constructs a test file path from scenario ID and level.
+func deriveTestFilePath(scenarioID string, level string) string {
+	return fmt.Sprintf("tests/%s/%s.spec.ts", strings.ToLower(level), scenarioID)
 }
 
 // convertStepsToStrings converts []interface{} to []string.

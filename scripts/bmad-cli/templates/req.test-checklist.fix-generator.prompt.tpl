@@ -13,6 +13,7 @@ Read the following documents to understand context before generating fixes:
 **Description:** {{.Subject.Description}}
 **Level:** {{.Subject.Level}}
 **Service:** {{.Subject.Service}}
+**Test File Path:** {{.Subject.TestFilePath}}
 
 ### Steps
 {{.Subject.FormatSteps}}
