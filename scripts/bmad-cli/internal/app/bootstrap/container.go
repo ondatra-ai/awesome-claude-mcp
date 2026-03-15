@@ -13,6 +13,7 @@ import (
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/input"
+	"bmad-cli/internal/infrastructure/requirements"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -24,6 +25,7 @@ type Container struct {
 	USImplementCmd      *commands.USImplementCommand
 	USMergeScenariosCmd *commands.USMergeScenariosCommand
 	USValidationCmd     *commands.USValidationCommand
+	ReqValidationCmd    *commands.ReqValidationCommand
 	RunDir              *fs.RunDirectory
 }
 
@@ -61,6 +63,9 @@ func NewContainer() (*Container, error) {
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
 
+	// Setup user input collector (shared across commands)
+	userInputCollector := input.NewUserInputCollector()
+
 	mergeScenariosGen := implement.NewMergeScenariosGenerator(claudeClient, cfg)
 	usValidateCmd := commands.NewUSValidateCommand(storyLoader)
 	usMergeScenariosCmd := commands.NewUSMergeScenariosCommand(
@@ -79,15 +84,41 @@ func NewContainer() (*Container, error) {
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
-	// Setup user story validation command (replaces checklist command)
+	usValidationCmd := createUSValidationCommand(
+		epicLoader, storyLoader, claudeClient, cfg, userInputCollector, runDir,
+	)
+
+	reqValidationCmd := createReqValidationCommand(
+		claudeClient, cfg, userInputCollector, runDir,
+	)
+
+	return &Container{
+		Config:              cfg,
+		PRTriageCmd:         prTriageCmd,
+		USImplementCmd:      usImplementCmd,
+		USMergeScenariosCmd: usMergeScenariosCmd,
+		USValidationCmd:     usValidationCmd,
+		ReqValidationCmd:    reqValidationCmd,
+		RunDir:              runDir,
+	}, nil
+}
+
+func createUSValidationCommand(
+	epicLoader *epic.EpicLoader,
+	storyLoader *story.StoryLoader,
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+	userInputCollector *input.UserInputCollector,
+	runDir *fs.RunDirectory,
+) *commands.USValidationCommand {
 	checklistLoader := checklist.NewChecklistLoader(cfg)
 	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
 	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
 	fixApplier := validate.NewFixApplier(claudeClient, cfg)
-	userInputCollector := input.NewUserInputCollector()
 	tableRenderer := commands.NewTableRenderer()
 	storiesDir := cfg.GetString("paths.stories_dir")
-	usValidationCmd := commands.NewUSValidationCommand(
+
+	return commands.NewUSValidationCommand(
 		epicLoader,
 		storyLoader,
 		checklistLoader,
@@ -99,13 +130,46 @@ func NewContainer() (*Container, error) {
 		runDir,
 		storiesDir,
 	)
+}
 
-	return &Container{
-		Config:              cfg,
-		PRTriageCmd:         prTriageCmd,
-		USImplementCmd:      usImplementCmd,
-		USMergeScenariosCmd: usMergeScenariosCmd,
-		USValidationCmd:     usValidationCmd,
-		RunDir:              runDir,
-	}, nil
+func createReqValidationCommand(
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+	userInputCollector *input.UserInputCollector,
+	runDir *fs.RunDirectory,
+) *commands.ReqValidationCommand {
+	testChecklistPath := cfg.GetString("paths.test_checklist")
+	testChecklistLoader := checklist.NewChecklistLoaderWithPath(testChecklistPath)
+
+	testEvaluator := validate.NewChecklistEvaluatorWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_checklist_system"),
+		cfg.GetString("templates.prompts.test_checklist"),
+	)
+
+	testFixGenerator := validate.NewFixPromptGeneratorWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_fix_generator_system"),
+		cfg.GetString("templates.prompts.test_fix_generator"),
+	)
+
+	testFixApplier := validate.NewFixApplierWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_fix_applier_system"),
+		cfg.GetString("templates.prompts.test_fix_applier"),
+	)
+
+	tableRenderer := commands.NewTableRenderer()
+	scenarioParser := requirements.NewScenarioParser()
+
+	return commands.NewReqValidationCommand(
+		testChecklistLoader,
+		testEvaluator,
+		testFixGenerator,
+		testFixApplier,
+		userInputCollector,
+		tableRenderer,
+		scenarioParser,
+		runDir,
+	)
 }

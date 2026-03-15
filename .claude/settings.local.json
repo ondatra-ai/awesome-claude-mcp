@@ -35,13 +35,16 @@
       "Bash(git push:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr checks:*)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__terminal__create_session",
+      "mcp__terminal__send_command",
+      "mcp__terminal__read_output"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "terminal"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

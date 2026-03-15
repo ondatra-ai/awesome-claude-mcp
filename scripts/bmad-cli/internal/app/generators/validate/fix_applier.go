@@ -6,10 +6,7 @@ import (
 	"log/slog"
 	"os"
 
-	"gopkg.in/yaml.v3"
-
 	"bmad-cli/internal/adapters/ai"
-	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/template"
@@ -20,9 +17,10 @@ const fixApplierFilePermissions = 0o644
 
 // FixApplierData represents data needed for fix applier templates.
 type FixApplierData struct {
-	Story      *story.Story // Current story to modify
-	FixPrompt  string       // The fix prompt to apply
-	ResultPath string       // Path for FILE_START/FILE_END output
+	Subject    any    // Current subject to modify (e.g., *story.Story or *TestGenerationData)
+	SubjectID  string // Subject identifier
+	FixPrompt  string // The fix prompt to apply
+	ResultPath string // Path for FILE_START/FILE_END output
 }
 
 // FixApplier applies fix prompts to stories using AI.
@@ -35,108 +33,94 @@ type FixApplier struct {
 	tmpDir       string
 }
 
-// NewFixApplier creates a new fix applier.
+// NewFixApplier creates a new fix applier with config-based template paths.
 func NewFixApplier(aiClient ports.AIPort, cfg *config.ViperConfig) *FixApplier {
 	systemTemplatePath := cfg.GetString("templates.prompts.fix_applier_system")
 	userTemplatePath := cfg.GetString("templates.prompts.fix_applier")
 
+	return NewFixApplierWithPaths(aiClient, cfg, systemTemplatePath, userTemplatePath)
+}
+
+// NewFixApplierWithPaths creates a new fix applier with explicit template paths.
+func NewFixApplierWithPaths(
+	aiClient ports.AIPort,
+	cfg *config.ViperConfig,
+	systemPath, userPath string,
+) *FixApplier {
 	return &FixApplier{
 		aiClient:     aiClient,
 		config:       cfg,
 		modeFactory:  ai.NewModeFactory(cfg),
-		systemLoader: template.NewTemplateLoader[FixApplierData](systemTemplatePath),
-		userLoader:   template.NewTemplateLoader[FixApplierData](userTemplatePath),
+		systemLoader: template.NewTemplateLoader[FixApplierData](systemPath),
+		userLoader:   template.NewTemplateLoader[FixApplierData](userPath),
 	}
 }
 
-// Apply applies a fix prompt to the story and returns the updated story.
+// Apply applies a fix prompt to the subject and returns the extracted content as a string.
+// The caller is responsible for parsing the returned content into the appropriate type.
 func (a *FixApplier) Apply(
 	ctx context.Context,
-	storyData *story.Story,
+	subject any,
+	subjectID string,
 	fixPrompt string,
 	tmpDir string,
 	iteration int,
-) (*story.Story, error) {
+) (string, error) {
 	a.tmpDir = tmpDir
 
-	slog.Info("Applying fix prompt to story",
-		"storyID", storyData.ID,
+	slog.Info("Applying fix prompt",
+		"subjectID", subjectID,
 		"iteration", iteration,
 	)
 
-	resultPath := fmt.Sprintf("%s/apply-%s-iter%d-result.yaml", tmpDir, storyData.ID, iteration)
+	resultPath := fmt.Sprintf("%s/apply-%s-iter%d-result.yaml", tmpDir, subjectID, iteration)
 
 	promptData := FixApplierData{
-		Story:      storyData,
+		Subject:    subject,
+		SubjectID:  subjectID,
 		FixPrompt:  fixPrompt,
 		ResultPath: resultPath,
 	}
 
 	systemPrompt, err := a.systemLoader.LoadTemplate(promptData)
 	if err != nil {
-		return nil, pkgerrors.ErrLoadChecklistSystemPromptFailed(err)
+		return "", pkgerrors.ErrLoadChecklistSystemPromptFailed(err)
 	}
 
 	userPrompt, err := a.userLoader.LoadTemplate(promptData)
 	if err != nil {
-		return nil, pkgerrors.ErrLoadChecklistUserPromptFailed(err)
+		return "", pkgerrors.ErrLoadChecklistUserPromptFailed(err)
 	}
 
 	// Save prompts for debugging
-	a.savePromptFile(storyData.ID, iteration, "system", systemPrompt)
-	a.savePromptFile(storyData.ID, iteration, "user", userPrompt)
+	a.savePromptFile(subjectID, iteration, "system", systemPrompt)
+	a.savePromptFile(subjectID, iteration, "user", userPrompt)
 
 	mode := a.modeFactory.GetThinkMode()
 
 	response, err := a.aiClient.ExecutePromptWithSystem(ctx, systemPrompt, userPrompt, "", mode)
 	if err != nil {
-		return nil, pkgerrors.ErrChecklistAIEvaluationFailed(err)
+		return "", pkgerrors.ErrChecklistAIEvaluationFailed(err)
 	}
 
 	// Save response for debugging
-	a.savePromptFile(storyData.ID, iteration, "response", response)
+	a.savePromptFile(subjectID, iteration, "response", response)
 
-	// Parse updated acceptance criteria from response
-	updatedACs, err := a.parseUpdatedACs(response, resultPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse updated acceptance criteria: %w", err)
-	}
-
-	// Create updated story with new ACs
-	updatedStory := *storyData // Copy story
-	updatedStory.AcceptanceCriteria = updatedACs
-
-	slog.Info("Fix applied successfully",
-		"storyID", storyData.ID,
-		"originalACCount", len(storyData.AcceptanceCriteria),
-		"updatedACCount", len(updatedACs),
-	)
-
-	return &updatedStory, nil
-}
-
-// parseUpdatedACs extracts and parses updated acceptance criteria from AI response.
-func (a *FixApplier) parseUpdatedACs(response, resultPath string) ([]story.AcceptanceCriterion, error) {
+	// Extract content from response
 	content := ExtractFileContent(response, resultPath)
 	if content == "" {
-		return nil, pkgerrors.ErrFixApplierNoContentFound(resultPath)
+		return "", pkgerrors.ErrFixApplierNoContentFound(resultPath)
 	}
 
 	// Save the extracted content
-	err := os.WriteFile(resultPath, []byte(content), fixApplierFilePermissions)
-	if err != nil {
-		slog.Warn("Failed to save result file", "path", resultPath, "error", err)
+	writeErr := os.WriteFile(resultPath, []byte(content), fixApplierFilePermissions)
+	if writeErr != nil {
+		slog.Warn("Failed to save result file", "path", resultPath, "error", writeErr)
 	}
 
-	// Parse YAML as acceptance criteria array
-	var acs []story.AcceptanceCriterion
+	slog.Info("Fix applied successfully", "subjectID", subjectID)
 
-	err = yaml.Unmarshal([]byte(content), &acs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse acceptance criteria YAML: %w", err)
-	}
-
-	return acs, nil
+	return content, nil
 }
 
 // savePromptFile saves a prompt file for debugging.

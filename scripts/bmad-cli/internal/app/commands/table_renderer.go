@@ -18,6 +18,18 @@ const (
 	minTruncateLen        = 3
 )
 
+// ScenarioSummary holds per-scenario summary data for the compact report table.
+type ScenarioSummary struct {
+	ScenarioID string
+	Level      string
+	Service    string
+	TestFile   string
+	PassCount  int
+	FailCount  int
+	Total      int
+	Error      string
+}
+
 // TableRenderer renders checklist reports as ASCII tables.
 type TableRenderer struct {
 	writer io.Writer
@@ -42,11 +54,54 @@ func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport, showFixP
 	}
 }
 
+// RenderCompactSummary renders a single compact table summarizing all scenarios.
+func (r *TableRenderer) RenderCompactSummary(summaries []ScenarioSummary) {
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintln(r.writer, "TEST VALIDATION REPORT")
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+	_, _ = fmt.Fprintln(r.writer)
+
+	const columnPadding = 2
+
+	tabWriter := tabwriter.NewWriter(r.writer, 0, 0, columnPadding, ' ', 0)
+
+	_, _ = fmt.Fprintln(tabWriter, "SCENARIO\tLEVEL\tSERVICE\tTEST FILE\tPASS\tFAIL\tSTATUS")
+	_, _ = fmt.Fprintln(tabWriter, "--------\t-----\t-------\t---------\t----\t----\t------")
+
+	passedCount := 0
+
+	for _, summary := range summaries {
+		status := "FAIL"
+		if summary.Error != "" {
+			status = "ERROR"
+		} else if summary.FailCount == 0 {
+			status = "PASS"
+			passedCount++
+		}
+
+		_, _ = fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%d/%d\t%d/%d\t%s\n",
+			summary.ScenarioID, summary.Level, summary.Service, summary.TestFile,
+			summary.PassCount, summary.Total, summary.FailCount, summary.Total, status)
+	}
+
+	_ = tabWriter.Flush()
+	_, _ = fmt.Fprintln(r.writer)
+
+	if passedCount == len(summaries) {
+		_, _ = fmt.Fprintf(r.writer, "Total: %d/%d scenarios passed.\n", passedCount, len(summaries))
+	} else {
+		_, _ = fmt.Fprintf(r.writer, "Total: %d/%d scenarios passed. Use --fix to fix failures.\n",
+			passedCount, len(summaries))
+	}
+
+	_, _ = fmt.Fprintln(r.writer, separatorLine)
+}
+
 // renderHeader renders the report header.
 func (r *TableRenderer) renderHeader(report *checklist.ChecklistReport) {
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
-	_, _ = fmt.Fprintf(r.writer, "USER STORY CHECKLIST VALIDATION - Story %s: %s\n",
-		report.StoryNumber, report.StoryTitle)
+	_, _ = fmt.Fprintf(r.writer, "CHECKLIST VALIDATION - %s: %s\n",
+		report.SubjectID, report.SubjectTitle)
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
 	_, _ = fmt.Fprintln(r.writer)
 }

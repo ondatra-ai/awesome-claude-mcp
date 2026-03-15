@@ -280,12 +280,16 @@ func (c *USValidationCommand) runSingleIteration(
 		return false, fmt.Errorf("failed to load story version: %w", err)
 	}
 
+	acCount := len(currentStory.AcceptanceCriteria)
+
 	var report *checklistmodels.ChecklistReport
 
 	if fix {
-		report, err = c.checklistEvaluator.EvaluateUntilFailure(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
+		report, err = c.checklistEvaluator.EvaluateUntilFailure(
+			ctx, currentStory, currentStory.ID, currentStory.Title, acCount, valCtx.prompts, valCtx.tmpDir)
 	} else {
-		report, err = c.checklistEvaluator.Evaluate(ctx, currentStory, valCtx.prompts, valCtx.tmpDir)
+		report, err = c.checklistEvaluator.Evaluate(
+			ctx, currentStory, currentStory.ID, currentStory.Title, acCount, valCtx.prompts, valCtx.tmpDir)
 	}
 
 	if err != nil {
@@ -408,7 +412,8 @@ func (c *USValidationCommand) refineFixPrompt(
 	existingAnswers["_user_refinement"] = feedback
 
 	params := validate.GenerateParams{
-		StoryData:   currentStory,
+		Subject:     currentStory,
+		SubjectID:   currentStory.ID,
 		FailedCheck: failedCheck,
 		TmpDir:      tmpDir,
 		UserAnswers: existingAnswers,
@@ -452,7 +457,8 @@ func (c *USValidationCommand) generateFixPromptWithAnswers(
 
 	for iteration := 1; iteration <= maxClarificationIterations; iteration++ {
 		params := validate.GenerateParams{
-			StoryData:   storyData,
+			Subject:     storyData,
+			SubjectID:   storyData.ID,
 			FailedCheck: failedCheck,
 			TmpDir:      tmpDir,
 			UserAnswers: userAnswers,
@@ -509,12 +515,23 @@ func (c *USValidationCommand) applyFix(
 	currentStory *story.Story,
 	fixPrompt string,
 ) (bool, error) {
-	updatedStory, err := c.fixApplier.Apply(ctx, currentStory, fixPrompt, valCtx.tmpDir, valCtx.iteration)
+	content, err := c.fixApplier.Apply(ctx, currentStory, currentStory.ID, fixPrompt, valCtx.tmpDir, valCtx.iteration)
 	if err != nil {
 		return false, fmt.Errorf("failed to apply fix: %w", err)
 	}
 
-	_, err = valCtx.versionMgr.SaveNextVersion(updatedStory)
+	// Parse the returned content back into acceptance criteria
+	var updatedACs []story.AcceptanceCriterion
+
+	err = yaml.Unmarshal([]byte(content), &updatedACs)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse updated acceptance criteria: %w", err)
+	}
+
+	updatedStory := *currentStory
+	updatedStory.AcceptanceCriteria = updatedACs
+
+	_, err = valCtx.versionMgr.SaveNextVersion(&updatedStory)
 	if err != nil {
 		return false, pkgerrors.ErrSaveStoryVersionFailed(err)
 	}

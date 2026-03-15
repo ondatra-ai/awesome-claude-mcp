@@ -21,6 +21,7 @@ func Execute() {
 
 	rootCmd.AddCommand(NewPRCommand(container))
 	rootCmd.AddCommand(NewUSCommand(container))
+	rootCmd.AddCommand(NewReqCommand(container))
 
 	err = rootCmd.Execute()
 	if err != nil {

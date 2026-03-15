@@ -12,7 +12,6 @@ import (
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/domain/models/checklist"
-	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/template"
@@ -23,7 +22,8 @@ const fixPromptFilePermissions = 0o644
 
 // FixPromptData represents data needed for fix prompt generation templates.
 type FixPromptData struct {
-	Story       *story.Story
+	Subject     any
+	SubjectID   string
 	FailedCheck checklist.ValidationResult
 	ResultPath  string
 	UserAnswers map[string]string // Answers from user (nil if first iteration)
@@ -33,7 +33,8 @@ type FixPromptData struct {
 
 // GenerateParams contains parameters for fix prompt generation.
 type GenerateParams struct {
-	StoryData   *story.Story
+	Subject     any
+	SubjectID   string
 	FailedCheck checklist.ValidationResult // Single failed check to generate fix for
 	TmpDir      string
 	UserAnswers map[string]string // Answers from previous clarification round (nil on first call)
@@ -49,17 +50,26 @@ type FixPromptGenerator struct {
 	userLoader   *template.TemplateLoader[FixPromptData]
 }
 
-// NewFixPromptGenerator creates a new fix prompt generator.
+// NewFixPromptGenerator creates a new fix prompt generator with config-based template paths.
 func NewFixPromptGenerator(aiClient ports.AIPort, cfg *config.ViperConfig) *FixPromptGenerator {
 	systemTemplatePath := cfg.GetString("templates.prompts.fix_generator_system")
 	userTemplatePath := cfg.GetString("templates.prompts.fix_generator")
 
+	return NewFixPromptGeneratorWithPaths(aiClient, cfg, systemTemplatePath, userTemplatePath)
+}
+
+// NewFixPromptGeneratorWithPaths creates a new fix prompt generator with explicit template paths.
+func NewFixPromptGeneratorWithPaths(
+	aiClient ports.AIPort,
+	cfg *config.ViperConfig,
+	systemPath, userPath string,
+) *FixPromptGenerator {
 	return &FixPromptGenerator{
 		aiClient:     aiClient,
 		config:       cfg,
 		modeFactory:  ai.NewModeFactory(cfg),
-		systemLoader: template.NewTemplateLoader[FixPromptData](systemTemplatePath),
-		userLoader:   template.NewTemplateLoader[FixPromptData](userTemplatePath),
+		systemLoader: template.NewTemplateLoader[FixPromptData](systemPath),
+		userLoader:   template.NewTemplateLoader[FixPromptData](userPath),
 	}
 }
 
@@ -82,7 +92,7 @@ func (g *FixPromptGenerator) Generate(
 
 	g.logGenerationStart(params, promptIndex, iteration)
 
-	resultPath := fmt.Sprintf("%s/%02d-%s-fix-prompts.md", params.TmpDir, promptIndex, params.StoryData.ID)
+	resultPath := fmt.Sprintf("%s/%02d-%s-fix-prompts.md", params.TmpDir, promptIndex, params.SubjectID)
 	promptData := g.buildPromptData(params, resultPath, iteration)
 
 	response, err := g.executeAIGeneration(ctx, params, promptData, promptIndex, iteration)
@@ -95,7 +105,7 @@ func (g *FixPromptGenerator) Generate(
 
 func (g *FixPromptGenerator) logGenerationStart(params GenerateParams, promptIndex, iteration int) {
 	slog.Info("Generating fix prompt",
-		"story", params.StoryData.ID,
+		"subjectID", params.SubjectID,
 		"promptIndex", promptIndex,
 		"section", params.FailedCheck.SectionPath,
 		"iteration", iteration,
@@ -108,7 +118,8 @@ func (g *FixPromptGenerator) buildPromptData(params GenerateParams, resultPath s
 	docPaths := g.resolveDocPaths(params.FailedCheck.Docs)
 
 	return FixPromptData{
-		Story:       params.StoryData,
+		Subject:     params.Subject,
+		SubjectID:   params.SubjectID,
 		FailedCheck: params.FailedCheck,
 		ResultPath:  resultPath,
 		UserAnswers: params.UserAnswers,
@@ -154,8 +165,8 @@ func (g *FixPromptGenerator) executeAIGeneration(
 	}
 
 	suffix := fmt.Sprintf("fix-iter%d", iteration)
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-system", systemPrompt)
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-user", userPrompt)
+	g.savePromptFile(params.TmpDir, params.SubjectID, promptIndex, suffix+"-system", systemPrompt)
+	g.savePromptFile(params.TmpDir, params.SubjectID, promptIndex, suffix+"-user", userPrompt)
 
 	mode := g.modeFactory.GetThinkMode()
 
@@ -164,7 +175,7 @@ func (g *FixPromptGenerator) executeAIGeneration(
 		return "", pkgerrors.ErrChecklistAIEvaluationFailed(err)
 	}
 
-	g.savePromptFile(params.TmpDir, params.StoryData.ID, promptIndex, suffix+"-response", response)
+	g.savePromptFile(params.TmpDir, params.SubjectID, promptIndex, suffix+"-response", response)
 
 	return response, nil
 }
@@ -235,8 +246,8 @@ func (g *FixPromptGenerator) hasQuestions(response string) bool {
 	return strings.Contains(response, questionsStartMarker)
 }
 
-// stripMarkdownCodeFences removes leading ```yaml/``` fences from YAML content.
-func stripMarkdownCodeFences(content string) string {
+// StripMarkdownCodeFences removes leading ```yaml/``` fences from YAML content.
+func StripMarkdownCodeFences(content string) string {
 	lines := strings.Split(content, "\n")
 	if len(lines) >= 2 && strings.HasPrefix(strings.TrimSpace(lines[0]), "```") {
 		// Remove first line (```yaml or ```)
@@ -264,7 +275,7 @@ func (g *FixPromptGenerator) parseQuestions(response string) ([]checklist.Clarif
 		return nil, errQuestionsEndMarkerNotFound
 	}
 
-	yamlContent := stripMarkdownCodeFences(strings.TrimSpace(response[contentStart : contentStart+endIdx]))
+	yamlContent := StripMarkdownCodeFences(strings.TrimSpace(response[contentStart : contentStart+endIdx]))
 
 	// Parse YAML structure
 	var wrapper struct {

@@ -38,7 +38,7 @@ func (g *TestCodeGenerator) GenerateTests(
 	requirementsFile string,
 	tmpDir string,
 ) (GenerationStatus, error) {
-	slog.Info("⚙️  Starting test generation", "requirements_file", requirementsFile)
+	slog.Info("Starting test generation", "requirements_file", requirementsFile)
 
 	// Parse requirements file to find pending scenarios
 	pendingScenarios, err := g.parsePendingScenarios(requirementsFile)
@@ -48,7 +48,7 @@ func (g *TestCodeGenerator) GenerateTests(
 	}
 
 	if len(pendingScenarios) == 0 {
-		slog.Info("✓ No pending scenarios to implement")
+		slog.Info("No pending scenarios to implement")
 
 		return NewSuccessStatus(0, nil, "No pending scenarios"), nil
 	}
@@ -75,17 +75,19 @@ func (g *TestCodeGenerator) GenerateTests(
 			"scenario_id", scenario.ScenarioID,
 		)
 
-		if g.implementSingleTest(ctx, scenario, userPromptLoader, systemPromptLoader, tmpDir) {
-			implementedCount++
-
-			slog.Info("✓ Test implemented successfully",
-				"scenario_id", scenario.ScenarioID,
-				"duration", time.Since(startTime).Round(time.Second),
-			)
+		if !g.implementSingleTest(ctx, scenario, userPromptLoader, systemPromptLoader, tmpDir) {
+			continue
 		}
+
+		implementedCount++
+
+		slog.Info("Test implemented successfully",
+			"scenario_id", scenario.ScenarioID,
+			"duration", time.Since(startTime).Round(time.Second),
+		)
 	}
 
-	slog.Info("✅ Test generation completed",
+	slog.Info("Test generation completed",
 		"implemented_count", implementedCount,
 		"total_pending", len(pendingScenarios),
 	)
@@ -203,7 +205,7 @@ func (g *TestCodeGenerator) implementSingleTest(
 ) bool {
 	userPrompt, err := userLoader.LoadTemplate(scenario)
 	if err != nil {
-		slog.Warn("⚠️  Skipping scenario: failed to load user prompt",
+		slog.Warn("Skipping scenario: failed to load user prompt",
 			"scenario_id", scenario.ScenarioID,
 			"error", err,
 		)
@@ -216,7 +218,7 @@ func (g *TestCodeGenerator) implementSingleTest(
 
 	systemPrompt, err := systemLoader.LoadTemplate(scenario)
 	if err != nil {
-		slog.Warn("⚠️  Skipping scenario: failed to load system prompt",
+		slog.Warn("Skipping scenario: failed to load system prompt",
 			"scenario_id", scenario.ScenarioID,
 			"error", err,
 		)
@@ -227,7 +229,7 @@ func (g *TestCodeGenerator) implementSingleTest(
 	// Save system prompt
 	g.savePromptFile(tmpDir, scenario.ScenarioID+"-test-generation-system-prompt.txt", systemPrompt)
 
-	slog.Info("🤖 Calling Claude for test generation", "scenario_id", scenario.ScenarioID)
+	slog.Info("Calling Claude for test generation", "scenario_id", scenario.ScenarioID)
 
 	response, err := g.claudeClient.ExecutePromptWithSystem(
 		ctx,
@@ -243,7 +245,7 @@ func (g *TestCodeGenerator) implementSingleTest(
 	}
 
 	if err != nil {
-		slog.Warn("⚠️  Failed to implement test scenario",
+		slog.Warn("Failed to implement test scenario",
 			"scenario_id", scenario.ScenarioID,
 			"error", err,
 		)
@@ -262,6 +264,6 @@ func (g *TestCodeGenerator) savePromptFile(tmpDir, filename, content string) {
 	if err != nil {
 		slog.Warn("Failed to save file", "file", filePath, "error", err)
 	} else {
-		slog.Info("💾 File saved", "file", filePath)
+		slog.Info("File saved", "file", filePath)
 	}
 }
