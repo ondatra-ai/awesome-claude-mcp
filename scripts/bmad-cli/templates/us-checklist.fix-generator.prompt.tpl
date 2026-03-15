@@ -9,16 +9,16 @@ Read the following documents to understand context before generating fixes:
 
 ## Original User Story
 
-**Story ID:** {{.Story.ID}}
-**Title:** {{.Story.Title}}
+**Story ID:** {{.Subject.ID}}
+**Title:** {{.Subject.Title}}
 
-**As a** {{.Story.AsA}}
-**I want** {{.Story.IWant}}
-**So that** {{.Story.SoThat}}
+**As a** {{.Subject.AsA}}
+**I want** {{.Subject.IWant}}
+**So that** {{.Subject.SoThat}}
 
 ## Current Acceptance Criteria
 
-{{- range $i, $ac := .Story.AcceptanceCriteria }}
+{{- range $i, $ac := .Subject.AcceptanceCriteria }}
 {{ add $i 1 }}. **{{ $ac.ID }}:** {{ $ac.Description }}
 {{- end }}
 
@@ -79,13 +79,13 @@ Analyze if you have enough context to generate a confident fix.
 **If you can generate a confident fix**, output:
 
 === FILE_START: {{.ResultPath}} ===
-# Fix Prompt for Story {{.Story.ID}}: {{.Story.Title}}
+# Fix Prompt for Story {{.Subject.ID}}: {{.Subject.Title}}
 
 ## Instructions
 Apply the following changes to the acceptance criteria for this story.
 
 ## Original Acceptance Criteria
-{{- range $i, $ac := .Story.AcceptanceCriteria }}
+{{- range $i, $ac := .Subject.AcceptanceCriteria }}
 {{ add $i 1 }}. {{ $ac.ID }}: {{ $ac.Description }}
 {{- end }}
 
@@ -168,7 +168,7 @@ questions:
   - Two or more ACs appear to describe the same behavior (ask before merging)
   - Adding or removing ACs
 - **GENERATE** when just converting format:
-  - First person → third person (use EXACT role: "{{.Story.AsA}}")
+  - First person → third person (use EXACT role: "{{.Subject.AsA}}")
   - Vague words → specific outcomes
   - Adding missing Given/When/Then structure
 {{- end }}

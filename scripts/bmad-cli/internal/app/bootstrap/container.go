@@ -13,6 +13,7 @@ import (
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/input"
+	"bmad-cli/internal/infrastructure/requirements"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -25,6 +26,7 @@ type Container struct {
 	USMergeScenariosCmd *commands.USMergeScenariosCommand
 	USValidationCmd     *commands.USValidationCommand
 	ReqGenerateTestsCmd *commands.ReqGenerateTestsCommand
+	ReqValidationCmd    *commands.ReqValidationCommand
 	RunDir              *fs.RunDirectory
 }
 
@@ -80,16 +82,19 @@ func NewContainer() (*Container, error) {
 		shellExec,
 		usValidateCmd,
 		usMergeScenariosCmd,
-		userInputCollector,
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
 	// Setup requirements commands
-	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg, userInputCollector)
+	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg)
 	reqGenerateTestsCmd := commands.NewReqGenerateTestsCommand(testCodeGen, runDir)
 
 	usValidationCmd := createUSValidationCommand(
 		epicLoader, storyLoader, claudeClient, cfg, userInputCollector, runDir,
+	)
+
+	reqValidationCmd := createReqValidationCommand(
+		claudeClient, cfg, userInputCollector, runDir,
 	)
 
 	return &Container{
@@ -99,6 +104,7 @@ func NewContainer() (*Container, error) {
 		USMergeScenariosCmd: usMergeScenariosCmd,
 		USValidationCmd:     usValidationCmd,
 		ReqGenerateTestsCmd: reqGenerateTestsCmd,
+		ReqValidationCmd:    reqValidationCmd,
 		RunDir:              runDir,
 	}, nil
 }
@@ -129,5 +135,47 @@ func createUSValidationCommand(
 		tableRenderer,
 		runDir,
 		storiesDir,
+	)
+}
+
+func createReqValidationCommand(
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+	userInputCollector *input.UserInputCollector,
+	runDir *fs.RunDirectory,
+) *commands.ReqValidationCommand {
+	testChecklistPath := cfg.GetString("paths.test_checklist")
+	testChecklistLoader := checklist.NewChecklistLoaderWithPath(testChecklistPath)
+
+	testEvaluator := validate.NewChecklistEvaluatorWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_checklist_system"),
+		cfg.GetString("templates.prompts.test_checklist"),
+	)
+
+	testFixGenerator := validate.NewFixPromptGeneratorWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_fix_generator_system"),
+		cfg.GetString("templates.prompts.test_fix_generator"),
+	)
+
+	testFixApplier := validate.NewFixApplierWithPaths(
+		claudeClient, cfg,
+		cfg.GetString("templates.prompts.test_fix_applier_system"),
+		cfg.GetString("templates.prompts.test_fix_applier"),
+	)
+
+	tableRenderer := commands.NewTableRenderer()
+	scenarioParser := requirements.NewScenarioParser()
+
+	return commands.NewReqValidationCommand(
+		testChecklistLoader,
+		testEvaluator,
+		testFixGenerator,
+		testFixApplier,
+		userInputCollector,
+		tableRenderer,
+		scenarioParser,
+		runDir,
 	)
 }

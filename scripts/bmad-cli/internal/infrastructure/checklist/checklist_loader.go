@@ -16,10 +16,17 @@ type ChecklistLoader struct {
 	checklistPath string
 }
 
-// NewChecklistLoader creates a new checklist loader.
+// NewChecklistLoader creates a new checklist loader using config-based path.
 func NewChecklistLoader(cfg *config.ViperConfig) *ChecklistLoader {
 	return &ChecklistLoader{
 		checklistPath: cfg.GetString("paths.checklist"),
+	}
+}
+
+// NewChecklistLoaderWithPath creates a new checklist loader with an explicit path.
+func NewChecklistLoaderWithPath(path string) *ChecklistLoader {
+	return &ChecklistLoader{
+		checklistPath: path,
 	}
 }
 

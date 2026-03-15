@@ -34,8 +34,18 @@ func newReqGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
 			defer stop()
 
 			requirements, _ := cmd.Flags().GetString("requirements")
+			fix, _ := cmd.Flags().GetBool("fix")
+			all, _ := cmd.Flags().GetBool("all")
 
-			err := container.ReqGenerateTestsCmd.Execute(ctx, requirements)
+			var err error
+
+			if fix || all {
+				// Use checklist-based validation
+				err = container.ReqValidationCmd.Execute(ctx, requirements, fix, all)
+			} else {
+				// Use existing generate-only behavior
+				err = container.ReqGenerateTestsCmd.Execute(ctx, requirements)
+			}
 
 			stop()
 
@@ -49,6 +59,10 @@ func newReqGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
 
 	cmd.Flags().StringP("requirements", "r", defaultRequirementsFile,
 		"Path to requirements.yaml file")
+	cmd.Flags().Bool("fix", false,
+		"Enable interactive fix mode with checklist-based validation")
+	cmd.Flags().Bool("all", false,
+		"Validate all scenarios (not just pending)")
 
 	return cmd
 }

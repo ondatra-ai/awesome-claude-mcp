@@ -1,13 +1,13 @@
 ## Current Story
 
-**ID:** {{.Story.ID}}
-**Title:** {{.Story.Title}}
-**As a:** {{.Story.AsA}}
-**I want:** {{.Story.IWant}}
-**So that:** {{.Story.SoThat}}
+**ID:** {{.Subject.ID}}
+**Title:** {{.Subject.Title}}
+**As a:** {{.Subject.AsA}}
+**I want:** {{.Subject.IWant}}
+**So that:** {{.Subject.SoThat}}
 
 ### Current Acceptance Criteria
-{{range .Story.AcceptanceCriteria}}
+{{range .Subject.AcceptanceCriteria}}
 **{{.ID}}:**
 {{.Description}}
 {{end}}

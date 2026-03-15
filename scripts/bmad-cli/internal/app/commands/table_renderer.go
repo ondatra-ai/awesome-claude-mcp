@@ -45,8 +45,8 @@ func (r *TableRenderer) RenderReport(report *checklist.ChecklistReport, showFixP
 // renderHeader renders the report header.
 func (r *TableRenderer) renderHeader(report *checklist.ChecklistReport) {
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
-	_, _ = fmt.Fprintf(r.writer, "USER STORY CHECKLIST VALIDATION - Story %s: %s\n",
-		report.StoryNumber, report.StoryTitle)
+	_, _ = fmt.Fprintf(r.writer, "CHECKLIST VALIDATION - %s: %s\n",
+		report.SubjectID, report.SubjectTitle)
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
 	_, _ = fmt.Fprintln(r.writer)
 }

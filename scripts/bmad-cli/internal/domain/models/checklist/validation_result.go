@@ -32,10 +32,10 @@ type ValidationResult struct {
 
 // ChecklistReport represents the complete validation report.
 type ChecklistReport struct {
-	StoryNumber string             // e.g., "4.1"
-	StoryTitle  string             // e.g., "Shared Document Editing"
-	Results     []ValidationResult // All validation results
-	Summary     ReportSummary      // Aggregated summary
+	SubjectID    string             // e.g., "4.1" or "INT-011"
+	SubjectTitle string             // e.g., "Shared Document Editing"
+	Results      []ValidationResult // All validation results
+	Summary      ReportSummary      // Aggregated summary
 }
 
 // ReportSummary contains aggregated statistics for the report.

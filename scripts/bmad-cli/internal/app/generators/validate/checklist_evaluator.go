@@ -13,7 +13,6 @@ import (
 
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/domain/models/checklist"
-	"bmad-cli/internal/domain/models/story"
 	"bmad-cli/internal/domain/ports"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/docs"
@@ -46,15 +45,17 @@ func getDocKeyToConfigPath() map[string]string {
 
 // ChecklistPromptData represents data needed for checklist validation prompts.
 type ChecklistPromptData struct {
-	Story       *story.Story
-	Question    string
-	Rationale   string
-	ResultPath  string
-	Docs        map[string]*docs.ArchitectureDoc
-	FixTemplate string // Template for generating fix prompt when validation fails
+	Subject      any
+	SubjectID    string
+	SubjectTitle string
+	Question     string
+	Rationale    string
+	ResultPath   string
+	Docs         map[string]*docs.ArchitectureDoc
+	FixTemplate  string // Template for generating fix prompt when validation fails
 }
 
-// ChecklistEvaluator evaluates user stories against validation prompts using AI.
+// ChecklistEvaluator evaluates subjects against validation prompts using AI.
 type ChecklistEvaluator struct {
 	aiClient     ports.AIPort
 	config       *config.ViperConfig
@@ -62,59 +63,74 @@ type ChecklistEvaluator struct {
 	systemLoader *template.TemplateLoader[ChecklistPromptData]
 	userLoader   *template.TemplateLoader[ChecklistPromptData]
 	tmpDir       string
-	storyID      string
+	subjectID    string
 }
 
-// NewChecklistEvaluator creates a new checklist evaluator.
+// NewChecklistEvaluator creates a new checklist evaluator with config-based template paths.
 func NewChecklistEvaluator(aiClient ports.AIPort, cfg *config.ViperConfig) *ChecklistEvaluator {
 	systemTemplatePath := cfg.GetString("templates.prompts.checklist_system")
 	userTemplatePath := cfg.GetString("templates.prompts.checklist")
 
+	return NewChecklistEvaluatorWithPaths(aiClient, cfg, systemTemplatePath, userTemplatePath)
+}
+
+// NewChecklistEvaluatorWithPaths creates a new checklist evaluator with explicit template paths.
+func NewChecklistEvaluatorWithPaths(
+	aiClient ports.AIPort,
+	cfg *config.ViperConfig,
+	systemPath, userPath string,
+) *ChecklistEvaluator {
 	return &ChecklistEvaluator{
 		aiClient:     aiClient,
 		config:       cfg,
 		modeFactory:  ai.NewModeFactory(cfg),
-		systemLoader: template.NewTemplateLoader[ChecklistPromptData](systemTemplatePath),
-		userLoader:   template.NewTemplateLoader[ChecklistPromptData](userTemplatePath),
+		systemLoader: template.NewTemplateLoader[ChecklistPromptData](systemPath),
+		userLoader:   template.NewTemplateLoader[ChecklistPromptData](userPath),
 	}
 }
 
-// Evaluate evaluates all prompts against the given story.
+// Evaluate evaluates all prompts against the given subject.
 func (e *ChecklistEvaluator) Evaluate(
 	ctx context.Context,
-	storyData *story.Story,
+	subject any,
+	subjectID, subjectTitle string,
+	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 ) (*checklist.ChecklistReport, error) {
-	return e.evaluatePrompts(ctx, storyData, prompts, tmpDir, false)
+	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, acCount, prompts, tmpDir, false)
 }
 
 // EvaluateUntilFailure evaluates prompts sequentially and stops at the first FAIL status.
 // This is used for the iterative fix workflow where we want to fix one issue at a time.
 func (e *ChecklistEvaluator) EvaluateUntilFailure(
 	ctx context.Context,
-	storyData *story.Story,
+	subject any,
+	subjectID, subjectTitle string,
+	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 ) (*checklist.ChecklistReport, error) {
-	return e.evaluatePrompts(ctx, storyData, prompts, tmpDir, true)
+	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, acCount, prompts, tmpDir, true)
 }
 
 // evaluatePrompts is the shared implementation for Evaluate and EvaluateUntilFailure.
 func (e *ChecklistEvaluator) evaluatePrompts(
 	ctx context.Context,
-	storyData *story.Story,
+	subject any,
+	subjectID, subjectTitle string,
+	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 	stopOnFailure bool,
 ) (*checklist.ChecklistReport, error) {
 	e.tmpDir = tmpDir
-	e.storyID = storyData.ID
+	e.subjectID = subjectID
 
 	report := &checklist.ChecklistReport{
-		StoryNumber: storyData.ID,
-		StoryTitle:  storyData.Title,
-		Results:     make([]checklist.ValidationResult, 0, len(prompts)),
+		SubjectID:    subjectID,
+		SubjectTitle: subjectTitle,
+		Results:      make([]checklist.ValidationResult, 0, len(prompts)),
 	}
 
 	for promptIndex, promptCtx := range prompts {
@@ -124,7 +140,7 @@ func (e *ChecklistEvaluator) evaluatePrompts(
 			"section", promptCtx.GetFullSectionPath(),
 		)
 
-		result, err := e.evaluatePrompt(ctx, storyData, promptCtx, promptIndex+1)
+		result, err := e.evaluatePrompt(ctx, subject, subjectID, acCount, promptCtx, promptIndex+1)
 		if err != nil {
 			slog.Error("Failed to evaluate prompt", "error", err)
 			// Continue with other prompts, mark this one as failed
@@ -158,10 +174,12 @@ func (e *ChecklistEvaluator) evaluatePrompts(
 	return report, nil
 }
 
-// evaluatePrompt evaluates a single prompt against the story.
+// evaluatePrompt evaluates a single prompt against the subject.
 func (e *ChecklistEvaluator) evaluatePrompt(
 	ctx context.Context,
-	storyData *story.Story,
+	subject any,
+	subjectID string,
+	acCount int,
 	promptCtx checklist.PromptWithContext,
 	promptIndex int,
 ) (checklist.ValidationResult, error) {
@@ -172,7 +190,7 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	sectionPath := promptCtx.GetFullSectionPath()
 	safeSectionPath := strings.ReplaceAll(sectionPath, "/", "-")
 	resultPath := fmt.Sprintf("%s/%02d-%s-checklist-%s-result.yaml",
-		e.tmpDir, promptIndex, e.storyID, safeSectionPath)
+		e.tmpDir, promptIndex, e.subjectID, safeSectionPath)
 
 	// Load system prompt template (uses cached loader)
 	systemPrompt, err := e.systemLoader.LoadTemplate(ChecklistPromptData{})
@@ -182,7 +200,8 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 
 	// Load user prompt template with data (uses cached loader)
 	promptData := ChecklistPromptData{
-		Story:       storyData,
+		Subject:     subject,
+		SubjectID:   subjectID,
 		Question:    promptCtx.Prompt.Question,
 		Rationale:   promptCtx.Prompt.Rationale,
 		ResultPath:  resultPath,
@@ -214,7 +233,7 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	parsedResult := e.parseResultFile(response, resultPath)
 
 	// Compare with expected
-	status := e.compareAnswers(promptCtx.Prompt.Answer, parsedResult.Answer, storyData)
+	status := e.compareAnswers(promptCtx.Prompt.Answer, parsedResult.Answer, acCount)
 
 	// Only include fix prompt if validation failed
 	fixPrompt := ""
@@ -284,13 +303,13 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult
 // compareAnswers compares actual answer to expected and returns status.
 func (e *ChecklistEvaluator) compareAnswers(
 	expected, actual string,
-	storyData *story.Story,
+	acCount int,
 ) checklist.Status {
 	expected = strings.TrimSpace(strings.ToLower(expected))
 	actual = strings.TrimSpace(strings.ToLower(actual))
 
 	// Try specialized comparisons in order
-	if status, matched := e.trySpecializedComparison(expected, actual, storyData); matched {
+	if status, matched := e.trySpecializedComparison(expected, actual, acCount); matched {
 		return status
 	}
 
@@ -306,16 +325,16 @@ func (e *ChecklistEvaluator) compareAnswers(
 // Returns the status and whether a pattern was matched.
 func (e *ChecklistEvaluator) trySpecializedComparison(
 	expected, actual string,
-	storyData *story.Story,
+	acCount int,
 ) (checklist.Status, bool) {
 	// Handle special case: "= total AC count" or similar
 	if e.isACCountComparison(expected) {
-		return e.compareToACCount(expected, actual, storyData), true
+		return e.compareToACCount(expected, actual, acCount), true
 	}
 
 	// Handle percentage comparisons BEFORE generic ≥/≤ to catch "≥50% of total"
 	if strings.Contains(expected, "%") {
-		return e.comparePercentage(expected, actual, storyData), true
+		return e.comparePercentage(expected, actual, acCount), true
 	}
 
 	// Handle comparison operators
@@ -445,15 +464,15 @@ func (e *ChecklistEvaluator) compareRange(expected, actual string) checklist.Sta
 
 // comparePercentage handles percentage comparisons.
 // When expected contains "of total" (e.g., "≥50% of total"), the actual answer is treated
-// as a count and converted to a percentage using the story's AC count as the denominator.
+// as a count and converted to a percentage using the acCount as the denominator.
 // Otherwise the actual answer is treated directly as a percentage.
-func (e *ChecklistEvaluator) comparePercentage(expected, actual string, storyData *story.Story) checklist.Status {
+func (e *ChecklistEvaluator) comparePercentage(expected, actual string, acCount int) checklist.Status {
 	expectedPct, parsed := extractPercentageThreshold(expected)
 	if !parsed {
 		return checklist.StatusFail
 	}
 
-	actualPct, resolved := resolveActualPercentage(expected, actual, storyData)
+	actualPct, resolved := resolveActualPercentage(expected, actual, acCount)
 	if !resolved {
 		return checklist.StatusFail
 	}
@@ -491,8 +510,8 @@ func extractPercentageThreshold(expected string) (int, bool) {
 }
 
 // resolveActualPercentage extracts the actual percentage value from the AI answer.
-// When expected contains "of total", converts a count to percentage using AC count.
-func resolveActualPercentage(expected, actual string, storyData *story.Story) (int, bool) {
+// When expected contains "of total", converts a count to percentage using acCount.
+func resolveActualPercentage(expected, actual string, acCount int) (int, bool) {
 	actualPctRe := regexp.MustCompile(`(\d+)%?`)
 
 	actualMatches := actualPctRe.FindStringSubmatch(actual)
@@ -506,9 +525,8 @@ func resolveActualPercentage(expected, actual string, storyData *story.Story) (i
 	}
 
 	// When expected says "of total", the AI answers with a count (not a percentage).
-	// Convert count to percentage using the story's AC count as denominator.
+	// Convert count to percentage using acCount as denominator.
 	if strings.Contains(expected, "of total") {
-		acCount := len(storyData.AcceptanceCriteria)
 		if acCount == 0 {
 			return 0, false
 		}
@@ -522,10 +540,8 @@ func resolveActualPercentage(expected, actual string, storyData *story.Story) (i
 // compareToACCount handles "= total AC count" comparisons.
 func (e *ChecklistEvaluator) compareToACCount(
 	_, actual string,
-	storyData *story.Story,
+	acCount int,
 ) checklist.Status {
-	acCount := len(storyData.AcceptanceCriteria)
-
 	actualNum, err := strconv.Atoi(actual)
 	if err != nil {
 		return checklist.StatusFail
@@ -574,7 +590,7 @@ func (e *ChecklistEvaluator) savePromptFile(sectionPath string, promptIndex int,
 
 	// Replace slashes in section path with dashes for filename
 	safeSectionPath := strings.ReplaceAll(sectionPath, "/", "-")
-	filePath := fmt.Sprintf("%s/%02d-%s-checklist-%s-%s.txt", e.tmpDir, promptIndex, e.storyID, safeSectionPath, suffix)
+	filePath := fmt.Sprintf("%s/%02d-%s-checklist-%s-%s.txt", e.tmpDir, promptIndex, e.subjectID, safeSectionPath, suffix)
 
 	err := os.WriteFile(filePath, []byte(content), filePermissions)
 	if err != nil {
