@@ -12,6 +12,7 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/git"
+	"bmad-cli/internal/infrastructure/input"
 	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
@@ -61,6 +62,7 @@ func NewImplementFactory(
 	shellExec *shell.CommandRunner,
 	validateCmd StoryValidator,
 	mergeScenariosCmd ScenarioMerger,
+	userInputCollector *input.UserInputCollector,
 ) *ImplementFactory {
 	return &ImplementFactory{
 		branchManager:     branchManager,
@@ -72,7 +74,7 @@ func NewImplementFactory(
 		validateCmd:       validateCmd,
 		mergeScenariosCmd: mergeScenariosCmd,
 		mergeScenariosGen: implement.NewMergeScenariosGenerator(claudeClient, cfg),
-		testCodeGen:       implement.NewTestCodeGenerator(claudeClient, cfg),
+		testCodeGen:       implement.NewTestCodeGenerator(claudeClient, cfg, userInputCollector),
 		testValidatorGen:  implement.NewTestValidatorGenerator(claudeClient, cfg),
 		featureImplGen:    implement.NewFeatureImplementerGenerator(claudeClient, cfg),
 	}

@@ -22,6 +22,10 @@ templates:
     fix_generator_system: "./scripts/bmad-cli/templates/us-checklist.fix-generator.system.prompt.tpl"
     fix_applier: "./scripts/bmad-cli/templates/us-checklist.fix-applier.prompt.tpl"
     fix_applier_system: "./scripts/bmad-cli/templates/us-checklist.fix-applier.system.prompt.tpl"
+    validate_generated_test: "./scripts/bmad-cli/templates/req.validate-test.prompt.tpl"
+    validate_generated_test_system: "./scripts/bmad-cli/templates/req.validate-test.system.prompt.tpl"
+    apply_arch_update: "./scripts/bmad-cli/templates/req.apply-arch-update.prompt.tpl"
+    apply_arch_update_system: "./scripts/bmad-cli/templates/req.apply-arch-update.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
 

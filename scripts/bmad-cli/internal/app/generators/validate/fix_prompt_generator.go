@@ -235,8 +235,8 @@ func (g *FixPromptGenerator) hasQuestions(response string) bool {
 	return strings.Contains(response, questionsStartMarker)
 }
 
-// stripMarkdownCodeFences removes leading ```yaml/``` fences from YAML content.
-func stripMarkdownCodeFences(content string) string {
+// StripMarkdownCodeFences removes leading ```yaml/``` fences from YAML content.
+func StripMarkdownCodeFences(content string) string {
 	lines := strings.Split(content, "\n")
 	if len(lines) >= 2 && strings.HasPrefix(strings.TrimSpace(lines[0]), "```") {
 		// Remove first line (```yaml or ```)
@@ -264,7 +264,7 @@ func (g *FixPromptGenerator) parseQuestions(response string) ([]checklist.Clarif
 		return nil, errQuestionsEndMarkerNotFound
 	}
 
-	yamlContent := stripMarkdownCodeFences(strings.TrimSpace(response[contentStart : contentStart+endIdx]))
+	yamlContent := StripMarkdownCodeFences(strings.TrimSpace(response[contentStart : contentStart+endIdx]))
 
 	// Parse YAML structure
 	var wrapper struct {

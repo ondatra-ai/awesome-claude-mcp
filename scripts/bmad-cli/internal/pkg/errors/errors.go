@@ -271,6 +271,7 @@ var (
 	ErrParsePendingScenarios      = errors.New("failed to parse pending scenarios")
 	ErrReadRequirements           = errors.New("failed to read requirements file")
 	ErrUnmarshalRequirements      = errors.New("failed to unmarshal requirements YAML")
+	ErrArchUpdateNoContent        = errors.New("no content found in architecture update response")
 	ErrModifierMustHaveOneKey     = errors.New("modifier must have exactly one key")
 	ErrInvalidStepStatementFormat = errors.New("invalid step statement format")
 	ErrHEADDetached               = errors.New("HEAD is detached - please checkout a branch first")

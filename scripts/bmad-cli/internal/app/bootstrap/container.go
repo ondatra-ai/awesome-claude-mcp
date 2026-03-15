@@ -62,6 +62,9 @@ func NewContainer() (*Container, error) {
 	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
 
+	// Setup user input collector (shared across commands)
+	userInputCollector := input.NewUserInputCollector()
+
 	mergeScenariosGen := implement.NewMergeScenariosGenerator(claudeClient, cfg)
 	usValidateCmd := commands.NewUSValidateCommand(storyLoader)
 	usMergeScenariosCmd := commands.NewUSMergeScenariosCommand(
@@ -77,32 +80,16 @@ func NewContainer() (*Container, error) {
 		shellExec,
 		usValidateCmd,
 		usMergeScenariosCmd,
+		userInputCollector,
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
 	// Setup requirements commands
-	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg)
+	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg, userInputCollector)
 	reqGenerateTestsCmd := commands.NewReqGenerateTestsCommand(testCodeGen, runDir)
 
-	// Setup user story validation command (replaces checklist command)
-	checklistLoader := checklist.NewChecklistLoader(cfg)
-	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
-	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
-	fixApplier := validate.NewFixApplier(claudeClient, cfg)
-	userInputCollector := input.NewUserInputCollector()
-	tableRenderer := commands.NewTableRenderer()
-	storiesDir := cfg.GetString("paths.stories_dir")
-	usValidationCmd := commands.NewUSValidationCommand(
-		epicLoader,
-		storyLoader,
-		checklistLoader,
-		checklistEvaluator,
-		fixPromptGenerator,
-		fixApplier,
-		userInputCollector,
-		tableRenderer,
-		runDir,
-		storiesDir,
+	usValidationCmd := createUSValidationCommand(
+		epicLoader, storyLoader, claudeClient, cfg, userInputCollector, runDir,
 	)
 
 	return &Container{
@@ -114,4 +101,33 @@ func NewContainer() (*Container, error) {
 		ReqGenerateTestsCmd: reqGenerateTestsCmd,
 		RunDir:              runDir,
 	}, nil
+}
+
+func createUSValidationCommand(
+	epicLoader *epic.EpicLoader,
+	storyLoader *story.StoryLoader,
+	claudeClient *ai.ClaudeClient,
+	cfg *config.ViperConfig,
+	userInputCollector *input.UserInputCollector,
+	runDir *fs.RunDirectory,
+) *commands.USValidationCommand {
+	checklistLoader := checklist.NewChecklistLoader(cfg)
+	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
+	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
+	fixApplier := validate.NewFixApplier(claudeClient, cfg)
+	tableRenderer := commands.NewTableRenderer()
+	storiesDir := cfg.GetString("paths.stories_dir")
+
+	return commands.NewUSValidationCommand(
+		epicLoader,
+		storyLoader,
+		checklistLoader,
+		checklistEvaluator,
+		fixPromptGenerator,
+		fixApplier,
+		userInputCollector,
+		tableRenderer,
+		runDir,
+		storiesDir,
+	)
 }
