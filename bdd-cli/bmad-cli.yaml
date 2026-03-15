@@ -22,10 +22,12 @@ templates:
     fix_generator_system: "./scripts/bmad-cli/templates/us-checklist.fix-generator.system.prompt.tpl"
     fix_applier: "./scripts/bmad-cli/templates/us-checklist.fix-applier.prompt.tpl"
     fix_applier_system: "./scripts/bmad-cli/templates/us-checklist.fix-applier.system.prompt.tpl"
-    validate_generated_test: "./scripts/bmad-cli/templates/req.validate-test.prompt.tpl"
-    validate_generated_test_system: "./scripts/bmad-cli/templates/req.validate-test.system.prompt.tpl"
-    apply_arch_update: "./scripts/bmad-cli/templates/req.apply-arch-update.prompt.tpl"
-    apply_arch_update_system: "./scripts/bmad-cli/templates/req.apply-arch-update.system.prompt.tpl"
+    test_checklist: "./scripts/bmad-cli/templates/req.test-checklist.prompt.tpl"
+    test_checklist_system: "./scripts/bmad-cli/templates/req.test-checklist.system.prompt.tpl"
+    test_fix_generator: "./scripts/bmad-cli/templates/req.test-checklist.fix-generator.prompt.tpl"
+    test_fix_generator_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-generator.system.prompt.tpl"
+    test_fix_applier: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.prompt.tpl"
+    test_fix_applier_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.system.prompt.tpl"
   checklists:
     triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
 
@@ -35,6 +37,7 @@ paths:
   qa_gates: "docs/qa/gates"
   stories_dir: "docs/stories"
   checklist: "./bdd-cli/user-story-description-checklist.yaml"
+  test_checklist: "./bdd-cli/test-validation-checklist.yaml"
 
 testing:
   command: "make test-e2e"
