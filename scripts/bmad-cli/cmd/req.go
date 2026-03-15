@@ -36,8 +36,10 @@ func newReqGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
 			requirements, _ := cmd.Flags().GetString("requirements")
 			fix, _ := cmd.Flags().GetBool("fix")
 			all, _ := cmd.Flags().GetBool("all")
+			scenarioFilter, _ := cmd.Flags().GetString("scenario")
+			promptFilter, _ := cmd.Flags().GetString("prompt")
 
-			err := container.ReqValidationCmd.Execute(ctx, requirements, fix, all)
+			err := container.ReqValidationCmd.Execute(ctx, requirements, fix, all, scenarioFilter, promptFilter)
 
 			stop()
 
@@ -55,6 +57,10 @@ func newReqGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
 		"Enable interactive fix mode with checklist-based validation")
 	cmd.Flags().Bool("all", false,
 		"Validate all scenarios (not just pending)")
+	cmd.Flags().String("scenario", "",
+		"Validate only this scenario ID (e.g., E2E-025)")
+	cmd.Flags().String("prompt", "",
+		"Evaluate only this prompt section (e.g., file_existence)")
 
 	return cmd
 }

@@ -67,6 +67,8 @@ func (c *ReqValidationCommand) Execute(
 	requirementsFile string,
 	fix bool,
 	all bool,
+	scenarioFilter string,
+	promptFilter string,
 ) error {
 	console.Header("TEST VALIDATION", reqSeparatorWidth)
 
@@ -74,6 +76,11 @@ func (c *ReqValidationCommand) Execute(
 	scenarios, err := c.scenarioParser.ParseScenarios(requirementsFile, !all)
 	if err != nil {
 		return fmt.Errorf("failed to parse scenarios: %w", err)
+	}
+
+	scenarios, err = filterScenarios(scenarios, scenarioFilter, requirementsFile)
+	if err != nil {
+		return err
 	}
 
 	if len(scenarios) == 0 {
@@ -97,25 +104,142 @@ func (c *ReqValidationCommand) Execute(
 		return pkgerrors.ErrNoPromptsForStageFailed("test_validation")
 	}
 
+	prompts, err = filterPrompts(prompts, promptFilter)
+	if err != nil {
+		return err
+	}
+
 	slog.Info("Extracted test validation prompts", "count", len(prompts))
 
-	// Validate each scenario
-	for i, scenario := range scenarios {
-		console.Header(fmt.Sprintf("SCENARIO %d/%d: %s", i+1, len(scenarios), scenario.ScenarioID), reqSeparatorWidth)
-
-		err = c.validateScenario(ctx, scenario, prompts, fix)
-		if err != nil {
-			slog.Error("Failed to validate scenario",
-				"scenario_id", scenario.ScenarioID,
-				"error", err,
-			)
-			console.Printf("Error validating %s: %v\n", scenario.ScenarioID, err)
-		}
-	}
+	c.runValidation(ctx, scenarios, prompts, fix)
 
 	console.Header("TEST VALIDATION COMPLETE", reqSeparatorWidth)
 
 	return nil
+}
+
+// runValidation executes validation in fix or report mode.
+func (c *ReqValidationCommand) runValidation(
+	ctx context.Context,
+	scenarios []*template.TestGenerationData,
+	prompts []checklistmodels.PromptWithContext,
+	fix bool,
+) {
+	if fix {
+		for i, scenario := range scenarios {
+			console.Header(fmt.Sprintf("SCENARIO %d/%d: %s", i+1, len(scenarios), scenario.ScenarioID), reqSeparatorWidth)
+
+			err := c.validateScenario(ctx, scenario, prompts, fix)
+			if err != nil {
+				slog.Error("Failed to validate scenario",
+					"scenario_id", scenario.ScenarioID,
+					"error", err,
+				)
+				console.Printf("Error validating %s: %v\n", scenario.ScenarioID, err)
+			}
+		}
+
+		return
+	}
+
+	summaries := make([]ScenarioSummary, 0, len(scenarios))
+
+	for _, scenario := range scenarios {
+		summary := c.validateScenarioReport(ctx, scenario, prompts)
+		summaries = append(summaries, summary)
+	}
+
+	c.tableRenderer.RenderCompactSummary(summaries)
+}
+
+// filterScenarios filters scenarios by ID if a filter is provided.
+func filterScenarios(
+	scenarios []*template.TestGenerationData,
+	scenarioFilter string,
+	requirementsFile string,
+) ([]*template.TestGenerationData, error) {
+	if scenarioFilter == "" {
+		return scenarios, nil
+	}
+
+	var filtered []*template.TestGenerationData
+
+	for _, s := range scenarios {
+		if s.ScenarioID == scenarioFilter {
+			filtered = append(filtered, s)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return nil, pkgerrors.ErrScenarioNotFoundError(scenarioFilter, requirementsFile)
+	}
+
+	return filtered, nil
+}
+
+// filterPrompts filters prompts by CriterionID if a filter is provided.
+func filterPrompts(
+	prompts []checklistmodels.PromptWithContext,
+	promptFilter string,
+) ([]checklistmodels.PromptWithContext, error) {
+	if promptFilter == "" {
+		return prompts, nil
+	}
+
+	var filtered []checklistmodels.PromptWithContext
+
+	for _, p := range prompts {
+		if p.CriterionID == promptFilter {
+			filtered = append(filtered, p)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return nil, pkgerrors.ErrPromptNotFoundError(promptFilter, "test_validation")
+	}
+
+	return filtered, nil
+}
+
+// validateScenarioReport validates a single scenario and returns a compact summary (no console output).
+func (c *ReqValidationCommand) validateScenarioReport(
+	ctx context.Context,
+	scenario *template.TestGenerationData,
+	prompts []checklistmodels.PromptWithContext,
+) ScenarioSummary {
+	summary := ScenarioSummary{
+		ScenarioID: scenario.ScenarioID,
+		Level:      scenario.Level,
+		Service:    scenario.Service,
+		TestFile:   scenario.TestFilePath,
+	}
+
+	c.loadTestContent(scenario)
+
+	versionMgr := fs.NewContentVersionManager(c.runDir, scenario.ScenarioID, "test")
+
+	err := versionMgr.SaveInitialVersion([]byte(scenario.ArchitectureContent))
+	if err != nil {
+		summary.Error = fmt.Sprintf("failed to save initial version: %v", err)
+
+		return summary
+	}
+
+	tmpDir := c.runDir.GetTmpOutPath()
+
+	report, err := c.checklistEvaluator.Evaluate(
+		ctx, scenario, scenario.ScenarioID, scenario.Description, 0, prompts, tmpDir)
+	if err != nil {
+		summary.Error = fmt.Sprintf("evaluation failed: %v", err)
+
+		return summary
+	}
+
+	summary.Total = report.Summary.TotalPrompts
+	summary.PassCount = report.Summary.PassCount
+	summary.FailCount = report.Summary.FailCount
+
+	return summary
 }
 
 // validateScenario validates a single test scenario.

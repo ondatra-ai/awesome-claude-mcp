@@ -1400,6 +1400,8 @@ var (
 	ErrStageMismatch             = errors.New("story stage mismatch")
 	ErrWriteStoryFile            = errors.New("failed to write story file")
 	ErrNoPromptsForStage         = errors.New("no prompts found for stage")
+	ErrScenarioNotFound          = errors.New("scenario not found")
+	ErrPromptNotFound            = errors.New("prompt not found")
 )
 
 func ErrLoadChecklistSystemPromptFailed(cause error) error {
@@ -1483,6 +1485,24 @@ func ErrWriteStoryFileFailed(cause error) error {
 		Code:     "WRITE_STORY_FILE_FAILED",
 		Message:  "failed to write story file",
 		Cause:    errors.Join(ErrWriteStoryFile, cause),
+	}
+}
+
+func ErrScenarioNotFoundError(scenarioID, requirementsFile string) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "SCENARIO_NOT_FOUND",
+		Message:  "scenario " + scenarioID + " not found in " + requirementsFile,
+		Cause:    ErrScenarioNotFound,
+	}
+}
+
+func ErrPromptNotFoundError(promptID, stageID string) error {
+	return &AppError{
+		Category: CategoryParsing,
+		Code:     "PROMPT_NOT_FOUND",
+		Message:  "prompt " + promptID + " not found in " + stageID + " stage",
+		Cause:    ErrPromptNotFound,
 	}
 }
 
