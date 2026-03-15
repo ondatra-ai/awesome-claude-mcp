@@ -24,6 +24,7 @@ type Container struct {
 	USImplementCmd      *commands.USImplementCommand
 	USMergeScenariosCmd *commands.USMergeScenariosCommand
 	USValidationCmd     *commands.USValidationCommand
+	ReqGenerateTestsCmd *commands.ReqGenerateTestsCommand
 	RunDir              *fs.RunDirectory
 }
 
@@ -79,6 +80,10 @@ func NewContainer() (*Container, error) {
 	)
 	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
 
+	// Setup requirements commands
+	testCodeGen := implement.NewTestCodeGenerator(claudeClient, cfg)
+	reqGenerateTestsCmd := commands.NewReqGenerateTestsCommand(testCodeGen, runDir)
+
 	// Setup user story validation command (replaces checklist command)
 	checklistLoader := checklist.NewChecklistLoader(cfg)
 	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
@@ -106,6 +111,7 @@ func NewContainer() (*Container, error) {
 		USImplementCmd:      usImplementCmd,
 		USMergeScenariosCmd: usMergeScenariosCmd,
 		USValidationCmd:     usValidationCmd,
+		ReqGenerateTestsCmd: reqGenerateTestsCmd,
 		RunDir:              runDir,
 	}, nil
 }
