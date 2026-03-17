@@ -4,7 +4,7 @@ How BMAD CLI checks the quality of user stories and generated tests.
 
 ## What It Does
 
-The CLI reads a YAML checklist that contains questions and expected answers. For each question, it asks Claude to check the artifact. Claude's answer is compared to the expected one. Each check gets a status: PASS, WARN, FAIL, or SKIP.
+The CLI reads a YAML checklist that contains questions and expected answers. For each question, it asks Claude to check the artifact (a user story or test file). Claude's answer is compared to the expected one. Each check gets a status: PASS, WARN, FAIL, or SKIP.
 
 Two checklists use the same format:
 
@@ -46,13 +46,13 @@ stages:
 
 ```mermaid
 flowchart TD
-    A[Load checklist YAML] --> B[Get prompts for stage]
-    B --> C[For each prompt: ask Claude]
-    C --> D[Compare answer to expected]
+    A[Load checklist YAML] --> B[Filter questions for current step e.g. story_creation]
+    B --> C[For each question: Claude checks the artifact]
+    C --> D[Compare Claude's answer to the expected one]
     D --> E{All passed?}
-    E -->|Yes| F[Save result]
-    E -->|No + fix mode| G[Fix loop]
-    E -->|No| H[Show report]
+    E -->|Yes| F[Save artifact and advance to next step]
+    E -->|No + fix mode| G[Try to fix the failure see below]
+    E -->|No| H[Show results table]
     G --> C
 ```
 
@@ -63,12 +63,12 @@ flowchart TD
 3. Collect all prompts from all sections in that stage
 4. Remove prompts where `skip` is set
 
-### Step 2: Ask Claude
+### Step 2: Check with Claude
 
 For each prompt:
 
 1. Load reference documents listed in `docs`
-2. Build a prompt with the artifact, question, and rationale
+2. Build an AI prompt with the artifact, question, and rationale
 3. Send to Claude
 4. Claude returns an answer in YAML format
 5. Parse the answer
@@ -98,13 +98,13 @@ When you use `--fix`, the CLI tries to fix problems one at a time:
 
 ```mermaid
 flowchart TD
-    A[Run checks, stop at first FAIL] --> B[Generate fix prompt]
-    B --> C{Need more info?}
-    C -->|Yes| D[Ask user questions]
+    A[Run checks, stop at first FAIL] --> B[AI generates instructions to fix the problem]
+    B --> C{AI needs clarification?}
+    C -->|Yes| D[AI asks user for details]
     D --> B
-    C -->|No| E[Show fix to user]
+    C -->|No| E[Show fix instructions to user]
     E --> F{User choice}
-    F -->|Apply| G[Apply fix, re-run checks]
+    F -->|Apply| G[Apply fix to artifact, re-run all checks]
     F -->|Refine| H[User gives feedback, regenerate fix]
     F -->|Exit| I[Stop]
     H --> E
