@@ -1,23 +1,23 @@
-# Checklist Validation Algorithm
+# Checklist Validation
 
-This document describes how BMAD CLI validates artifacts (user stories and generated tests) against YAML-based checklists.
+How BMAD CLI checks the quality of user stories and generated tests.
 
-## Overview
+## What It Does
 
-The checklist validation system is an AI-driven quality gate. A YAML checklist defines questions with expected answers. For each question, the CLI sends the artifact and the question to Claude, parses the AI's answer, and compares it to the expected answer. The result is PASS, WARN, FAIL, or SKIP per question.
+The CLI reads a YAML checklist that contains questions and expected answers. For each question, it asks Claude to check the artifact. Claude's answer is compared to the expected one. Each check gets a status: PASS, WARN, FAIL, or SKIP.
 
-There are two checklist files, both validated against the same Yamale schema at build time:
+Two checklists use the same format:
 
-| Checklist file | Purpose | CLI entry point |
+| File | What it checks | Command |
 |---|---|---|
-| `bdd-cli/user-story-description-checklist.yaml` | Validates user stories across 4 stages | `bmad-cli us create/refine/ready` |
-| `bdd-cli/test-validation-checklist.yaml` | Validates generated Playwright tests | `bmad-cli req generate_tests` |
+| `bdd-cli/user-story-description-checklist.yaml` | User stories (4 stages) | `us create` / `us refine` / `us ready` |
+| `bdd-cli/test-validation-checklist.yaml` | Playwright tests | `req generate_tests` |
 
-## YAML Structure
+## Checklist YAML Format
 
 ```yaml
 version: "3.0"
-default_docs: [architecture, prd]   # optional — doc keys loaded for every prompt
+default_docs: [architecture, prd]
 stages:
   - id: story_creation
     name: Story Creation
@@ -27,145 +27,105 @@ stages:
         validation_prompts:
           - Q: "Does the story follow the template?"
             A: "yes"
-            rationale: "optional — why this matters"
-            skip: ""             # non-empty → skipped
-            docs: [prd]          # overrides default_docs for this prompt
-            F: "fix template…"   # template for generating fix prompt on failure
+            rationale: "Why this matters"
+            skip: ""        # non-empty = skip this check
+            docs: [prd]     # reference docs for this check
+            F: "fix template..."
 ```
 
-Key fields on each prompt:
-
-| Field | Role |
+| Field | What it does |
 |---|---|
-| `Q` | Question sent to Claude about the artifact |
-| `A` | Expected answer — supports exact match, ranges, comparisons (see below) |
-| `rationale` | Included in the AI prompt for context |
-| `skip` | If non-empty, the prompt is excluded from evaluation |
-| `docs` | Document keys resolved to file paths via config; overrides `default_docs` |
-| `F` | Markdown template used by the fix-prompt generator when this check fails |
+| `Q` | Question about the artifact, sent to Claude |
+| `A` | Expected answer (see comparison rules below) |
+| `rationale` | Extra context for Claude |
+| `skip` | If not empty, this check is skipped |
+| `docs` | Reference documents to include (overrides `default_docs`) |
+| `F` | Template for generating a fix when this check fails |
 
-## Algorithm
-
-### High-Level Flow
+## How It Works
 
 ```mermaid
 flowchart TD
-    A[CLI Command<br>us create / req generate_tests] --> B[Load Checklist YAML]
-    B --> C[Extract Prompts for Stage]
-    C --> D{Fix mode?}
-    D -->|No| E[Evaluate ALL prompts]
-    D -->|Yes| F[Evaluate until first FAIL]
-    E --> G[Render Report Table]
-    F --> G
-    G --> H{All passed?}
-    H -->|Yes| I[Save artifact & advance stage]
-    H -->|No, not fix mode| J[Show failures & exit]
-    H -->|No, fix mode| K[Enter Fix Loop]
-    K --> F
+    A[Load checklist YAML] --> B[Get prompts for stage]
+    B --> C[For each prompt: ask Claude]
+    C --> D[Compare answer to expected]
+    D --> E{All passed?}
+    E -->|Yes| F[Save result]
+    E -->|No + fix mode| G[Fix loop]
+    E -->|No| H[Show report]
+    G --> C
 ```
 
-### 1. Load and Filter
+### Step 1: Load Prompts
 
-```mermaid
-flowchart LR
-    A[YAML File] -->|yaml.Unmarshal| B[Checklist struct]
-    B -->|ExtractPromptsForStage| C{For each section}
-    C --> D{For each prompt}
-    D --> E{skip non-empty?}
-    E -->|Yes| F[Skip]
-    E -->|No| G[Wrap in PromptWithContext<br>add stage/section metadata]
-    G --> H["[]PromptWithContext"]
-```
+1. Read the checklist YAML file
+2. Find the right stage (e.g. `story_creation`)
+3. Collect all prompts from all sections in that stage
+4. Remove prompts where `skip` is set
 
-### 2. Evaluate Each Prompt
+### Step 2: Ask Claude
 
-```mermaid
-sequenceDiagram
-    participant E as ChecklistEvaluator
-    participant C as Config
-    participant T as Template Engine
-    participant AI as Claude API
-    participant P as Parser
+For each prompt:
 
-    E->>C: Resolve doc keys → file paths
-    E->>T: Render system prompt (cached)
-    E->>T: Render user prompt with data
-    Note over T: Subject, Question, Rationale,<br>ResultPath, Docs, FixTemplate
-    E->>AI: ExecutePromptWithSystem<br>(think mode)
-    AI-->>E: Response with FILE_START/FILE_END
-    E->>P: Extract YAML between markers
-    P-->>E: {answer, fix_prompt?}
-    E->>E: compareAnswers(expected, actual, acCount)
-    E-->>E: PASS | WARN | FAIL
-```
+1. Load reference documents listed in `docs`
+2. Build a prompt with the artifact, question, and rationale
+3. Send to Claude
+4. Claude returns an answer in YAML format
+5. Parse the answer
 
-All prompts, responses, and parsed results are saved to a temp directory for debugging.
+### Step 3: Compare Answers
 
-### 3. Answer Comparison Rules
+The expected answer (`A` field) supports different formats:
+
+| Pattern | Example | How it works |
+|---|---|---|
+| Exact match | `"yes"`, `"no"` | Must match exactly (case-insensitive) |
+| Range | `"3-7"` | Number must be between 3 and 7 |
+| At least | `">=2"` | Number must be 2 or more |
+| At most | `"<=10"` | Number must be 10 or less |
+| Percentage | `">=50%"` | Percentage must be 50% or more |
+| AC count | `"= total AC count"` | Must equal the number of acceptance criteria |
+
+Range checks give WARN if the answer is off by 1. Percentage checks give WARN if within 10%.
+
+### Step 4: Report
+
+After all checks, the CLI shows a table with results and counts: total, passed, warned, failed, skipped.
+
+## Fix Mode (--fix)
+
+When you use `--fix`, the CLI tries to fix problems one at a time:
 
 ```mermaid
 flowchart TD
-    A[compareAnswers] --> B{Contains 'total' + 'ac'?}
-    B -->|Yes| C["AC count check<br>actual == acCount"]
-    B -->|No| D{Contains '%'?}
-    D -->|Yes| E{Contains 'of total'?}
-    E -->|Yes| F["Convert count → %<br>(count × 100) / acCount<br>then compare"]
-    E -->|No| G["Direct % compare<br>≥ threshold → PASS<br>within 10% → WARN"]
-    D -->|No| H{Starts with ≥ / >=?}
-    H -->|Yes| I["actual ≥ threshold → PASS"]
-    H -->|No| J{Starts with ≤ / <=?}
-    J -->|Yes| K["actual ≤ threshold → PASS"]
-    J -->|No| L{Contains '-'?}
-    L -->|Yes| M["Range: min ≤ actual ≤ max → PASS<br>off by 1 → WARN"]
-    L -->|No| N["Exact match<br>case-insensitive"]
+    A[Run checks, stop at first FAIL] --> B[Generate fix prompt]
+    B --> C{Need more info?}
+    C -->|Yes| D[Ask user questions]
+    D --> B
+    C -->|No| E[Show fix to user]
+    E --> F{User choice}
+    F -->|Apply| G[Apply fix, re-run checks]
+    F -->|Refine| H[User gives feedback, regenerate fix]
+    F -->|Exit| I[Stop]
+    H --> E
+    G --> A
 ```
 
-Comparison order matters — AC-count and percentage checks run before generic `≥`/`≤` to avoid misparse.
+1. Run checks, stop at the first failure
+2. AI generates a fix prompt (may ask clarifying questions first, up to 5 rounds)
+3. User sees the fix and picks: Apply, Refine, or Exit
+4. **Apply**: the fix is applied, checks run again from the start
+5. **Refine**: user gives feedback, fix is regenerated (up to 3 times)
+6. **Exit**: stop and save current version
 
-### 4. Report Generation
+### After All Checks Pass
 
-After all prompts are evaluated (or after the first FAIL in fix mode), `ChecklistReport.CalculateSummary()` computes:
+- **User stories**: stage is advanced (e.g. `story_creation` -> `refinement`), story saved to `docs/stories/`
+- **Tests**: fixed test file is written to disk
 
-```
-TotalPrompts, PassCount, WarnCount, FailCount, SkipCount, PassRate
-```
+## Schema Validation
 
-The report is rendered as a table in the terminal.
-
-### 5. Fix Mode (--fix)
-
-```mermaid
-flowchart TD
-    A[EvaluateUntilFailure] --> B{First FAIL found}
-    B --> C[FixPromptGenerator.Generate]
-    C --> D{AI response type}
-    D -->|clarify_questions| E[Ask user for answers]
-    E --> F{Iteration < 5?}
-    F -->|Yes| C
-    F -->|No| Z[Give up]
-    D -->|fix_prompt| G[Display fix prompt]
-    G --> H{User choice}
-    H -->|Apply| I[FixApplier sends prompt to AI]
-    I --> J[AI returns updated artifact]
-    J --> K[Save as next version]
-    K --> A
-    H -->|Refine| L{Refinement < 3?}
-    L -->|Yes| M[Collect user feedback]
-    M --> N[Regenerate fix prompt]
-    N --> G
-    L -->|No| G
-    H -->|Exit| O[Stop]
-```
-
-### 6. On All Checks Passed
-
-**User stories:** The story's `stage` field is advanced to the next stage (e.g., `story_creation` → `refinement`), and the story YAML is saved to `docs/stories/`.
-
-**Tests:** The fixed test file is written back to disk at its `TestFilePath`.
-
-## Build-Time Schema Validation
-
-Both checklist YAML files are validated against `bdd-cli/user-story-description-checklist-schema.yaml` using [Yamale](https://github.com/23andMe/Yamale) during `make lint-docs`:
+`make lint-docs` validates both checklist files against the same Yamale schema to make sure the YAML structure is correct:
 
 ```makefile
 yamale -s bdd-cli/user-story-description-checklist-schema.yaml \
@@ -173,16 +133,14 @@ yamale -s bdd-cli/user-story-description-checklist-schema.yaml \
          bdd-cli/test-validation-checklist.yaml
 ```
 
-This ensures structural consistency (correct field names, types, required vs optional) before any runtime use.
+## Source Files
 
-## Key Source Files
-
-| File | Role |
+| File | What it does |
 |---|---|
-| `internal/domain/models/checklist/` | Domain models: Checklist, Stage, Section, Prompt, ValidationResult |
-| `internal/infrastructure/checklist/checklist_loader.go` | Loads YAML, extracts stage-specific prompts |
-| `internal/app/generators/validate/checklist_evaluator.go` | AI evaluation, answer comparison |
-| `internal/app/generators/validate/fix_prompt_generator.go` | Fix prompt generation with clarification loop |
-| `internal/app/generators/validate/fix_applier.go` | Applies fix prompts to produce updated artifacts |
+| `internal/domain/models/checklist/` | Data models (Checklist, Prompt, ValidationResult) |
+| `internal/infrastructure/checklist/checklist_loader.go` | Loads YAML, extracts prompts |
+| `internal/app/generators/validate/checklist_evaluator.go` | Runs checks, compares answers |
+| `internal/app/generators/validate/fix_prompt_generator.go` | Generates fix prompts |
+| `internal/app/generators/validate/fix_applier.go` | Applies fixes to artifacts |
 | `internal/app/commands/us_validation_command.go` | User story validation command |
 | `internal/app/commands/req_validation_command.go` | Test validation command |
