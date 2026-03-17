@@ -10,7 +10,7 @@ Two checklists use the same format:
 
 | File | What it checks | Command |
 |---|---|---|
-| `bdd-cli/user-story-description-checklist.yaml` | User stories (4 stages) | `us create` / `us refine` / `us ready` |
+| `bdd-cli/user-story-description-checklist.yaml` | User stories (4 stages: creation, refinement, ready, done) | `us create` / `us refine` / `us ready` |
 | `bdd-cli/test-validation-checklist.yaml` | Playwright tests | `req generate_tests` |
 
 ## Checklist YAML Format
@@ -37,9 +37,10 @@ stages:
 |---|---|
 | `Q` | Question about the artifact, sent to Claude |
 | `A` | Expected answer (see comparison rules below) |
-| `rationale` | Extra context for Claude |
+| `rationale` | Explains why this check matters, included in the AI prompt |
 | `skip` | If not empty, this check is skipped |
 | `docs` | Reference documents to include (overrides `default_docs`) |
+| `default_docs` | Reference documents included by default for all checks in the stage |
 | `F` | Template for generating a fix when this check fails |
 
 ## How It Works
@@ -56,16 +57,16 @@ flowchart TD
     G --> C
 ```
 
-### Step 1: Load Prompts
+### Step 1: Load Questions
 
 1. Read the checklist YAML file
 2. Find the right stage (e.g. `story_creation`)
-3. Collect all prompts from all sections in that stage
-4. Remove prompts where `skip` is set
+3. Collect all questions from all sections in that stage
+4. Remove questions where `skip` is set
 
 ### Step 2: Check with Claude
 
-For each prompt:
+For each question:
 
 1. Load reference documents listed in `docs`
 2. Build an AI prompt with the artifact, question, and rationale
@@ -86,7 +87,7 @@ The expected answer (`A` field) supports different formats:
 | Percentage | `">=50%"` | Percentage must be 50% or more |
 | AC count | `"= total AC count"` | Must equal the number of acceptance criteria |
 
-Range checks give WARN if the answer is off by 1. Percentage checks give WARN if within 10%.
+Range checks give WARN if the answer is off by 1 from the nearest boundary. Percentage checks give WARN if within 10%.
 
 ### Step 4: Report
 
@@ -112,15 +113,15 @@ flowchart TD
 ```
 
 1. Run checks, stop at the first failure
-2. AI generates a fix prompt (may ask clarifying questions first, up to 5 rounds)
+2. AI generates fix instructions (may ask clarifying questions first, up to 5 rounds)
 3. User sees the fix and picks: Apply, Refine, or Exit
 4. **Apply**: the fix is applied, checks run again from the start
 5. **Refine**: user gives feedback, fix is regenerated (up to 3 times)
-6. **Exit**: stop and save current version
+6. **Exit**: stop and save current version of the artifact
 
 ### After All Checks Pass
 
-- **User stories**: stage is advanced (e.g. `story_creation` -> `refinement`), story saved to `docs/stories/`
+- **User stories**: the CLI advances to the next stage (e.g. `story_creation` -> `refinement`), story saved to `docs/stories/`
 - **Tests**: fixed test file is written to disk
 
 ## Schema Validation
