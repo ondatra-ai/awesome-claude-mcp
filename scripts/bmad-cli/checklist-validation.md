@@ -47,7 +47,7 @@ stages:
 ```mermaid
 flowchart TD
     A[Load checklist YAML] --> B[Filter questions for current step e.g. story_creation]
-    B --> C[For each question: Claude checks the artifact]
+    B --> C[For each question: run question through Claude]
     C --> D[Compare Claude's answer to the expected one]
     D --> E{All passed?}
     E -->|Yes| F[Save artifact and advance to next step]
