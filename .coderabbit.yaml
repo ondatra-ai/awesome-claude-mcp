@@ -18,6 +18,5 @@ reviews:
     - "!**/.cursor/**"
     - "!.claude/**"
     - "!**/.claude/**"
-    - "!**/.bmad-core/**"
     - "!docs/**"
     - "!**/docs/**"

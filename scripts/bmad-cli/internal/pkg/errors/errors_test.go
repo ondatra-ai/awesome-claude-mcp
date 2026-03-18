@@ -72,13 +72,13 @@ func TestErrorConstructors(t *testing.T) {
 			category: pkgerrors.CategoryAI,
 		},
 		{
-			name:     "ErrNoPRFoundForBranch",
-			err:      pkgerrors.ErrNoPRFoundForBranch("main"),
+			name:     "ErrGetCurrentBranchFailed",
+			err:      pkgerrors.ErrGetCurrentBranchFailed(errors.New("test")),
 			category: pkgerrors.CategoryGitHub,
 		},
 		{
-			name:     "ErrInvalidRiskScore",
-			err:      pkgerrors.ErrInvalidRiskScore(15),
+			name:     "ErrExecuteTemplateFailed",
+			err:      pkgerrors.ErrExecuteTemplateFailed(errors.New("test")),
 			category: pkgerrors.CategoryParsing,
 		},
 	}

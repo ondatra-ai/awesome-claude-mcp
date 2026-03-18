@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"bmad-cli/internal/adapters/ai"
-	"bmad-cli/internal/adapters/github"
 	"bmad-cli/internal/app/commands"
 	"bmad-cli/internal/app/factories"
 	"bmad-cli/internal/app/generators/implement"
@@ -21,7 +20,6 @@ import (
 
 type Container struct {
 	Config              *config.ViperConfig
-	PRTriageCmd         *commands.PRTriageCommand
 	USImplementCmd      *commands.USImplementCommand
 	USMergeScenariosCmd *commands.USMergeScenariosCommand
 	USValidationCmd     *commands.USValidationCommand
@@ -45,8 +43,6 @@ func NewContainer() (*Container, error) {
 
 	shellExec := shell.NewCommandRunner()
 
-	githubService := github.NewGitHubService(shellExec)
-
 	epicLoader := epic.NewEpicLoader(cfg)
 
 	// Setup AI client - required for operation
@@ -54,9 +50,6 @@ func NewContainer() (*Container, error) {
 	if err != nil {
 		return nil, pkgerrors.ErrCreateAIClientFailed(err)
 	}
-
-	// Setup PR triage command - required for operation
-	prTriageCmd := createPRTriageCommand(githubService, claudeClient, cfg)
 
 	// Setup user story commands
 	gitService := git.NewGitService(shellExec)
@@ -94,7 +87,6 @@ func NewContainer() (*Container, error) {
 
 	return &Container{
 		Config:              cfg,
-		PRTriageCmd:         prTriageCmd,
 		USImplementCmd:      usImplementCmd,
 		USMergeScenariosCmd: usMergeScenariosCmd,
 		USValidationCmd:     usValidationCmd,

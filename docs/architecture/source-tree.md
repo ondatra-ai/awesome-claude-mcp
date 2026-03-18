@@ -15,7 +15,7 @@ This document summarizes the current monorepo layout after the migration to Rail
 │   ├── backend/                        # Go REST API service (user management, OAuth)
 │   └── mcp-service/                    # Go MCP Protocol Handler (HTTP+SSE, tool execution)
 ├── tests/                              # Playwright and other cross-service tests
-├── scripts/                            # Utility scripts (linting, PR triage, etc.)
+├── scripts/                            # Utility scripts (linting, bmad-cli, etc.)
 ├── Makefile                            # Local tasks (lint, test, railway deploy)
 ├── docker-compose.yaml                  # Local dev stack
 ├── railway.toml                        # Railway service definitions
