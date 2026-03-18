@@ -74,6 +74,7 @@ make lint-docs    # Validate YAML documentation
 #### Command Timeouts
 Different commands require different timeout values based on their complexity:
 
+**User Story Commands:**
 ```bash
 # Implement user story - 2 hours (7200 seconds)
 go build -C scripts/bmad-cli -o ./bmad-cli && timeout 7200 scripts/bmad-cli/bmad-cli us implement 3.1
@@ -81,6 +82,9 @@ go build -C scripts/bmad-cli -o ./bmad-cli && timeout 7200 scripts/bmad-cli/bmad
 # Implement with force flag - 2 hours (7200 seconds)
 go build -C scripts/bmad-cli -o ./bmad-cli && timeout 7200 scripts/bmad-cli/bmad-cli us implement 3.1 --force
 ```
+
+**Timeout Guidelines:**
+- `us implement`: 2 hours (7200s) - Full implementation with code generation
 
 **Important Notes:**
 - Always run from repository root for proper path resolution
