@@ -19,7 +19,6 @@ func Execute() {
 		Short: "BMAD CLI tool",
 	}
 
-	rootCmd.AddCommand(NewPRCommand(container))
 	rootCmd.AddCommand(NewUSCommand(container))
 	rootCmd.AddCommand(NewReqCommand(container))
 

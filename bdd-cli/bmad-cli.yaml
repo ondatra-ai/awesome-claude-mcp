@@ -6,8 +6,6 @@ epics:
 
 templates:
   prompts:
-    heuristic: "./scripts/bmad-cli/templates/heuristic.prompt.tpl"
-    apply: "./scripts/bmad-cli/templates/apply.prompt.tpl"
     merge_scenarios: "./scripts/bmad-cli/templates/us-implement.1.merge-scenarios.prompt.tpl"
     merge_scenarios_system: "./scripts/bmad-cli/templates/us-implement.1.merge-scenarios.system.prompt.tpl"
     generate_tests: "./scripts/bmad-cli/templates/us-implement.2.generate-tests.prompt.tpl"
@@ -28,9 +26,6 @@ templates:
     test_fix_generator_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-generator.system.prompt.tpl"
     test_fix_applier: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.prompt.tpl"
     test_fix_applier_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.system.prompt.tpl"
-  checklists:
-    triage_heuristic: "./.bmad-core/checklists/triage-heuristic-checklist.md"
-
 paths:
   tmp_dir: "./tmp"
   tmp_glob: "./tmp/**"

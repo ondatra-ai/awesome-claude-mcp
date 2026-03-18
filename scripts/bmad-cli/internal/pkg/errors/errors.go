@@ -38,28 +38,23 @@ func (e *AppError) Unwrap() error {
 
 // AI Errors.
 var (
-	ErrEmptyOutput               = errors.New("client returned empty output")
-	ErrCreateTmpDirectory        = errors.New("failed to create tmp directory")
-	ErrLoadData                  = errors.New("failed to load data")
-	ErrLoadPrompts               = errors.New("failed to load prompts")
-	ErrGenerateContent           = errors.New("failed to generate content")
-	ErrWriteResponseFile         = errors.New("failed to write response file")
-	ErrParseResponse             = errors.New("failed to parse response")
-	ErrValidation                = errors.New("validation failed")
-	ErrFileNotFound              = errors.New("file not found")
-	ErrParseYAML                 = errors.New("failed to parse YAML")
-	ErrKeyNotFoundInYAML         = errors.New("key not found in YAML")
-	ErrReadTemplateFile          = errors.New("failed to read template file")
-	ErrReadChecklistFile         = errors.New("failed to read checklist file")
-	ErrParseTemplate             = errors.New("failed to parse template")
-	ErrSendQuery                 = errors.New("failed to send query")
-	ErrClaudeReturnedError       = errors.New("claude returned error")
-	ErrResponseTooLarge          = errors.New("claude response too large for buffer")
-	ErrBuildHeuristicPrompt      = errors.New("failed to build heuristic prompt")
-	ErrAIClientExecution         = errors.New("AI client execution failed")
-	ErrParseAIOutput             = errors.New("failed to parse AI output")
-	ErrBuildImplementationPrompt = errors.New("failed to build implementation prompt")
-	ErrAIClientImplementation    = errors.New("AI client implementation failed")
+	ErrEmptyOutput         = errors.New("client returned empty output")
+	ErrCreateTmpDirectory  = errors.New("failed to create tmp directory")
+	ErrLoadData            = errors.New("failed to load data")
+	ErrLoadPrompts         = errors.New("failed to load prompts")
+	ErrGenerateContent     = errors.New("failed to generate content")
+	ErrWriteResponseFile   = errors.New("failed to write response file")
+	ErrParseResponse       = errors.New("failed to parse response")
+	ErrValidation          = errors.New("validation failed")
+	ErrFileNotFound        = errors.New("file not found")
+	ErrParseYAML           = errors.New("failed to parse YAML")
+	ErrKeyNotFoundInYAML   = errors.New("key not found in YAML")
+	ErrReadTemplateFile    = errors.New("failed to read template file")
+	ErrReadChecklistFile   = errors.New("failed to read checklist file")
+	ErrParseTemplate       = errors.New("failed to parse template")
+	ErrSendQuery           = errors.New("failed to send query")
+	ErrClaudeReturnedError = errors.New("claude returned error")
+	ErrResponseTooLarge    = errors.New("claude response too large for buffer")
 )
 
 func ErrEmptyClientOutput(clientName string) error {
@@ -143,83 +138,23 @@ func ErrClaudeExecutionFailed(cause error) error {
 	}
 }
 
-func ErrBuildHeuristicPromptFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "BUILD_HEURISTIC_PROMPT_FAILED",
-		Message:  "failed to build heuristic prompt",
-		Cause:    errors.Join(ErrBuildHeuristicPrompt, cause),
-	}
-}
-
-func ErrAIClientExecutionFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "AI_CLIENT_EXECUTION_FAILED",
-		Message:  "AI client execution failed",
-		Cause:    errors.Join(ErrAIClientExecution, cause),
-	}
-}
-
-func ErrParseAIOutputFailed(clientName string, cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "PARSE_AI_OUTPUT_FAILED",
-		Message:  "failed to parse " + clientName + " output",
-		Cause:    errors.Join(ErrParseAIOutput, cause),
-	}
-}
-
-func ErrBuildImplementationPromptFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "BUILD_IMPLEMENTATION_PROMPT_FAILED",
-		Message:  "failed to build implementation prompt",
-		Cause:    errors.Join(ErrBuildImplementationPrompt, cause),
-	}
-}
-
-func ErrAIClientImplementationFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "AI_CLIENT_IMPLEMENTATION_FAILED",
-		Message:  "AI client implementation failed",
-		Cause:    errors.Join(ErrAIClientImplementation, cause),
-	}
-}
-
-// GitHub Errors.
+// Git Errors.
 var (
-	ErrNoPRFound               = errors.New("no PR found")
-	ErrUnexpectedRepoOutput    = errors.New("unexpected repo output")
-	ErrNoEligibleReviewThreads = errors.New("no eligible review threads found")
-	ErrUnexpectedOutput        = errors.New("unexpected output format")
-	ErrNoComments              = errors.New("no comments found in thread")
-	ErrGitBranch               = errors.New("git branch command failed")
-	ErrGHPRList                = errors.New("gh pr list command failed")
-	ErrParsePRList             = errors.New("failed to parse PR list")
-	ErrRepoView                = errors.New("repo view command failed")
-	ErrGetCurrentBranch        = errors.New("failed to get current branch")
-	ErrListPRs                 = errors.New("failed to list PRs for branch")
-	ErrCheckWorkingTreeStatus  = errors.New("failed to check working tree status")
-	ErrFetchOriginMain         = errors.New("failed to fetch origin/main")
-	ErrResolveThread           = errors.New("resolve thread failed")
-	ErrReplyThread             = errors.New("reply thread failed")
-	ErrGetRepoOwnerAndName     = errors.New("failed to get repository owner and name")
-	ErrGraphQLListThreads      = errors.New("graphql list threads failed")
-	ErrParseThreadsPage        = errors.New("parse threads page failed")
-	ErrCompareMainWithOrigin   = errors.New("failed to compare main with origin/main")
-	ErrSwitchBranch            = errors.New("failed to switch to branch")
-	ErrCheckoutRemoteBranch    = errors.New("failed to checkout remote branch")
-	ErrCreateBranch            = errors.New("failed to create branch")
-	ErrPushBranch              = errors.New("failed to push branch")
-	ErrSwitchToMain            = errors.New("failed to switch to main")
-	ErrDeleteLocalBranch       = errors.New("failed to delete local branch")
-	ErrDeleteRemoteBranch      = errors.New("failed to delete remote branch")
-	ErrCheckHEADState          = errors.New("failed to check HEAD state")
-	ErrCheckGitRepository      = errors.New("failed to check git repository")
-	ErrCheckMainBehindOrigin   = errors.New("failed to check if main is behind origin")
-	ErrUnrelatedBranch         = errors.New("currently on unrelated branch")
+	ErrGetCurrentBranch       = errors.New("failed to get current branch")
+	ErrCheckWorkingTreeStatus = errors.New("failed to check working tree status")
+	ErrFetchOriginMain        = errors.New("failed to fetch origin/main")
+	ErrCompareMainWithOrigin  = errors.New("failed to compare main with origin/main")
+	ErrSwitchBranch           = errors.New("failed to switch to branch")
+	ErrCheckoutRemoteBranch   = errors.New("failed to checkout remote branch")
+	ErrCreateBranch           = errors.New("failed to create branch")
+	ErrPushBranch             = errors.New("failed to push branch")
+	ErrSwitchToMain           = errors.New("failed to switch to main")
+	ErrDeleteLocalBranch      = errors.New("failed to delete local branch")
+	ErrDeleteRemoteBranch     = errors.New("failed to delete remote branch")
+	ErrCheckHEADState         = errors.New("failed to check HEAD state")
+	ErrCheckGitRepository     = errors.New("failed to check git repository")
+	ErrCheckMainBehindOrigin  = errors.New("failed to check if main is behind origin")
+	ErrUnrelatedBranch        = errors.New("currently on unrelated branch")
 )
 
 // Infrastructure Errors.
@@ -246,9 +181,6 @@ var (
 	ErrMultipleEpicFiles          = errors.New("multiple epic files found")
 	ErrReadEpicFile               = errors.New("failed to read epic file")
 	ErrParseEpicYAML              = errors.New("failed to parse epic YAML")
-	ErrRegexError                 = errors.New("regex error")
-	ErrApplyThreadAction          = errors.New("apply failed for thread")
-	ErrTriageError                = errors.New("triage error")
 	ErrGetStorySlug               = errors.New("failed to get story slug")
 	ErrCloneRequirementsFile      = errors.New("failed to clone requirements file")
 	ErrLoadStory                  = errors.New("failed to load story")
@@ -295,84 +227,12 @@ func ErrLoadTemplateFileFailed(cause error) error {
 	}
 }
 
-func ErrNoPRFoundForBranch(branch string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "NO_PR_FOUND",
-		Message:  "no PR found for branch: " + branch,
-		Cause:    ErrNoPRFound,
-	}
-}
-
-func ErrUnexpectedRepoOutputWithDetails(output string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "UNEXPECTED_REPO_OUTPUT",
-		Message:  "unexpected repo view output: " + output,
-		Cause:    ErrUnexpectedRepoOutput,
-	}
-}
-
-func ErrNoEligibleThreads(prNumber int) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "NO_ELIGIBLE_THREADS",
-		Message:  fmt.Sprintf("no eligible review threads found for PR %d", prNumber),
-		Cause:    ErrNoEligibleReviewThreads,
-	}
-}
-
-func ErrGitBranchFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "GIT_BRANCH_FAILED",
-		Message:  "git branch command failed",
-		Cause:    errors.Join(ErrGitBranch, cause),
-	}
-}
-
-func ErrGHPRListFailed(cause error, output string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "GH_PR_LIST_FAILED",
-		Message:  "gh pr list failed, out=" + output,
-		Cause:    errors.Join(ErrGHPRList, cause),
-	}
-}
-
-func ErrParsePRListFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "PARSE_PR_LIST_FAILED",
-		Message:  "failed to parse PR list",
-		Cause:    errors.Join(ErrParsePRList, cause),
-	}
-}
-
-func ErrRepoViewFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "REPO_VIEW_FAILED",
-		Message:  "repo view command failed",
-		Cause:    errors.Join(ErrRepoView, cause),
-	}
-}
-
 func ErrGetCurrentBranchFailed(cause error) error {
 	return &AppError{
 		Category: CategoryGitHub,
 		Code:     "GET_CURRENT_BRANCH_FAILED",
 		Message:  "failed to get current branch",
 		Cause:    errors.Join(ErrGetCurrentBranch, cause),
-	}
-}
-
-func ErrListPRsFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "LIST_PRS_FAILED",
-		Message:  "failed to list PRs for branch " + branch,
-		Cause:    errors.Join(ErrListPRs, cause),
 	}
 }
 
@@ -394,91 +254,10 @@ func ErrFetchOriginMainFailed(cause error) error {
 	}
 }
 
-func ErrResolveThreadFailed(cause error, output string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "RESOLVE_THREAD_FAILED",
-		Message:  "resolve thread failed, out=" + output,
-		Cause:    errors.Join(ErrResolveThread, cause),
-	}
-}
-
-func ErrReplyThreadFailed(cause error, output string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "REPLY_THREAD_FAILED",
-		Message:  "reply thread failed, out=" + output,
-		Cause:    errors.Join(ErrReplyThread, cause),
-	}
-}
-
-func ErrGetRepoOwnerAndNameFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "GET_REPO_OWNER_AND_NAME_FAILED",
-		Message:  "failed to get repository owner and name",
-		Cause:    errors.Join(ErrGetRepoOwnerAndName, cause),
-	}
-}
-
-func ErrGraphQLListThreadsFailed(cause error, output string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "GRAPHQL_LIST_THREADS_FAILED",
-		Message:  "graphql list threads failed, out=" + output,
-		Cause:    errors.Join(ErrGraphQLListThreads, cause),
-	}
-}
-
-func ErrParseThreadsPageFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "PARSE_THREADS_PAGE_FAILED",
-		Message:  "parse threads page failed",
-		Cause:    errors.Join(ErrParseThreadsPage, cause),
-	}
-}
-
 // Parsing Errors.
 var (
-	ErrRiskScoreNotFound       = errors.New("risk_score not found")
-	ErrPreferredOptionNotFound = errors.New("preferred_option not found in YAML")
-	ErrSummaryNotFound         = errors.New("summary not found in YAML")
-	ErrItemsBlockNotFound      = errors.New("items block not found or empty")
-	ErrInvalidBooleanValue     = errors.New("invalid boolean value")
-	ErrMissingRequiredItem     = errors.New("missing required item")
-	ErrInvalidRiskScoreValue   = errors.New("invalid risk score value")
-	ErrExecuteTemplate         = errors.New("failed to execute template")
-	ErrParseSummaryYAML        = errors.New("missing summary in YAML")
-	ErrParseRiskScore          = errors.New("failed to parse risk score")
+	ErrExecuteTemplate = errors.New("failed to execute template")
 )
-
-func ErrItemsMustBeBoolean(key, val string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_BOOLEAN_VALUE",
-		Message:  fmt.Sprintf("items[%s] must be boolean, got %q", key, val),
-		Cause:    ErrInvalidBooleanValue,
-	}
-}
-
-func ErrMissingItems(key string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "MISSING_REQUIRED_ITEM",
-		Message:  "missing items." + key,
-		Cause:    ErrMissingRequiredItem,
-	}
-}
-
-func ErrInvalidRiskScore(score int) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_RISK_SCORE",
-		Message:  fmt.Sprintf("invalid risk_score: %d", score),
-		Cause:    ErrInvalidRiskScoreValue,
-	}
-}
 
 func ErrExecuteTemplateFailed(cause error) error {
 	return &AppError{
@@ -486,24 +265,6 @@ func ErrExecuteTemplateFailed(cause error) error {
 		Code:     "EXECUTE_TEMPLATE_FAILED",
 		Message:  "failed to execute template",
 		Cause:    errors.Join(ErrExecuteTemplate, cause),
-	}
-}
-
-func ErrParseSummaryYAMLFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "PARSE_SUMMARY_YAML_FAILED",
-		Message:  "missing summary in YAML",
-		Cause:    errors.Join(ErrParseSummaryYAML, cause),
-	}
-}
-
-func ErrParseRiskScoreFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "PARSE_RISK_SCORE_FAILED",
-		Message:  "failed to parse risk score",
-		Cause:    errors.Join(ErrParseRiskScore, cause),
 	}
 }
 
@@ -952,24 +713,6 @@ func ErrParseEpicYAMLFailed(epicFilePath string, cause error) error {
 		Code:     "PARSE_EPIC_YAML_FAILED",
 		Message:  "failed to parse epic YAML from " + epicFilePath,
 		Cause:    errors.Join(ErrParseEpicYAML, cause),
-	}
-}
-
-func ErrApplyThreadActionFailed(threadID string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "APPLY_THREAD_ACTION_FAILED",
-		Message:  "apply failed for thread " + threadID,
-		Cause:    errors.Join(ErrApplyThreadAction, cause),
-	}
-}
-
-func ErrTriageFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "TRIAGE_FAILED",
-		Message:  "triage",
-		Cause:    errors.Join(ErrTriageError, cause),
 	}
 }
 
