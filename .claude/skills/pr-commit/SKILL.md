@@ -75,18 +75,25 @@ git --no-pager diff
 
 Review what will be committed.
 
-## Commit and Push
+### 7. Stage and Commit
 
-After all checks pass:
+```bash
+git add .
+```
 
-1. Stage changes: `git add .`
-2. Create commit with a proper message (see format below)
-3. Push immediately — do not ask for confirmation
-4. Clean up any temp files in `./tmp/`
+Create commit with a proper message (see format below).
 
-### Update PR
+### 8. Push
 
-After pushing, invoke the `pr-update` skill to update the PR title and description to reflect all commits on the branch.
+```bash
+git push origin HEAD
+```
+
+Push immediately — do not ask for confirmation. If push fails, resolve immediately. Clean up any temp files in `./tmp/`.
+
+### 9. Update PR
+
+Invoke the `pr-update` skill to update the PR title and description to reflect all commits on the branch.
 
 ## Commit Message Format
 
