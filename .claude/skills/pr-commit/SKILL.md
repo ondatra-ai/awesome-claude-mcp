@@ -11,6 +11,10 @@ Execute a complete code quality validation pipeline before committing changes. T
 
 Every numbered step below MUST be executed on every invocation of this skill, in order, regardless of how trivial the change looks. There are no exceptions for docs-only changes, config-only changes, typo fixes, or renames. If a step's tooling finds nothing to do (e.g. `make lint-frontend` when no frontend files changed), the step still runs — the tool's own "nothing to check" output is the correct outcome, not a reason to skip the invocation. Skipping a step for any reason is a failure of this skill.
 
+**Nested skill returns are not turn boundaries.** Step 5 (`update-memory`) and Step 9 (`pr-update`) invoke other skills. When a nested skill finishes, immediately resume at the next numbered step of this pipeline. Do not emit a status message, summary, or any other text that would end the turn until Step 10's execution report has been produced.
+
+**No text output is permitted before Step 10.** The only terminal text this skill may emit is the Step 10 execution report. If you find yourself about to write a narrative update, a completion message, or any explanation before Step 10 runs, stop — that text is a premature turn-end and counts as a skill violation.
+
 ## Steps
 
 ### 0. Ensure Working Branch
