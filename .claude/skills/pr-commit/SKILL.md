@@ -7,6 +7,10 @@ description: Run a full code quality validation pipeline (linting, unit tests, e
 
 Execute a complete code quality validation pipeline before committing changes. This ensures all code meets production standards before it reaches the remote repository.
 
+## Mandatory execution
+
+Every numbered step below MUST be executed on every invocation of this skill, in order, regardless of how trivial the change looks. There are no exceptions for docs-only changes, config-only changes, typo fixes, or renames. If a step's tooling finds nothing to do (e.g. `make lint-frontend` when no frontend files changed), the step still runs — the tool's own "nothing to check" output is the correct outcome, not a reason to skip the invocation. Skipping a step for any reason is a failure of this skill.
+
 ## Steps
 
 ### 0. Ensure Working Branch
@@ -25,7 +29,7 @@ If already on a feature branch: continue as-is.
 
 ## Validation Pipeline
 
-Run these checks in order. If any step fails, fix the issue and re-run that step before proceeding. Never disable linting rules, skip tests, or use `--no-verify`.
+Run every check in order. If a step fails, fix the underlying code and re-run that step before proceeding. You may not skip a step, disable a lint rule, skip a test, or use `--no-verify`. "Not relevant to this diff" is not a valid reason to skip — run the step and let the tool decide.
 
 ### 1. Linting
 
@@ -94,6 +98,27 @@ Push immediately — do not ask for confirmation. If push fails, resolve immedia
 ### 9. Update PR
 
 Invoke the `pr-update` skill to update the PR title and description to reflect all commits on the branch.
+
+### 10. Report Execution
+
+Before ending the turn, emit a table listing every step 0–9 with its outcome: `run` or `failed-then-fixed`. The table must have ten rows. If any row would read `skipped`, the skill has been violated — run the missing step(s) and re-report. Do not close the turn without this table.
+
+Example:
+
+```
+| Step | Outcome |
+|---|---|
+| 0. Branch | run |
+| 1. Lint | run |
+| 2. Unit tests | run |
+| 3. E2E tests | run |
+| 4. Pre-commit hooks | run |
+| 5. Update memory | run |
+| 6. Review changes | run |
+| 7. Stage & commit | run |
+| 8. Push | run |
+| 9. Update PR | run |
+```
 
 ## Commit Message Format
 
