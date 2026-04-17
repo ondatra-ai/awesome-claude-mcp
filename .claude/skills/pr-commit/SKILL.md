@@ -7,6 +7,22 @@ description: Run a full code quality validation pipeline (linting, unit tests, e
 
 Execute a complete code quality validation pipeline before committing changes. This ensures all code meets production standards before it reaches the remote repository.
 
+## Steps
+
+### 0. Ensure Working Branch
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+If on `main`: create a new branch before proceeding. Derive the branch name from the staged changes (e.g., `feat/add-ebos-research`, `fix/update-skill`). Use kebab-case with a conventional prefix (`feat/`, `fix/`, `chore/`, `docs/`).
+
+```bash
+git checkout -b <branch-name>
+```
+
+If already on a feature branch: continue as-is.
+
 ## Validation Pipeline
 
 Run these checks in order. If any step fails, fix the issue and re-run that step before proceeding. Never disable linting rules, skip tests, or use `--no-verify`.
@@ -46,7 +62,11 @@ pre-commit run --all-files
 
 If configured, run and fix any issues reported.
 
-### 5. Review Changes
+### 5. Update Project Memory
+
+Before staging and committing, invoke the `update-memory` skill to check if CLAUDE.md needs updating based on the changes. If it modifies CLAUDE.md, it will stage it automatically — the update will be included in this commit.
+
+### 6. Review Changes
 
 ```bash
 git --no-pager status
@@ -63,6 +83,10 @@ After all checks pass:
 2. Create commit with a proper message (see format below)
 3. Push immediately — do not ask for confirmation
 4. Clean up any temp files in `./tmp/`
+
+### Update PR
+
+After pushing, invoke the `pr-update` skill to update the PR title and description to reflect all commits on the branch.
 
 ## Commit Message Format
 
@@ -94,6 +118,7 @@ git commit -F ./tmp/commit-msg.txt && rm ./tmp/commit-msg.txt && git push origin
 ## Rules
 
 - Always push after committing — never leave commits unpushed
+- Always update the PR description after pushing
 - Never use `git commit --no-verify`
 - Use `./tmp/` for any temporary files and clean them up afterwards
 - If push fails, resolve immediately
