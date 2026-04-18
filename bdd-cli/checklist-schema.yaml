@@ -1,18 +1,10 @@
-# Yamale schema for user-story-description-checklist.yaml
-# Validates user story validation checklist configuration
-# Structure: stages[] -> sections[] -> validation_prompts[]
+# Yamale schema for per-command checklists under bdd-cli/checklists/.
+# Each checklist is single-stage: sections[] -> validation_prompts[].
 
 version: str()
 last_updated: str()
 default_docs: list(str(), required=False)
-stages: list(include('stage'))
-
----
-stage:
-  id: str()
-  name: str()
-  description: str(required=False)
-  sections: list(include('section'))
+sections: list(include('section'))
 
 ---
 section:

@@ -6,33 +6,25 @@ epics:
 
 templates:
   prompts:
-    merge_scenarios: "./scripts/bmad-cli/templates/us-implement.1.merge-scenarios.prompt.tpl"
-    merge_scenarios_system: "./scripts/bmad-cli/templates/us-implement.1.merge-scenarios.system.prompt.tpl"
-    generate_tests: "./scripts/bmad-cli/templates/us-implement.2.generate-tests.prompt.tpl"
-    generate_tests_system: "./scripts/bmad-cli/templates/us-implement.2.generate-tests.system.prompt.tpl"
-    validate_tests: "./scripts/bmad-cli/templates/us-implement.3.validate-tests.prompt.tpl"
-    validate_tests_system: "./scripts/bmad-cli/templates/us-implement.3.validate-tests.system.prompt.tpl"
-    implement_feature: "./scripts/bmad-cli/templates/us-implement.4.implement-feature.prompt.tpl"
-    implement_feature_system: "./scripts/bmad-cli/templates/us-implement.4.implement-feature.system.prompt.tpl"
     checklist: "./scripts/bmad-cli/templates/us-checklist.prompt.tpl"
     checklist_system: "./scripts/bmad-cli/templates/us-checklist.system.prompt.tpl"
     fix_generator: "./scripts/bmad-cli/templates/us-checklist.fix-generator.prompt.tpl"
     fix_generator_system: "./scripts/bmad-cli/templates/us-checklist.fix-generator.system.prompt.tpl"
     fix_applier: "./scripts/bmad-cli/templates/us-checklist.fix-applier.prompt.tpl"
     fix_applier_system: "./scripts/bmad-cli/templates/us-checklist.fix-applier.system.prompt.tpl"
-    test_checklist: "./scripts/bmad-cli/templates/req.test-checklist.prompt.tpl"
-    test_checklist_system: "./scripts/bmad-cli/templates/req.test-checklist.system.prompt.tpl"
-    test_fix_generator: "./scripts/bmad-cli/templates/req.test-checklist.fix-generator.prompt.tpl"
-    test_fix_generator_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-generator.system.prompt.tpl"
-    test_fix_applier: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.prompt.tpl"
-    test_fix_applier_system: "./scripts/bmad-cli/templates/req.test-checklist.fix-applier.system.prompt.tpl"
+    test_checklist: "./scripts/bmad-cli/templates/us.generate_tests-checklist.prompt.tpl"
+    test_checklist_system: "./scripts/bmad-cli/templates/us.generate_tests-checklist.system.prompt.tpl"
+    test_fix_generator: "./scripts/bmad-cli/templates/us.generate_tests-checklist.fix-generator.prompt.tpl"
+    test_fix_generator_system: "./scripts/bmad-cli/templates/us.generate_tests-checklist.fix-generator.system.prompt.tpl"
+    test_fix_applier: "./scripts/bmad-cli/templates/us.generate_tests-checklist.fix-applier.prompt.tpl"
+    test_fix_applier_system: "./scripts/bmad-cli/templates/us.generate_tests-checklist.fix-applier.system.prompt.tpl"
+
 paths:
   tmp_dir: "./tmp"
   tmp_glob: "./tmp/**"
   qa_gates: "docs/qa/gates"
   stories_dir: "docs/stories"
-  checklist: "./bdd-cli/user-story-description-checklist.yaml"
-  test_checklist: "./bdd-cli/test-validation-checklist.yaml"
+  checklists_dir: "./bdd-cli/checklists"
 
 testing:
   command: "make test-e2e"

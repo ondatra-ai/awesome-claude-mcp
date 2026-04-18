@@ -5,7 +5,6 @@ story:
   i_want: str()
   so_that: str()
   status: enum('PLANNED', 'IN_PROGRESS', 'COMPLETE', 'BLOCKED', 'CANCELLED')
-  stage: str(required=False)
   acceptance_criteria: list(include('acceptance_criterion'), min=1)
 
 ---
