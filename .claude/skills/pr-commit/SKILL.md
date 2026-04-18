@@ -7,9 +7,33 @@ description: Run a full code quality validation pipeline (linting, unit tests, e
 
 Execute a complete code quality validation pipeline before committing changes. This ensures all code meets production standards before it reaches the remote repository.
 
+## Mandatory execution
+
+Every numbered step below MUST be executed on every invocation of this skill, in order, regardless of how trivial the change looks. There are no exceptions for docs-only changes, config-only changes, typo fixes, or renames. If a step's tooling finds nothing to do (e.g. `make lint-frontend` when no frontend files changed), the step still runs — the tool's own "nothing to check" output is the correct outcome, not a reason to skip the invocation. Skipping a step for any reason is a failure of this skill.
+
+**Nested skill returns are not turn boundaries.** Step 5 (`update-memory`) and Step 9 (`pr-update`) invoke other skills. When a nested skill finishes, immediately resume at the next numbered step of this pipeline. Do not emit a status message, summary, or any other text that would end the turn until Step 10's execution report has been produced.
+
+**No text output is permitted before Step 10.** The only terminal text this skill may emit is the Step 10 execution report. If you find yourself about to write a narrative update, a completion message, or any explanation before Step 10 runs, stop — that text is a premature turn-end and counts as a skill violation.
+
+## Steps
+
+### 0. Ensure Working Branch
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+If on `main`: create a new branch before proceeding. Derive the branch name from the staged changes (e.g., `feat/add-ebos-research`, `fix/update-skill`). Use kebab-case with a conventional prefix (`feat/`, `fix/`, `chore/`, `docs/`).
+
+```bash
+git checkout -b <branch-name>
+```
+
+If already on a feature branch: continue as-is.
+
 ## Validation Pipeline
 
-Run these checks in order. If any step fails, fix the issue and re-run that step before proceeding. Never disable linting rules, skip tests, or use `--no-verify`.
+Run every check in order. If a step fails, fix the underlying code and re-run that step before proceeding. You may not skip a step, disable a lint rule, skip a test, or use `--no-verify`. "Not relevant to this diff" is not a valid reason to skip — run the step and let the tool decide.
 
 ### 1. Linting
 
@@ -46,7 +70,11 @@ pre-commit run --all-files
 
 If configured, run and fix any issues reported.
 
-### 5. Review Changes
+### 5. Update Project Memory
+
+Before staging and committing, invoke the `update-memory` skill to check if CLAUDE.md needs updating based on the changes. If it modifies CLAUDE.md, it will stage it automatically — the update will be included in this commit.
+
+### 6. Review Changes
 
 ```bash
 git --no-pager status
@@ -55,14 +83,46 @@ git --no-pager diff
 
 Review what will be committed.
 
-## Commit and Push
+### 7. Stage and Commit
 
-After all checks pass:
+```bash
+git add .
+```
 
-1. Stage changes: `git add .`
-2. Create commit with a proper message (see format below)
-3. Push immediately — do not ask for confirmation
-4. Clean up any temp files in `./tmp/`
+Create commit with a proper message (see format below).
+
+### 8. Push
+
+```bash
+git push origin HEAD
+```
+
+Push immediately — do not ask for confirmation. If push fails, resolve immediately. Clean up any temp files in `./tmp/`.
+
+### 9. Update PR
+
+Invoke the `pr-update` skill to update the PR title and description to reflect all commits on the branch.
+
+### 10. Report Execution
+
+Before ending the turn, emit a table listing every step 0–9 with its outcome: `run` or `failed-then-fixed`. The table must have ten rows. If any row would read `skipped`, the skill has been violated — run the missing step(s) and re-report. Do not close the turn without this table.
+
+Example:
+
+```
+| Step | Outcome |
+|---|---|
+| 0. Branch | run |
+| 1. Lint | run |
+| 2. Unit tests | run |
+| 3. E2E tests | run |
+| 4. Pre-commit hooks | run |
+| 5. Update memory | run |
+| 6. Review changes | run |
+| 7. Stage & commit | run |
+| 8. Push | run |
+| 9. Update PR | run |
+```
 
 ## Commit Message Format
 
@@ -94,6 +154,7 @@ git commit -F ./tmp/commit-msg.txt && rm ./tmp/commit-msg.txt && git push origin
 ## Rules
 
 - Always push after committing — never leave commits unpushed
+- Always update the PR description after pushing
 - Never use `git commit --no-verify`
 - Use `./tmp/` for any temporary files and clean them up afterwards
 - If push fails, resolve immediately

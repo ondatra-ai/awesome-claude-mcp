@@ -60,3 +60,6 @@ crash.log
 *.tfplan
 **/tfplan
 scripts/bmad-cli/bmad-cli
+
+# Claude Code local settings
+.claude/settings.local.json
