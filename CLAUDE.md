@@ -78,7 +78,7 @@ All CLI commands live under the `us` supergroup:
 - `us create <id>` — extract a story from its epic and run the `us-create` checklist.
 - `us refine <id>` — load a story from `docs/stories/` and run the `us-refine` checklist.
 - `us generate_tests` — walk every scenario in `docs/requirements.yaml` and run the `us-generate_tests` checklist (with `--fix`, writes missing test files).
-- `us implement <id>` — run the `us-implement` checklist (currently empty; reserved for future prompts).
+- `us implement` — walk every scenario in `docs/requirements.yaml` and run the `us-implement` checklist (currently empty; reserved for future feature-implementation prompts).
 
 Each checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bmad-cli.yaml`.
 

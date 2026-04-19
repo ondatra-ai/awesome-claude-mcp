@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"bmad-cli/internal/app/generators/validate"
 	checklistmodels "bmad-cli/internal/domain/models/checklist"
@@ -22,19 +23,23 @@ const (
 	testFilePermissions = 0o644
 )
 
-// ExecuteTestValidation runs the `us generate_tests` command: walks every
-// scenario in requirements.yaml, evaluates the `us-generate_tests` checklist,
-// and (with --fix) runs the interactive fix loop per scenario.
-func (c *USValidationCommand) ExecuteTestValidation(
+// ExecuteScenarioChecklist runs the given checklist against every scenario
+// in requirements.yaml. Used by `us generate_tests` and `us implement`.
+// With --fix, enters the interactive fix loop per scenario.
+func (c *USValidationCommand) ExecuteScenarioChecklist(
 	ctx context.Context,
 	requirementsFile string,
+	checklistName string,
 	fix bool,
 	scenarioParser *requirements.ScenarioParser,
-	testEvaluator *validate.ChecklistEvaluator,
-	testFixGenerator *validate.FixPromptGenerator,
-	testFixApplier *validate.FixApplier,
+	evaluator *validate.ChecklistEvaluator,
+	fixGenerator *validate.FixPromptGenerator,
+	fixApplier *validate.FixApplier,
 ) error {
-	console.Header("TEST VALIDATION", separatorWidth)
+	console.Header(
+		strings.ToUpper(checklistName)+" — SCENARIO VALIDATION",
+		separatorWidth,
+	)
 
 	scenarios, err := scenarioParser.ParseScenarios(requirementsFile, false)
 	if err != nil {
@@ -47,20 +52,31 @@ func (c *USValidationCommand) ExecuteTestValidation(
 		return nil
 	}
 
-	slog.Info("Found scenarios to validate", "count", len(scenarios))
+	slog.Info("Found scenarios to validate",
+		"checklist", checklistName,
+		"count", len(scenarios),
+	)
 
-	prompts, err := c.checklistLoader.Load("us-generate_tests")
+	prompts, err := c.checklistLoader.Load(checklistName)
 	if err != nil {
-		return fmt.Errorf("failed to load test checklist: %w", err)
+		return fmt.Errorf("failed to load checklist %q: %w", checklistName, err)
 	}
 
+	// Empty-checklist short-circuit: when the checklist is a deliberate
+	// placeholder (e.g. us-implement today), walking all scenarios to
+	// run zero prompts is pointless. Report and return cleanly.
 	if len(prompts) == 0 {
-		console.Println("No validation prompts found for us-generate_tests.")
+		console.Println(
+			fmt.Sprintf("No validation prompts defined for %s. Nothing to do.", checklistName),
+		)
 
-		return pkgerrors.ErrNoPromptsForStageFailed("us-generate_tests")
+		return nil
 	}
 
-	slog.Info("Loaded test validation prompts", "count", len(prompts))
+	slog.Info("Loaded validation prompts",
+		"checklist", checklistName,
+		"count", len(prompts),
+	)
 
 	for i, scenario := range scenarios {
 		console.Header(
@@ -70,7 +86,7 @@ func (c *USValidationCommand) ExecuteTestValidation(
 
 		err := c.validateScenario(
 			ctx, scenario, prompts, fix,
-			testEvaluator, testFixGenerator, testFixApplier,
+			evaluator, fixGenerator, fixApplier,
 		)
 		if err != nil {
 			slog.Error("Failed to validate scenario",
@@ -81,7 +97,10 @@ func (c *USValidationCommand) ExecuteTestValidation(
 		}
 	}
 
-	console.Header("TEST VALIDATION COMPLETE", separatorWidth)
+	console.Header(
+		strings.ToUpper(checklistName)+" — VALIDATION COMPLETE",
+		separatorWidth,
+	)
 
 	return nil
 }

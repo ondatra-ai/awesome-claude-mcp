@@ -16,13 +16,19 @@ import (
 
 // Container wires together the components needed by the CLI.
 type Container struct {
-	Config                 *config.ViperConfig
-	USValidationCmd        *commands.USValidationCommand
-	ScenarioParser         *requirements.ScenarioParser
-	TestChecklistEvaluator *validate.ChecklistEvaluator
-	TestFixPromptGenerator *validate.FixPromptGenerator
-	TestFixApplier         *validate.FixApplier
-	RunDir                 *fs.RunDirectory
+	Config          *config.ViperConfig
+	USValidationCmd *commands.USValidationCommand
+	ScenarioParser  *requirements.ScenarioParser
+	// Shared evaluator / fix-prompt / fix-applier triple used by every
+	// scenario-walking command (`us generate_tests`, `us implement`).
+	// The underlying prompt templates live at
+	// templates.prompts.test_checklist* / test_fix_* in bmad-cli.yaml;
+	// they're generic enough to drive any checklist that iterates over
+	// TestGenerationData scenarios.
+	ScenarioEvaluator          *validate.ChecklistEvaluator
+	ScenarioFixPromptGenerator *validate.FixPromptGenerator
+	ScenarioFixApplier         *validate.FixApplier
+	RunDir                     *fs.RunDirectory
 }
 
 // NewContainer builds the Container.
@@ -71,20 +77,22 @@ func NewContainer() (*Container, error) {
 		storiesDir,
 	)
 
-	// Separate prompt-template set for test validation (`us generate_tests`).
-	testEvaluator := validate.NewChecklistEvaluatorWithPaths(
+	// Scenario-validation evaluator / fix-prompt / fix-applier set, shared
+	// by `us generate_tests` and `us implement`. The underlying templates
+	// are configured under templates.prompts.test_checklist* / test_fix_*.
+	scenarioEvaluator := validate.NewChecklistEvaluatorWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_checklist_system"),
 		cfg.GetString("templates.prompts.test_checklist"),
 	)
 
-	testFixPromptGenerator := validate.NewFixPromptGeneratorWithPaths(
+	scenarioFixPromptGenerator := validate.NewFixPromptGeneratorWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_fix_generator_system"),
 		cfg.GetString("templates.prompts.test_fix_generator"),
 	)
 
-	testFixApplier := validate.NewFixApplierWithPaths(
+	scenarioFixApplier := validate.NewFixApplierWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_fix_applier_system"),
 		cfg.GetString("templates.prompts.test_fix_applier"),
@@ -93,12 +101,12 @@ func NewContainer() (*Container, error) {
 	scenarioParser := requirements.NewScenarioParser()
 
 	return &Container{
-		Config:                 cfg,
-		USValidationCmd:        usValidationCmd,
-		ScenarioParser:         scenarioParser,
-		TestChecklistEvaluator: testEvaluator,
-		TestFixPromptGenerator: testFixPromptGenerator,
-		TestFixApplier:         testFixApplier,
-		RunDir:                 runDir,
+		Config:                     cfg,
+		USValidationCmd:            usValidationCmd,
+		ScenarioParser:             scenarioParser,
+		ScenarioEvaluator:          scenarioEvaluator,
+		ScenarioFixPromptGenerator: scenarioFixPromptGenerator,
+		ScenarioFixApplier:         scenarioFixApplier,
+		RunDir:                     runDir,
 	}, nil
 }
