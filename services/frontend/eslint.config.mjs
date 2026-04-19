@@ -43,7 +43,7 @@ export default [
     ignores: [
       'dist/',
       'node_modules/',
-      '**/*.js',
+      '*.js',
       '**/*.d.ts',
       '.next/',
       'eslint.config.mjs',
@@ -79,6 +79,7 @@ export default [
         { terms: ['eslint-disable'], location: 'start' },
       ],
       'prettier/prettier': 'error',
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
