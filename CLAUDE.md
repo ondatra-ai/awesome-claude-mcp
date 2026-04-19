@@ -225,14 +225,44 @@ type DataCache struct { /* caching complexity */ }
 **Current Status (as of 2025-10-10):**
 - Compliance tracked through code review
 
-## Interactive Testing with Terminal MCP
+## Shell Usage
 
-When testing the app, use the terminal MCP to create an interactive bash session.
-Before launching the app, unset `CLAUDECODE` so the app can spawn Claude Code as a subprocess:
+**Do not use `cd` to change the working directory.** Always run commands from
+the repository root using absolute or `-C <path>` flags (e.g. `go build -C
+scripts/bmad-cli`). This keeps paths predictable across turns and prevents the
+working directory from drifting into nested subdirectories.
+
+## Testing `scripts/bmad-cli/`
+
+All bmad-cli testing happens from the repository root. **Use the terminal MCP**
+(`mcp__terminal__create_session` + `send_command`) for an interactive bash
+session so the CLI can spawn Claude Code as a subprocess. Before launching,
+unset `CLAUDECODE`:
 
 ```bash
-env -u CLAUDECODE ./your-app
+env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli <args>
 ```
+
+### Test commands (run from repo root)
+
+1. **Build:**
+   ```bash
+   go build -C scripts/bmad-cli -o ./bmad-cli
+   ```
+2. **Invoke a command:**
+   ```bash
+   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us refine <story-id>
+   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us create <story-id>
+   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us generate_tests
+   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us implement
+   ```
+
+### Timing
+
+`us refine` drives many sequential Claude calls and typically takes **about
+5 minutes** end-to-end. When invoking it via the terminal MCP, send the
+command, then `sleep 300` (or poll with `read_output` every ~60s) before
+reading the final tail. Do not abort early.
 
 ## Notes
 

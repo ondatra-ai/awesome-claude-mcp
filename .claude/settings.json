@@ -1,2 +1,14 @@
 {
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Reminder: never offer commits, commit breakdowns, or ready-to-commit narration unless the user has explicitly asked to commit. Wait for an explicit commit/push/merge instruction before invoking pr-commit/pr-merge skills.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
 }

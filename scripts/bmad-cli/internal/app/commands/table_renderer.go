@@ -68,7 +68,9 @@ func (r *TableRenderer) renderTable(report *checklist.ChecklistReport) {
 	for _, result := range report.Results {
 		question := truncateString(result.Question, maxQuestionLen)
 		expected := truncateString(result.ExpectedAnswer, answerMaxLen)
-		actual := truncateString(result.ActualAnswer, answerMaxLen)
+		actual := summarizeAnswer(
+			result.ExpectedAnswer, result.ActualAnswer, answerMaxLen,
+		)
 		status := r.formatStatus(result.Status)
 
 		_, _ = fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\n",
@@ -158,6 +160,28 @@ func (r *TableRenderer) renderFixPrompts(report *checklist.ChecklistReport) {
 	}
 
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
+}
+
+// summarizeAnswer renders the ACTUAL column for a row. For map-typed
+// questions (expected == "{}") it collapses a non-empty map to "N AC(s)"
+// and preserves "{}" for empty maps. Other answers fall back to
+// truncateString.
+func summarizeAnswer(expected, actual string, maxLen int) string {
+	if strings.TrimSpace(expected) != "{}" {
+		return truncateString(actual, maxLen)
+	}
+
+	node, ok := checklist.ParseAnswerMap(actual)
+	if !ok {
+		return truncateString(actual, maxLen)
+	}
+
+	count := checklist.AnswerMapEntryCount(node)
+	if count == 0 {
+		return "{}"
+	}
+
+	return fmt.Sprintf("%d AC(s)", count)
 }
 
 // truncateString truncates a string to maxLen, adding "..." if needed.

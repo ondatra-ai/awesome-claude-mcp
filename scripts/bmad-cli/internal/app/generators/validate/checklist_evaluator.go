@@ -254,10 +254,12 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	}, nil
 }
 
-// resultYAML represents the structure of the result file.
+// resultYAML represents the structure of the result file. The Answer field
+// uses yaml.Node so it can hold either a scalar (integer, yes/no, percentage)
+// or a mapping (violation map keyed by AC id).
 type resultYAML struct {
-	Answer    string `yaml:"answer"`
-	FixPrompt string `yaml:"fix_prompt,omitempty"`
+	Answer    yaml.Node `yaml:"answer"`
+	FixPrompt string    `yaml:"fix_prompt,omitempty"`
 }
 
 // ParsedResult contains the parsed answer and optional fix prompt.
@@ -295,9 +297,32 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult
 	}
 
 	return ParsedResult{
-		Answer:    strings.TrimSpace(result.Answer),
+		Answer:    renderAnswerNode(&result.Answer),
 		FixPrompt: strings.TrimSpace(result.FixPrompt),
 	}
+}
+
+// renderAnswerNode converts the YAML answer node back to its text form. For
+// scalars this returns the raw value (e.g. "5", "yes"); for mappings and
+// sequences it preserves the YAML block structure so downstream display and
+// comparison logic see the same text the user would read in the result file.
+func renderAnswerNode(node *yaml.Node) string {
+	if node == nil || node.Kind == 0 {
+		return ""
+	}
+
+	if node.Kind == yaml.ScalarNode {
+		return strings.TrimSpace(node.Value)
+	}
+
+	out, err := yaml.Marshal(node)
+	if err != nil {
+		slog.Warn("Failed to marshal answer node", "error", err)
+
+		return ""
+	}
+
+	return strings.TrimRight(string(out), "\n")
 }
 
 // compareAnswers compares actual answer to expected and returns status.
@@ -327,6 +352,11 @@ func (e *ChecklistEvaluator) trySpecializedComparison(
 	expected, actual string,
 	acCount int,
 ) (checklist.Status, bool) {
+	// Handle empty-map expectation: "{}" means "no violations"
+	if expected == "{}" {
+		return e.compareEmptyMap(actual), true
+	}
+
 	// Handle special case: "= total AC count" or similar
 	if e.isACCountComparison(expected) {
 		return e.compareToACCount(expected, actual, acCount), true
@@ -357,6 +387,21 @@ func (e *ChecklistEvaluator) trySpecializedComparison(
 // isACCountComparison checks if the expected value is an AC count comparison.
 func (e *ChecklistEvaluator) isACCountComparison(expected string) bool {
 	return strings.Contains(expected, "total") && strings.Contains(expected, "ac")
+}
+
+// compareEmptyMap returns PASS when actual parses as an empty YAML mapping,
+// FAIL otherwise (non-empty map, non-map value, or parse error).
+func (e *ChecklistEvaluator) compareEmptyMap(actual string) checklist.Status {
+	node, ok := checklist.ParseAnswerMap(actual)
+	if !ok {
+		return checklist.StatusFail
+	}
+
+	if checklist.AnswerMapEntryCount(node) == 0 {
+		return checklist.StatusPass
+	}
+
+	return checklist.StatusFail
 }
 
 // isGreaterOrEqualComparison checks for >= or ≥ prefix.
