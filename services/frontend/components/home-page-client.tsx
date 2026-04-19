@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 
 import { VersionDisplay } from '@/components/version-display';
 import { WelcomeCard } from '@/components/welcome-card';
