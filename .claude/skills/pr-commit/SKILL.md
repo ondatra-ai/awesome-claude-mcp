@@ -105,23 +105,25 @@ Invoke the `pr-update` skill to update the PR title and description to reflect a
 
 ### 10. Report Execution
 
-Before ending the turn, emit a table listing every step 0–9 with its outcome: `run` or `failed-then-fixed`. The table must have ten rows. If any row would read `skipped`, the skill has been violated — run the missing step(s) and re-report. Do not close the turn without this table.
+Before ending the turn, emit a single one-line status for every step 0–9 in order, separated by ` · `. Each entry has the form `N. <label> ✅` when the step ran (including `failed-then-fixed`) or `N. <label> ❌` when it did not. The line must contain all ten entries. If any entry is ❌, the skill has been violated — run the missing step(s) and re-report.
+
+Use these exact labels:
+
+- `0. Branch checked`
+- `1. Lint passed`
+- `2. Unit tests passed`
+- `3. E2E tests passed`
+- `4. Pre-commit passed`
+- `5. Memory updated`
+- `6. Changes reviewed`
+- `7. Commit created`
+- `8. Pushed`
+- `9. PR updated`
 
 Example:
 
 ```
-| Step | Outcome |
-|---|---|
-| 0. Branch | run |
-| 1. Lint | run |
-| 2. Unit tests | run |
-| 3. E2E tests | run |
-| 4. Pre-commit hooks | run |
-| 5. Update memory | run |
-| 6. Review changes | run |
-| 7. Stage & commit | run |
-| 8. Push | run |
-| 9. Update PR | run |
+0. Branch checked ✅ · 1. Lint passed ✅ · 2. Unit tests passed ✅ · 3. E2E tests passed ✅ · 4. Pre-commit passed ✅ · 5. Memory updated ✅ · 6. Changes reviewed ✅ · 7. Commit created ✅ · 8. Pushed ✅ · 9. PR updated ✅
 ```
 
 ## Commit Message Format
