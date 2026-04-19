@@ -3,30 +3,35 @@ package bootstrap
 import (
 	"bmad-cli/internal/adapters/ai"
 	"bmad-cli/internal/app/commands"
-	"bmad-cli/internal/app/factories"
-	"bmad-cli/internal/app/generators/implement"
 	"bmad-cli/internal/app/generators/validate"
 	"bmad-cli/internal/infrastructure/checklist"
 	"bmad-cli/internal/infrastructure/config"
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
-	"bmad-cli/internal/infrastructure/git"
 	"bmad-cli/internal/infrastructure/input"
 	"bmad-cli/internal/infrastructure/requirements"
-	"bmad-cli/internal/infrastructure/shell"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
+// Container wires together the components needed by the CLI.
 type Container struct {
-	Config              *config.ViperConfig
-	USImplementCmd      *commands.USImplementCommand
-	USMergeScenariosCmd *commands.USMergeScenariosCommand
-	USValidationCmd     *commands.USValidationCommand
-	ReqValidationCmd    *commands.ReqValidationCommand
-	RunDir              *fs.RunDirectory
+	Config          *config.ViperConfig
+	USValidationCmd *commands.USValidationCommand
+	ScenarioParser  *requirements.ScenarioParser
+	// Shared evaluator / fix-prompt / fix-applier triple used by every
+	// scenario-walking command (`us generate_tests`, `us implement`).
+	// The underlying prompt templates live at
+	// templates.prompts.test_checklist* / test_fix_* in bmad-cli.yaml;
+	// they're generic enough to drive any checklist that iterates over
+	// TestGenerationData scenarios.
+	ScenarioEvaluator          *validate.ChecklistEvaluator
+	ScenarioFixPromptGenerator *validate.FixPromptGenerator
+	ScenarioFixApplier         *validate.FixApplier
+	RunDir                     *fs.RunDirectory
 }
 
+// NewContainer builds the Container.
 func NewContainer() (*Container, error) {
 	cfg, err := config.NewViperConfig()
 	if err != nil {
@@ -35,86 +40,35 @@ func NewContainer() (*Container, error) {
 
 	configureLogging()
 
-	// Create run directory once for entire CLI execution
 	runDir, err := fs.NewRunDirectory(cfg.GetString("paths.tmp_dir"))
 	if err != nil {
 		return nil, pkgerrors.ErrCreateRunDirectoryFailed(err)
 	}
 
-	shellExec := shell.NewCommandRunner()
-
 	epicLoader := epic.NewEpicLoader(cfg)
 
-	// Setup AI client - required for operation
 	claudeClient, err := ai.NewClaudeClient()
 	if err != nil {
 		return nil, pkgerrors.ErrCreateAIClientFailed(err)
 	}
 
-	// Setup user story commands
-	gitService := git.NewGitService(shellExec)
-	branchManager := git.NewBranchManager(gitService)
 	storyLoader := story.NewStoryLoader(cfg)
-
-	// Setup user input collector (shared across commands)
 	userInputCollector := input.NewUserInputCollector()
 
-	mergeScenariosGen := implement.NewMergeScenariosGenerator(claudeClient, cfg)
-	usValidateCmd := commands.NewUSValidateCommand(storyLoader)
-	usMergeScenariosCmd := commands.NewUSMergeScenariosCommand(
-		storyLoader, mergeScenariosGen, runDir,
-	)
-
-	implementFactory := factories.NewImplementFactory(
-		branchManager,
-		storyLoader,
-		claudeClient,
-		cfg,
-		runDir,
-		shellExec,
-		usValidateCmd,
-		usMergeScenariosCmd,
-	)
-	usImplementCmd := commands.NewUSImplementCommand(implementFactory)
-
-	usValidationCmd := createUSValidationCommand(
-		epicLoader, storyLoader, claudeClient, cfg, userInputCollector, runDir,
-	)
-
-	reqValidationCmd := createReqValidationCommand(
-		claudeClient, cfg, userInputCollector, runDir,
-	)
-
-	return &Container{
-		Config:              cfg,
-		USImplementCmd:      usImplementCmd,
-		USMergeScenariosCmd: usMergeScenariosCmd,
-		USValidationCmd:     usValidationCmd,
-		ReqValidationCmd:    reqValidationCmd,
-		RunDir:              runDir,
-	}, nil
-}
-
-func createUSValidationCommand(
-	epicLoader *epic.EpicLoader,
-	storyLoader *story.StoryLoader,
-	claudeClient *ai.ClaudeClient,
-	cfg *config.ViperConfig,
-	userInputCollector *input.UserInputCollector,
-	runDir *fs.RunDirectory,
-) *commands.USValidationCommand {
 	checklistLoader := checklist.NewChecklistLoader(cfg)
-	checklistEvaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
+
+	evaluator := validate.NewChecklistEvaluator(claudeClient, cfg)
 	fixPromptGenerator := validate.NewFixPromptGenerator(claudeClient, cfg)
 	fixApplier := validate.NewFixApplier(claudeClient, cfg)
+
 	tableRenderer := commands.NewTableRenderer()
 	storiesDir := cfg.GetString("paths.stories_dir")
 
-	return commands.NewUSValidationCommand(
+	usValidationCmd := commands.NewUSValidationCommand(
 		epicLoader,
 		storyLoader,
 		checklistLoader,
-		checklistEvaluator,
+		evaluator,
 		fixPromptGenerator,
 		fixApplier,
 		userInputCollector,
@@ -122,46 +76,37 @@ func createUSValidationCommand(
 		runDir,
 		storiesDir,
 	)
-}
 
-func createReqValidationCommand(
-	claudeClient *ai.ClaudeClient,
-	cfg *config.ViperConfig,
-	userInputCollector *input.UserInputCollector,
-	runDir *fs.RunDirectory,
-) *commands.ReqValidationCommand {
-	testChecklistPath := cfg.GetString("paths.test_checklist")
-	testChecklistLoader := checklist.NewChecklistLoaderWithPath(testChecklistPath)
-
-	testEvaluator := validate.NewChecklistEvaluatorWithPaths(
+	// Scenario-validation evaluator / fix-prompt / fix-applier set, shared
+	// by `us generate_tests` and `us implement`. The underlying templates
+	// are configured under templates.prompts.test_checklist* / test_fix_*.
+	scenarioEvaluator := validate.NewChecklistEvaluatorWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_checklist_system"),
 		cfg.GetString("templates.prompts.test_checklist"),
 	)
 
-	testFixGenerator := validate.NewFixPromptGeneratorWithPaths(
+	scenarioFixPromptGenerator := validate.NewFixPromptGeneratorWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_fix_generator_system"),
 		cfg.GetString("templates.prompts.test_fix_generator"),
 	)
 
-	testFixApplier := validate.NewFixApplierWithPaths(
+	scenarioFixApplier := validate.NewFixApplierWithPaths(
 		claudeClient, cfg,
 		cfg.GetString("templates.prompts.test_fix_applier_system"),
 		cfg.GetString("templates.prompts.test_fix_applier"),
 	)
 
-	tableRenderer := commands.NewTableRenderer()
 	scenarioParser := requirements.NewScenarioParser()
 
-	return commands.NewReqValidationCommand(
-		testChecklistLoader,
-		testEvaluator,
-		testFixGenerator,
-		testFixApplier,
-		userInputCollector,
-		tableRenderer,
-		scenarioParser,
-		runDir,
-	)
+	return &Container{
+		Config:                     cfg,
+		USValidationCmd:            usValidationCmd,
+		ScenarioParser:             scenarioParser,
+		ScenarioEvaluator:          scenarioEvaluator,
+		ScenarioFixPromptGenerator: scenarioFixPromptGenerator,
+		ScenarioFixApplier:         scenarioFixApplier,
+		RunDir:                     runDir,
+	}, nil
 }

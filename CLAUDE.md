@@ -71,24 +71,19 @@ make lint-docs    # Validate YAML documentation
 ### BMAD CLI Usage
 **CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
 
-#### Command Timeouts
-Different commands require different timeout values based on their complexity:
+#### Subcommands
 
-**User Story Commands:**
-```bash
-# Implement user story - 2 hours (7200 seconds)
-go build -C scripts/bmad-cli -o ./bmad-cli && timeout 7200 scripts/bmad-cli/bmad-cli us implement 3.1
+All CLI commands live under the `us` supergroup:
 
-# Implement with force flag - 2 hours (7200 seconds)
-go build -C scripts/bmad-cli -o ./bmad-cli && timeout 7200 scripts/bmad-cli/bmad-cli us implement 3.1 --force
-```
+- `us create <id>` — extract a story from its epic and run the `us-create` checklist.
+- `us refine <id>` — load a story from `docs/stories/` and run the `us-refine` checklist.
+- `us generate_tests` — walk every scenario in `docs/requirements.yaml` and run the `us-generate_tests` checklist (with `--fix`, writes missing test files).
+- `us implement` — walk every scenario in `docs/requirements.yaml` and run the `us-implement` checklist (currently empty; reserved for future feature-implementation prompts).
 
-**Timeout Guidelines:**
-- `us implement`: 2 hours (7200s) - Full implementation with code generation
+Each checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bmad-cli.yaml`.
 
 **Important Notes:**
 - Always run from repository root for proper path resolution
-- Timeouts ensure commands don't hang indefinitely during AI processing
 - Commands respect configured engine type (see config files)
 
 ## Project Structure

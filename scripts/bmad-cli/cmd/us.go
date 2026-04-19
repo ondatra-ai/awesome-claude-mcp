@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,86 +13,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const defaultRequirementsFile = "docs/requirements.yaml"
+
+// errUSImplementTakesNoArgs is returned when `us implement` is given a
+// positional argument (e.g. a story id) — the command now walks every
+// scenario in requirements.yaml rather than targeting one story.
+var errUSImplementTakesNoArgs = errors.New(
+	"us implement takes no arguments; it walks all scenarios in docs/requirements.yaml",
+)
+
 func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 	usCmd := &cobra.Command{
 		Use:   "us",
 		Short: "User story commands",
 	}
 
-	usCmd.AddCommand(newUSImplementCmd(container))
-	usCmd.AddCommand(newUSMergeScenariosCmd(container))
 	usCmd.AddCommand(newUSCreateCmd(container))
 	usCmd.AddCommand(newUSRefineCmd(container))
-	usCmd.AddCommand(newUSArchitectureCmd(container))
+	usCmd.AddCommand(newUSGenerateTestsCmd(container))
+	usCmd.AddCommand(newUSImplementCmd(container))
 
 	return usCmd
 }
 
-func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
-	implementCmd := &cobra.Command{
-		Use:   "implement [story-number]",
-		Short: "Implement user story (placeholder)",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, stop := signal.NotifyContext(context.Background(),
-				os.Interrupt, syscall.SIGTERM)
-			defer stop()
-
-			force, _ := cmd.Flags().GetBool("force")
-			steps, _ := cmd.Flags().GetString("steps")
-			err := container.USImplementCmd.Execute(ctx, args[0], force, steps)
-
-			stop()
-
-			if err != nil {
-				return fmt.Errorf("us implement command failed: %w", err)
-			}
-
-			return nil
-		},
-	}
-
-	implementCmd.Flags().BoolP("force", "f", false,
-		"Force recreate the story branch even if it already exists")
-
-	stepsHelp := "Comma-separated list of steps to execute " +
-		"(validate_story,create_branch,merge_scenarios,generate_tests," +
-		"validate_tests,validate_scenarios,implement_feature,all)"
-	implementCmd.Flags().StringP("steps", "s", "all", stepsHelp)
-
-	return implementCmd
-}
-
-func newUSMergeScenariosCmd(container *bootstrap.Container) *cobra.Command {
-	return &cobra.Command{
-		Use:   "merge_scenarios [story-number]",
-		Short: "Merge story scenarios into requirements.yaml",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, stop := signal.NotifyContext(context.Background(),
-				os.Interrupt, syscall.SIGTERM)
-			defer stop()
-
-			err := container.USMergeScenariosCmd.Execute(ctx, args[0])
-
-			stop()
-
-			if err != nil {
-				return fmt.Errorf("us merge_scenarios command failed: %w", err)
-			}
-
-			return nil
-		},
-	}
-}
-
-// newUSValidationCmd creates a validation subcommand with --fix flag and signal handling.
-func newUSValidationCmd(
+// newUSChecklistCmd builds a subcommand that drives a per-story checklist.
+func newUSChecklistCmd(
 	container *bootstrap.Container,
 	use string,
 	short string,
 	long string,
-	config commands.StageConfig,
+	config commands.CommandConfig,
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   use,
@@ -123,78 +74,130 @@ func newUSValidationCmd(
 	return cmd
 }
 
-func newUSCreateCmd(container *bootstrap.Container) *cobra.Command {
-	return newUSValidationCmd(
-		container,
-		"create [story-number]",
-		"Create and validate a user story (Stage 1: Story Creation)",
-		`Extract a story from its epic and validate against Stage 1 (Story Creation)
-checklist prompts.
-
-The story is saved to docs/stories/ upon passing all checks.
-
-Example:
-  bmad-cli us create 4.1
-  bmad-cli us create 4.1 --fix`,
-		commands.StageConfig{
-			StageID:       "story_creation",
-			RequiredStage: "",
-			NextStage:     "refinement",
-			LoadFromEpic:  true,
-			StageName:     "Story Creation",
-			CommandName:   "us create",
-		},
-	)
-}
-
-func newUSRefineCmd(container *bootstrap.Container) *cobra.Command {
-	return newUSValidationCmd(
-		container,
-		"refine [story-number]",
-		"Refine a user story (Stage 2: Refinement)",
-		`Load a story from docs/stories/ and validate against Stage 2 (Refinement)
-checklist prompts. Requires story to be at stage "refinement" (set by us create).
-
-Example:
-  bmad-cli us refine 4.1
-  bmad-cli us refine 4.1 --fix`,
-		commands.StageConfig{
-			StageID:       "refinement",
-			RequiredStage: "refinement",
-			NextStage:     "architecture",
-			LoadFromEpic:  false,
-			StageName:     "Refinement",
-			CommandName:   "us refine",
-		},
-	)
-}
-
-func newUSArchitectureCmd(container *bootstrap.Container) *cobra.Command {
-	return &cobra.Command{
-		Use:   "architecture [story-number]",
-		Short: "Architecture review (Stage 3: Architecture)",
-		Long: `Architecture review stage. No automated checks are defined yet.
-Advances the story stage from "architecture" to "final_check".
-
-Example:
-  bmad-cli us architecture 4.1`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config := commands.StageConfig{
-				StageID:       "architecture",
-				RequiredStage: "architecture",
-				NextStage:     "final_check",
-				LoadFromEpic:  false,
-				StageName:     "Architecture",
-				CommandName:   "us architecture",
+// newUSScenarioChecklistCmd builds a subcommand that walks every scenario in
+// docs/requirements.yaml and runs the named checklist against each.
+func newUSScenarioChecklistCmd(
+	container *bootstrap.Container,
+	use string,
+	short string,
+	long string,
+	checklistName string,
+	commandLabel string,
+) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   use,
+		Short: short,
+		Long:  long,
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return nil
 			}
 
-			err := container.USValidationCmd.AdvanceStage(args[0], config)
+			return errUSImplementTakesNoArgs
+		},
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			ctx, stop := signal.NotifyContext(context.Background(),
+				os.Interrupt, syscall.SIGTERM)
+			defer stop()
+
+			fix, _ := cmd.Flags().GetBool("fix")
+
+			err := container.USValidationCmd.ExecuteScenarioChecklist(
+				ctx,
+				defaultRequirementsFile,
+				checklistName,
+				fix,
+				container.ScenarioParser,
+				container.ScenarioEvaluator,
+				container.ScenarioFixPromptGenerator,
+				container.ScenarioFixApplier,
+			)
+
+			stop()
+
 			if err != nil {
-				return fmt.Errorf("us architecture command failed: %w", err)
+				return fmt.Errorf("%s command failed: %w", commandLabel, err)
 			}
 
 			return nil
 		},
 	}
+
+	cmd.Flags().Bool("fix", false,
+		"Enable interactive fix mode with checklist-based validation")
+
+	return cmd
+}
+
+func newUSCreateCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSChecklistCmd(
+		container,
+		"create [story-number]",
+		"Create and validate a user story",
+		`Extract a story from its epic and validate it against the us-create
+checklist. The story is saved to docs/stories/ upon passing all checks.
+
+Example:
+  bmad-cli us create 4.1
+  bmad-cli us create 4.1 --fix`,
+		commands.CommandConfig{
+			CommandName:   "us create",
+			ChecklistName: "us-create",
+			LoadFromEpic:  true,
+		},
+	)
+}
+
+func newUSRefineCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSChecklistCmd(
+		container,
+		"refine [story-number]",
+		"Refine a user story",
+		`Load a story from docs/stories/ and validate it against the us-refine
+checklist. The story file is updated in place upon passing all checks.
+
+Example:
+  bmad-cli us refine 4.1
+  bmad-cli us refine 4.1 --fix`,
+		commands.CommandConfig{
+			CommandName:   "us refine",
+			ChecklistName: "us-refine",
+			LoadFromEpic:  false,
+		},
+	)
+}
+
+func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSScenarioChecklistCmd(
+		container,
+		"implement",
+		"Walk every scenario in requirements.yaml and run the us-implement checklist",
+		`Walk all scenarios in docs/requirements.yaml and validate them against
+the us-implement checklist. With --fix, the interactive loop drives
+feature-code fixes for scenarios whose checks fail. The checklist is
+currently empty; the command exists as a slot for future prompts.
+
+Example:
+  bmad-cli us implement
+  bmad-cli us implement --fix`,
+		"us-implement",
+		"us implement",
+	)
+}
+
+func newUSGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSScenarioChecklistCmd(
+		container,
+		"generate_tests",
+		"Generate and validate tests for every scenario in requirements.yaml",
+		`Walk all scenarios in docs/requirements.yaml and validate their test
+files against the us-generate_tests checklist. With --fix, missing test files
+are created and existing ones updated in place.
+
+Example:
+  bmad-cli us generate_tests
+  bmad-cli us generate_tests --fix`,
+		"us-generate_tests",
+		"us generate_tests",
+	)
 }

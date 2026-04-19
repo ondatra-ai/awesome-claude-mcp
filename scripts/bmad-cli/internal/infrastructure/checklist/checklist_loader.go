@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 
@@ -11,91 +12,62 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 )
 
-// ChecklistLoader loads and parses the validation checklist YAML.
+// ChecklistLoader loads per-command checklist YAMLs from a common directory.
+// Each file is single-stage (flat sections at the top).
 type ChecklistLoader struct {
-	checklistPath string
+	checklistsDir string
 }
 
-// NewChecklistLoader creates a new checklist loader using config-based path.
+// NewChecklistLoader creates a loader rooted at `paths.checklists_dir`.
 func NewChecklistLoader(cfg *config.ViperConfig) *ChecklistLoader {
 	return &ChecklistLoader{
-		checklistPath: cfg.GetString("paths.checklist"),
+		checklistsDir: cfg.GetString("paths.checklists_dir"),
 	}
 }
 
-// NewChecklistLoaderWithPath creates a new checklist loader with an explicit path.
-func NewChecklistLoaderWithPath(path string) *ChecklistLoader {
-	return &ChecklistLoader{
-		checklistPath: path,
-	}
-}
+// Load reads the checklist for the named command (e.g. "us-create") and
+// returns its prompts flattened with section context. Skipped prompts are
+// filtered out.
+func (l *ChecklistLoader) Load(commandName string) ([]checklist.PromptWithContext, error) {
+	path := filepath.Join(l.checklistsDir, commandName+".yaml")
+	slog.Debug("Loading checklist", "command", commandName, "path", path)
 
-// Load loads and parses the checklist YAML file.
-func (l *ChecklistLoader) Load() (*checklist.Checklist, error) {
-	slog.Debug("Loading checklist", "path", l.checklistPath)
-
-	data, err := os.ReadFile(l.checklistPath)
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read checklist file: %w", err)
+		return nil, fmt.Errorf("failed to read checklist %s: %w", path, err)
 	}
 
-	var parsedChecklist checklist.Checklist
+	var parsed checklist.Checklist
 
-	err = yaml.Unmarshal(data, &parsedChecklist)
+	err = yaml.Unmarshal(data, &parsed)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse checklist YAML: %w", err)
+		return nil, fmt.Errorf("failed to parse checklist %s: %w", path, err)
 	}
 
-	slog.Debug("Checklist loaded successfully",
-		"version", parsedChecklist.Version,
-		"stages", len(parsedChecklist.Stages),
-	)
-
-	return &parsedChecklist, nil
-}
-
-// ExtractPromptsForStage extracts prompts from a specific stage by ID.
-func (l *ChecklistLoader) ExtractPromptsForStage(
-	chkList *checklist.Checklist,
-	stageID string,
-) []checklist.PromptWithContext {
-	for _, stage := range chkList.Stages {
-		if stage.ID == stageID {
-			prompts := l.extractPromptsFromStage(chkList, stage)
-			slog.Debug("Extracted prompts for stage", "stageID", stageID, "count", len(prompts))
-
-			return prompts
-		}
-	}
-
-	slog.Warn("Stage not found in checklist", "stageID", stageID)
-
-	return nil
-}
-
-// extractPromptsFromStage extracts prompts from a single stage.
-func (l *ChecklistLoader) extractPromptsFromStage(
-	chkList *checklist.Checklist,
-	stage checklist.Stage,
-) []checklist.PromptWithContext {
 	prompts := make([]checklist.PromptWithContext, 0)
 
-	for _, section := range stage.Sections {
+	for _, section := range parsed.Sections {
 		for _, prompt := range section.ValidationPrompts {
 			if prompt.ShouldSkip() {
 				continue
 			}
 
 			prompts = append(prompts, checklist.PromptWithContext{
-				SectionID:     stage.ID,
-				SectionName:   stage.Name,
+				SectionID:     commandName,
+				SectionName:   commandName,
 				CriterionID:   section.ID,
 				CriterionName: section.Name,
-				DefaultDocs:   chkList.DefaultDocs,
+				DefaultDocs:   parsed.DefaultDocs,
 				Prompt:        prompt,
 			})
 		}
 	}
 
-	return prompts
+	slog.Debug("Checklist loaded",
+		"command", commandName,
+		"sections", len(parsed.Sections),
+		"prompts", len(prompts),
+	)
+
+	return prompts, nil
 }
