@@ -248,8 +248,14 @@ sections:
                   - and: "<additional outcome if needed>"
           ```
 
-      - Q: "Count ACs with vague words (properly, correctly, appropriate, user-friendly, fast, etc.) in their description or steps. Answer as integer."
-        A: "0"
+      - Q: |
+          List every AC whose description or steps contain a vague word from the
+          forbidden qualifiers list in the terms reference (properly, correctly,
+          appropriate, user-friendly, fast, etc.).
+          Answer as a YAML map keyed by AC id; each value is a list of the vague
+          words found in that AC.
+          If no violations, answer with an empty map `{}`.
+        A: "{}"
         rationale: "Vague words cannot be tested objectively."
         docs:
           - prd
@@ -262,16 +268,13 @@ sections:
           Use the forbidden qualifiers list from the terms reference document.
           Replace each forbidden qualifier with specific, measurable criteria.
 
-          Output format (YAML list):
-          ```yaml
-          - original: "<AC text with vague word>"
-            vague_word: "<the vague word>"
-            issue: "Cannot be tested objectively"
-            rewritten: "<AC with specific measurable criteria>"
-          ```
-
-      - Q: "Count ACs whose Given/When/Then steps use action verbs from the forbidden actions list in the terms reference document. Answer as integer."
-        A: "0"
+      - Q: |
+          List every AC whose Given/When/Then steps use action verbs from the
+          forbidden actions list in the terms reference document.
+          Answer as a YAML map keyed by AC id; each value is a list of the
+          forbidden verbs used in that AC.
+          If no violations, answer with an empty map `{}`.
+        A: "{}"
         rationale: "Every step must use concrete, reproducible action verbs defined in the terms reference. Forbidden verbs do not specify the interaction mechanism and cannot be automated."
         docs:
           - prd
@@ -281,21 +284,20 @@ sections:
           Rewrite each step that uses a forbidden action verb.
 
           Use the terms reference document to select a concrete replacement verb
-          from the appropriate allowed action category (conversational, ui, observation, or system).
+          from the appropriate allowed action category (conversational, ui,
+          observation, or system).
 
-          The replacement must specify the interaction mechanism — not just the user's intent.
+          The replacement must specify the interaction mechanism — not just the
+          user's intent.
 
-          Output format (YAML list):
-          ```yaml
-          - ac_id: "<AC id>"
-            step_type: "given|when|then"
-            original: "<the step text with forbidden verb>"
-            forbidden_verb: "<the forbidden verb used>"
-            rewritten: "<step using an allowed verb from terms reference>"
-          ```
-
-      - Q: "Count ACs that describe implementation (endpoint created, database updated) vs observable behavior (using allowed action verbs from the terms reference). Answer implementation count as integer."
-        A: "0"
+      - Q: |
+          List every AC that describes implementation (endpoint created,
+          database updated, etc.) instead of observable behavior using allowed
+          action verbs from the terms reference.
+          Answer as a YAML map keyed by AC id; each value is a list of
+          implementation phrases found in that AC.
+          If no violations, answer with an empty map `{}`.
+        A: "{}"
         rationale: "ACs describe observable behavior, not technical implementation."
         docs:
           - prd

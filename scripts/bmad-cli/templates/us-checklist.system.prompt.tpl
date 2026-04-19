@@ -31,3 +31,13 @@ When generating fix_prompt examples:
 - count questions → number (e.g., "3")
 - choice questions → one option (e.g., "goal")
 - percentage questions → number (e.g., "80")
+- map/list questions → YAML map keyed as instructed in the question
+  (use an empty map `{}` when there are no entries).
+  Example of a non-empty answer:
+
+  ```yaml
+  AC3:
+    - properly shares
+  AC4:
+    - correctly updates
+  ```

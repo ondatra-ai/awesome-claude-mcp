@@ -30,6 +30,7 @@ const (
 	separatorWidth             = 80
 	storyFilePermissions       = 0o644
 	storyDirPermissions        = 0o755
+	failureActualSummaryLen    = 40
 )
 
 // CommandConfig describes a single `us` subcommand: which checklist file it
@@ -652,10 +653,39 @@ func (c *USValidationCommand) displayFailureInfo(
 	console.Separator("=", separatorWidth)
 	console.Printf("Question: %s\n", failedCheck.Question)
 	console.Printf("Expected: %s\n", failedCheck.ExpectedAnswer)
-	console.Printf("Actual: %s\n", failedCheck.ActualAnswer)
+	console.Printf("Actual: %s\n", summarizeAnswer(
+		failedCheck.ExpectedAnswer,
+		failedCheck.ActualAnswer,
+		failureActualSummaryLen,
+	))
 
 	if failedCheck.Rationale != "" {
 		console.Printf("Rationale: %s\n", failedCheck.Rationale)
+	}
+
+	c.displayViolations(failedCheck)
+}
+
+// displayViolations prints the raw violation map for map-typed checks so the
+// user can see which ACs and which terms triggered the failure.
+func (c *USValidationCommand) displayViolations(
+	failedCheck *checklistmodels.ValidationResult,
+) {
+	if strings.TrimSpace(failedCheck.ExpectedAnswer) != "{}" {
+		return
+	}
+
+	node, ok := checklistmodels.ParseAnswerMap(failedCheck.ActualAnswer)
+	if !ok || checklistmodels.AnswerMapEntryCount(node) == 0 {
+		return
+	}
+
+	console.Println("Violations:")
+
+	for _, line := range strings.Split(
+		strings.TrimRight(failedCheck.ActualAnswer, "\n"), "\n",
+	) {
+		console.Printf("  %s\n", line)
 	}
 }
 
