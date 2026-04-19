@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import { HomePageClient } from '@/components/home-page-client';
 
 function resolveBackendBaseUrl(): string {

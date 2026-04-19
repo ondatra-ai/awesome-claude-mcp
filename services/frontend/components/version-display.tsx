@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import type { IVersionDisplayProps } from '@/interfaces/version-display';
 
 export function VersionDisplay({
