@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -21,11 +19,7 @@ import (
 )
 
 const (
-	minRegexMatchLen = 2     // Minimum matches for regex capture groups
-	rangeParts       = 2     // Number of parts in a range like "3-7"
-	warnThresholdPct = 10    // Warning threshold for percentage comparisons
-	percentBase      = 100   // Base for percentage calculations
-	filePermissions  = 0o644 // File permissions for saved prompts
+	filePermissions = 0o644 // File permissions for saved prompts
 )
 
 // getDocKeyToConfigPath returns the mapping of doc keys to bmad-cli.yaml config paths.
@@ -94,11 +88,10 @@ func (e *ChecklistEvaluator) Evaluate(
 	ctx context.Context,
 	subject any,
 	subjectID, subjectTitle string,
-	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 ) (*checklist.ChecklistReport, error) {
-	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, acCount, prompts, tmpDir, false)
+	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, prompts, tmpDir, false)
 }
 
 // EvaluateUntilFailure evaluates prompts sequentially and stops at the first FAIL status.
@@ -107,11 +100,10 @@ func (e *ChecklistEvaluator) EvaluateUntilFailure(
 	ctx context.Context,
 	subject any,
 	subjectID, subjectTitle string,
-	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 ) (*checklist.ChecklistReport, error) {
-	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, acCount, prompts, tmpDir, true)
+	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, prompts, tmpDir, true)
 }
 
 // evaluatePrompts is the shared implementation for Evaluate and EvaluateUntilFailure.
@@ -119,7 +111,6 @@ func (e *ChecklistEvaluator) evaluatePrompts(
 	ctx context.Context,
 	subject any,
 	subjectID, subjectTitle string,
-	acCount int,
 	prompts []checklist.PromptWithContext,
 	tmpDir string,
 	stopOnFailure bool,
@@ -140,19 +131,18 @@ func (e *ChecklistEvaluator) evaluatePrompts(
 			"section", promptCtx.GetFullSectionPath(),
 		)
 
-		result, err := e.evaluatePrompt(ctx, subject, subjectID, acCount, promptCtx, promptIndex+1)
+		result, err := e.evaluatePrompt(ctx, subject, subjectID, promptCtx, promptIndex+1)
 		if err != nil {
 			slog.Error("Failed to evaluate prompt", "error", err)
 			// Continue with other prompts, mark this one as failed
 			result = checklist.ValidationResult{
-				SectionPath:    promptCtx.GetFullSectionPath(),
-				Question:       promptCtx.Prompt.Question,
-				ExpectedAnswer: promptCtx.Prompt.Answer,
-				ActualAnswer:   "ERROR: " + err.Error(),
-				Status:         checklist.StatusFail,
-				Rationale:      promptCtx.Prompt.Rationale,
-				PromptIndex:    promptIndex + 1,
-				Docs:           promptCtx.GetEffectiveDocs(),
+				SectionPath:  promptCtx.GetFullSectionPath(),
+				Question:     promptCtx.Prompt.Question,
+				ActualAnswer: "ERROR: " + err.Error(),
+				Status:       checklist.StatusFail,
+				Rationale:    promptCtx.Prompt.Rationale,
+				PromptIndex:  promptIndex + 1,
+				Docs:         promptCtx.GetEffectiveDocs(),
 			}
 		}
 
@@ -179,7 +169,6 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	ctx context.Context,
 	subject any,
 	subjectID string,
-	acCount int,
 	promptCtx checklist.PromptWithContext,
 	promptIndex int,
 ) (checklist.ValidationResult, error) {
@@ -232,8 +221,11 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	// Parse the answer from result file (extracted from FILE_START/FILE_END in response)
 	parsedResult := e.parseResultFile(response, resultPath)
 
-	// Compare with expected
-	status := e.compareAnswers(promptCtx.Prompt.Answer, parsedResult.Answer, acCount)
+	// Universal pass/fail: AI emits `answer: pass` or `answer: fail`.
+	status := checklist.StatusFail
+	if strings.EqualFold(strings.TrimSpace(parsedResult.Answer), "pass") {
+		status = checklist.StatusPass
+	}
 
 	// Only include fix prompt if validation failed
 	fixPrompt := ""
@@ -242,15 +234,15 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 	}
 
 	return checklist.ValidationResult{
-		SectionPath:    promptCtx.GetFullSectionPath(),
-		Question:       promptCtx.Prompt.Question,
-		ExpectedAnswer: promptCtx.Prompt.Answer,
-		ActualAnswer:   parsedResult.Answer,
-		Status:         status,
-		Rationale:      promptCtx.Prompt.Rationale,
-		FixPrompt:      fixPrompt,
-		PromptIndex:    promptIndex,
-		Docs:           promptCtx.GetEffectiveDocs(),
+		SectionPath:  promptCtx.GetFullSectionPath(),
+		Question:     promptCtx.Prompt.Question,
+		ActualAnswer: parsedResult.Answer,
+		Context:      parsedResult.Context,
+		Status:       status,
+		Rationale:    promptCtx.Prompt.Rationale,
+		FixPrompt:    fixPrompt,
+		PromptIndex:  promptIndex,
+		Docs:         promptCtx.GetEffectiveDocs(),
 	}, nil
 }
 
@@ -259,12 +251,14 @@ func (e *ChecklistEvaluator) evaluatePrompt(
 // or a mapping (violation map keyed by AC id).
 type resultYAML struct {
 	Answer    yaml.Node `yaml:"answer"`
+	Context   []string  `yaml:"context,omitempty"`
 	FixPrompt string    `yaml:"fix_prompt,omitempty"`
 }
 
 // ParsedResult contains the parsed answer and optional fix prompt.
 type ParsedResult struct {
 	Answer    string
+	Context   []string
 	FixPrompt string
 }
 
@@ -302,6 +296,7 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult
 
 	return ParsedResult{
 		Answer:    renderAnswerNode(&result.Answer),
+		Context:   result.Context,
 		FixPrompt: strings.TrimSpace(result.FixPrompt),
 	}
 }
@@ -329,38 +324,6 @@ func renderAnswerNode(node *yaml.Node) string {
 	return strings.TrimRight(string(out), "\n")
 }
 
-// compareAnswers compares actual answer to expected and returns status.
-func (e *ChecklistEvaluator) compareAnswers(
-	expected, actual string,
-	acCount int,
-) checklist.Status {
-	expected = strings.TrimSpace(strings.ToLower(expected))
-	actual = strings.TrimSpace(strings.ToLower(actual))
-
-	// Universal pass/fail shape: when no expected answer is configured in
-	// the checklist, treat answer == "pass" as PASS and anything else as
-	// FAIL. The pass criterion lives inside the Q: prompt itself.
-	if expected == "" {
-		if actual == "pass" {
-			return checklist.StatusPass
-		}
-
-		return checklist.StatusFail
-	}
-
-	// Try specialized comparisons in order
-	if status, matched := e.trySpecializedComparison(expected, actual, acCount); matched {
-		return status
-	}
-
-	// Exact match fallback
-	if expected == actual {
-		return checklist.StatusPass
-	}
-
-	return checklist.StatusFail
-}
-
 // stripMarkdownFences removes leading/trailing markdown code fences
 // (```yaml, ```yml, or plain ```) from a YAML payload. Some models wrap
 // answer blocks inside markdown fences even when the surrounding format
@@ -381,259 +344,6 @@ func stripMarkdownFences(content string) string {
 	content = strings.TrimSuffix(content, "```")
 
 	return strings.TrimSpace(content)
-}
-
-// trySpecializedComparison attempts to match specialized comparison patterns.
-// Returns the status and whether a pattern was matched.
-func (e *ChecklistEvaluator) trySpecializedComparison(
-	expected, actual string,
-	acCount int,
-) (checklist.Status, bool) {
-	// Handle empty-map expectation: "{}" means "no violations"
-	if expected == "{}" {
-		return e.compareEmptyMap(actual), true
-	}
-
-	// Handle special case: "= total AC count" or similar
-	if e.isACCountComparison(expected) {
-		return e.compareToACCount(expected, actual, acCount), true
-	}
-
-	// Handle percentage comparisons BEFORE generic ≥/≤ to catch "≥50% of total"
-	if strings.Contains(expected, "%") {
-		return e.comparePercentage(expected, actual, acCount), true
-	}
-
-	// Handle comparison operators
-	if e.isGreaterOrEqualComparison(expected) {
-		return e.compareGreaterOrEqual(expected, actual), true
-	}
-
-	if e.isLessOrEqualComparison(expected) {
-		return e.compareLessOrEqual(expected, actual), true
-	}
-
-	// Handle ranges like "3-7" or "0-2"
-	if e.isRangeComparison(expected) {
-		return e.compareRange(expected, actual), true
-	}
-
-	return checklist.StatusFail, false
-}
-
-// isACCountComparison checks if the expected value is an AC count comparison.
-func (e *ChecklistEvaluator) isACCountComparison(expected string) bool {
-	return strings.Contains(expected, "total") && strings.Contains(expected, "ac")
-}
-
-// compareEmptyMap returns PASS when actual parses as an empty YAML mapping,
-// FAIL otherwise (non-empty map, non-map value, or parse error).
-func (e *ChecklistEvaluator) compareEmptyMap(actual string) checklist.Status {
-	node, ok := checklist.ParseAnswerMap(actual)
-	if !ok {
-		return checklist.StatusFail
-	}
-
-	if checklist.AnswerMapEntryCount(node) == 0 {
-		return checklist.StatusPass
-	}
-
-	return checklist.StatusFail
-}
-
-// isGreaterOrEqualComparison checks for >= or ≥ prefix.
-func (e *ChecklistEvaluator) isGreaterOrEqualComparison(expected string) bool {
-	return strings.HasPrefix(expected, ">=") || strings.HasPrefix(expected, "≥")
-}
-
-// isLessOrEqualComparison checks for <= or ≤ prefix.
-func (e *ChecklistEvaluator) isLessOrEqualComparison(expected string) bool {
-	return strings.HasPrefix(expected, "<=") || strings.HasPrefix(expected, "≤")
-}
-
-// isRangeComparison checks for range pattern like "3-7".
-func (e *ChecklistEvaluator) isRangeComparison(expected string) bool {
-	return strings.Contains(expected, "-") && !strings.HasPrefix(expected, "-")
-}
-
-// compareGreaterOrEqual handles >=N comparisons.
-func (e *ChecklistEvaluator) compareGreaterOrEqual(expected, actual string) checklist.Status {
-	// Extract number from expected (e.g., ">=2" -> 2)
-	re := regexp.MustCompile(`[>=≥]+\s*(\d+)`)
-
-	matches := re.FindStringSubmatch(expected)
-	if len(matches) < minRegexMatchLen {
-		return checklist.StatusFail
-	}
-
-	expectedNum, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	actualNum, err := strconv.Atoi(actual)
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	if actualNum >= expectedNum {
-		return checklist.StatusPass
-	}
-
-	return checklist.StatusFail
-}
-
-// compareLessOrEqual handles <=N comparisons.
-func (e *ChecklistEvaluator) compareLessOrEqual(expected, actual string) checklist.Status {
-	// Extract number from expected (e.g., "<=10" -> 10)
-	re := regexp.MustCompile(`[<=≤]+\s*(\d+)`)
-
-	matches := re.FindStringSubmatch(expected)
-	if len(matches) < minRegexMatchLen {
-		return checklist.StatusFail
-	}
-
-	expectedNum, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	actualNum, err := strconv.Atoi(actual)
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	if actualNum <= expectedNum {
-		return checklist.StatusPass
-	}
-
-	return checklist.StatusFail
-}
-
-// compareRange handles range comparisons like "3-7".
-func (e *ChecklistEvaluator) compareRange(expected, actual string) checklist.Status {
-	parts := strings.Split(expected, "-")
-	if len(parts) != rangeParts {
-		return checklist.StatusFail
-	}
-
-	minVal, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	maxVal, err := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	actualNum, err := strconv.Atoi(actual)
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	if actualNum >= minVal && actualNum <= maxVal {
-		return checklist.StatusPass
-	}
-
-	// Close to range = warning
-	if actualNum == minVal-1 || actualNum == maxVal+1 {
-		return checklist.StatusWarn
-	}
-
-	return checklist.StatusFail
-}
-
-// comparePercentage handles percentage comparisons.
-// When expected contains "of total" (e.g., "≥50% of total"), the actual answer is treated
-// as a count and converted to a percentage using the acCount as the denominator.
-// Otherwise the actual answer is treated directly as a percentage.
-func (e *ChecklistEvaluator) comparePercentage(expected, actual string, acCount int) checklist.Status {
-	expectedPct, parsed := extractPercentageThreshold(expected)
-	if !parsed {
-		return checklist.StatusFail
-	}
-
-	actualPct, resolved := resolveActualPercentage(expected, actual, acCount)
-	if !resolved {
-		return checklist.StatusFail
-	}
-
-	return comparePercentageValues(expected, actualPct, expectedPct)
-}
-
-// comparePercentageValues compares actual vs expected percentage with ≥ operator support.
-func comparePercentageValues(expected string, actualPct, expectedPct int) checklist.Status {
-	if strings.Contains(expected, ">=") || strings.Contains(expected, "≥") {
-		if actualPct >= expectedPct {
-			return checklist.StatusPass
-		}
-
-		if actualPct >= expectedPct-warnThresholdPct {
-			return checklist.StatusWarn
-		}
-	}
-
-	return checklist.StatusFail
-}
-
-// extractPercentageThreshold extracts the numeric threshold from an expected percentage string.
-func extractPercentageThreshold(expected string) (int, bool) {
-	re := regexp.MustCompile(`[>=≥]*\s*(\d+)%`)
-
-	matches := re.FindStringSubmatch(expected)
-	if len(matches) < minRegexMatchLen {
-		return 0, false
-	}
-
-	val, err := strconv.Atoi(matches[1])
-
-	return val, err == nil
-}
-
-// resolveActualPercentage extracts the actual percentage value from the AI answer.
-// When expected contains "of total", converts a count to percentage using acCount.
-func resolveActualPercentage(expected, actual string, acCount int) (int, bool) {
-	actualPctRe := regexp.MustCompile(`(\d+)%?`)
-
-	actualMatches := actualPctRe.FindStringSubmatch(actual)
-	if len(actualMatches) < minRegexMatchLen {
-		return 0, false
-	}
-
-	actualNum, err := strconv.Atoi(actualMatches[1])
-	if err != nil {
-		return 0, false
-	}
-
-	// When expected says "of total", the AI answers with a count (not a percentage).
-	// Convert count to percentage using acCount as denominator.
-	if strings.Contains(expected, "of total") {
-		if acCount == 0 {
-			return 0, false
-		}
-
-		return (actualNum * percentBase) / acCount, true
-	}
-
-	return actualNum, true
-}
-
-// compareToACCount handles "= total AC count" comparisons.
-func (e *ChecklistEvaluator) compareToACCount(
-	_, actual string,
-	acCount int,
-) checklist.Status {
-	actualNum, err := strconv.Atoi(actual)
-	if err != nil {
-		return checklist.StatusFail
-	}
-
-	if actualNum == acCount {
-		return checklist.StatusPass
-	}
-
-	return checklist.StatusFail
 }
 
 // loadRequestedDocs resolves document keys to file paths.

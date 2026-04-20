@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	maxQuestionLen        = 40
+	maxQuestionLen        = 80
 	maxQuestionLenFixList = 80 // Longer question display for fix prompts list
 	separatorLine         = "================================================================================"
 	percentMultiplier     = 100
@@ -61,22 +61,18 @@ func (r *TableRenderer) renderTable(report *checklist.ChecklistReport) {
 	tabWriter := tabwriter.NewWriter(r.writer, 0, 0, columnPadding, ' ', 0)
 
 	// Header
-	_, _ = fmt.Fprintln(tabWriter, "SECTION\tQUESTION\tEXPECTED\tACTUAL\tSTATUS")
-	_, _ = fmt.Fprintln(tabWriter, "-------\t--------\t--------\t------\t------")
+	_, _ = fmt.Fprintln(tabWriter, "SECTION\tQUESTION\tACTUAL\tSTATUS")
+	_, _ = fmt.Fprintln(tabWriter, "-------\t--------\t------\t------")
 
 	// Results
 	for _, result := range report.Results {
 		question := truncateString(result.Question, maxQuestionLen)
-		expected := truncateString(result.ExpectedAnswer, answerMaxLen)
-		actual := summarizeAnswer(
-			result.ExpectedAnswer, result.ActualAnswer, answerMaxLen,
-		)
+		actual := summarizeAnswer(result.ActualAnswer, answerMaxLen)
 		status := r.formatStatus(result.Status)
 
-		_, _ = fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%s\n",
 			result.SectionPath,
 			question,
-			expected,
 			actual,
 			status,
 		)
@@ -162,26 +158,10 @@ func (r *TableRenderer) renderFixPrompts(report *checklist.ChecklistReport) {
 	_, _ = fmt.Fprintln(r.writer, separatorLine)
 }
 
-// summarizeAnswer renders the ACTUAL column for a row. For map-typed
-// questions (expected == "{}") it collapses a non-empty map to "N AC(s)"
-// and preserves "{}" for empty maps. Other answers fall back to
-// truncateString.
-func summarizeAnswer(expected, actual string, maxLen int) string {
-	if strings.TrimSpace(expected) != "{}" {
-		return truncateString(actual, maxLen)
-	}
-
-	node, ok := checklist.ParseAnswerMap(actual)
-	if !ok {
-		return truncateString(actual, maxLen)
-	}
-
-	count := checklist.AnswerMapEntryCount(node)
-	if count == 0 {
-		return "{}"
-	}
-
-	return fmt.Sprintf("%d AC(s)", count)
+// summarizeAnswer renders the ACTUAL column for a row by truncating the
+// answer to maxLen characters.
+func summarizeAnswer(actual string, maxLen int) string {
+	return truncateString(actual, maxLen)
 }
 
 // truncateString truncates a string to maxLen, adding "..." if needed.
