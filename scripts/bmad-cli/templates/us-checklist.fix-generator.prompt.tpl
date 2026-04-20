@@ -29,7 +29,6 @@ The following check failed and needs to be fixed:
 ### Failed Check: {{ .FailedCheck.SectionPath }}
 
 **Question:** {{ .FailedCheck.Question }}
-**Expected:** {{ .FailedCheck.ExpectedAnswer }}
 **Actual:** {{ .FailedCheck.ActualAnswer }}
 
 **Suggested Fix Template:**

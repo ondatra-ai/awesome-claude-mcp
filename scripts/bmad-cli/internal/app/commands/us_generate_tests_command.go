@@ -209,10 +209,10 @@ func (c *USValidationCommand) evaluateTestScenario(
 
 	if fix {
 		report, err = testEvaluator.EvaluateUntilFailure(
-			ctx, scenario, scenario.ScenarioID, scenario.Description, 0, prompts, tmpDir)
+			ctx, scenario, scenario.ScenarioID, scenario.Description, prompts, tmpDir)
 	} else {
 		report, err = testEvaluator.Evaluate(
-			ctx, scenario, scenario.ScenarioID, scenario.Description, 0, prompts, tmpDir)
+			ctx, scenario, scenario.ScenarioID, scenario.Description, prompts, tmpDir)
 	}
 
 	if err != nil {

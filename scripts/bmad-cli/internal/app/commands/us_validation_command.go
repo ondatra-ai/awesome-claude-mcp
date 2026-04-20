@@ -30,7 +30,6 @@ const (
 	separatorWidth             = 80
 	storyFilePermissions       = 0o644
 	storyDirPermissions        = 0o755
-	failureActualSummaryLen    = 40
 )
 
 // CommandConfig describes a single `us` subcommand: which checklist file it
@@ -239,9 +238,7 @@ func (c *USValidationCommand) runSingleIteration(
 		return false, fmt.Errorf("failed to load story version: %w", err)
 	}
 
-	acCount := len(currentStory.AcceptanceCriteria)
-
-	report, err := c.evaluateStory(ctx, currentStory, acCount, valCtx, fix)
+	report, err := c.evaluateStory(ctx, currentStory, valCtx, fix)
 	if err != nil {
 		return false, err
 	}
@@ -276,7 +273,6 @@ func (c *USValidationCommand) runSingleIteration(
 func (c *USValidationCommand) evaluateStory(
 	ctx context.Context,
 	currentStory *story.Story,
-	acCount int,
 	valCtx *validationContext,
 	fix bool,
 ) (*checklistmodels.ChecklistReport, error) {
@@ -288,11 +284,11 @@ func (c *USValidationCommand) evaluateStory(
 	if fix {
 		report, err = c.checklistEvaluator.EvaluateUntilFailure(
 			ctx, currentStory, currentStory.ID, currentStory.Title,
-			acCount, valCtx.prompts, valCtx.tmpDir)
+			valCtx.prompts, valCtx.tmpDir)
 	} else {
 		report, err = c.checklistEvaluator.Evaluate(
 			ctx, currentStory, currentStory.ID, currentStory.Title,
-			acCount, valCtx.prompts, valCtx.tmpDir)
+			valCtx.prompts, valCtx.tmpDir)
 	}
 
 	if err != nil {
@@ -652,40 +648,17 @@ func (c *USValidationCommand) displayFailureInfo(
 	console.Printf("CHECK FAILED: %s\n", failedCheck.SectionPath)
 	console.Separator("=", separatorWidth)
 	console.Printf("Question: %s\n", failedCheck.Question)
-	console.Printf("Expected: %s\n", failedCheck.ExpectedAnswer)
-	console.Printf("Actual: %s\n", summarizeAnswer(
-		failedCheck.ExpectedAnswer,
-		failedCheck.ActualAnswer,
-		failureActualSummaryLen,
-	))
 
 	if failedCheck.Rationale != "" {
 		console.Printf("Rationale: %s\n", failedCheck.Rationale)
 	}
 
-	c.displayViolations(failedCheck)
-}
+	if len(failedCheck.Context) > 0 {
+		console.Println("Context:")
 
-// displayViolations prints the raw violation map for map-typed checks so the
-// user can see which ACs and which terms triggered the failure.
-func (c *USValidationCommand) displayViolations(
-	failedCheck *checklistmodels.ValidationResult,
-) {
-	if strings.TrimSpace(failedCheck.ExpectedAnswer) != "{}" {
-		return
-	}
-
-	node, ok := checklistmodels.ParseAnswerMap(failedCheck.ActualAnswer)
-	if !ok || checklistmodels.AnswerMapEntryCount(node) == 0 {
-		return
-	}
-
-	console.Println("Violations:")
-
-	for _, line := range strings.Split(
-		strings.TrimRight(failedCheck.ActualAnswer, "\n"), "\n",
-	) {
-		console.Printf("  %s\n", line)
+		for _, line := range failedCheck.Context {
+			console.Printf("  - %s\n", line)
+		}
 	}
 }
 

@@ -6,10 +6,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Prompt represents a single validation prompt with Q/A/rationale.
+// Prompt represents a single validation prompt.
 type Prompt struct {
 	Question     string   // The validation question (Q in YAML)
-	Answer       string   // The expected answer (A in YAML)
 	Rationale    string   // Why this matters
 	Skip         string   // If set, skip this prompt
 	ActionIfYes  string   // Action if answer is yes
@@ -19,7 +18,7 @@ type Prompt struct {
 }
 
 // UnmarshalYAML implements custom YAML unmarshaling for Prompt.
-// This handles the uppercase Q and A fields from the YAML format.
+// This handles the uppercase Q field from the YAML format.
 func (p *Prompt) UnmarshalYAML(node *yaml.Node) error {
 	var raw map[string]interface{}
 
@@ -29,7 +28,6 @@ func (p *Prompt) UnmarshalYAML(node *yaml.Node) error {
 	}
 
 	p.Question = getStringFromMap(raw, "Q")
-	p.Answer = getStringFromMap(raw, "A")
 	p.Rationale = getStringFromMap(raw, "rationale")
 	p.Skip = getStringFromMap(raw, "skip")
 	p.ActionIfYes = getStringFromMap(raw, "action_if_yes")
