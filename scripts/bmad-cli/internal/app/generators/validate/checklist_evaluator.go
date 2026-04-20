@@ -278,6 +278,10 @@ func (e *ChecklistEvaluator) parseResultFile(response, path string) ParsedResult
 		return ParsedResult{}
 	}
 
+	// Strip markdown code fences (```yaml ... ```) that some models add
+	// inside the FILE_START/FILE_END block.
+	content = stripMarkdownFences(content)
+
 	// Save the extracted content to file
 	err := os.WriteFile(path, []byte(content), filePermissions)
 	if err != nil {
@@ -333,6 +337,17 @@ func (e *ChecklistEvaluator) compareAnswers(
 	expected = strings.TrimSpace(strings.ToLower(expected))
 	actual = strings.TrimSpace(strings.ToLower(actual))
 
+	// Universal pass/fail shape: when no expected answer is configured in
+	// the checklist, treat answer == "pass" as PASS and anything else as
+	// FAIL. The pass criterion lives inside the Q: prompt itself.
+	if expected == "" {
+		if actual == "pass" {
+			return checklist.StatusPass
+		}
+
+		return checklist.StatusFail
+	}
+
 	// Try specialized comparisons in order
 	if status, matched := e.trySpecializedComparison(expected, actual, acCount); matched {
 		return status
@@ -344,6 +359,28 @@ func (e *ChecklistEvaluator) compareAnswers(
 	}
 
 	return checklist.StatusFail
+}
+
+// stripMarkdownFences removes leading/trailing markdown code fences
+// (```yaml, ```yml, or plain ```) from a YAML payload. Some models wrap
+// answer blocks inside markdown fences even when the surrounding format
+// is FILE_START/FILE_END markers; this normalizes that.
+func stripMarkdownFences(content string) string {
+	content = strings.TrimSpace(content)
+
+	// Strip leading fence on its own line: ```yaml, ```yml, or ```
+	if strings.HasPrefix(content, "```") {
+		if idx := strings.Index(content, "\n"); idx >= 0 {
+			content = content[idx+1:]
+		} else {
+			content = strings.TrimPrefix(content, "```")
+		}
+	}
+
+	content = strings.TrimSpace(content)
+	content = strings.TrimSuffix(content, "```")
+
+	return strings.TrimSpace(content)
 }
 
 // trySpecializedComparison attempts to match specialized comparison patterns.

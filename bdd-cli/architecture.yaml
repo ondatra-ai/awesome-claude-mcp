@@ -114,9 +114,15 @@ architecture:
           e2e:
             path: tests/e2e
             framework: playwright
+            helpers:
+              - name: McpClient
+                description: "Test helper that wraps the MCP server connection; provides callTool() to invoke MCP tools (e.g. edit_document) in tests"
           integration:
             path: tests/integration
             framework: playwright
+            helpers:
+              - name: McpClient
+                description: "Test helper that wraps the MCP server connection; provides callTool() to invoke MCP tools (e.g. edit_document) in tests"
           unit:
             path: services/mcp-service
             framework: go-test

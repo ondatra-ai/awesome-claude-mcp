@@ -17,7 +17,7 @@ section:
 ---
 validation_prompt:
   Q: str()
-  A: str()
+  A: str(required=False)
   rationale: str(required=False)
   skip: str(required=False)
   docs: list(str(), required=False)

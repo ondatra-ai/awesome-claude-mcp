@@ -46,6 +46,13 @@ test_config:
   framework: str()
   config: str(required=False)
   pattern: str(required=False)
+  helpers: list(include('test_helper'), required=False)
+
+---
+test_helper:
+  name: str()
+  description: str()
+  path: str(required=False)
 
 ---
 documentation_def:
