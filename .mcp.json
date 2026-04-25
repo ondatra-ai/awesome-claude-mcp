@@ -11,6 +11,10 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "historian": {
+      "command": "npx",
+      "args": ["-y", "claude-historian-mcp"]
     }
   }
 }
