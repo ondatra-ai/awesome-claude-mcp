@@ -1,27 +1,11 @@
 ---
 name: claude-historian
-description: Automatic history search — checks past sessions before web research, planning, and debugging, siblings deepen coverage
-triggers: [PreToolUse, PostToolUse]
+description: Search past Claude sessions for solutions, decisions, and context when researching, planning, or debugging
 ---
 
 # Historian Plugin
 
-Session memory. Checks past sessions before redundant research, planning, or debugging.
-
-## Hooks
-
-| Hook | When | Action |
-|------|------|--------|
-| **PreToolUse(WebSearch/WebFetch)** | Before web research | Checks `find_similar_queries()` first |
-| **PreToolUse(EnterPlanMode)** | Before planning | Searches `search_plans()` for past approaches |
-| **PreToolUse(Task)** | Before agents | Checks `find_tool_patterns()` for workflows |
-| **PostToolUse(Bash)** | After errors | Suggests `get_error_solutions()` |
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `/search-historian <query>` | Search past sessions for solutions, decisions, context |
+Session memory. Search past sessions for prior solutions, decisions, or context before redundant research, planning, or debugging.
 
 ## Workflows
 
