@@ -30,6 +30,7 @@ func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 
 	usCmd.AddCommand(newUSCreateCmd(container))
 	usCmd.AddCommand(newUSRefineCmd(container))
+	usCmd.AddCommand(newUSApplyCmd(container))
 	usCmd.AddCommand(newUSGenerateTestsCmd(container))
 	usCmd.AddCommand(newUSImplementCmd(container))
 
@@ -162,6 +163,25 @@ Example:
 		commands.CommandConfig{
 			CommandName:   "us refine",
 			ChecklistName: "us-refine",
+			LoadFromEpic:  false,
+		},
+	)
+}
+
+func newUSApplyCmd(container *bootstrap.Container) *cobra.Command {
+	return newUSChecklistCmd(
+		container,
+		"apply [story-number]",
+		"Apply scenarios from a refined user story",
+		`Load a story from docs/stories/ and validate it against the us-apply
+checklist. The story file is updated in place upon passing all checks.
+
+Example:
+  bmad-cli us apply 4.1
+  bmad-cli us apply 4.1 --fix`,
+		commands.CommandConfig{
+			CommandName:   "us apply",
+			ChecklistName: "us-apply",
 			LoadFromEpic:  false,
 		},
 	)

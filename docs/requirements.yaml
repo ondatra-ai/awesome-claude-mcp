@@ -17,15 +17,9 @@ scenarios:
     description: "server responds with correct status"
     service: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-INT-001"
         merge_date: "2025-09-23"
     merged_steps:
@@ -40,15 +34,9 @@ scenarios:
     description: "version endpoint rejects invalid methods"
     service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-004"
         merge_date: "2025-09-23"
     merged_steps:
@@ -64,15 +52,9 @@ scenarios:
     description: "health endpoint returns healthy status"
     service: "backend"
     requirement: "Backend /health endpoint returns healthy status"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-002"
         merge_date: "2025-09-23"
     merged_steps:
@@ -87,15 +69,9 @@ scenarios:
     description: "health endpoint rejects invalid methods"
     service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-004"
         merge_date: "2025-09-23"
     merged_steps:
@@ -111,15 +87,9 @@ scenarios:
     description: "non-existent endpoint returns 404"
     service: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-003"
         merge_date: "2025-09-23"
     merged_steps:
@@ -135,15 +105,9 @@ scenarios:
     description: "service returns version with headers"
     service: "backend"
     requirement: "Backend /version endpoint returns 1.0.0"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-001"
         merge_date: "2025-09-23"
     merged_steps:
@@ -158,15 +122,9 @@ scenarios:
     description: "health endpoint accessible via HTTP"
     service: "backend"
     requirement: "Backend /health endpoint returns healthy status"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-006"
         merge_date: "2025-09-23"
     merged_steps:
@@ -181,15 +139,9 @@ scenarios:
     description: "returns 404 for non-existent endpoints"
     service: "backend"
     requirement: "Backend handles 404 for non-existent endpoints"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-004"
         merge_date: "2025-09-23"
     merged_steps:
@@ -205,15 +157,9 @@ scenarios:
     description: "returns 405 for POST on version endpoint"
     service: "backend"
     requirement: "Backend rejects invalid HTTP methods"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-005"
         merge_date: "2025-09-23"
     merged_steps:
@@ -229,15 +175,9 @@ scenarios:
     description: "includes CORS headers for frontend requests"
     service: "backend"
     requirement: "Backend provides CORS headers for frontend"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/backend-api.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-007"
         merge_date: "2025-09-23"
     merged_steps:
@@ -253,15 +193,9 @@ scenarios:
     description: "SPA loads in browser"
     service: "frontend"
     requirement: "Frontend single-page application loads successfully"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/homepage.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-002"
         merge_date: "2025-09-23"
     merged_steps:
@@ -276,15 +210,9 @@ scenarios:
     description: "version appears at bottom of page"
     service: "frontend"
     requirement: "Homepage displays backend version at bottom"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/homepage.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-003"
         merge_date: "2025-09-23"
     merged_steps:
@@ -299,15 +227,9 @@ scenarios:
     description: "welcome card is visible"
     service: "frontend"
     requirement: "Homepage displays welcome card with features"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/homepage.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-008"
         merge_date: "2025-09-23"
     merged_steps:
@@ -323,15 +245,9 @@ scenarios:
     description: "adapts to different viewport sizes"
     service: "frontend"
     requirement: "Homepage has responsive design"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/homepage.spec.ts"
     last_updated: "2025-10-08"
     user_stories:
-      - story_id: "1.1"
-        story_file: "docs/stories/1.1-initial-setup.md"
+      - story: "docs/stories/1.1-initial-setup.md"
         scenario_id: "1.1-E2E-010"
         merge_date: "2025-09-23"
     merged_steps:
@@ -346,19 +262,12 @@ scenarios:
   INT-008:
     description: "HTTP+SSE session establishment succeeds"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-001"
         merge_date: "2025-10-09"
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-002"
         merge_date: "2025-10-09"
     merged_steps:
@@ -373,15 +282,9 @@ scenarios:
   INT-009:
     description: "HTTP endpoint establishes SSE stream for server messages"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-003"
         merge_date: "2025-10-09"
     merged_steps:
@@ -395,15 +298,9 @@ scenarios:
   INT-010:
     description: "Health check returns service status with dependencies"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-004"
         merge_date: "2025-10-09"
     merged_steps:
@@ -419,15 +316,9 @@ scenarios:
   INT-011:
     description: "Server rejects unauthorized domain CORS preflight request"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-005"
         merge_date: "2025-10-09"
     merged_steps:
@@ -441,15 +332,9 @@ scenarios:
   INT-012:
     description: "Server accepts CORS preflight from authorized Claude domain"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-006"
         merge_date: "2025-10-09"
     merged_steps:
@@ -463,15 +348,9 @@ scenarios:
   INT-013:
     description: "MCP protocol message parsing succeeds"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-007"
         merge_date: "2025-10-09"
     merged_steps:
@@ -486,19 +365,12 @@ scenarios:
   INT-014:
     description: "Server rejects invalid JSON with parsing error"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-008"
         merge_date: "2025-10-09"
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-014"
         merge_date: "2025-10-09"
     merged_steps:
@@ -513,15 +385,9 @@ scenarios:
   INT-015:
     description: "Server validates required MCP protocol fields"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-009"
         merge_date: "2025-10-09"
     merged_steps:
@@ -536,19 +402,12 @@ scenarios:
   INT-016:
     description: "Server rejects message with invalid field values"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-010"
         merge_date: "2025-10-09"
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-016"
         merge_date: "2025-10-09"
     merged_steps:
@@ -567,15 +426,9 @@ scenarios:
   INT-017:
     description: "Server accepts well-formed message with valid schema"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-011"
         merge_date: "2025-10-09"
     merged_steps:
@@ -589,15 +442,9 @@ scenarios:
   INT-018:
     description: "Server returns complete MCP response with required fields"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-012"
         merge_date: "2025-10-09"
     merged_steps:
@@ -613,15 +460,9 @@ scenarios:
   INT-019:
     description: "Server returns formatted error for invalid MCP request"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-013"
         merge_date: "2025-10-09"
     merged_steps:
@@ -637,15 +478,9 @@ scenarios:
   INT-020:
     description: "Server response includes JSON structure with metadata fields"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-014"
         merge_date: "2025-10-09"
     merged_steps:
@@ -661,15 +496,9 @@ scenarios:
   INT-021:
     description: "Server returns MCP protocol-compliant response"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-015"
         merge_date: "2025-10-09"
     merged_steps:
@@ -684,15 +513,9 @@ scenarios:
   INT-022:
     description: "Server tracks session state and message activity"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-016"
         merge_date: "2025-10-09"
     merged_steps:
@@ -708,15 +531,9 @@ scenarios:
   INT-023:
     description: "Server responds to keepalive request"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-017"
         merge_date: "2025-10-09"
     merged_steps:
@@ -730,15 +547,9 @@ scenarios:
   INT-024:
     description: "Server closes idle session after timeout period"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-018"
         merge_date: "2025-10-09"
     merged_steps:
@@ -753,15 +564,9 @@ scenarios:
   INT-025:
     description: "Server handles client-initiated session closure gracefully"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-019"
         merge_date: "2025-10-09"
     merged_steps:
@@ -777,15 +582,9 @@ scenarios:
   INT-026:
     description: "Server performs graceful shutdown on SIGTERM signal"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-020"
         merge_date: "2025-10-09"
     merged_steps:
@@ -801,15 +600,9 @@ scenarios:
   INT-027:
     description: "Server performs periodic heartbeat check on all connections"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-021"
         merge_date: "2025-10-09"
     merged_steps:
@@ -824,15 +617,9 @@ scenarios:
   INT-028:
     description: "Metrics endpoint returns connection statistics"
     service: "mcp-service"
-    level: "integration"
-    priority: "P2"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-022"
         merge_date: "2025-10-09"
     merged_steps:
@@ -848,15 +635,9 @@ scenarios:
   INT-029:
     description: "Server handles concurrent client connections successfully"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-023"
         merge_date: "2025-10-09"
     merged_steps:
@@ -871,15 +652,9 @@ scenarios:
   INT-030:
     description: "Server rejects connection when limit reached"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-024"
         merge_date: "2025-10-09"
     merged_steps:
@@ -894,15 +669,9 @@ scenarios:
   INT-031:
     description: "Server processes concurrent messages from multiple clients"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-025"
         merge_date: "2025-10-09"
     merged_steps:
@@ -917,15 +686,9 @@ scenarios:
   INT-032:
     description: "Server enforces rate limit and rejects excess requests"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-026"
         merge_date: "2025-10-09"
     merged_steps:
@@ -941,15 +704,9 @@ scenarios:
   INT-033:
     description: "Server handles rapid connection churn without race conditions"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-027"
         merge_date: "2025-10-09"
     merged_steps:
@@ -964,15 +721,9 @@ scenarios:
   INT-034:
     description: "Server maintains stable performance under concurrent connection load"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-028"
         merge_date: "2025-10-09"
     merged_steps:
@@ -987,15 +738,9 @@ scenarios:
   INT-035:
     description: "Server survives connection storm and recovers to normal operation"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-029"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1010,15 +755,9 @@ scenarios:
   INT-036:
     description: "Server achieves target message throughput under concurrent load"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-INT-030"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1033,15 +772,9 @@ scenarios:
   E2E-011:
     description: "MCP client completes handshake with server successfully"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-E2E-001"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1057,15 +790,9 @@ scenarios:
   E2E-012:
     description: "Server processes complete MCP request-response cycle with validation"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-E2E-002"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1081,15 +808,9 @@ scenarios:
   E2E-013:
     description: "Server handles invalid requests with fail-fast error response"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-E2E-003"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1105,15 +826,9 @@ scenarios:
   E2E-014:
     description: "Server isolates concurrent client sessions without cross-contamination"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-E2E-004"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1129,15 +844,9 @@ scenarios:
   E2E-015:
     description: "Health check returns status with connection and dependency metrics"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P2"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.1"
-        story_file: "docs/stories/3.1-*.yaml"
+      - story: "docs/stories/3.1-*.yaml"
         scenario_id: "3.1-E2E-005"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1153,15 +862,9 @@ scenarios:
   E2E-016:
     description: "Initialize handshake returns server metadata and capabilities"
     service: ""
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-E2E-001"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1176,15 +879,9 @@ scenarios:
   INT-037:
     description: "Server responds to tools/list request with tool definitions"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-001"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1198,15 +895,9 @@ scenarios:
   INT-038:
     description: "Server streams tool catalog via SSE with schema definitions"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-002"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1221,15 +912,9 @@ scenarios:
   INT-039:
     description: "Tool catalog includes all document editing operations"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-003"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1247,15 +932,9 @@ scenarios:
   INT-040:
     description: "Tool schemas conform to JSON Schema specification"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-004"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1270,15 +949,9 @@ scenarios:
   INT-041:
     description: "Tool discovery completes within 2 seconds"
     service: "mcp-service"
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-005"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1292,15 +965,9 @@ scenarios:
   INT-042:
     description: "replaceAll tool execution returns success with metadata"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-006"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1315,15 +982,9 @@ scenarios:
   INT-043:
     description: "append tool processes positioned insertion with anchor text"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-007"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1338,15 +999,9 @@ scenarios:
   INT-044:
     description: "Tool invocation follows JSON-RPC 2.0 message format"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-008"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1361,15 +1016,9 @@ scenarios:
   INT-045:
     description: "Tool invocation completes within 2 seconds"
     service: ""
-    level: "integration"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-009"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1383,15 +1032,9 @@ scenarios:
   INT-046:
     description: "Server parses Claude API format and returns compatible response"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-010"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1406,15 +1049,9 @@ scenarios:
   INT-047:
     description: "Server processes operations with parameters and returns responses"
     service: ""
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-011"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1428,15 +1065,9 @@ scenarios:
   INT-048:
     description: "Server rejects non-existent tool with method not found error"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-012"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1451,15 +1082,9 @@ scenarios:
   INT-049:
     description: "Server validates tool parameters and returns detailed error"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-013"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1474,15 +1099,9 @@ scenarios:
   INT-050:
     description: "Server validates documentId format and provides recovery hints"
     service: "mcp-service"
-    level: "integration"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/integration/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-INT-015"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1497,15 +1116,9 @@ scenarios:
   E2E-017:
     description: "Tool catalog discovery includes Google Docs operations"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-E2E-002"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1520,15 +1133,9 @@ scenarios:
   E2E-018:
     description: "replaceAll operation executes with document preview and metrics"
     service: ""
-    level: "e2e"
-    priority: "P0"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-E2E-003"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1545,15 +1152,9 @@ scenarios:
   E2E-019:
     description: "Complete Claude to MCP flow completes within 2 seconds"
     service: "mcp-service"
-    level: "e2e"
-    priority: "P1"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-10"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-E2E-004"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1567,15 +1168,9 @@ scenarios:
   E2E-020:
     description: "MCP server logs complete operation trace with metadata"
     service: ""
-    level: "e2e"
-    priority: "P2"
-    implementation_status:
-      status: "implemented"
-      file_path: "tests/e2e/mcp-service.spec.ts"
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "3.2"
-        story_file: "docs/stories/3.2-*.yaml"
+      - story: "docs/stories/3.2-*.yaml"
         scenario_id: "3.2-E2E-005"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1590,15 +1185,9 @@ scenarios:
   E2E-021:
     description: "Claude applies edit to shared Google Doc and confirms with URL"
     service: ""
-    level: "e2e"
-    priority: ""
-    implementation_status:
-      status: "pending"
-      file_path: null
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "4.1"
-        story_file: "docs/stories/4.1-*.yaml"
+      - story: "docs/stories/4.1-*.yaml"
         scenario_id: "4.1-001"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1613,15 +1202,9 @@ scenarios:
   E2E-022:
     description: "Claude returns service account email and sharing instructions for unshared doc"
     service: ""
-    level: "e2e"
-    priority: ""
-    implementation_status:
-      status: "pending"
-      file_path: null
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "4.1"
-        story_file: "docs/stories/4.1-*.yaml"
+      - story: "docs/stories/4.1-*.yaml"
         scenario_id: "4.1-002"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1636,15 +1219,9 @@ scenarios:
   E2E-023:
     description: "Claude provides service account email when asked which account to share with"
     service: ""
-    level: "e2e"
-    priority: ""
-    implementation_status:
-      status: "pending"
-      file_path: null
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "4.1"
-        story_file: "docs/stories/4.1-*.yaml"
+      - story: "docs/stories/4.1-*.yaml"
         scenario_id: "4.1-003"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1658,15 +1235,9 @@ scenarios:
   E2E-024:
     description: "Claude returns DOCUMENT_NOT_FOUND error for non-existent or deleted doc"
     service: ""
-    level: ""
-    priority: ""
-    implementation_status:
-      status: "pending"
-      file_path: null
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "4.1"
-        story_file: "docs/stories/4.1-*.yaml"
+      - story: "docs/stories/4.1-*.yaml"
         scenario_id: "4.1-004"
         merge_date: "2025-10-09"
     merged_steps:
@@ -1681,15 +1252,9 @@ scenarios:
   E2E-025:
     description: "Claude returns PERMISSION_DENIED error when doc shared as Viewer only"
     service: ""
-    level: ""
-    priority: ""
-    implementation_status:
-      status: "pending"
-      file_path: null
     last_updated: "2025-10-09"
     user_stories:
-      - story_id: "4.1"
-        story_file: "docs/stories/4.1-*.yaml"
+      - story: "docs/stories/4.1-*.yaml"
         scenario_id: "4.1-005"
         merge_date: "2025-10-09"
     merged_steps:
