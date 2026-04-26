@@ -1,76 +1,100 @@
 # Unified Checklist Engine
 
-## Core Insight
+## Core insight
 
-Every CLI command can be implemented as: **checklist + prompts + entity filter + fix mode**.
+Every CLI command is a walk over **entities × prompts**, with `--fix` turning
+each failed (entity, prompt) cell into a Claude-driven fix step. There are
+exactly two things that vary per command:
 
-The existing checklist engine (ChecklistEvaluator → FixPromptGenerator → FixApplier) already handles both single-entity (`us create`) and multi-entity (`req validate`) cases. The only command that bypasses this engine is `us merge-scenarios`, which uses a separate one-shot generator. This proposal unifies all commands under the checklist engine.
+1. **Entity source** — what populates the entity list.
+2. **Fix target** — what the fix step mutates.
 
-## The Model
+Everything else (prompt loading, evaluation, fix-prompt generation, fix
+application, version management, reporting) is shared.
 
-Every command is defined by three pieces of config:
+## The matrix
 
-1. **Checklist YAML** — what to validate (validation prompts with expected answers)
-2. **System + user prompt** — how to evaluate and how to fix
-3. **Entity filter** — which entities to operate on (JSON filter / parser)
+| Command            | Entities                                     | Prompts (N)                  | Fix target                       |
+|--------------------|----------------------------------------------|------------------------------|----------------------------------|
+| `us create`        | 1 — story extracted from epic                | from `us-create.yaml`        | story file in `docs/stories/`    |
+| `us refine`        | 1 — story loaded from `docs/stories/`        | from `us-refine.yaml`        | same story file                  |
+| `us apply`         | M — ACs from one story file                  | from `us-apply.yaml`         | `docs/requirements.yaml`         |
+| `us generate_tests`| M — scenarios from `docs/requirements.yaml`  | from `us-generate_tests.yaml`| per-scenario test file           |
+| `us implement`     | M — scenarios from `docs/requirements.yaml`  | from `us-implement.yaml`     | feature code (TBD)               |
 
-The `--fix` flag controls behavior:
-- Without `--fix`: report-only mode (dry run showing pass/fail status)
-- With `--fix`: validate → fail → fix loop (the fix prompt does the actual work)
+The `1 × N` commands share `newUSChecklistCmd`. The `M × N` commands share a
+walker (`ExecuteScenarioChecklist` for requirements-sourced scenarios,
+`ExecuteStoryScenarioChecklist` for story-sourced scenarios). The walker
+delegates to the same evaluator / fix-generator / fix-applier triple.
 
-## Unified Runner (Pseudocode)
+## The walk (pseudocode)
 
-```
-entities = load_entities(entity_filter, source_file)
-prompts  = load_checklist(checklist_yaml, stage)
+    entities = parser.parse(source)            // story file or requirements.yaml
+    prompts  = checklistLoader.load(name)      // bdd-cli/checklists/<name>.yaml
 
-for each entity in entities:
-    for each prompt in prompts:
-        result = evaluate(entity, prompt)
-        if FAIL and --fix:
-            generate fix_prompt(entity, failed_check)
-            apply fix
-            re-evaluate
-```
+    for entity in entities:
+      for prompt in prompts:
+        result = evaluator.evaluate(entity, prompt)
+        if result == FAIL and --fix:
+          fixPrompt = fixGen.generate(entity, prompt)
+          fixApplier.apply(entity, fixPrompt)        // mutates fix target
+          re-evaluate
 
-This is exactly what `us create` and `req validate` already do. The difference is only in what `entities` and `prompts` are.
+For `1 × N` commands `entities` is a single-element list; the inner loop is
+unchanged. The `--fix` branch is what carries the per-command difference: a
+`us refine` fix rewrites the story; a `us apply` fix calls `Edit` on a scratch
+copy of `docs/requirements.yaml`; a `us generate_tests` fix writes a test
+file.
 
-## How Existing Commands Map
+## Pluggable pieces
 
-| Command | Checklist | Entities | Fix action |
-|---------|-----------|----------|------------|
-| `us create 4.1 --fix` | user-story-description-checklist.yaml (stage: story_creation) | `[story 4.1]` (single entity from epic) | Rewrite story text |
-| `us refine 4.1 --fix` | user-story-description-checklist.yaml (stage: refinement) | `[story 4.1]` (single entity from story file) | Improve story text |
-| `req validate --fix` | test-validation-checklist.yaml (stage: test_validation) | All scenarios from requirements.yaml | Rewrite test code |
-| `us merge-scenarios 4.1` | **NEW** merge-scenarios-checklist.yaml | Scenarios from story 4.1 | Merge scenario into requirements.yaml |
+| Piece              | Subject-agnostic? | Where it lives                                                      |
+|--------------------|-------------------|---------------------------------------------------------------------|
+| ChecklistLoader    | yes               | `internal/infrastructure/checklist/checklist_loader.go`             |
+| Evaluator          | yes (template-driven) | `internal/app/generators/validate/checklist_evaluator.go`         |
+| FixPromptGenerator | yes (template-driven) | `internal/app/generators/validate/fix_prompt_generator.go`        |
+| FixApplier         | yes; returns content, caller persists | `internal/app/generators/validate/fix_applier.go`           |
+| EntityParser       | NO — one impl per source | requirements: `infrastructure/requirements/scenario_parser.go` <br> story: `infrastructure/stories/story_scenario_parser.go` *(new)* |
 
-## Merge Scenarios as a Checklist (New)
+Adding a new command is therefore: new checklist YAML + (optional) new entity
+parser + (optional) new template set + thin command wiring. No new engine
+code.
 
-Currently `merge_scenarios_generator.go` calls Claude directly per scenario with no validation loop. Reframed as a checklist:
+## Persistence note for `us apply`
 
-- **Validate prompt**: "Is scenario X already correctly merged into requirements.yaml with proper requirement ID, bidirectional mapping, and story lineage?"
-- **Expected answer**: "Yes"
-- **Fix prompt**: "Merge this scenario into requirements.yaml following the merge rules (ID assignment, field mapping, conflict resolution)"
+Unlike `us generate_tests` (which writes one isolated file per scenario),
+`us apply` mutates a single shared file (`docs/requirements.yaml`). To avoid
+leaving the registry in a partial state if the run aborts mid-walk:
 
-This turns a one-shot action into the same validate→fix loop. Benefits:
-- `us merge-scenarios 4.1` (no --fix) = dry run showing which scenarios are/aren't merged
-- `us merge-scenarios 4.1 --fix` = actually merges them
-- Same engine, same reporting, same interactive refinement
+1. At start, copy `docs/requirements.yaml` → `<tmpDir>/requirements.yaml`
+   (scratch).
+2. Every evaluator and fix-applier prompt reads from and writes to the
+   scratch path; `docs/requirements.yaml` is untouched.
+3. After the walk completes successfully, `os.Rename(scratch, original)`
+   atomically.
+4. On any abort, discard the scratch.
 
-## What Needs to Change
+Because the walk is sequential (M scenarios × N prompts, one cell at a time)
+there is no concurrency. Each cell sees the cumulative effect of all prior
+fixes through the scratch file.
 
-1. **Create merge-scenarios-checklist.yaml** with validation prompts for merge status
-2. **Create merge-scenarios system/user prompt templates** for the fix action
-3. **Create an entity parser** that extracts scenarios from a story (analogous to ScenarioParser for requirements.yaml)
-4. **Remove `merge_scenarios_generator.go`** — replaced by the checklist engine
-5. **Update `us_merge_scenarios_command.go`** to use ChecklistEvaluator + FixPromptGenerator + FixApplier instead of calling MergeScenariosGenerator directly
+## Why `us apply` is M × N, not 1 × N
 
-## Longer-Term Vision
+`us create` and `us refine` evaluate properties of a story *as a whole*
+(role/goal/AC count/etc.) — those questions have one answer per story, so the
+walk is `1 × N`.
 
-Any new command becomes just config:
-- Write a checklist YAML
-- Write system/user prompt templates
-- Define the entity filter
-- Wire it up as a thin command that calls the unified engine
+`us apply` evaluates properties of *each AC inside* the story (does this
+scenario already live in `requirements.yaml`? are there duplicates?) — those
+are per-scenario questions, so the walk is `M × N`. The fix prompt for each
+(scenario, prompt) cell is literally what performs the "copy" into
+`requirements.yaml`.
 
-No new generator code needed. The engine handles the validate/fix loop, versioning, interactive refinement, and reporting for all commands.
+## Replacing the old `us merge-scenarios`
+
+The deleted `merge_scenarios_generator.go` (last in commit `1001bd5`) ran a
+one-shot Claude call per scenario with no validation loop. The checklist
+engine subsumes it: the validate prompts answer "is this already merged
+correctly?", the fix prompt does the merge, and the loop gives idempotency
+(`us apply` without `--fix` is a dry-run report; with `--fix` it actually
+merges). No new generator code; no separate one-shot path.
