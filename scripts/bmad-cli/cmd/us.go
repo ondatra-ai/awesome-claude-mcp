@@ -169,22 +169,55 @@ Example:
 }
 
 func newUSApplyCmd(container *bootstrap.Container) *cobra.Command {
-	return newUSChecklistCmd(
-		container,
-		"apply [story-number]",
-		"Apply scenarios from a refined user story",
-		`Load a story from docs/stories/ and validate it against the us-apply
-checklist. The story file is updated in place upon passing all checks.
+	cmd := &cobra.Command{
+		Use:   "apply [story-number]",
+		Short: "Apply scenarios from a refined user story into the registry",
+		Long: `Walk every acceptance criterion in docs/stories/<story-number>-*.yaml and
+validate each one against the us-apply checklist. With --fix, every failed
+(AC, prompt) cell drives a Claude-mediated edit on a scratch copy of
+docs/requirements.yaml. The canonical registry file is replaced atomically
+only when every AC passes every prompt; otherwise it is left untouched.
+
+Stories that still use the deprecated scenarios.test_scenarios[] format are
+rejected — convert them to acceptance_criteria with embedded steps first.
 
 Example:
   bmad-cli us apply 4.1
   bmad-cli us apply 4.1 --fix`,
-		commands.CommandConfig{
-			CommandName:   "us apply",
-			ChecklistName: "us-apply",
-			LoadFromEpic:  false,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, stop := signal.NotifyContext(context.Background(),
+				os.Interrupt, syscall.SIGTERM)
+			defer stop()
+
+			fix, _ := cmd.Flags().GetBool("fix")
+
+			err := container.USValidationCmd.ExecuteStoryScenarioChecklist(
+				ctx,
+				args[0],
+				defaultRequirementsFile,
+				"us-apply",
+				fix,
+				container.StoryScenarioParser,
+				container.ApplyEvaluator,
+				container.ApplyFixPromptGenerator,
+				container.ApplyFixApplier,
+			)
+
+			stop()
+
+			if err != nil {
+				return fmt.Errorf("us apply command failed: %w", err)
+			}
+
+			return nil
 		},
-	)
+	}
+
+	cmd.Flags().Bool("fix", false,
+		"Enable interactive fix mode to merge scenarios into the registry")
+
+	return cmd
 }
 
 func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
