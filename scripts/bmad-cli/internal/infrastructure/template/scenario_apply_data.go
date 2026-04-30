@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+// MergedSteps represents the Given-When-Then structure flattened from a
+// scenario's steps[].
+type MergedSteps struct {
+	Given []string
+	When  []string
+	Then  []string
+}
+
 // ScenarioApplyData carries one acceptance criterion from a refined story
 // through the apply-checklist evaluator, fix-prompt generator, and
 // fix-applier templates. Each instance represents a single (scenario,
@@ -47,8 +55,7 @@ func NewScenarioApplyData(
 }
 
 // FormatSteps renders the AC's Given / When / Then for display in the
-// apply prompt templates. Mirrors TestGenerationData.FormatSteps so the
-// templates can share the same shape.
+// apply prompt templates.
 func (d *ScenarioApplyData) FormatSteps() string {
 	var result strings.Builder
 

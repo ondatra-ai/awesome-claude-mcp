@@ -19,13 +19,10 @@ application, version management, reporting) is shared.
 | `us create`        | 1 — story extracted from epic                | from `us-create.yaml`        | story file in `docs/stories/`    |
 | `us refine`        | 1 — story loaded from `docs/stories/`        | from `us-refine.yaml`        | same story file                  |
 | `us apply`         | M — ACs from one story file                  | from `us-apply.yaml`         | `docs/requirements.yaml`         |
-| `us generate_tests`| M — scenarios from `docs/requirements.yaml`  | from `us-generate_tests.yaml`| per-scenario test file           |
-| `us implement`     | M — scenarios from `docs/requirements.yaml`  | from `us-implement.yaml`     | feature code (TBD)               |
 
-The `1 × N` commands share `newUSChecklistCmd`. The `M × N` commands share a
-walker (`ExecuteScenarioChecklist` for requirements-sourced scenarios,
-`ExecuteStoryScenarioChecklist` for story-sourced scenarios). The walker
-delegates to the same evaluator / fix-generator / fix-applier triple.
+The `1 × N` commands share `newUSChecklistCmd`. The `M × N` commands share
+the `ExecuteStoryScenarioChecklist` walker for story-sourced scenarios. The
+walker delegates to the same evaluator / fix-generator / fix-applier triple.
 
 ## The walk (pseudocode)
 
@@ -43,8 +40,7 @@ delegates to the same evaluator / fix-generator / fix-applier triple.
 For `1 × N` commands `entities` is a single-element list; the inner loop is
 unchanged. The `--fix` branch is what carries the per-command difference: a
 `us refine` fix rewrites the story; a `us apply` fix calls `Edit` on a scratch
-copy of `docs/requirements.yaml`; a `us generate_tests` fix writes a test
-file.
+copy of `docs/requirements.yaml`.
 
 ## Pluggable pieces
 
@@ -54,7 +50,7 @@ file.
 | Evaluator          | yes (template-driven) | `internal/app/generators/validate/checklist_evaluator.go`         |
 | FixPromptGenerator | yes (template-driven) | `internal/app/generators/validate/fix_prompt_generator.go`        |
 | FixApplier         | yes; returns content, caller persists | `internal/app/generators/validate/fix_applier.go`           |
-| EntityParser       | NO — one impl per source | requirements: `infrastructure/requirements/scenario_parser.go` <br> story: `infrastructure/stories/story_scenario_parser.go` *(new)* |
+| EntityParser       | NO — one impl per source | story: `infrastructure/story/story_scenario_parser.go` |
 
 Adding a new command is therefore: new checklist YAML + (optional) new entity
 parser + (optional) new template set + thin command wiring. No new engine
@@ -62,7 +58,6 @@ code.
 
 ## Persistence note for `us apply`
 
-Unlike `us generate_tests` (which writes one isolated file per scenario),
 `us apply` mutates a single shared file (`docs/requirements.yaml`). To avoid
 leaving the registry in a partial state if the run aborts mid-walk:
 

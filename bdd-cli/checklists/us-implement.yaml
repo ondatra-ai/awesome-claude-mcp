@@ -1,9 +1,0 @@
-# Checklist for `bmad-cli us implement <story-id>`.
-# Placeholder — no validation prompts defined yet. The command loads this
-# file so the shape is in place for future sections to be added incrementally
-# per the unified-checklist-engine design.
-
-version: "1.0"
-last_updated: "2026-04-18"
-
-sections: []

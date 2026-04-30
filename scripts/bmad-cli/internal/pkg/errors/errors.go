@@ -38,10 +38,8 @@ func (e *AppError) Unwrap() error {
 
 // AI Errors.
 var (
-	ErrEmptyOutput         = errors.New("client returned empty output")
 	ErrCreateTmpDirectory  = errors.New("failed to create tmp directory")
 	ErrLoadData            = errors.New("failed to load data")
-	ErrLoadPrompts         = errors.New("failed to load prompts")
 	ErrGenerateContent     = errors.New("failed to generate content")
 	ErrWriteResponseFile   = errors.New("failed to write response file")
 	ErrParseResponse       = errors.New("failed to parse response")
@@ -50,30 +48,11 @@ var (
 	ErrParseYAML           = errors.New("failed to parse YAML")
 	ErrKeyNotFoundInYAML   = errors.New("key not found in YAML")
 	ErrReadTemplateFile    = errors.New("failed to read template file")
-	ErrReadChecklistFile   = errors.New("failed to read checklist file")
 	ErrParseTemplate       = errors.New("failed to parse template")
 	ErrSendQuery           = errors.New("failed to send query")
 	ErrClaudeReturnedError = errors.New("claude returned error")
 	ErrResponseTooLarge    = errors.New("claude response too large for buffer")
 )
-
-func ErrEmptyClientOutput(clientName string) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "EMPTY_OUTPUT",
-		Message:  clientName + " returned empty output",
-		Cause:    ErrEmptyOutput,
-	}
-}
-
-func ErrLoadPromptsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "LOAD_PROMPTS_FAILED",
-		Message:  "failed to load prompts",
-		Cause:    errors.Join(ErrLoadPrompts, cause),
-	}
-}
 
 func ErrReadTemplateFileFailed(filePath string, cause error) error {
 	return &AppError{
@@ -81,15 +60,6 @@ func ErrReadTemplateFileFailed(filePath string, cause error) error {
 		Code:     "READ_TEMPLATE_FILE_FAILED",
 		Message:  "failed to read template file " + filePath,
 		Cause:    errors.Join(ErrReadTemplateFile, cause),
-	}
-}
-
-func ErrReadChecklistFileFailed(filePath string, cause error) error {
-	return &AppError{
-		Category: CategoryAI,
-		Code:     "READ_CHECKLIST_FILE_FAILED",
-		Message:  "failed to read checklist file " + filePath,
-		Cause:    errors.Join(ErrReadChecklistFile, cause),
 	}
 }
 
@@ -138,25 +108,6 @@ func ErrClaudeExecutionFailed(cause error) error {
 	}
 }
 
-// Git Errors.
-var (
-	ErrGetCurrentBranch       = errors.New("failed to get current branch")
-	ErrCheckWorkingTreeStatus = errors.New("failed to check working tree status")
-	ErrFetchOriginMain        = errors.New("failed to fetch origin/main")
-	ErrCompareMainWithOrigin  = errors.New("failed to compare main with origin/main")
-	ErrSwitchBranch           = errors.New("failed to switch to branch")
-	ErrCheckoutRemoteBranch   = errors.New("failed to checkout remote branch")
-	ErrCreateBranch           = errors.New("failed to create branch")
-	ErrPushBranch             = errors.New("failed to push branch")
-	ErrSwitchToMain           = errors.New("failed to switch to main")
-	ErrDeleteLocalBranch      = errors.New("failed to delete local branch")
-	ErrDeleteRemoteBranch     = errors.New("failed to delete remote branch")
-	ErrCheckHEADState         = errors.New("failed to check HEAD state")
-	ErrCheckGitRepository     = errors.New("failed to check git repository")
-	ErrCheckMainBehindOrigin  = errors.New("failed to check if main is behind origin")
-	ErrUnrelatedBranch        = errors.New("currently on unrelated branch")
-)
-
 // Infrastructure Errors.
 var (
 	ErrDocumentNotConfigured      = errors.New("document path not configured")
@@ -168,10 +119,8 @@ var (
 	ErrFindStoryFile              = errors.New("failed to find story file")
 	ErrStoryFileNotFound          = errors.New("story file not found")
 	ErrMultipleStoryFiles         = errors.New("multiple story files found")
-	ErrStoryFileNotAccessible     = errors.New("story file not accessible")
 	ErrReadStoryFile              = errors.New("failed to read story file")
 	ErrParseStoryYAML             = errors.New("failed to parse story YAML")
-	ErrInvalidStorySlug           = errors.New("invalid story slug")
 	ErrParseStoryNumber           = errors.New("failed to parse story number")
 	ErrLoadEpic                   = errors.New("failed to load epic")
 	ErrStoryIndexOutOfBounds      = errors.New("story index out of bounds")
@@ -181,41 +130,9 @@ var (
 	ErrMultipleEpicFiles          = errors.New("multiple epic files found")
 	ErrReadEpicFile               = errors.New("failed to read epic file")
 	ErrParseEpicYAML              = errors.New("failed to parse epic YAML")
-	ErrGetStorySlug               = errors.New("failed to get story slug")
-	ErrCloneRequirementsFile      = errors.New("failed to clone requirements file")
-	ErrLoadStory                  = errors.New("failed to load story")
-	ErrMergeScenarios             = errors.New("failed to merge scenarios")
-	ErrReplaceRequirements        = errors.New("failed to replace requirements")
-	ErrGenerateTests              = errors.New("failed to generate tests")
-	ErrImplementFeatures          = errors.New("failed to implement features")
-	ErrLoadUserPromptFailed       = errors.New("failed to load user prompt")
-	ErrLoadSystemPromptFailed     = errors.New("failed to load system prompt")
-	ErrCreateOutputDirectory      = errors.New("failed to create directory")
-	ErrReadRequirementsFile       = errors.New("failed to read requirements.yaml")
-	ErrWriteOutputFile            = errors.New("failed to write output file")
-	ErrReadOriginalFile           = errors.New("failed to read original")
-	ErrCreateBackupFile           = errors.New("failed to create backup")
-	ErrReadMergedFile             = errors.New("failed to read merged")
-	ErrReplaceFile                = errors.New("failed to replace")
-	ErrLoadUserPrompt             = errors.New("failed to load user prompt")
-	ErrLoadSystemPrompt           = errors.New("failed to load system prompt")
-	ErrMergeScenario              = errors.New("failed to merge scenario")
-	ErrParsePendingScenarios      = errors.New("failed to parse pending scenarios")
-	ErrReadRequirements           = errors.New("failed to read requirements file")
-	ErrUnmarshalRequirements      = errors.New("failed to unmarshal requirements YAML")
 	ErrArchUpdateNoContent        = errors.New("no content found in architecture update response")
 	ErrModifierMustHaveOneKey     = errors.New("modifier must have exactly one key")
 	ErrInvalidStepStatementFormat = errors.New("invalid step statement format")
-	ErrHEADDetached               = errors.New("HEAD is detached - please checkout a branch first")
-	ErrWorkingTreeDirty           = errors.New(
-		"working tree has uncommitted changes - please commit or stash them first",
-	)
-	ErrNotGitRepository = errors.New("current directory is not a git repository")
-	ErrMainBehindOrigin = errors.New(
-		"main branch is behind origin/main - please pull the latest changes first",
-	)
-	ErrInvalidStoryFilename     = errors.New("invalid story filename format")
-	ErrInvalidStoryFilenameSlug = errors.New("invalid story filename: slug cannot be empty")
 )
 
 func ErrLoadTemplateFileFailed(cause error) error {
@@ -224,33 +141,6 @@ func ErrLoadTemplateFileFailed(cause error) error {
 		Code:     "LOAD_TEMPLATE_FILE_FAILED",
 		Message:  "failed to load template file",
 		Cause:    errors.Join(ErrLoadTemplateFile, cause),
-	}
-}
-
-func ErrGetCurrentBranchFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "GET_CURRENT_BRANCH_FAILED",
-		Message:  "failed to get current branch",
-		Cause:    errors.Join(ErrGetCurrentBranch, cause),
-	}
-}
-
-func ErrCheckWorkingTreeStatusFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CHECK_WORKING_TREE_STATUS_FAILED",
-		Message:  "failed to check working tree status",
-		Cause:    errors.Join(ErrCheckWorkingTreeStatus, cause),
-	}
-}
-
-func ErrFetchOriginMainFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "FETCH_ORIGIN_MAIN_FAILED",
-		Message:  "failed to fetch origin/main",
-		Cause:    errors.Join(ErrFetchOriginMain, cause),
 	}
 }
 
@@ -599,15 +489,6 @@ func ErrMultipleStoryFilesError(storyNumber string, matches []string) error {
 	}
 }
 
-func ErrStoryFileNotAccessibleError(storyFile string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "STORY_FILE_NOT_ACCESSIBLE",
-		Message:  "story file not accessible: " + storyFile,
-		Cause:    errors.Join(ErrStoryFileNotAccessible, cause),
-	}
-}
-
 func ErrReadStoryFileFailed(storyFile string, cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
@@ -623,15 +504,6 @@ func ErrParseStoryYAMLFailed(storyFile string, cause error) error {
 		Code:     "PARSE_STORY_YAML_FAILED",
 		Message:  "failed to parse story YAML from " + storyFile,
 		Cause:    errors.Join(ErrParseStoryYAML, cause),
-	}
-}
-
-func ErrInvalidStorySlugError(slug string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "INVALID_STORY_SLUG",
-		Message:  fmt.Sprintf("invalid story slug '%s': cannot contain spaces (use dashes instead)", slug),
-		Cause:    ErrInvalidStorySlug,
 	}
 }
 
@@ -716,308 +588,6 @@ func ErrParseEpicYAMLFailed(epicFilePath string, cause error) error {
 	}
 }
 
-func ErrGetStorySlugFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "GET_STORY_SLUG_FAILED",
-		Message:  "failed to get story slug",
-		Cause:    errors.Join(ErrGetStorySlug, cause),
-	}
-}
-
-func ErrCloneRequirementsFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "CLONE_REQUIREMENTS_FILE_FAILED",
-		Message:  "failed to clone requirements file",
-		Cause:    errors.Join(ErrCloneRequirementsFile, cause),
-	}
-}
-
-func ErrLoadStoryFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "LOAD_STORY_FAILED",
-		Message:  "failed to load story",
-		Cause:    errors.Join(ErrLoadStory, cause),
-	}
-}
-
-func ErrMergeScenariosFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "MERGE_SCENARIOS_FAILED",
-		Message:  "failed to merge scenarios",
-		Cause:    errors.Join(ErrMergeScenarios, cause),
-	}
-}
-
-func ErrReplaceRequirementsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "REPLACE_REQUIREMENTS_FAILED",
-		Message:  "failed to replace requirements",
-		Cause:    errors.Join(ErrReplaceRequirements, cause),
-	}
-}
-
-func ErrGenerateTestsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "GENERATE_TESTS_FAILED",
-		Message:  "failed to generate tests",
-		Cause:    errors.Join(ErrGenerateTests, cause),
-	}
-}
-
-func ErrImplementFeaturesFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "IMPLEMENT_FEATURES_FAILED",
-		Message:  "failed to implement features",
-		Cause:    errors.Join(ErrImplementFeatures, cause),
-	}
-}
-
-func ErrImplementFeaturesMaxAttemptsExceeded(maxAttempts int) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "IMPLEMENT_FEATURES_MAX_ATTEMPTS_EXCEEDED",
-		Message:  fmt.Sprintf("failed to make tests pass after %d attempts", maxAttempts),
-		Cause:    ErrImplementFeatures,
-	}
-}
-
-func ErrCreateOutputDirectoryFailed(outputDir string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "CREATE_OUTPUT_DIRECTORY_FAILED",
-		Message:  "failed to create directory " + outputDir,
-		Cause:    errors.Join(ErrCreateOutputDirectory, cause),
-	}
-}
-
-func ErrReadRequirementsFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_REQUIREMENTS_FILE_FAILED",
-		Message:  "failed to read requirements.yaml",
-		Cause:    errors.Join(ErrReadRequirementsFile, cause),
-	}
-}
-
-func ErrWriteOutputFileFailed(outputFile string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "WRITE_OUTPUT_FILE_FAILED",
-		Message:  "failed to write " + outputFile,
-		Cause:    errors.Join(ErrWriteOutputFile, cause),
-	}
-}
-
-func ErrReadOriginalFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_ORIGINAL_FILE_FAILED",
-		Message:  "failed to read original",
-		Cause:    errors.Join(ErrReadOriginalFile, cause),
-	}
-}
-
-func ErrCreateBackupFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "CREATE_BACKUP_FILE_FAILED",
-		Message:  "failed to create backup",
-		Cause:    errors.Join(ErrCreateBackupFile, cause),
-	}
-}
-
-func ErrReadMergedFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_MERGED_FILE_FAILED",
-		Message:  "failed to read merged",
-		Cause:    errors.Join(ErrReadMergedFile, cause),
-	}
-}
-
-func ErrReplaceFileFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "REPLACE_FILE_FAILED",
-		Message:  "failed to replace",
-		Cause:    errors.Join(ErrReplaceFile, cause),
-	}
-}
-
-func ErrLoadUserPromptForScenarioFailed(scenarioID string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "LOAD_USER_PROMPT_FAILED",
-		Message:  "failed to load user prompt for scenario " + scenarioID,
-		Cause:    errors.Join(ErrLoadUserPrompt, cause),
-	}
-}
-
-func ErrLoadSystemPromptForScenarioFailed(scenarioID string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "LOAD_SYSTEM_PROMPT_FAILED",
-		Message:  "failed to load system prompt for scenario " + scenarioID,
-		Cause:    errors.Join(ErrLoadSystemPrompt, cause),
-	}
-}
-
-func ErrMergeScenarioFailed(scenarioID string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "MERGE_SCENARIO_FAILED",
-		Message:  "failed to merge scenario " + scenarioID,
-		Cause:    errors.Join(ErrMergeScenario, cause),
-	}
-}
-
-func ErrParsePendingScenariosFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "PARSE_PENDING_SCENARIOS_FAILED",
-		Message:  "failed to parse pending scenarios",
-		Cause:    errors.Join(ErrParsePendingScenarios, cause),
-	}
-}
-
-func ErrReadRequirementsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "READ_REQUIREMENTS_FAILED",
-		Message:  "failed to read requirements file",
-		Cause:    errors.Join(ErrReadRequirements, cause),
-	}
-}
-
-func ErrUnmarshalRequirementsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "UNMARSHAL_REQUIREMENTS_FAILED",
-		Message:  "failed to unmarshal requirements YAML",
-		Cause:    errors.Join(ErrUnmarshalRequirements, cause),
-	}
-}
-
-// Git-related constructor functions.
-func ErrCompareMainWithOriginFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "COMPARE_MAIN_WITH_ORIGIN_FAILED",
-		Message:  "failed to compare main with origin/main",
-		Cause:    errors.Join(ErrCompareMainWithOrigin, cause),
-	}
-}
-
-func ErrSwitchBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "SWITCH_BRANCH_FAILED",
-		Message:  "failed to switch to branch " + branch,
-		Cause:    errors.Join(ErrSwitchBranch, cause),
-	}
-}
-
-func ErrCheckoutRemoteBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CHECKOUT_REMOTE_BRANCH_FAILED",
-		Message:  "failed to checkout remote branch " + branch,
-		Cause:    errors.Join(ErrCheckoutRemoteBranch, cause),
-	}
-}
-
-func ErrCreateBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CREATE_BRANCH_FAILED",
-		Message:  "failed to create branch " + branch,
-		Cause:    errors.Join(ErrCreateBranch, cause),
-	}
-}
-
-func ErrPushBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "PUSH_BRANCH_FAILED",
-		Message:  "failed to push branch " + branch,
-		Cause:    errors.Join(ErrPushBranch, cause),
-	}
-}
-
-func ErrSwitchToMainFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "SWITCH_TO_MAIN_FAILED",
-		Message:  "failed to switch to main",
-		Cause:    errors.Join(ErrSwitchToMain, cause),
-	}
-}
-
-func ErrDeleteLocalBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "DELETE_LOCAL_BRANCH_FAILED",
-		Message:  "failed to delete local branch " + branch,
-		Cause:    errors.Join(ErrDeleteLocalBranch, cause),
-	}
-}
-
-func ErrDeleteRemoteBranchFailed(branch string, cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "DELETE_REMOTE_BRANCH_FAILED",
-		Message:  "failed to delete remote branch " + branch,
-		Cause:    errors.Join(ErrDeleteRemoteBranch, cause),
-	}
-}
-
-func ErrCheckHEADStateFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CHECK_HEAD_STATE_FAILED",
-		Message:  "failed to check HEAD state",
-		Cause:    errors.Join(ErrCheckHEADState, cause),
-	}
-}
-
-func ErrCheckGitRepositoryFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CHECK_GIT_REPOSITORY_FAILED",
-		Message:  "failed to check git repository",
-		Cause:    errors.Join(ErrCheckGitRepository, cause),
-	}
-}
-
-func ErrCheckMainBehindOriginFailed(cause error) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "CHECK_MAIN_BEHIND_ORIGIN_FAILED",
-		Message:  "failed to check if main is behind origin",
-		Cause:    errors.Join(ErrCheckMainBehindOrigin, cause),
-	}
-}
-
-func ErrUnrelatedBranchError(currentBranch, storyNumber string) error {
-	return &AppError{
-		Category: CategoryGitHub,
-		Code:     "UNRELATED_BRANCH",
-		Message: fmt.Sprintf(
-			"currently on branch '%s' which is not related to story %s - please switch to main first",
-			currentBranch,
-			storyNumber,
-		),
-		Cause: ErrUnrelatedBranch,
-	}
-}
-
 func ErrACMissingStepsError(acID string) error {
 	return &AppError{
 		Category: CategoryParsing,
@@ -1036,101 +606,6 @@ func ErrInvalidModifierError(modifierType string) error {
 	}
 }
 
-func ErrInvalidSteps(cause error) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "INVALID_STEPS",
-		Message:  "invalid steps parameter",
-		Cause:    cause,
-	}
-}
-
-// Test Execution Errors.
-var (
-	ErrBaselineTestsFailed     = errors.New("baseline tests failed")
-	ErrGeneratedTestsPass      = errors.New("generated tests should fail but passed")
-	ErrRunTests                = errors.New("failed to run tests")
-	ErrValidateTests           = errors.New("test validation failed")
-	ErrValidateScenarios       = errors.New("scenario validation failed")
-	ErrMissingScenarioCoverage = errors.New("missing scenario coverage in tests")
-	ErrUnfixedTestIssues       = errors.New("unfixed test quality issues")
-	ErrReadResultFile          = errors.New("failed to read result file")
-	ErrParseResultYAML         = errors.New("failed to parse result YAML")
-)
-
-func ErrBaselineTestsFailedError(output string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "BASELINE_TESTS_FAILED",
-		Message:  "baseline tests must pass before test generation - tests are failing. Output: " + output,
-		Cause:    ErrBaselineTestsFailed,
-	}
-}
-
-func ErrGeneratedTestsPassError(output string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "GENERATED_TESTS_PASS",
-		Message:  "generated tests should fail (TDD red phase) but all tests passed. Output: " + output,
-		Cause:    ErrGeneratedTestsPass,
-	}
-}
-
-func ErrRunTestsFailed(phase string, cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "RUN_TESTS_FAILED",
-		Message:  "failed to run tests during " + phase + " phase",
-		Cause:    errors.Join(ErrRunTests, cause),
-	}
-}
-
-func ErrValidateTestsFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "VALIDATE_TESTS_FAILED",
-		Message:  "test validation failed - tests contain quality issues",
-		Cause:    errors.Join(ErrValidateTests, cause),
-	}
-}
-
-func ErrValidateScenariosFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "VALIDATE_SCENARIOS_FAILED",
-		Message:  "scenario validation failed",
-		Cause:    errors.Join(ErrValidateScenarios, cause),
-	}
-}
-
-func ErrMissingScenarioCoverageError(missingScenarios []string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "MISSING_SCENARIO_COVERAGE",
-		Message:  fmt.Sprintf("missing test coverage for scenarios: %v", missingScenarios),
-		Cause:    ErrMissingScenarioCoverage,
-	}
-}
-
-func ErrUnfixedTestIssuesError(count int) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "UNFIXED_TEST_ISSUES",
-		Message:  fmt.Sprintf("%d issues could not be automatically fixed", count),
-		Cause:    ErrUnfixedTestIssues,
-	}
-}
-
-// ErrImplementFailed wraps implementation errors.
-func ErrImplementFailed(cause error) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "IMPLEMENT_FAILED",
-		Message:  "implementation failed",
-		Cause:    cause,
-	}
-}
-
 // Checklist Validation Errors.
 var (
 	ErrLoadChecklistSystemPrompt = errors.New("failed to load checklist system prompt")
@@ -1140,11 +615,7 @@ var (
 	ErrFixPromptGeneration       = errors.New("fix prompt generation failed")
 	ErrFixPromptRefinement       = errors.New("fix prompt refinement failed")
 	ErrSaveStoryVersion          = errors.New("failed to save story version")
-	ErrStageMismatch             = errors.New("story stage mismatch")
 	ErrWriteStoryFile            = errors.New("failed to write story file")
-	ErrNoPromptsForStage         = errors.New("no prompts found for stage")
-	ErrScenarioNotFound          = errors.New("scenario not found")
-	ErrPromptNotFound            = errors.New("prompt not found")
 )
 
 func ErrLoadChecklistSystemPromptFailed(cause error) error {
@@ -1210,50 +681,11 @@ func ErrSaveStoryVersionFailed(cause error) error {
 	}
 }
 
-func ErrStageMismatchError(storyID, currentStage, commandName, requiredStage string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "STAGE_MISMATCH",
-		Message: fmt.Sprintf(
-			"story %s is at stage %q, but %s requires stage %q — run the previous stage command first",
-			storyID, currentStage, commandName, requiredStage,
-		),
-		Cause: ErrStageMismatch,
-	}
-}
-
 func ErrWriteStoryFileFailed(cause error) error {
 	return &AppError{
 		Category: CategoryInfrastructure,
 		Code:     "WRITE_STORY_FILE_FAILED",
 		Message:  "failed to write story file",
 		Cause:    errors.Join(ErrWriteStoryFile, cause),
-	}
-}
-
-func ErrScenarioNotFoundError(scenarioID, requirementsFile string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "SCENARIO_NOT_FOUND",
-		Message:  "scenario " + scenarioID + " not found in " + requirementsFile,
-		Cause:    ErrScenarioNotFound,
-	}
-}
-
-func ErrPromptNotFoundError(promptID, stageID string) error {
-	return &AppError{
-		Category: CategoryParsing,
-		Code:     "PROMPT_NOT_FOUND",
-		Message:  "prompt " + promptID + " not found in " + stageID + " stage",
-		Cause:    ErrPromptNotFound,
-	}
-}
-
-func ErrNoPromptsForStageFailed(stageID string) error {
-	return &AppError{
-		Category: CategoryInfrastructure,
-		Code:     "NO_PROMPTS_FOR_STAGE",
-		Message:  "no prompts found for stage: " + stageID,
-		Cause:    ErrNoPromptsForStage,
 	}
 }

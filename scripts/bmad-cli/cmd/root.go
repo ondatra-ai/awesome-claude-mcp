@@ -20,6 +20,7 @@ func Execute() {
 	}
 
 	rootCmd.AddCommand(NewUSCommand(container))
+	rootCmd.AddCommand(NewBuildCommand(container))
 
 	err = rootCmd.Execute()
 	if err != nil {

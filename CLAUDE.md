@@ -73,15 +73,20 @@ make lint-docs    # Validate YAML documentation
 
 #### Subcommands
 
-All CLI commands live under the `us` supergroup:
+CLI commands are organized into two supergroups: `us` (story workflow) and `build` (build pipeline, stubbed).
+
+`us` supergroup:
 
 - `us create <id>` — extract a story from its epic and run the `us-create` checklist.
 - `us refine <id>` — load a story from `docs/stories/` and run the `us-refine` checklist.
 - `us apply <id>` — load a story from `docs/stories/` and run the `us-apply` checklist to merge scenarios from the refined story into the codebase.
-- `us generate_tests` — walk every scenario in `docs/requirements.yaml` and run the `us-generate_tests` checklist (with `--fix`, writes missing test files).
-- `us implement` — walk every scenario in `docs/requirements.yaml` and run the `us-implement` checklist (currently empty; reserved for future feature-implementation prompts).
 
-Each checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bmad-cli.yaml`.
+`build` supergroup (stubs — bodies print "not yet implemented"):
+
+- `build tests` — placeholder for upcoming test-build pipeline.
+- `build code` — placeholder for upcoming code-build pipeline.
+
+Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bmad-cli.yaml`.
 
 **Important Notes:**
 - Always run from repository root for proper path resolution
@@ -255,8 +260,6 @@ env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli <args>
    env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us refine <story-id>
    env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us create <story-id>
    env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us apply <story-id>
-   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us generate_tests
-   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us implement
    ```
 
 ### Timing

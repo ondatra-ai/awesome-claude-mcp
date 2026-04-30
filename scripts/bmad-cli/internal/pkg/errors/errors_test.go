@@ -60,21 +60,15 @@ func TestAppError_Unwrap(t *testing.T) {
 }
 
 func TestErrorConstructors(t *testing.T) {
-	// Test that all error constructors return proper AppError types
 	tests := []struct {
 		name     string
 		err      error
 		category pkgerrors.Category
 	}{
 		{
-			name:     "ErrEmptyClientOutput",
-			err:      pkgerrors.ErrEmptyClientOutput("TestClient"),
+			name:     "ErrParseTemplateFailed",
+			err:      pkgerrors.ErrParseTemplateFailed(errors.New("test")),
 			category: pkgerrors.CategoryAI,
-		},
-		{
-			name:     "ErrGetCurrentBranchFailed",
-			err:      pkgerrors.ErrGetCurrentBranchFailed(errors.New("test")),
-			category: pkgerrors.CategoryGitHub,
 		},
 		{
 			name:     "ErrExecuteTemplateFailed",
