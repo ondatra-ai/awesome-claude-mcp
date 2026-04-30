@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,13 +14,6 @@ import (
 
 const defaultRequirementsFile = "docs/requirements.yaml"
 
-// errUSImplementTakesNoArgs is returned when `us implement` is given a
-// positional argument (e.g. a story id) — the command now walks every
-// scenario in requirements.yaml rather than targeting one story.
-var errUSImplementTakesNoArgs = errors.New(
-	"us implement takes no arguments; it walks all scenarios in docs/requirements.yaml",
-)
-
 func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 	usCmd := &cobra.Command{
 		Use:   "us",
@@ -31,8 +23,6 @@ func NewUSCommand(container *bootstrap.Container) *cobra.Command {
 	usCmd.AddCommand(newUSCreateCmd(container))
 	usCmd.AddCommand(newUSRefineCmd(container))
 	usCmd.AddCommand(newUSApplyCmd(container))
-	usCmd.AddCommand(newUSGenerateTestsCmd(container))
-	usCmd.AddCommand(newUSImplementCmd(container))
 
 	return usCmd
 }
@@ -71,61 +61,6 @@ func newUSChecklistCmd(
 
 	cmd.Flags().Bool("fix", false,
 		"Enable interactive fix mode to resolve failed checks")
-
-	return cmd
-}
-
-// newUSScenarioChecklistCmd builds a subcommand that walks every scenario in
-// docs/requirements.yaml and runs the named checklist against each.
-func newUSScenarioChecklistCmd(
-	container *bootstrap.Container,
-	use string,
-	short string,
-	long string,
-	checklistName string,
-	commandLabel string,
-) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   use,
-		Short: short,
-		Long:  long,
-		Args: func(_ *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return nil
-			}
-
-			return errUSImplementTakesNoArgs
-		},
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			ctx, stop := signal.NotifyContext(context.Background(),
-				os.Interrupt, syscall.SIGTERM)
-			defer stop()
-
-			fix, _ := cmd.Flags().GetBool("fix")
-
-			err := container.USValidationCmd.ExecuteScenarioChecklist(
-				ctx,
-				defaultRequirementsFile,
-				checklistName,
-				fix,
-				container.ScenarioParser,
-				container.ScenarioEvaluator,
-				container.ScenarioFixPromptGenerator,
-				container.ScenarioFixApplier,
-			)
-
-			stop()
-
-			if err != nil {
-				return fmt.Errorf("%s command failed: %w", commandLabel, err)
-			}
-
-			return nil
-		},
-	}
-
-	cmd.Flags().Bool("fix", false,
-		"Enable interactive fix mode with checklist-based validation")
 
 	return cmd
 }
@@ -218,39 +153,4 @@ Example:
 		"Enable interactive fix mode to merge scenarios into the registry")
 
 	return cmd
-}
-
-func newUSImplementCmd(container *bootstrap.Container) *cobra.Command {
-	return newUSScenarioChecklistCmd(
-		container,
-		"implement",
-		"Walk every scenario in requirements.yaml and run the us-implement checklist",
-		`Walk all scenarios in docs/requirements.yaml and validate them against
-the us-implement checklist. With --fix, the interactive loop drives
-feature-code fixes for scenarios whose checks fail. The checklist is
-currently empty; the command exists as a slot for future prompts.
-
-Example:
-  bmad-cli us implement
-  bmad-cli us implement --fix`,
-		"us-implement",
-		"us implement",
-	)
-}
-
-func newUSGenerateTestsCmd(container *bootstrap.Container) *cobra.Command {
-	return newUSScenarioChecklistCmd(
-		container,
-		"generate_tests",
-		"Generate and validate tests for every scenario in requirements.yaml",
-		`Walk all scenarios in docs/requirements.yaml and validate their test
-files against the us-generate_tests checklist. With --fix, missing test files
-are created and existing ones updated in place.
-
-Example:
-  bmad-cli us generate_tests
-  bmad-cli us generate_tests --fix`,
-		"us-generate_tests",
-		"us generate_tests",
-	)
 }

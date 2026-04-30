@@ -17,7 +17,7 @@ const fixApplierFilePermissions = 0o644
 
 // FixApplierData represents data needed for fix applier templates.
 type FixApplierData struct {
-	Subject    any    // Current subject to modify (e.g., *story.Story or *TestGenerationData)
+	Subject    any    // Current subject to modify (e.g., *story.Story or *ScenarioApplyData)
 	SubjectID  string // Subject identifier
 	FixPrompt  string // The fix prompt to apply
 	ResultPath string // Path for FILE_START/FILE_END output

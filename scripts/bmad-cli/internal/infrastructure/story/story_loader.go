@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -13,64 +12,6 @@ import (
 	"bmad-cli/internal/infrastructure/config"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
-
-const filenamePartsCount = 2 // Story filename has 2 parts: story-number and slug
-
-// ValidationRule represents a validation check.
-type ValidationRule struct {
-	Name      string
-	Validator func(nameWithoutExt, slug string) error
-}
-
-// getFilenameValidations returns all validation rules.
-func getFilenameValidations() []ValidationRule {
-	return []ValidationRule{
-		{
-			Name: "DashSeparator",
-			Validator: func(nameWithoutExt, slug string) error {
-				if !strings.Contains(nameWithoutExt, "-") {
-					return fmt.Errorf("invalid story filename: %w", pkgerrors.ErrInvalidStoryFilename)
-				}
-
-				return nil
-			},
-		},
-		{
-			Name: "EmptySlug",
-			Validator: func(nameWithoutExt, slug string) error {
-				if slug == "" {
-					return fmt.Errorf("empty slug: %w", pkgerrors.ErrInvalidStoryFilenameSlug)
-				}
-
-				return nil
-			},
-		},
-		{
-			Name: "NoSpaces",
-			Validator: func(nameWithoutExt, slug string) error {
-				if strings.Contains(slug, " ") {
-					return fmt.Errorf("invalid slug: %w", pkgerrors.ErrInvalidStorySlugError(slug))
-				}
-
-				return nil
-			},
-		},
-	}
-}
-
-// validateFilename executes all validation rules.
-func validateFilename(filename, nameWithoutExt, slug string) error {
-	for _, rule := range getFilenameValidations() {
-		err := rule.Validator(nameWithoutExt, slug)
-		if err != nil {
-			slog.Error("Validation failed", "rule", rule.Name, "filename", filename, "error", err)
-
-			return err
-		}
-	}
-
-	return nil
-}
 
 // StoryLoader provides utilities for loading story information.
 type StoryLoader struct {
@@ -84,72 +25,10 @@ func NewStoryLoader(cfg *config.ViperConfig) *StoryLoader {
 	}
 }
 
-// GetStorySlug extracts the slug from the story filename.
-func (l *StoryLoader) GetStorySlug(storyNumber string) (string, error) {
-	slog.Debug("Getting story slug", "story_number", storyNumber)
-
-	pattern := filepath.Join(l.storiesDir, storyNumber+"-*.yaml")
-
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		slog.Error("Failed to glob story files", "error", err, "pattern", pattern)
-
-		return "", fmt.Errorf("find story file failed: %w", pkgerrors.ErrFindStoryFileFailed(err))
-	}
-
-	if len(matches) == 0 {
-		slog.Error("No story file found", "story_number", storyNumber, "pattern", pattern)
-
-		return "", fmt.Errorf(
-			"story file not found: %w",
-			pkgerrors.ErrStoryFileNotFoundError(storyNumber, l.storiesDir, storyNumber),
-		)
-	}
-
-	if len(matches) > 1 {
-		slog.Error("Multiple story files found", "story_number", storyNumber, "count", len(matches), "files", matches)
-
-		return "", fmt.Errorf("multiple story files: %w", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches))
-	}
-
-	// Verify file exists and is readable
-	storyFile := matches[0]
-
-	_, err = os.Stat(storyFile)
-	if err != nil {
-		slog.Error("Story file not accessible", "file", storyFile, "error", err)
-
-		return "", fmt.Errorf("story file not accessible: %w", pkgerrors.ErrStoryFileNotAccessibleError(storyFile, err))
-	}
-
-	// Extract slug from filename: "3.1-mcp-server-implementation.yaml" -> "mcp-server-implementation"
-	filename := filepath.Base(storyFile)
-	nameWithoutExt := strings.TrimSuffix(filename, ".yaml")
-
-	// Parse slug from filename
-	parts := strings.SplitN(nameWithoutExt, "-", filenamePartsCount)
-
-	slug := ""
-	if len(parts) == filenamePartsCount {
-		slug = parts[1]
-	}
-
-	// Execute all validation rules
-	err = validateFilename(filename, nameWithoutExt, slug)
-	if err != nil {
-		return "", err
-	}
-
-	slog.Debug("Story slug extracted", "story_number", storyNumber, "slug", slug, "file", storyFile)
-
-	return slug, nil
-}
-
 // Load loads the complete story document from YAML file.
 func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 	slog.Debug("Loading story document", "story_number", storyNumber)
 
-	// Find story file using same logic as GetStorySlug
 	pattern := filepath.Join(l.storiesDir, storyNumber+"-*.yaml")
 
 	matches, err := filepath.Glob(pattern)
@@ -174,7 +53,6 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 		return nil, fmt.Errorf("multiple story files: %w", pkgerrors.ErrMultipleStoryFilesError(storyNumber, matches))
 	}
 
-	// Read story file
 	storyFile := matches[0]
 
 	data, err := os.ReadFile(storyFile)
@@ -184,7 +62,6 @@ func (l *StoryLoader) Load(storyNumber string) (*story.StoryDocument, error) {
 		return nil, fmt.Errorf("read story file failed: %w", pkgerrors.ErrReadStoryFileFailed(storyFile, err))
 	}
 
-	// Unmarshal YAML
 	var storyDoc story.StoryDocument
 
 	err = yaml.Unmarshal(data, &storyDoc)

@@ -10,7 +10,6 @@ import (
 	"bmad-cli/internal/infrastructure/epic"
 	"bmad-cli/internal/infrastructure/fs"
 	"bmad-cli/internal/infrastructure/input"
-	"bmad-cli/internal/infrastructure/requirements"
 	"bmad-cli/internal/infrastructure/story"
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
@@ -65,20 +64,10 @@ func newScenarioTriple(
 type Container struct {
 	Config          *config.ViperConfig
 	USValidationCmd *commands.USValidationCommand
-	ScenarioParser  *requirements.ScenarioParser
-	// Shared evaluator / fix-prompt / fix-applier triple used by every
-	// scenario-walking command (`us generate_tests`, `us implement`).
-	// The underlying prompt templates live at
-	// templates.prompts.test_checklist* / test_fix_* in bmad-cli.yaml;
-	// they're generic enough to drive any checklist that iterates over
-	// TestGenerationData scenarios.
-	ScenarioEvaluator          *validate.ChecklistEvaluator
-	ScenarioFixPromptGenerator *validate.FixPromptGenerator
-	ScenarioFixApplier         *validate.FixApplier
-	// Apply-flavored equivalents driving `us apply`. The parser reads a
-	// refined story file (acceptance_criteria[].steps shape) and emits
-	// one ScenarioApplyData per AC; the evaluator / fix-prompt / fix-
-	// applier triple uses the templates.prompts.apply_* templates and
+	// Apply-flavored evaluator / fix-prompt / fix-applier triple driving
+	// `us apply`. The parser reads a refined story file
+	// (acceptance_criteria[].steps shape) and emits one ScenarioApplyData
+	// per AC; the triple uses the templates.prompts.apply_* templates and
 	// targets the scratch copy of docs/requirements.yaml.
 	StoryScenarioParser     *story.StoryScenarioParser
 	ApplyEvaluator          *validate.ChecklistEvaluator
@@ -133,18 +122,6 @@ func NewContainer() (*Container, error) {
 		storiesDir,
 	)
 
-	// Scenario-validation evaluator / fix-prompt / fix-applier set, shared
-	// by `us generate_tests` and `us implement`. The underlying templates
-	// are configured under templates.prompts.test_checklist* / test_fix_*.
-	scenarioTrip := newScenarioTriple(claudeClient, cfg, scenarioTripleConfigKeys{
-		checklistSystem:    "templates.prompts.test_checklist_system",
-		checklist:          "templates.prompts.test_checklist",
-		fixGeneratorSystem: "templates.prompts.test_fix_generator_system",
-		fixGenerator:       "templates.prompts.test_fix_generator",
-		fixApplierSystem:   "templates.prompts.test_fix_applier_system",
-		fixApplier:         "templates.prompts.test_fix_applier",
-	})
-
 	// Apply-flavored evaluator / fix-prompt / fix-applier set used by
 	// `us apply`. Templates live under templates.prompts.apply_* and
 	// are written for the merge-into-requirements.yaml subject.
@@ -157,20 +134,15 @@ func NewContainer() (*Container, error) {
 		fixApplier:         "templates.prompts.apply_fix_applier",
 	})
 
-	scenarioParser := requirements.NewScenarioParser()
 	storyScenarioParser := story.NewStoryScenarioParser(cfg)
 
 	return &Container{
-		Config:                     cfg,
-		USValidationCmd:            usValidationCmd,
-		ScenarioParser:             scenarioParser,
-		ScenarioEvaluator:          scenarioTrip.evaluator,
-		ScenarioFixPromptGenerator: scenarioTrip.fixGenerator,
-		ScenarioFixApplier:         scenarioTrip.fixApplier,
-		StoryScenarioParser:        storyScenarioParser,
-		ApplyEvaluator:             applyTrip.evaluator,
-		ApplyFixPromptGenerator:    applyTrip.fixGenerator,
-		ApplyFixApplier:            applyTrip.fixApplier,
-		RunDir:                     runDir,
+		Config:                  cfg,
+		USValidationCmd:         usValidationCmd,
+		StoryScenarioParser:     storyScenarioParser,
+		ApplyEvaluator:          applyTrip.evaluator,
+		ApplyFixPromptGenerator: applyTrip.fixGenerator,
+		ApplyFixApplier:         applyTrip.fixApplier,
+		RunDir:                  runDir,
 	}, nil
 }

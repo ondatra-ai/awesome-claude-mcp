@@ -25,11 +25,6 @@ type McpStdioServerConfig struct {
 	Env     map[string]string `json:"env,omitempty"`
 }
 
-// GetType returns the server type for McpStdioServerConfig.
-func (c *McpStdioServerConfig) GetType() McpServerType {
-	return McpServerTypeStdio
-}
-
 // McpSSEServerConfig configures an MCP Server-Sent Events server.
 type McpSSEServerConfig struct {
 	Type    McpServerType     `json:"type"`
@@ -37,19 +32,9 @@ type McpSSEServerConfig struct {
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
-// GetType returns the server type for McpSSEServerConfig.
-func (c *McpSSEServerConfig) GetType() McpServerType {
-	return McpServerTypeSSE
-}
-
 // McpHTTPServerConfig configures an MCP HTTP server.
 type McpHTTPServerConfig struct {
 	Type    McpServerType     `json:"type"`
 	URL     string            `json:"url"`
 	Headers map[string]string `json:"headers,omitempty"`
-}
-
-// GetType returns the server type for McpHTTPServerConfig.
-func (c *McpHTTPServerConfig) GetType() McpServerType {
-	return McpServerTypeHTTP
 }
