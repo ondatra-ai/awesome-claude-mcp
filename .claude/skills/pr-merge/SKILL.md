@@ -13,7 +13,7 @@ Merge the current branch's pull request and clean up afterwards. This is a squas
 2. Run `gh pr merge --squash --delete-branch` to squash-merge and delete the remote branch
 3. Detect whether the main branch is called `main` or `master`
 4. Check out the main branch and pull latest changes
-5. Delete the local feature branch
+5. Delete the local feature branch if it still exists (`gh pr merge --delete-branch` may have already removed it)
 
 ## Implementation
 
@@ -30,10 +30,10 @@ if git show-ref --verify --quiet refs/heads/master; then
 fi
 
 git checkout $MAIN_BRANCH
-git pull origin $MAIN_BRANCH
+git pull origin $MAIN_BRANCH || exit 1
 
-if [ $? -eq 0 ]; then
-    git branch -D $CURRENT_BRANCH
+if git show-ref --verify --quiet "refs/heads/$CURRENT_BRANCH"; then
+    git branch -D "$CURRENT_BRANCH"
 fi
 ```
 
