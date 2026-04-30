@@ -1181,3 +1181,87 @@ scenarios:
       then:
         - "Server logs include complete operation trace"
         - "Logs capture request ID, operation type, and execution time"
+
+  E2E-021:
+    description: "Claude edits shared document and responds with success message containing document URL"
+    service: ""
+    last_updated: "2026-04-27"
+    user_stories:
+      - story: "docs/stories/4.1-shared-document-editing.yaml"
+        scenario_id: "4.1-001"
+        merge_date: "2026-04-27"
+    merged_steps:
+      given:
+        - "a Claude User has shared a Google Doc with the service account with Editor access"
+      when:
+        - "the Claude User asks Claude to edit that document"
+      then:
+        - "Claude applies the requested edit to the document"
+        - and: "Claude responds with a success message containing the document URL"
+
+  E2E-022:
+    description: "Claude responds with service account email and Editor access instructions for unshared document"
+    service: ""
+    last_updated: "2026-04-27"
+    user_stories:
+      - story: "docs/stories/4.1-shared-document-editing.yaml"
+        scenario_id: "4.1-002"
+        merge_date: "2026-04-27"
+    merged_steps:
+      given:
+        - "a Claude User has NOT shared a Google Doc with the service account"
+      when:
+        - "the Claude User asks Claude to edit that document"
+      then:
+        - "Claude responds with a message containing the service account email address"
+        - and: "the message includes step-by-step instructions for granting Editor access"
+
+  E2E-023:
+    description: "Claude responds with service account email when asked which account to share Google Docs with"
+    service: ""
+    last_updated: "2026-04-27"
+    user_stories:
+      - story: "docs/stories/4.1-shared-document-editing.yaml"
+        scenario_id: "4.1-003"
+        merge_date: "2026-04-27"
+    merged_steps:
+      given:
+        - "a Claude User wants to know which account to share their Google Docs with"
+      when:
+        - "the Claude User asks Claude which account to share their Google Docs with"
+      then:
+        - "Claude responds with a message containing the service account email address"
+
+  E2E-024:
+    description: "Claude responds with DOCUMENT_NOT_FOUND error when editing non-existent or deleted document"
+    service: ""
+    last_updated: "2026-04-27"
+    user_stories:
+      - story: "docs/stories/4.1-shared-document-editing.yaml"
+        scenario_id: "4.1-004"
+        merge_date: "2026-04-27"
+    merged_steps:
+      given:
+        - "a Google Doc that does not exist or has been deleted"
+      when:
+        - "a Claude User asks Claude to edit that document"
+      then:
+        - "Claude responds with an error message containing the error code DOCUMENT_NOT_FOUND"
+        - and: "the error message states that the document does not exist or has been deleted"
+
+  E2E-025:
+    description: "Claude responds with PERMISSION_DENIED error and Editor access instructions for Viewer-only shared document"
+    service: ""
+    last_updated: "2026-04-27"
+    user_stories:
+      - story: "docs/stories/4.1-shared-document-editing.yaml"
+        scenario_id: "4.1-005"
+        merge_date: "2026-04-27"
+    merged_steps:
+      given:
+        - "a Claude User has shared a Google Doc with the service account as Viewer only"
+      when:
+        - "the Claude User asks Claude to edit that document"
+      then:
+        - "Claude responds with an error message containing the error code PERMISSION_DENIED"
+        - and: "the error message includes instructions to re-share the document with Editor access"
