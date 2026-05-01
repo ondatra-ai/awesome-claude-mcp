@@ -47,6 +47,7 @@ type Fixture struct {
 	ExpectedExitCode int
 	StdoutRegexes    []*regexp.Regexp
 	JudgeSpec        string // contents of expected/judge.md
+	Stdin            []byte // contents of optional `answers` file, fed to subprocess stdin
 }
 
 // RunResult bundles everything we observed from one fixture run.
@@ -85,6 +86,11 @@ func LoadFixture(dir string) (*Fixture, error) {
 		return nil, fmt.Errorf("read judge.md: %w", err)
 	}
 
+	stdinBytes, err := readStdin(filepath.Join(dir, "answers"))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Fixture{
 		Name:             filepath.Base(dir),
 		Dir:              dir,
@@ -92,7 +98,21 @@ func LoadFixture(dir string) (*Fixture, error) {
 		ExpectedExitCode: exitCode,
 		StdoutRegexes:    regexes,
 		JudgeSpec:        string(judgeBytes),
+		Stdin:            stdinBytes,
 	}, nil
+}
+
+func readStdin(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("read answers: %w", err)
+	}
+
+	return data, nil
 }
 
 func readExitCode(path string) (int, error) {
@@ -172,6 +192,10 @@ func Execute(ctx context.Context, fixture *Fixture, binPath string) (*RunResult,
 	cmd := exec.CommandContext(ctx, binPath, args...)
 	cmd.Dir = tmpDir
 	cmd.Env = envWithoutClaudeCode(os.Environ())
+
+	if fixture.Stdin != nil {
+		cmd.Stdin = bytes.NewReader(fixture.Stdin)
+	}
 
 	var stdout, stderr bytes.Buffer
 

@@ -8,6 +8,8 @@ import (
 	"bmad-cli/claudecode/internal/subprocess"
 )
 
+const testSubtype = "test"
+
 // TestErrorSenderWithRealChannels tests ErrorSender with actual Transport channels.
 // This test uses export_test.go helpers to verify channel behavior without accessing unexported fields.
 func TestErrorSenderWithRealChannels(t *testing.T) {
@@ -72,7 +74,7 @@ func TestMessageSenderSingleMessage(t *testing.T) {
 	transport := subprocess.NewTestTransportWithChannels()
 	defer subprocess.CloseTestTransport(transport)
 
-	mockMsg := &shared.SystemMessage{Subtype: "test"}
+	mockMsg := &shared.SystemMessage{Subtype: testSubtype}
 	sender := &subprocess.MessageSender{}
 	ctx := &subprocess.ProcessContext{
 		Messages: []shared.Message{mockMsg},
@@ -96,7 +98,7 @@ func TestMessageSenderSingleMessage(t *testing.T) {
 		sysMsg, ok := receivedMsg.(*shared.SystemMessage)
 		if !ok {
 			t.Error("expected SystemMessage type")
-		} else if sysMsg.Subtype != "test" {
+		} else if sysMsg.Subtype != testSubtype {
 			t.Errorf("expected subtype 'test', got %q", sysMsg.Subtype)
 		}
 	default:
@@ -109,7 +111,7 @@ func TestMessageSenderWithError(t *testing.T) {
 	transport := subprocess.NewTestTransportWithChannels()
 	defer subprocess.CloseTestTransport(transport)
 
-	mockMsg := &shared.SystemMessage{Subtype: "test"}
+	mockMsg := &shared.SystemMessage{Subtype: testSubtype}
 	sender := &subprocess.MessageSender{}
 	ctx := &subprocess.ProcessContext{
 		Messages: []shared.Message{mockMsg},
