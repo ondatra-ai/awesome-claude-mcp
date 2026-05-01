@@ -49,9 +49,20 @@ make help  # Show all available commands
 
 #### Testing
 ```bash
-make test-unit    # Run unit tests (Go backend + Jest frontend)
-make test-e2e     # Run integration & E2E tests (starts Docker services automatically)
+make test-unit         # Run unit tests (Go backend + Jest frontend)
+make test-e2e          # Run integration & E2E tests (starts Docker services automatically)
+make test-e2e-bdd-cli  # Run bmad-cli BDD fixtures (real Claude calls; opt-in, ~3-5 min/fixture)
 ```
+
+The `test-e2e-bdd-cli` target drives end-to-end fixtures under
+`scripts/bmad-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
+folder with `cmd`, `input/` (starting filesystem), and
+`expected/{exit_code,stdout.regex,judge.md}`. The runner copies
+`input/` into a tmpdir, execs the CLI there, diffs the result, and
+asks Claude (via the existing `claudecode/` wrapper) to compare the
+diff against `judge.md` and return PASS / FAIL. Tests are gated by a
+`//go:build bdd` tag so they're invisible to default `go test ./...`.
+Skipped if the `claude` CLI is not on `$PATH`.
 
 #### Development
 ```bash
