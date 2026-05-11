@@ -7,6 +7,11 @@ import (
 	pkgerrors "bmad-cli/internal/pkg/errors"
 )
 
+const (
+	testErrCode = "TEST_ERROR"
+	testErrMsg  = "test message"
+)
+
 func TestAppError_Error(t *testing.T) {
 	tests := []struct {
 		name string
@@ -17,8 +22,8 @@ func TestAppError_Error(t *testing.T) {
 			name: "error with cause",
 			err: &pkgerrors.AppError{
 				Category: pkgerrors.CategoryAI,
-				Code:     "TEST_ERROR",
-				Message:  "test message",
+				Code:     testErrCode,
+				Message:  testErrMsg,
 				Cause:    errors.New("underlying error"),
 			},
 			want: "[ai:TEST_ERROR] test message: underlying error",
@@ -27,8 +32,8 @@ func TestAppError_Error(t *testing.T) {
 			name: "error without cause",
 			err: &pkgerrors.AppError{
 				Category: pkgerrors.CategoryGitHub,
-				Code:     "TEST_ERROR",
-				Message:  "test message",
+				Code:     testErrCode,
+				Message:  testErrMsg,
 				Cause:    nil,
 			},
 			want: "[github:TEST_ERROR] test message",
@@ -48,8 +53,8 @@ func TestAppError_Unwrap(t *testing.T) {
 	cause := errors.New("underlying error")
 	err := &pkgerrors.AppError{
 		Category: pkgerrors.CategoryAI,
-		Code:     "TEST_ERROR",
-		Message:  "test message",
+		Code:     testErrCode,
+		Message:  testErrMsg,
 		Cause:    cause,
 	}
 

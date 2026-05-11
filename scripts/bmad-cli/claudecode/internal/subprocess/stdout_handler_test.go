@@ -7,6 +7,8 @@ import (
 	"bmad-cli/claudecode/internal/subprocess"
 )
 
+const testLine = "test"
+
 func TestEmptyLineFilter(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -20,7 +22,7 @@ func TestEmptyLineFilter(t *testing.T) {
 		},
 		{
 			name:           "non-empty line calls next handler",
-			line:           "test",
+			line:           testLine,
 			expectContinue: true,
 		},
 	}
@@ -46,7 +48,7 @@ func TestEmptyLineFilterChaining(t *testing.T) {
 	nextHandler := &mockHandler{shouldReturn: false}
 	filter.SetNext(nextHandler)
 
-	ctx := &subprocess.ProcessContext{Line: "test"}
+	ctx := &subprocess.ProcessContext{Line: testLine}
 	result := filter.Handle(ctx, nil)
 
 	if !nextHandler.wasCalled {
@@ -126,7 +128,7 @@ func TestHandlerChaining(t *testing.T) {
 
 	filter.SetNext(sender)
 
-	ctx := &subprocess.ProcessContext{Line: "test"}
+	ctx := &subprocess.ProcessContext{Line: testLine}
 	filter.Handle(ctx, nil)
 
 	// If we get here without panic, chaining works

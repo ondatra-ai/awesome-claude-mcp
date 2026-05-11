@@ -7,6 +7,15 @@ import (
 	"bmad-cli/claudecode/internal/shared"
 )
 
+const (
+	keySubtype       = "subtype"
+	keyDurationAPIMs = "duration_api_ms"
+	keyIsError       = "is_error"
+	keyNumTurns      = "num_turns"
+	keySessionID     = "session_id"
+	testSessionID    = "session123"
+)
+
 func TestRequiredFieldsStrategy(t *testing.T) {
 	strategy := &parser.RequiredFieldsStrategy{}
 
@@ -18,34 +27,34 @@ func TestRequiredFieldsStrategy(t *testing.T) {
 		{
 			name: "all required fields present",
 			data: map[string]any{
-				"subtype":         "test",
-				"duration_ms":     float64(100),
-				"duration_api_ms": float64(50),
-				"is_error":        false,
-				"num_turns":       float64(1),
-				"session_id":      "session123",
+				keySubtype:       "test",
+				"duration_ms":    float64(100),
+				keyDurationAPIMs: float64(50),
+				keyIsError:       false,
+				keyNumTurns:      float64(1),
+				keySessionID:     testSessionID,
 			},
 			expectError: false,
 		},
 		{
 			name: "missing subtype",
 			data: map[string]any{
-				"duration_ms":     float64(100),
-				"duration_api_ms": float64(50),
-				"is_error":        false,
-				"num_turns":       float64(1),
-				"session_id":      "session123",
+				"duration_ms":    float64(100),
+				keyDurationAPIMs: float64(50),
+				keyIsError:       false,
+				keyNumTurns:      float64(1),
+				keySessionID:     testSessionID,
 			},
 			expectError: true,
 		},
 		{
 			name: "missing duration_ms",
 			data: map[string]any{
-				"subtype":         "test",
-				"duration_api_ms": float64(50),
-				"is_error":        false,
-				"num_turns":       float64(1),
-				"session_id":      "session123",
+				keySubtype:       "test",
+				keyDurationAPIMs: float64(50),
+				keyIsError:       false,
+				keyNumTurns:      float64(1),
+				keySessionID:     testSessionID,
 			},
 			expectError: true,
 		},

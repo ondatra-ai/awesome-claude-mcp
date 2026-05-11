@@ -10,6 +10,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	ac1 = "AC-1"
+	ac2 = "AC-2"
+)
+
 func TestGenerateScenarios_MultipleACsWithSteps(t *testing.T) {
 	parser := &story.GherkinParser{}
 
@@ -18,7 +23,7 @@ func TestGenerateScenarios_MultipleACsWithSteps(t *testing.T) {
 
 	acs := []story.AcceptanceCriterion{
 		{
-			ID:          "AC-1",
+			ID:          ac1,
 			Description: "Claude must modify a shared Google Doc",
 			Steps: []story.ScenarioStep{
 				{Given: []story.StepStatement{{Statement: givenShared}}},
@@ -30,7 +35,7 @@ func TestGenerateScenarios_MultipleACsWithSteps(t *testing.T) {
 			},
 		},
 		{
-			ID:          "AC-2",
+			ID:          ac2,
 			Description: "Claude should respond with sharing instructions",
 			Steps: []story.ScenarioStep{
 				{Given: []story.StepStatement{{Statement: "a Google Doc not shared"}}},
@@ -52,8 +57,8 @@ func TestGenerateScenarios_MultipleACsWithSteps(t *testing.T) {
 		t.Fatalf("expected 2 scenarios, got %d", len(scenarios))
 	}
 
-	assertScenarioMeta(t, scenarios[0], "4.1-001", "AC-1")
-	assertScenarioMeta(t, scenarios[1], "4.1-002", "AC-2")
+	assertScenarioMeta(t, scenarios[0], "4.1-001", ac1)
+	assertScenarioMeta(t, scenarios[1], "4.1-002", ac2)
 
 	// Verify steps are copied from AC
 	if len(scenarios[0].Steps) != 3 {
@@ -70,7 +75,7 @@ func TestGenerateScenarios_ErrorOnMissingSteps(t *testing.T) {
 
 	acs := []story.AcceptanceCriterion{
 		{
-			ID:          "AC-1",
+			ID:          ac1,
 			Description: "Claude must do something",
 			Steps: []story.ScenarioStep{
 				{Given: []story.StepStatement{{Statement: "a precondition"}}},
@@ -79,7 +84,7 @@ func TestGenerateScenarios_ErrorOnMissingSteps(t *testing.T) {
 			},
 		},
 		{
-			ID:          "AC-2",
+			ID:          ac2,
 			Description: "Claude should do something else",
 			// No steps — should cause error
 		},
@@ -94,7 +99,7 @@ func TestGenerateScenarios_ErrorOnMissingSteps(t *testing.T) {
 		t.Errorf("expected nil scenarios on error, got %v", scenarios)
 	}
 
-	if !strings.Contains(err.Error(), "AC-2") {
+	if !strings.Contains(err.Error(), ac2) {
 		t.Errorf("error should reference AC-2, got: %v", err)
 	}
 }
@@ -104,7 +109,7 @@ func TestGenerateScenarios_EmptyFieldsLeftBlank(t *testing.T) {
 
 	acs := []story.AcceptanceCriterion{
 		{
-			ID:          "AC-1",
+			ID:          ac1,
 			Description: "Claude must do something",
 			Steps: []story.ScenarioStep{
 				{Given: []story.StepStatement{{Statement: "a user"}}},
@@ -159,7 +164,7 @@ func TestGenerateScenarios_YAMLRoundTrip(t *testing.T) {
 
 	acs := []story.AcceptanceCriterion{
 		{
-			ID:          "AC-1",
+			ID:          ac1,
 			Description: "Claude must be able to modify a Google Doc shared with the service account",
 			Steps: []story.ScenarioStep{
 				{Given: []story.StepStatement{
@@ -203,7 +208,7 @@ func TestGenerateScenarios_YAMLRoundTrip(t *testing.T) {
 
 func TestAcceptanceCriterion_YAMLRoundTrip(t *testing.T) {
 	criterion := story.AcceptanceCriterion{
-		ID:          "AC-1",
+		ID:          ac1,
 		Description: "Claude must modify a shared document",
 		Steps: []story.ScenarioStep{
 			{Given: []story.StepStatement{{Statement: "a shared document"}}},
@@ -227,8 +232,8 @@ func TestAcceptanceCriterion_YAMLRoundTrip(t *testing.T) {
 		t.Fatalf("Unmarshal error: %v", err)
 	}
 
-	if roundTripped.ID != "AC-1" {
-		t.Errorf("ID = %q, want %q", roundTripped.ID, "AC-1")
+	if roundTripped.ID != ac1 {
+		t.Errorf("ID = %q, want %q", roundTripped.ID, ac1)
 	}
 
 	if roundTripped.Description != "Claude must modify a shared document" {

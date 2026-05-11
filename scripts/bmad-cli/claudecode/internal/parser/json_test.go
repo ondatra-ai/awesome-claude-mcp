@@ -8,12 +8,17 @@ import (
 	"bmad-cli/claudecode/internal/shared"
 )
 
+const (
+	fieldType    = "type"
+	fieldSubtype = "subtype"
+)
+
 func TestParseMessage_UnknownTypeSkipped(t *testing.T) {
 	jsonParser := parser.New()
 
 	msg, err := jsonParser.ParseMessage(map[string]any{
-		"type": "rate_limit_event",
-		"data": map[string]any{"retry_after": 5},
+		fieldType: "rate_limit_event",
+		"data":    map[string]any{"retry_after": 5},
 	})
 
 	if !errors.Is(err, parser.ErrSkippedMessage) {
@@ -29,8 +34,8 @@ func TestParseMessage_KnownTypesStillWork(t *testing.T) {
 	jsonParser := parser.New()
 
 	msg, err := jsonParser.ParseMessage(map[string]any{
-		"type":    "system",
-		"subtype": "init",
+		fieldType:    "system",
+		fieldSubtype: "init",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -81,12 +86,12 @@ func TestParseContentBlock_UnknownTypeFiltered(t *testing.T) {
 
 	// Assistant message with one known and one unknown content block
 	msg, err := jsonParser.ParseMessage(map[string]any{
-		"type": "assistant",
+		fieldType: "assistant",
 		"message": map[string]any{
 			"model": "claude-opus-4-6",
 			"content": []any{
-				map[string]any{"type": "text", "text": "hello"},
-				map[string]any{"type": "server_tool_use", "id": "x", "name": "y"},
+				map[string]any{fieldType: "text", "text": "hello"},
+				map[string]any{fieldType: "server_tool_use", "id": "x", "name": "y"},
 			},
 		},
 	})

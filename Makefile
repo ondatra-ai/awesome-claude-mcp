@@ -1,5 +1,5 @@
 # MCP Google Docs Editor - Development Makefile
-.PHONY: help init dev test-unit test-e2e lint-backend lint-frontend lint-scripts lint-docs lint
+.PHONY: help init dev test-unit test-e2e test-e2e-bdd-cli lint-backend lint-frontend lint-scripts lint-docs lint
 
 SUPPORTED_E2E_ENVS := local dev
 E2E_ENV ?= local
@@ -77,6 +77,11 @@ test-e2e: ## Run E2E tests (default local; append environment name e.g. `make te
 		echo "❌ Tests exited with $$TEST_EXIT_CODE (frontend failures may be expected for remote envs)."; \
 	fi; \
 	exit $$TEST_EXIT_CODE
+
+test-e2e-bdd-cli: ## Run BDD end-to-end tests for bmad-cli (real Claude calls; requires `claude` CLI logged in)
+	@echo "🧪 Running bmad-cli BDD fixtures (this can take several minutes per fixture)..."
+	go test -C scripts/bmad-cli -tags=bdd -timeout=30m -v ./tests/bdd/...
+	@echo "✅ bmad-cli BDD tests completed!"
 
 lint-backend: ## Run Go linter on backend code (auto-fix when possible)
 	@echo "🔧 Running go fmt to fix formatting on backend..."

@@ -14,7 +14,7 @@ func TestEnsureScenariosPopulated_PreservesExisting(t *testing.T) {
 		Story: story.Story{
 			ID: "1.0",
 			AcceptanceCriteria: []story.AcceptanceCriterion{
-				{ID: "AC-1", Steps: []story.ScenarioStep{{Given: []story.StepStatement{{Statement: "x"}}}}},
+				{ID: ac1, Steps: []story.ScenarioStep{{Given: []story.StepStatement{{Statement: "x"}}}}},
 			},
 		},
 	}
@@ -32,13 +32,13 @@ func TestEnsureScenariosPopulated_GeneratesFromACsWithSteps(t *testing.T) {
 			ID: "4.1",
 			AcceptanceCriteria: []story.AcceptanceCriterion{
 				{
-					ID: "AC-1",
+					ID: ac1,
 					Steps: []story.ScenarioStep{
 						{Given: []story.StepStatement{{Statement: "a document"}}},
 					},
 				},
 				{
-					ID: "AC-2",
+					ID: ac2,
 					Steps: []story.ScenarioStep{
 						{When: []story.StepStatement{{Statement: "user edits"}}},
 					},
@@ -67,9 +67,9 @@ func TestEnsureScenariosPopulated_FiltersACsWithoutSteps(t *testing.T) {
 		Story: story.Story{
 			ID: "2.0",
 			AcceptanceCriteria: []story.AcceptanceCriterion{
-				{ID: "AC-1", Description: "no steps here"},
+				{ID: ac1, Description: "no steps here"},
 				{
-					ID: "AC-2",
+					ID: ac2,
 					Steps: []story.ScenarioStep{
 						{Then: []story.StepStatement{{Statement: "result"}}},
 					},
@@ -85,7 +85,7 @@ func TestEnsureScenariosPopulated_FiltersACsWithoutSteps(t *testing.T) {
 		t.Fatalf("expected 1 scenario, got %d", len(doc.Scenarios.TestScenarios))
 	}
 
-	if doc.Scenarios.TestScenarios[0].AcceptanceCriteria[0] != "AC-2" {
+	if doc.Scenarios.TestScenarios[0].AcceptanceCriteria[0] != ac2 {
 		t.Errorf("expected AC-2, got %s", doc.Scenarios.TestScenarios[0].AcceptanceCriteria[0])
 	}
 }
@@ -95,8 +95,8 @@ func TestEnsureScenariosPopulated_NoACsWithSteps(t *testing.T) {
 		Story: story.Story{
 			ID: "3.0",
 			AcceptanceCriteria: []story.AcceptanceCriterion{
-				{ID: "AC-1", Description: "no steps"},
-				{ID: "AC-2", Description: "no steps either"},
+				{ID: ac1, Description: "no steps"},
+				{ID: ac2, Description: "no steps either"},
 			},
 		},
 	}

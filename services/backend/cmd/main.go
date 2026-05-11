@@ -15,6 +15,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const serviceName = "MCP Google Docs Editor - Backend"
+
 // VersionResponse represents the API version information.
 type VersionResponse struct {
 	Version string `json:"version"`
@@ -50,7 +52,7 @@ func setupRoutes(app *fiber.App) {
 
 		return ctx.JSON(HealthResponse{
 			Status:    "healthy",
-			Service:   "MCP Google Docs Editor - Backend",
+			Service:   serviceName,
 			Timestamp: time.Now(),
 		})
 	})
@@ -84,8 +86,8 @@ func createFiberApp(corsAllowedOrigins string) *fiber.App {
 		Prefork:       false, // Disable for development
 		CaseSensitive: true,
 		StrictRouting: true,
-		ServerHeader:  "MCP Google Docs Editor - Backend",
-		AppName:       "MCP Google Docs Editor - Backend",
+		ServerHeader:  serviceName,
+		AppName:       serviceName,
 	})
 
 	// Middleware setup
