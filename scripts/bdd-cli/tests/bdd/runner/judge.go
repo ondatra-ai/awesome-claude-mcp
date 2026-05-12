@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"bdd-cli/internal/adapters/ai"
+	"bdd-cli/src/adapters/ai"
 )
 
 const (
