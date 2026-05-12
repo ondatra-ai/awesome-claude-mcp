@@ -44,7 +44,6 @@ playwright-report/
 # Editor/IDE
 # .idea/
 # .vscode/
-# BMAD (local only)
 
 # Temporary files
 tmp/
@@ -59,7 +58,7 @@ tmp/
 crash.log
 *.tfplan
 **/tfplan
-scripts/bmad-cli/bmad-cli
+scripts/bdd-cli/bdd-cli
 
 # Claude Code local settings
 .claude/settings.local.json

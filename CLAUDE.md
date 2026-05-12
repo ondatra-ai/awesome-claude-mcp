@@ -51,11 +51,11 @@ make help  # Show all available commands
 ```bash
 make test-unit         # Run unit tests (Go backend + Jest frontend)
 make test-e2e          # Run integration & E2E tests (starts Docker services automatically)
-make test-e2e-bdd-cli  # Run bmad-cli BDD fixtures (real Claude calls; opt-in, ~3-5 min/fixture)
+make test-e2e-bdd-cli  # Run bdd-cli BDD fixtures (real Claude calls; opt-in, ~3-5 min/fixture)
 ```
 
 The `test-e2e-bdd-cli` target drives end-to-end fixtures under
-`scripts/bmad-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
+`scripts/bdd-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
 folder with `cmd`, `input/` (starting filesystem),
 `expected/{exit_code,stdout.regex,judge.md}`, and an optional
 `answers` file. The runner copies `input/` into a tmpdir, execs the
@@ -84,12 +84,12 @@ make dev          # Start all services with Docker Compose
 make lint         # Run all linting checks
 make lint-backend # Lint Go backend code
 make lint-frontend # Lint TypeScript/React frontend code
-make lint-scripts # Lint Go scripts (bmad-cli)
+make lint-scripts # Lint Go scripts (bdd-cli)
 make lint-docs    # Validate YAML documentation
 ```
 
-### BMAD CLI Usage
-**CRITICAL**: Always run BMAD CLI from the repository root directory, not from `scripts/bmad-cli/`
+### BDD CLI Usage
+**CRITICAL**: Always run BDD CLI from the repository root directory, not from `scripts/bdd-cli/`
 
 #### Subcommands
 
@@ -106,7 +106,7 @@ CLI commands are organized into two supergroups: `us` (story workflow) and `buil
 - `build tests` — placeholder for upcoming test-build pipeline.
 - `build code` — placeholder for upcoming code-build pipeline.
 
-Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bmad-cli.yaml`.
+Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
 
 **Important Notes:**
 - Always run from repository root for proper path resolution
@@ -134,12 +134,12 @@ Currently empty - update this section as the codebase develops.
   - Switch environment: `railway environment <development|staging|production>`
   - Deploy service: `railway up --service <name> --path-as-root services/<frontend|backend>`
 
-## BMAD CLI Architecture Principles
+## BDD CLI Architecture Principles
 
 ### Quality Over Cost Principle
 **QUALITY IS PARAMOUNT - TIME, PRICE, AND TOKEN USAGE ARE LOWEST PRIORITY** 🎯
 
-When making decisions about BMAD CLI implementation:
+When making decisions about BDD CLI implementation:
 - ✅ **Prioritize output quality**: Always choose the approach that produces the best results
 - ✅ **Multi-stage generation is acceptable**: If it takes 3x tokens to get perfect output, do it
 - ✅ **Take time for quality**: Generation time is not a concern if results are better
@@ -170,7 +170,7 @@ When making decisions about BMAD CLI implementation:
 - **Avoid interfaces** unless there's a genuine need for multiple implementations
 - **Question every layer** - if it doesn't add real value, remove it
 
-#### Example: BMAD CLI Story Generation
+#### Example: BDD CLI Story Generation
 ```go
 // ✅ GOOD: Direct data flow
 type StoryDocument struct {
@@ -194,7 +194,7 @@ type DataCache struct { /* caching complexity */ }
 
 #### When This Principle Was Established
 - **Date**: 2025-09-28
-- **Context**: BMAD CLI refactoring session
+- **Context**: BDD CLI refactoring session
 - **Result**: Eliminated 200+ lines of unnecessary abstraction code
 - **Verification**: Story generation still works perfectly with much simpler code
 
@@ -255,31 +255,31 @@ type DataCache struct { /* caching complexity */ }
 
 **Do not use `cd` to change the working directory.** Always run commands from
 the repository root using absolute or `-C <path>` flags (e.g. `go build -C
-scripts/bmad-cli`). This keeps paths predictable across turns and prevents the
+scripts/bdd-cli`). This keeps paths predictable across turns and prevents the
 working directory from drifting into nested subdirectories.
 
-## Testing `scripts/bmad-cli/`
+## Testing `scripts/bdd-cli/`
 
-All bmad-cli testing happens from the repository root. **Use the terminal MCP**
+All bdd-cli testing happens from the repository root. **Use the terminal MCP**
 (`mcp__terminal__create_session` + `send_command`) for an interactive bash
 session so the CLI can spawn Claude Code as a subprocess. Before launching,
 unset `CLAUDECODE`:
 
 ```bash
-env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli <args>
+env -u CLAUDECODE ./scripts/bdd-cli/bdd-cli <args>
 ```
 
 ### Test commands (run from repo root)
 
 1. **Build:**
    ```bash
-   go build -C scripts/bmad-cli -o ./bmad-cli
+   go build -C scripts/bdd-cli -o ./bdd-cli
    ```
 2. **Invoke a command:**
    ```bash
-   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us refine <story-id>
-   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us create <story-id>
-   env -u CLAUDECODE ./scripts/bmad-cli/bmad-cli us apply <story-id>
+   env -u CLAUDECODE ./scripts/bdd-cli/bdd-cli us refine <story-id>
+   env -u CLAUDECODE ./scripts/bdd-cli/bdd-cli us create <story-id>
+   env -u CLAUDECODE ./scripts/bdd-cli/bdd-cli us apply <story-id>
    ```
 
 ### Timing

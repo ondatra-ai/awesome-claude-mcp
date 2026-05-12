@@ -318,7 +318,7 @@ FR-00015:
 ## Proposed Merge Command Flow
 
 ```bash
-$ bmad-cli us implement 3.1
+$ bdd-cli us implement 3.1
 
 Step 1: Analyzing story scenarios...
   Found 10 scenarios in Story 3.1
@@ -666,7 +666,7 @@ def find_matching_requirement(story_scenario):
 #### Option 3: Interactive Prompt (Recommended for Ambiguous Cases)
 
 ```bash
-$ bmad-cli us implement 3.1
+$ bdd-cli us implement 3.1
 
 Analyzing scenario 3.1-INT-005:
   Description: "WebSocket connection establishment with security"
@@ -957,7 +957,7 @@ def generate_file_path(scenario):
 #### Option 2: Prompt User (Interactive)
 
 ```bash
-$ bmad-cli us implement 3.1
+$ bdd-cli us implement 3.1
 
 Merging scenario 3.1-INT-001...
   Description: "WebSocket connection establishment"
@@ -990,7 +990,7 @@ INT_00015_01:
 #### Recommendation: Convention with Override
 
 ```yaml
-# In bmad-cli.yaml config
+# In bdd-cli.yaml config
 test_file_conventions:
   integration:
     backend: "tests/integration/{story}-mcp.test.go"
@@ -1074,7 +1074,7 @@ def assign_file_path(scenario, config):
 - [ ] Implement merge logic with conflict resolution
 - [ ] Add file path convention system
 - [ ] Create migration script for existing scenarios
-- [ ] Update BMAD CLI `us implement` command
+- [ ] Update BDD CLI `us implement` command
 - [ ] Add validation for both schemas
 - [ ] Write tests for merge logic
 - [ ] Document merge workflow for users

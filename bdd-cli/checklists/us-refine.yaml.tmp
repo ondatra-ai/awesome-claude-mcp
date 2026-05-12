@@ -1,4 +1,4 @@
-# Checklist for `bmad-cli us refine <story-id>`.
+# Checklist for `bdd-cli us refine <story-id>`.
 # Team discusses and adds details (INVEST, acceptance criteria, anti-patterns, splitting).
 #
 # Sources:

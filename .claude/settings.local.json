@@ -29,7 +29,7 @@
       "mcp__context7__get-library-docs",
       "Bash(git ls-tree:*)",
       "Bash(go build:*)",
-      "Bash(scripts/bmad-cli/bmad-cli us checklist:*)",
+      "Bash(scripts/bdd-cli/bdd-cli us checklist:*)",
       "Bash(find:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
