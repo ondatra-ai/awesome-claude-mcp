@@ -136,10 +136,10 @@ linters:
       # Don't require wrapping for errors from internal packages
       # Our internal/pkg/errors package provides properly wrapped errors
       ignorePackageGlobs:
-        - "bdd-cli/internal/*"
+        - "bdd-cli/src/internal/*"
         - "*/internal/*"
       ignoreSigRegexps:
-        - 'bdd-cli/internal/pkg/errors\.Err.*'
+        - 'bdd-cli/src/internal/pkg/errors\.Err.*'
     tagliatelle:
       # For internal domain models and application code
       case:
@@ -154,23 +154,23 @@ linters:
     warn-unused: true
     rules:
       # GitHub API structures must use camelCase to match GitHub's API contract
-      - path: internal/adapters/github/.*\.go
+      - path: src/internal/adapters/github/.*\.go
         linters:
           - tagliatelle
-      - path: internal/domain/models/thread\.go
+      - path: src/internal/domain/models/thread\.go
         linters:
           - tagliatelle
       # Don't require wrapping for internal package returns
       # Our internal/pkg/errors package provides properly wrapped errors
-      - path: (internal/.*|claudecode/.*)\.go
+      - path: (src/internal/.*|src/claudecode/.*|src/adapters/.*)\.go
         linters:
           - wrapcheck
-        text: "bdd-cli/internal/pkg/errors"
+        text: "bdd-cli/src/internal/pkg/errors"
       # Allow dynamic errors in test files for test fixtures
       - path: _test\.go
         linters:
           - err113
       # Allow fmt.Print in console package - it wraps fmt for terminal UI output
-      - path: internal/pkg/console/.*\.go
+      - path: src/internal/pkg/console/.*\.go
         linters:
           - forbidigo

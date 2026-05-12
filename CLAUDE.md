@@ -273,7 +273,7 @@ env -u CLAUDECODE ./scripts/bdd-cli/bdd-cli <args>
 
 1. **Build:**
    ```bash
-   go build -C scripts/bdd-cli -o ./bdd-cli
+   go build -C scripts/bdd-cli -o ./bdd-cli ./src
    ```
 2. **Invoke a command:**
    ```bash
