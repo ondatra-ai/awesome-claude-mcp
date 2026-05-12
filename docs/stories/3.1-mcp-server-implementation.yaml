@@ -550,7 +550,7 @@ change_log:
   - date: "2025-10-10"
     version: "1.0.0"
     description: "Initial story creation"
-    author: "bmad-cli"
+    author: "bdd-cli"
 
 qa_results:
   review_date: "2025-10-10"

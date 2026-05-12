@@ -1,4 +1,4 @@
-# Checklist for `bmad-cli us apply <story-id>`.
+# Checklist for `bdd-cli us apply <story-id>`.
 # Walk every AC in the refined story and merge each one into the registry
 # (docs/requirements.yaml).
 #

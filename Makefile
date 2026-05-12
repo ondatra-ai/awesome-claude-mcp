@@ -78,10 +78,10 @@ test-e2e: ## Run E2E tests (default local; append environment name e.g. `make te
 	fi; \
 	exit $$TEST_EXIT_CODE
 
-test-e2e-bdd-cli: ## Run BDD end-to-end tests for bmad-cli (real Claude calls; requires `claude` CLI logged in)
-	@echo "🧪 Running bmad-cli BDD fixtures (this can take several minutes per fixture)..."
-	go test -C scripts/bmad-cli -tags=bdd -timeout=30m -v ./tests/bdd/...
-	@echo "✅ bmad-cli BDD tests completed!"
+test-e2e-bdd-cli: ## Run BDD end-to-end tests for bdd-cli (real Claude calls; requires `claude` CLI logged in)
+	@echo "🧪 Running bdd-cli BDD fixtures (this can take several minutes per fixture)..."
+	go test -C scripts/bdd-cli -tags=bdd -timeout=30m -v ./tests/bdd/...
+	@echo "✅ bdd-cli BDD tests completed!"
 
 lint-backend: ## Run Go linter on backend code (auto-fix when possible)
 	@echo "🔧 Running go fmt to fix formatting on backend..."
@@ -99,8 +99,8 @@ lint-frontend: ## Run ESLint and Prettier on frontend code (via Docker)
 lint-scripts: ## Run Go linter on scripts with Go code (auto-fix when possible)
 	@echo "🔧 Running go fmt to fix formatting on all Go scripts..."
 	find scripts/ -name "*.go" -exec gofmt -l -w {} \;
-	@echo "🔍 Running golangci-lint on bmad-cli..."
-	cd scripts/bmad-cli && golangci-lint run --fix ./...
+	@echo "🔍 Running golangci-lint on bdd-cli..."
+	cd scripts/bdd-cli && golangci-lint run --fix ./...
 	@echo "✅ Scripts linting completed!"
 
 lint-docs: ## Validate YAML files against Yamale schemas
