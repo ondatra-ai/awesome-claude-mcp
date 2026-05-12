@@ -1,4 +1,37 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(make:*)",
+      "Bash(go build:*)",
+      "Bash(git --no-pager:*)",
+      "Bash(git add:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(scripts/bdd-cli/bdd-cli us checklist:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "mcp__context7__*",
+      "mcp__terminal__*"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "terminal"
+  ],
   "hooks": {
     "UserPromptSubmit": [
       {
