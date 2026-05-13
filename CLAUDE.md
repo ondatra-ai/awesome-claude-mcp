@@ -12,7 +12,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This repository contains documentation and specifications for an MCP (Model Context Protocol) Google Docs Editor integration.
+This repository hosts two products under one tree:
+
+- **MCP Google Docs Editor** (`services/backend`, `services/frontend`) — a Model Context Protocol server plus a Next.js UI for editing Google Docs through Claude.
+- **bdd-cli / TrueBDD** (`scripts/bdd-cli/`) — a Spec-Anchored CLI (aspiring to Spec-as-Source) that drives Claude-mediated checklists over user stories. See `scripts/bdd-cli/README.md` for the vision.
 
 ## Testing Approach
 
@@ -99,12 +102,12 @@ CLI commands are organized into two supergroups: `us` (story workflow) and `buil
 
 - `us create <id>` — extract a story from its epic and run the `us-create` checklist.
 - `us refine <id>` — load a story from `docs/stories/` and run the `us-refine` checklist.
-- `us apply <id>` — load a story from `docs/stories/` and run the `us-apply` checklist to merge scenarios from the refined story into the codebase.
+- `us apply <id>` — walk every AC in a refined story, validate against `us-apply`, and merge scenarios into the central `docs/requirements.yaml` registry.
 
-`build` supergroup (stubs — bodies print "not yet implemented"):
+`build` supergroup (stubs — bodies print "not yet implemented"). These are the future Spec-as-Source regeneration steps:
 
-- `build tests` — placeholder for upcoming test-build pipeline.
-- `build code` — placeholder for upcoming code-build pipeline.
+- `build tests` — will generate executable tests from the Gherkin scenarios in `docs/requirements.yaml`.
+- `build code` — will regenerate code from the requirements registry plus `bdd-cli/architecture.yaml`.
 
 Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
 
@@ -114,7 +117,15 @@ Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `u
 
 ## Project Structure
 
-Currently empty - update this section as the codebase develops.
+- `services/backend/` — Go backend (Fiber). Lint: `make lint-backend`.
+- `services/frontend/` — Next.js 16 + React 19 frontend. Lint config is **ESLint 9 flat config** in `services/frontend/eslint.config.mjs`; the rule set committed at `services/frontend/.eslintrc.json` is still authoritative and must not be changed without permission.
+- `scripts/bdd-cli/` — Go source for the bdd-cli tool. Entry point `src/main.go`, module name `bdd-cli`, builds to `./scripts/bdd-cli/bdd-cli`.
+- `bdd-cli/` — bdd-cli **configuration and data** (not source): `bdd-cli.yaml`, `checklists/us-{create,refine,apply}.yaml`, schemas (`*-schema.yaml`), `architecture.yaml`, `terms.yaml`.
+- `docs/` — `architecture.md`, `prd.md`, `requirements.yaml` (the scenario registry that `us apply` writes to), `epics/`, `stories/`, `qa/`.
+- `tests/` — Playwright INT + E2E tests for the MCP product.
+- `tmp/` — runtime working dir for bdd-cli prompt/response artifacts.
+
+Note the two `bdd-cli/` directories: `bdd-cli/` at repo root is config/data; `scripts/bdd-cli/` is the Go module that consumes it.
 
 ## Railway Deployment
 
@@ -293,6 +304,7 @@ reading the final tail. Do not abort early.
 
 - The .gitignore is configured for Go projects
 - Environment variables should be stored in .env files (excluded from git)
+- Frontend stack: Next.js 16 + React 19 + ESLint 9 (flat config in `services/frontend/eslint.config.mjs`).
 - Never Update @services/frontend/.eslintrc.json and @.golangci.yaml without my permission
 - **CRITICAL**: NEVER merge pull requests without explicit user command to merge
 - **CRITICAL**: NEVER use `git commit --amend` or `git push --force`/`--force-with-lease`. Always create new commits.
