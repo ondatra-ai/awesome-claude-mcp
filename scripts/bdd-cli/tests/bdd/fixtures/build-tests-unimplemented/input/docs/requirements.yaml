@@ -1,0 +1,34 @@
+# Seed registry for the `build-tests-unimplemented` BDD fixture.
+#
+# One scenario (INT-900). The `build tests` command's contract — once
+# implemented — is to walk every scenario here and, for any that lack
+# an executable test in the codebase, produce one. This fixture asserts
+# that contract: the judge fails the run if no test file referencing
+# `INT-900` is created during the run.
+#
+# Today `build tests` is a stub, so the fixture fails. It will pass
+# automatically once the command actually generates tests.
+
+metadata:
+  title: "Test Requirements Registry (BDD fixture seed)"
+  version: "2.0"
+  last_updated: "2026-05-14"
+  description: "Seed for build-tests-unimplemented fixture"
+
+scenarios:
+  INT-900:
+    description: "MCP /mcp endpoint responds 200 to a valid initialize POST"
+    service: "mcp-service"
+    requirement: "fixture seed — expects `build tests` to create a test"
+    last_updated: "2026-05-14"
+    user_stories:
+      - story: "docs/stories/99.3-fixture.yaml"
+        scenario_id: "99.3-001"
+        merge_date: "2026-05-14"
+    merged_steps:
+      given:
+        - "the MCP server is running on its configured port"
+      when:
+        - "the Claude User posts a valid JSON-RPC initialize request to /mcp"
+      then:
+        - "the server returns HTTP 200"
