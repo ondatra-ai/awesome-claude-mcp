@@ -4,7 +4,12 @@
 version: str()
 last_updated: str()
 default_docs: list(str(), required=False)
+config: include('config_block', required=False)
 sections: list(include('section'))
+
+---
+config_block:
+  max_apply_attempts: int(required=False)
 
 ---
 section:

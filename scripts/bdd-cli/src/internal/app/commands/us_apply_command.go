@@ -21,6 +21,7 @@ import (
 const (
 	scratchRegistryFilename = "requirements.yaml"
 	scratchFilePermissions  = 0o644
+	defaultMaxApplyAttempts = 5
 )
 
 // applyDeps bundles the four apply-flavored dependencies the walk needs
@@ -35,10 +36,11 @@ type applyDeps struct {
 
 // applySetup is the resolved state needed to run the apply walk.
 type applySetup struct {
-	scenarios   []*template.ScenarioApplyData
-	prompts     []checklistmodels.PromptWithContext
-	tmpDir      string
-	scratchPath string
+	scenarios        []*template.ScenarioApplyData
+	prompts          []checklistmodels.PromptWithContext
+	tmpDir           string
+	scratchPath      string
+	maxApplyAttempts int
 }
 
 // ExecuteStoryScenarioChecklist walks every acceptance criterion in the
@@ -87,7 +89,7 @@ func (c *USValidationCommand) ExecuteStoryScenarioChecklist(
 		return nil
 	}
 
-	allPassed := c.walkApplyScenarios(ctx, setup, fix, deps)
+	allPassed := c.runApplyFixpoint(ctx, setup, fix, deps)
 
 	console.Header(
 		strings.ToUpper(checklistName)+" — APPLY COMPLETE",
@@ -95,6 +97,52 @@ func (c *USValidationCommand) ExecuteStoryScenarioChecklist(
 	)
 
 	return c.commitApplyWalk(allPassed, setup.scratchPath, requirementsFile)
+}
+
+// runApplyFixpoint repeatedly walks every scenario × every prompt
+// until a full walk applies zero fixes (the fixpoint) — or until the
+// per-checklist cap fires. A walk that applies any fix is followed by
+// a re-walk so cross-AC interactions (a fix on AC N invalidating a
+// previously-passing prompt on AC M < N) cannot leave the canonical
+// registry in a stale state.
+//
+// Return value drives the canonical commit: true when the walk
+// converged with allPassed; false on user Exit, hard failure, or the
+// cap firing.
+func (c *USValidationCommand) runApplyFixpoint(
+	ctx context.Context,
+	setup *applySetup,
+	fix bool,
+	deps applyDeps,
+) bool {
+	maxAttempts := setup.maxApplyAttempts
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if attempt > 1 {
+			console.Header(
+				fmt.Sprintf("RE-WALK %d/%d (fixes applied — verifying)",
+					attempt, maxAttempts),
+				separatorWidth,
+			)
+		}
+
+		allPassed, anyFixApplied := c.walkApplyScenarios(ctx, setup, fix, deps)
+
+		if !allPassed {
+			return false
+		}
+
+		if !anyFixApplied {
+			return true
+		}
+	}
+
+	console.Printf(
+		"Hit max apply attempts (%d) without convergence; canonical left unchanged.\n",
+		maxAttempts,
+	)
+
+	return false
 }
 
 // prepareApplyWalk resolves the story file, copies the canonical
@@ -122,9 +170,16 @@ func (c *USValidationCommand) prepareApplyWalk(
 		return nil, fmt.Errorf("failed to parse story scenarios: %w", err)
 	}
 
-	prompts, err := c.checklistLoader.Load(checklistName)
+	checklistDoc, err := c.checklistLoader.LoadFull(checklistName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load checklist %q: %w", checklistName, err)
+	}
+
+	prompts := flattenChecklistPrompts(checklistDoc, checklistName)
+
+	maxApplyAttempts := defaultMaxApplyAttempts
+	if checklistDoc.Config != nil && checklistDoc.Config.MaxApplyAttempts > 0 {
+		maxApplyAttempts = checklistDoc.Config.MaxApplyAttempts
 	}
 
 	slog.Info("Apply walk starting",
@@ -133,25 +188,61 @@ func (c *USValidationCommand) prepareApplyWalk(
 		"scratch", scratchPath,
 		"scenarios", len(scenarios),
 		"prompts", len(prompts),
+		"max_apply_attempts", maxApplyAttempts,
 	)
 
 	return &applySetup{
-		scenarios:   scenarios,
-		prompts:     prompts,
-		tmpDir:      tmpDir,
-		scratchPath: scratchPath,
+		scenarios:        scenarios,
+		prompts:          prompts,
+		tmpDir:           tmpDir,
+		scratchPath:      scratchPath,
+		maxApplyAttempts: maxApplyAttempts,
 	}, nil
 }
 
+// flattenChecklistPrompts walks a Checklist's sections and emits the
+// non-skipped prompts with section context attached. Mirrors the loop
+// inside ChecklistLoader.Load so callers that need both the full
+// Checklist (for the `config:` block) and the flat prompt list can
+// derive both from a single LoadFull call.
+func flattenChecklistPrompts(
+	doc *checklistmodels.Checklist,
+	commandName string,
+) []checklistmodels.PromptWithContext {
+	prompts := make([]checklistmodels.PromptWithContext, 0)
+
+	for _, section := range doc.Sections {
+		for _, prompt := range section.ValidationPrompts {
+			if prompt.ShouldSkip() {
+				continue
+			}
+
+			prompts = append(prompts, checklistmodels.PromptWithContext{
+				SectionID:     commandName,
+				SectionName:   commandName,
+				CriterionID:   section.ID,
+				CriterionName: section.Name,
+				DefaultDocs:   doc.DefaultDocs,
+				Prompt:        prompt,
+			})
+		}
+	}
+
+	return prompts
+}
+
 // walkApplyScenarios runs the inner per-scenario × per-prompt loop and
-// reports whether every scenario ended in PASS.
+// reports (allPassed, anyFixApplied). anyFixApplied is true iff at
+// least one scenario applied a fix during its iteration — used by the
+// outer fixpoint loop to decide whether a re-walk is needed.
 func (c *USValidationCommand) walkApplyScenarios(
 	ctx context.Context,
 	setup *applySetup,
 	fix bool,
 	deps applyDeps,
-) bool {
+) (bool, bool) {
 	allPassed := true
+	anyFixApplied := false
 
 	for index, scenario := range setup.scenarios {
 		console.Header(
@@ -160,10 +251,15 @@ func (c *USValidationCommand) walkApplyScenarios(
 			separatorWidth,
 		)
 
-		scenarioPassed, scenarioErr := c.runApplyScenario(
+		scenarioPassed, scenarioFixApplied, scenarioErr := c.runApplyScenario(
 			ctx, scenario, setup.prompts, setup.tmpDir, fix,
 			deps.evaluator, deps.fixGenerator, deps.fixApplier,
 		)
+
+		if scenarioFixApplied {
+			anyFixApplied = true
+		}
+
 		if scenarioErr != nil {
 			slog.Error("Apply scenario failed",
 				"ac_id", scenario.ACID,
@@ -181,7 +277,7 @@ func (c *USValidationCommand) walkApplyScenarios(
 		}
 	}
 
-	return allPassed
+	return allPassed, anyFixApplied
 }
 
 // commitApplyWalk decides whether to atomically replace the canonical
@@ -211,9 +307,12 @@ func (c *USValidationCommand) commitApplyWalk(
 }
 
 // runApplyScenario drives one (scenario × all prompts) cell column with
-// the optional fix loop. Returns (passed, error). When passed=false in
-// non-fix mode the caller continues with the next scenario but the
-// final canonical-file commit is skipped.
+// the optional fix loop. Returns (passed, fixApplied, error). When
+// passed=false in non-fix mode the caller continues with the next
+// scenario but the final canonical-file commit is skipped.
+// fixApplied is true iff the per-scenario loop re-iterated at least
+// once — which only happens when applyApplyFix returned
+// shouldContinue=true on an ActionApply turn.
 func (c *USValidationCommand) runApplyScenario(
 	ctx context.Context,
 	scenario *template.ScenarioApplyData,
@@ -223,18 +322,24 @@ func (c *USValidationCommand) runApplyScenario(
 	evaluator *validate.ChecklistEvaluator,
 	fixGenerator *validate.FixPromptGenerator,
 	fixApplier *validate.FixApplier,
-) (bool, error) {
+) (bool, bool, error) {
+	fixApplied := false
+
 	for iteration := 1; ; iteration++ {
+		if iteration > 1 {
+			fixApplied = true
+		}
+
 		shouldContinue, passed, err := c.runApplyIteration(
 			ctx, scenario, prompts, tmpDir, fix, iteration,
 			evaluator, fixGenerator, fixApplier,
 		)
 		if err != nil {
-			return false, err
+			return false, fixApplied, err
 		}
 
 		if !shouldContinue {
-			return passed, nil
+			return passed, fixApplied, nil
 		}
 	}
 }

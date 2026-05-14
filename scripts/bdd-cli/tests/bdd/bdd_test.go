@@ -52,11 +52,12 @@ func buildBddCLI(t *testing.T) string {
 	binPath := filepath.Join(tmp, "bdd-cli")
 
 	// `go test` runs with cwd = the package dir (tests/bdd). Build the
-	// module by pointing -C up two levels to scripts/bdd-cli.
+	// module by pointing -C up two levels to scripts/bdd-cli; the
+	// binary entry lives under ./src (post commit efa7318).
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "go", "build", "-C", "../..", "-o", binPath)
+	cmd := exec.CommandContext(ctx, "go", "build", "-C", "../..", "-o", binPath, "./src")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

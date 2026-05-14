@@ -59,14 +59,32 @@ make test-e2e-bdd-cli  # Run bdd-cli BDD fixtures (real Claude calls; opt-in, ~3
 
 The `test-e2e-bdd-cli` target drives end-to-end fixtures under
 `scripts/bdd-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
-folder with `cmd`, `input/` (starting filesystem),
+folder with `cmd`, `input/` (designed test content — see below),
 `expected/{exit_code,stdout.regex,judge.md}`, and an optional
-`answers` file. The runner copies `input/` into a tmpdir, execs the
-CLI there, diffs the result, and asks Claude (via the existing
-`claudecode/` wrapper) to compare the diff against `judge.md` and
-return PASS / FAIL. Tests are gated by a `//go:build bdd` tag so
-they're invisible to default `go test ./...`. Skipped if the `claude`
-CLI is not on `$PATH`.
+`answers` file.
+
+The runner builds each run's tmpdir in two layers: first it
+pre-populates the real-repo engine ingredients (`bdd-cli/` and
+`scripts/bdd-cli/templates/`) so every fixture exercises the live
+checklists and prompt templates; then it overlays the fixture's
+`input/` on top, which by convention contains **only `docs/`** —
+designed scenario content (synthetic prd, architecture, epic,
+story, seeded requirements registry). Files inside `input/` win
+over the pre-populated layer, so a fixture may deliberately
+override a real-repo file by shipping it under `input/<same path>`
+(rare; reserved for tests that pin a per-fixture variant of a
+checklist or config).
+
+The runner snapshots the tmpdir after prep but before the run, so
+the diff fed to the judge only contains files the run itself
+created or modified — pre-populated and overlaid files that the
+run did not touch are not surfaced. After the CLI exits, the
+runner asks Claude (via the existing `claudecode/` wrapper) to
+compare the diff against `judge.md` and return PASS / FAIL.
+
+Tests are gated by a `//go:build bdd` tag so they're invisible to
+default `go test ./...`. Skipped if the `claude` CLI is not on
+`$PATH`.
 
 If the fixture's `cmd` invokes `--fix` (the interactive fix loop),
 add an `answers` file alongside `cmd`. Its contents are piped
@@ -106,10 +124,10 @@ CLI commands are organized into two supergroups: `us` (story workflow) and `buil
 
 `build` supergroup (stubs — bodies print "not yet implemented"). These are the future Spec-as-Source regeneration steps:
 
-- `build tests` — will generate executable tests from the Gherkin scenarios in `docs/requirements.yaml`.
+- `build tests` — will generate executable tests from the Gherkin scenarios in `docs/requirements.yaml`. Seed checklist already lives at `bdd-cli/checklists/build-tests.yaml` (one prompt: every registry scenario must be referenced by an executable test).
 - `build code` — will regenerate code from the requirements registry plus `bdd-cli/architecture.yaml`.
 
-Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `us-<subcommand>.yaml`; the loader resolves it by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
+Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenates the full command path: `us apply` → `us-apply.yaml`, `build tests` → `build-tests.yaml`. Resolution is by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
 
 **Important Notes:**
 - Always run from repository root for proper path resolution
@@ -120,7 +138,7 @@ Each `us` checklist lives in `bdd-cli/checklists/<command>.yaml`. Filename is `u
 - `services/backend/` — Go backend (Fiber). Lint: `make lint-backend`.
 - `services/frontend/` — Next.js 16 + React 19 frontend. Lint config is **ESLint 9 flat config** in `services/frontend/eslint.config.mjs`; the rule set committed at `services/frontend/.eslintrc.json` is still authoritative and must not be changed without permission.
 - `scripts/bdd-cli/` — Go source for the bdd-cli tool. Entry point `src/main.go`, module name `bdd-cli`, builds to `./scripts/bdd-cli/bdd-cli`.
-- `bdd-cli/` — bdd-cli **configuration and data** (not source): `bdd-cli.yaml`, `checklists/us-{create,refine,apply}.yaml`, schemas (`*-schema.yaml`), `architecture.yaml`, `terms.yaml`.
+- `bdd-cli/` — bdd-cli **configuration and data** (not source): `bdd-cli.yaml`, `checklists/us-{create,refine,apply}.yaml` and `checklists/build-tests.yaml`, schemas (`*-schema.yaml`), `architecture.yaml`, `terms.yaml`.
 - `docs/` — `architecture.md`, `prd.md`, `requirements.yaml` (the scenario registry that `us apply` writes to), `epics/`, `stories/`, `qa/`.
 - `tests/` — Playwright INT + E2E tests for the MCP product.
 - `tmp/` — runtime working dir for bdd-cli prompt/response artifacts.

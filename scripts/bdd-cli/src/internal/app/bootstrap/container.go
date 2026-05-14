@@ -124,7 +124,11 @@ func NewContainer() (*Container, error) {
 
 	// Apply-flavored evaluator / fix-prompt / fix-applier set used by
 	// `us apply`. Templates live under templates.prompts.apply_* and
-	// are written for the merge-into-requirements.yaml subject.
+	// are written for the merge-into-requirements.yaml subject. The
+	// apply-flavored fix-applier mutates the scratch registry in
+	// place via the Edit tool, so it needs EditMode permissions —
+	// unlike the create/refine appliers, which emit
+	// FILE_START/FILE_END markers and let the Go engine write.
 	applyTrip := newScenarioTriple(claudeClient, cfg, scenarioTripleConfigKeys{
 		checklistSystem:    "templates.prompts.apply_checklist_system",
 		checklist:          "templates.prompts.apply_checklist",
@@ -133,6 +137,7 @@ func NewContainer() (*Container, error) {
 		fixApplierSystem:   "templates.prompts.apply_fix_applier_system",
 		fixApplier:         "templates.prompts.apply_fix_applier",
 	})
+	applyTrip.fixApplier.UseEditMode()
 
 	storyScenarioParser := story.NewStoryScenarioParser(cfg)
 
