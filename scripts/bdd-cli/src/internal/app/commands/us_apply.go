@@ -8,6 +8,7 @@ import (
 
 	"bdd-cli/src/internal/app/engine"
 	"bdd-cli/src/internal/app/generators/validate"
+	"bdd-cli/src/internal/app/runner"
 	"bdd-cli/src/internal/infrastructure/checklist"
 	"bdd-cli/src/internal/infrastructure/fs"
 	"bdd-cli/src/internal/infrastructure/input"
@@ -26,7 +27,7 @@ type ApplyDeps struct {
 	ApplyFixPromptGenerator *validate.FixPromptGenerator
 	ApplyFixApplier         *validate.FixApplier
 	UserInputCollector      *input.UserInputCollector
-	TableRenderer           *TableRenderer
+	TableRenderer           *runner.TableRenderer
 	RunDir                  *fs.RunDirectory
 }
 
@@ -44,7 +45,7 @@ func RunApply(
 	tmpDir := deps.RunDir.GetTmpOutPath()
 	scratchPath := filepath.Join(tmpDir, scratchRegistryFilename)
 
-	return Run(ctx, Spec[*template.ScenarioApplyData]{
+	err := runner.Run(ctx, runner.Spec[*template.ScenarioApplyData]{
 		Name:          "us apply",
 		ChecklistName: "us-apply",
 		StoryNumber:   storyNumber,
@@ -61,9 +62,14 @@ func RunApply(
 
 		ChecklistLoader: deps.ChecklistLoader,
 		Renderer:        deps.TableRenderer,
-		UI:              newFixLoopUI(deps.UserInputCollector),
+		UI:              runner.NewFixLoopUI(deps.UserInputCollector),
 		TmpDir:          tmpDir,
 	})
+	if err != nil {
+		return fmt.Errorf("us apply command failed: %w", err)
+	}
+
+	return nil
 }
 
 // loadScenarios is the LoadItems factory for `us apply`. Copies the
@@ -74,7 +80,7 @@ func loadScenarios(
 	storyNumber, requirementsFile, scratchPath string,
 ) func(ctx context.Context) ([]*template.ScenarioApplyData, error) {
 	return func(_ context.Context) ([]*template.ScenarioApplyData, error) {
-		err := copyFile(requirementsFile, scratchPath)
+		err := runner.CopyFile(requirementsFile, scratchPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to seed scratch registry: %w", err)
 		}

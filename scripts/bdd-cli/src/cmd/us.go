@@ -80,15 +80,8 @@ Example:
   bdd-cli us create 4.1 --fix`,
 		func(ctx context.Context, storyNumber string, fix bool) error {
 			return commands.RunCreate(ctx, commands.CreateDeps{
-				EpicLoader:         container.EpicLoader,
-				ChecklistLoader:    container.ChecklistLoader,
-				Evaluator:          container.Evaluator,
-				FixGenerator:       container.FixGenerator,
-				FixApplier:         container.FixApplier,
-				UserInputCollector: container.UserInputCollector,
-				TableRenderer:      container.TableRenderer,
-				RunDir:             container.RunDir,
-				StoriesDir:         container.StoriesDir,
+				StoryCommonDeps: storyCommonFromContainer(container),
+				EpicLoader:      container.EpicLoader,
 			}, storyNumber, fix)
 		},
 	)
@@ -106,18 +99,27 @@ Example:
   bdd-cli us refine 4.1 --fix`,
 		func(ctx context.Context, storyNumber string, fix bool) error {
 			return commands.RunRefine(ctx, commands.RefineDeps{
-				StoryLoader:        container.StoryLoader,
-				ChecklistLoader:    container.ChecklistLoader,
-				Evaluator:          container.Evaluator,
-				FixGenerator:       container.FixGenerator,
-				FixApplier:         container.FixApplier,
-				UserInputCollector: container.UserInputCollector,
-				TableRenderer:      container.TableRenderer,
-				RunDir:             container.RunDir,
-				StoriesDir:         container.StoriesDir,
+				StoryCommonDeps: storyCommonFromContainer(container),
+				StoryLoader:     container.StoryLoader,
 			}, storyNumber, fix)
 		},
 	)
+}
+
+// storyCommonFromContainer projects the bootstrap container into the
+// fields shared by us create and us refine. Keeps the per-command
+// cobra handlers tiny.
+func storyCommonFromContainer(container *bootstrap.Container) commands.StoryCommonDeps {
+	return commands.StoryCommonDeps{
+		ChecklistLoader:    container.ChecklistLoader,
+		Evaluator:          container.Evaluator,
+		FixGenerator:       container.FixGenerator,
+		FixApplier:         container.FixApplier,
+		UserInputCollector: container.UserInputCollector,
+		TableRenderer:      container.TableRenderer,
+		RunDir:             container.RunDir,
+		StoriesDir:         container.StoriesDir,
+	}
 }
 
 func newUSApplyCmd(container *bootstrap.Container) *cobra.Command {

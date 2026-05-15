@@ -1,4 +1,4 @@
-package commands
+package runner
 
 import (
 	"bdd-cli/src/internal/app/engine"
@@ -14,8 +14,8 @@ type fixLoopUI struct {
 	collector *input.UserInputCollector
 }
 
-// newFixLoopUI builds a FixLoopUI satisfying engine.FixLoopUI.
-func newFixLoopUI(collector *input.UserInputCollector) engine.FixLoopUI {
+// NewFixLoopUI builds a FixLoopUI satisfying engine.FixLoopUI.
+func NewFixLoopUI(collector *input.UserInputCollector) engine.FixLoopUI {
 	return &fixLoopUI{collector: collector}
 }
 

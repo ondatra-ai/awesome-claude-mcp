@@ -1,4 +1,4 @@
-package commands
+package runner
 
 import (
 	"context"
@@ -12,6 +12,21 @@ import (
 	"bdd-cli/src/internal/infrastructure/checklist"
 	"bdd-cli/src/internal/pkg/console"
 )
+
+// renderedPrompt is the Q value the engine passes around. Pairs a
+// PromptWithContext with its 1-based index so per-cell file naming
+// stays stable across walks.
+type renderedPrompt struct {
+	Prompt checklistmodels.PromptWithContext
+	Index  int
+}
+
+// renderPrompt is the engine's GenerateQFn for every us-* command.
+// Cheap on purpose — the heavy template rendering happens inside the
+// evaluator's Claude call, which has both item and q.
+func renderPrompt(idx int, prompt checklistmodels.PromptWithContext) *renderedPrompt {
+	return &renderedPrompt{Prompt: prompt, Index: idx}
+}
 
 // Spec describes one checklist-driven command: its name, the
 // checklist YAML it drives, the items it walks, and the per-command
@@ -89,7 +104,7 @@ func Run[I any](ctx context.Context, spec Spec[I]) error {
 
 	console.Header(
 		strings.ToUpper(spec.Name)+" — Story "+spec.StoryNumber,
-		separatorWidth,
+		SeparatorWidth,
 	)
 
 	items, err := spec.LoadItems(ctx)
@@ -128,7 +143,7 @@ func Run[I any](ctx context.Context, spec Spec[I]) error {
 
 	console.Header(
 		strings.ToUpper(spec.Name)+" — COMPLETE",
-		separatorWidth,
+		SeparatorWidth,
 	)
 
 	return spec.Finalize(result)
@@ -142,17 +157,17 @@ func buildSpecEngine[I any](
 	spec Spec[I],
 	builder *reportBuilder,
 	maxAttempts int,
-) *engine.Engine[I, checklistmodels.PromptWithContext, *RenderedPrompt] {
+) *engine.Engine[I, checklistmodels.PromptWithContext, *renderedPrompt] {
 	var latestResult checklistmodels.ValidationResult
 
-	cell := &engine.CellHandler[I, *RenderedPrompt]{
+	cell := &engine.CellHandler[I, *renderedPrompt]{
 		Query:   buildQueryClosure(spec, builder, &latestResult),
 		GenFix:  buildGenFixClosure(spec, &latestResult),
 		Fix:     buildFixClosure(spec),
 		UI:      spec.UI,
 		FixMode: spec.Fix,
 	}
-	walker := &engine.SequentialWalker[I, *RenderedPrompt]{Cell: cell}
+	walker := &engine.SequentialWalker[I, *renderedPrompt]{Cell: cell}
 
 	return engine.New(
 		renderPrompt, walker,
@@ -168,11 +183,11 @@ func buildQueryClosure[I any](
 	spec Spec[I],
 	builder *reportBuilder,
 	latestResult *checklistmodels.ValidationResult,
-) engine.QueryFn[I, *RenderedPrompt] {
+) engine.QueryFn[I, *renderedPrompt] {
 	return func(
 		ctx context.Context,
 		item I,
-		query *RenderedPrompt,
+		query *renderedPrompt,
 	) (bool, error) {
 		subjectID, subjectTitle := spec.GetSubject(item)
 
@@ -196,11 +211,11 @@ func buildQueryClosure[I any](
 func buildGenFixClosure[I any](
 	spec Spec[I],
 	latestResult *checklistmodels.ValidationResult,
-) engine.GenerateFixFn[I, *RenderedPrompt] {
+) engine.GenerateFixFn[I, *renderedPrompt] {
 	return func(
 		ctx context.Context,
 		item I,
-		_ *RenderedPrompt,
+		_ *renderedPrompt,
 		userAnswers map[string]string,
 		iteration int,
 	) (engine.FixResult, error) {

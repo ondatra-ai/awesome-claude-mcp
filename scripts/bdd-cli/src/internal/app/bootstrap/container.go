@@ -2,8 +2,8 @@ package bootstrap
 
 import (
 	"bdd-cli/src/adapters/ai"
-	"bdd-cli/src/internal/app/commands"
 	"bdd-cli/src/internal/app/generators/validate"
+	"bdd-cli/src/internal/app/runner"
 	"bdd-cli/src/internal/domain/ports"
 	"bdd-cli/src/internal/infrastructure/checklist"
 	"bdd-cli/src/internal/infrastructure/config"
@@ -72,7 +72,7 @@ type Container struct {
 	StoryScenarioParser *story.StoryScenarioParser
 	ChecklistLoader     *checklist.ChecklistLoader
 	UserInputCollector  *input.UserInputCollector
-	TableRenderer       *commands.TableRenderer
+	TableRenderer       *runner.TableRenderer
 	// Standard generator triple drives `us create` and `us refine`.
 	Evaluator    *validate.ChecklistEvaluator
 	FixGenerator *validate.FixPromptGenerator
@@ -123,7 +123,7 @@ func NewContainer() (*Container, error) {
 		StoryScenarioParser:     story.NewStoryScenarioParser(cfg),
 		ChecklistLoader:         checklist.NewChecklistLoader(cfg),
 		UserInputCollector:      input.NewUserInputCollector(),
-		TableRenderer:           commands.NewTableRenderer(),
+		TableRenderer:           runner.NewTableRenderer(),
 		Evaluator:               validate.NewChecklistEvaluator(claudeClient, cfg),
 		FixGenerator:            validate.NewFixPromptGenerator(claudeClient, cfg),
 		FixApplier:              validate.NewFixApplier(claudeClient, cfg),

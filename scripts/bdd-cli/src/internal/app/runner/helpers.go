@@ -1,4 +1,4 @@
-package commands
+package runner
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	separatorWidth       = 80
+	SeparatorWidth       = 80
 	storyFilePermissions = 0o644
 	storyDirPermissions  = 0o755
 	scratchFilePerm      = 0o644
@@ -73,11 +73,11 @@ func slugify(title string) string {
 	return strings.Trim(slug, "-")
 }
 
-// displayStory pretty-prints a story under a banner. Used during
+// DisplayStory pretty-prints a story under a banner. Used during
 // load to confirm the engine is operating on the right subject.
-func displayStory(storyData *story.Story, header string) {
+func DisplayStory(storyData *story.Story, header string) {
 	console.BlankLine()
-	console.Header(header, separatorWidth)
+	console.Header(header, SeparatorWidth)
 
 	yamlBytes, err := yaml.Marshal(storyData)
 	if err != nil {
@@ -87,16 +87,16 @@ func displayStory(storyData *story.Story, header string) {
 	}
 
 	console.Println(string(yamlBytes))
-	console.Separator("=", separatorWidth)
+	console.Separator("=", SeparatorWidth)
 }
 
 // displayFailureInfo prints the section / question / rationale /
 // context block for the first failed check.
 func displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
 	console.BlankLine()
-	console.Separator("=", separatorWidth)
+	console.Separator("=", SeparatorWidth)
 	console.Printf("CHECK FAILED: %s\n", failedCheck.SectionPath)
-	console.Separator("=", separatorWidth)
+	console.Separator("=", SeparatorWidth)
 	console.Printf("Question: %s\n", failedCheck.Question)
 
 	if failedCheck.Rationale != "" {
@@ -115,9 +115,9 @@ func displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
 // displayFixPrompt prints the rendered fix prompt under a banner.
 func displayFixPrompt(fixPrompt string) {
 	console.BlankLine()
-	console.Header("FIX PROMPT GENERATED", separatorWidth)
+	console.Header("FIX PROMPT GENERATED", SeparatorWidth)
 	console.Println(fixPrompt)
-	console.Separator("=", separatorWidth)
+	console.Separator("=", SeparatorWidth)
 }
 
 // writeNewStoryFile writes a fresh story YAML under `<id>-<slug>.yaml`
@@ -237,19 +237,19 @@ func runFixPromptGeneration(
 	return out, nil
 }
 
-// storySubject is the GetSubject implementation shared by us create
+// StorySubject is the GetSubject implementation shared by us create
 // and us refine. Pulls the (id, title) pair the report builder uses
 // for table headings.
-func storySubject(item *story.Story) (string, string) {
+func StorySubject(item *story.Story) (string, string) {
 	return item.ID, item.Title
 }
 
-// storyPostFix returns the PostFix closure for story-based commands.
+// StoryPostFix returns the PostFix closure for story-based commands.
 // The FixApplier returns the new ACs as a YAML blob; this closure
 // unmarshals them, saves a new version, and returns the freshly
 // loaded latest snapshot — which the engine uses for the next Query
 // iteration against the same item.
-func storyPostFix(
+func StoryPostFix(
 	versionMgr *fs.StoryVersionManager,
 ) func(ctx context.Context, item *story.Story, applierContent string) (*story.Story, error) {
 	return func(_ context.Context, item *story.Story, applierContent string) (*story.Story, error) {
@@ -282,10 +282,10 @@ func storyPostFix(
 	}
 }
 
-// storyFinalize returns the Finalize closure for story-based commands.
+// StoryFinalize returns the Finalize closure for story-based commands.
 // On Converged it writes the final story file (new or update toggle);
 // every other stop reason prints a help message and returns nil.
-func storyFinalize(
+func StoryFinalize(
 	storiesDir, storyNumber string,
 	versionMgr *fs.StoryVersionManager,
 	fix, writeNew bool,
@@ -329,7 +329,7 @@ func writeConvergedStory(
 	storiesDir, storyNumber string,
 	writeNew bool,
 ) error {
-	console.Header("ALL CHECKS PASSED!", separatorWidth)
+	console.Header("ALL CHECKS PASSED!", SeparatorWidth)
 
 	latest, err := versionMgr.LoadLatest()
 	if err != nil {
@@ -363,7 +363,7 @@ func writeConvergedStory(
 // displayFinalStory prints the converged story under a banner.
 func displayFinalStory(storyData *story.Story) {
 	console.BlankLine()
-	console.Header("FINAL STORY VERSION", separatorWidth)
+	console.Header("FINAL STORY VERSION", SeparatorWidth)
 
 	yamlBytes, err := yaml.Marshal(storyData)
 	if err != nil {
@@ -373,13 +373,13 @@ func displayFinalStory(storyData *story.Story) {
 	}
 
 	console.Println(strings.TrimRight(string(yamlBytes), "\n"))
-	console.Separator("=", separatorWidth)
+	console.Separator("=", SeparatorWidth)
 }
 
-// copyFile makes a byte-for-byte copy of src at dst, creating dst's
+// CopyFile makes a byte-for-byte copy of src at dst, creating dst's
 // parent directory if needed. Used by `us apply` to seed the scratch
 // requirements registry.
-func copyFile(src, dst string) error {
+func CopyFile(src, dst string) error {
 	err := os.MkdirAll(filepath.Dir(dst), storyDirPermissions)
 	if err != nil {
 		return fmt.Errorf("failed to create scratch directory: %w", err)
