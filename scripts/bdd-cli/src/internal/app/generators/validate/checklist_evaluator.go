@@ -106,6 +106,26 @@ func (e *ChecklistEvaluator) EvaluateUntilFailure(
 	return e.evaluatePrompts(ctx, subject, subjectID, subjectTitle, prompts, tmpDir, true)
 }
 
+// EvaluateOne evaluates a single prompt against the subject and returns
+// the full ValidationResult. This is the per-cell primitive the engine
+// `query` closure calls — returning the result (not just pass/fail) so
+// the cell's `genFix` closure can read it via shared closure state.
+//
+// promptIndex must be 1-based to match the tmp-file naming convention.
+func (e *ChecklistEvaluator) EvaluateOne(
+	ctx context.Context,
+	subject any,
+	subjectID string,
+	promptCtx checklist.PromptWithContext,
+	tmpDir string,
+	promptIndex int,
+) (checklist.ValidationResult, error) {
+	e.tmpDir = tmpDir
+	e.subjectID = subjectID
+
+	return e.evaluatePrompt(ctx, subject, subjectID, promptCtx, promptIndex)
+}
+
 // evaluatePrompts is the shared implementation for Evaluate and EvaluateUntilFailure.
 func (e *ChecklistEvaluator) evaluatePrompts(
 	ctx context.Context,
