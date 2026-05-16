@@ -14,7 +14,19 @@ import (
 	"bdd-cli/tests/bdd/runner"
 )
 
-const fixtureTimeout = 15 * time.Minute
+const (
+	// fixtureTimeout caps the CLI run alone. The `--fix` fixtures make
+	// 30+ sequential Claude calls (walk → fix loop → re-walk) and were
+	// previously killed at the 15-minute mark with the re-walk still
+	// pending.
+	fixtureTimeout = 30 * time.Minute
+	// judgeTimeout caps the post-run judge call. The judge gets its
+	// own fresh context so it can still produce a verdict when the CLI
+	// run hits fixtureTimeout (otherwise the same expired context would
+	// short-circuit the judge with "context deadline exceeded" and mask
+	// the real "CLI was killed" failure).
+	judgeTimeout = 5 * time.Minute
+)
 
 func TestBDDFixtures(t *testing.T) {
 	_, err := exec.LookPath("claude")
@@ -96,18 +108,21 @@ func runFixture(t *testing.T, dir, binPath string, judge runner.Judge) {
 		t.Fatalf("load fixture: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), fixtureTimeout)
-	defer cancel()
+	runCtx, runCancel := context.WithTimeout(context.Background(), fixtureTimeout)
+	defer runCancel()
 
 	t.Logf("running %q (%s) — this can take several minutes", fixture.Cmd, fixture.Name)
 
-	res, err := runner.Execute(ctx, fixture, binPath)
+	res, err := runner.Execute(runCtx, fixture, binPath)
 	if err != nil {
 		dumpRun(t, res)
 		t.Fatalf("execute: %v", err)
 	}
 
-	verdict := runner.Evaluate(ctx, fixture, res, judge)
+	judgeCtx, judgeCancel := context.WithTimeout(context.Background(), judgeTimeout)
+	defer judgeCancel()
+
+	verdict := runner.Evaluate(judgeCtx, fixture, res, judge)
 
 	if verdict.Pass() {
 		t.Logf("PASS %s (exit=%d, %d file change(s))", fixture.Name, res.ExitCode, len(res.Diff))

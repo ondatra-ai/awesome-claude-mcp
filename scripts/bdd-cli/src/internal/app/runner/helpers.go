@@ -245,23 +245,28 @@ func StorySubject(item *story.Story) (string, string) {
 }
 
 // StoryPostFix returns the PostFix closure for story-based commands.
-// The FixApplier returns the new ACs as a YAML blob; this closure
-// unmarshals them, saves a new version, and returns the freshly
-// loaded latest snapshot — which the engine uses for the next Query
-// iteration against the same item.
+// The FixApplier returns the full updated story body as YAML; this
+// closure unmarshals it, pins the canonical ID, saves a new version,
+// and returns the freshly loaded latest snapshot — which the engine
+// uses for the next Query iteration against the same item.
+//
+// The applier's contract is to emit every story field (top-level
+// `title`/`as_a`/`i_want`/`so_that`/`status` plus `acceptance_criteria`)
+// so any fix — not just AC-shaped ones — actually lands. The story ID
+// is reasserted from the in-memory item to defend against an applier
+// that drops or rewrites it.
 func StoryPostFix(
 	versionMgr *fs.StoryVersionManager,
 ) func(ctx context.Context, item *story.Story, applierContent string) (*story.Story, error) {
 	return func(_ context.Context, item *story.Story, applierContent string) (*story.Story, error) {
-		var updatedACs []story.AcceptanceCriterion
+		var updated story.Story
 
-		err := yaml.Unmarshal([]byte(applierContent), &updatedACs)
+		err := yaml.Unmarshal([]byte(applierContent), &updated)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse updated acceptance criteria: %w", err)
+			return nil, fmt.Errorf("failed to parse updated story body: %w", err)
 		}
 
-		updated := *item
-		updated.AcceptanceCriteria = updatedACs
+		updated.ID = item.ID
 
 		_, err = versionMgr.SaveNextVersion(&updated)
 		if err != nil {
