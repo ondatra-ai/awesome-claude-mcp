@@ -164,6 +164,16 @@ type Options struct {
 	// MaxApplyAttempts bounds the outer fixpoint re-walk. 0 → default
 	// (5). Plumbed from a checklist's `config.max_apply_attempts`.
 	MaxApplyAttempts int
+	// OnAttemptStart, if non-nil, fires at the top of each outer-walk
+	// attempt (1-indexed). The runner uses this to emit the
+	// "RE-WALK N/M" banner on attempts past the first; the engine
+	// itself stays console-free.
+	OnAttemptStart func(attempt, maxAttempts int)
+	// OnItemStart, if non-nil, fires before each per-item walk within
+	// an attempt. The runner uses this to emit a per-item banner (e.g.
+	// "AC N/M: <description>" for us apply); story-based commands with
+	// a single item leave the spec callback nil and emit nothing.
+	OnItemStart func(idx, total int)
 }
 
 // Result is what `Engine.Run` returns to the caller.

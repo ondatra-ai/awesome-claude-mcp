@@ -58,6 +58,10 @@ func (e *Engine[I, P, Q]) Run(
 	}
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if e.opts.OnAttemptStart != nil {
+			e.opts.OnAttemptStart(attempt, maxAttempts)
+		}
+
 		summary, err := e.walkAllItems(ctx, items, queries)
 		if err != nil {
 			return nil, err
@@ -107,6 +111,10 @@ func (e *Engine[I, P, Q]) walkAllItems(
 	summary := walkSummary{allPassed: true}
 
 	for idx, item := range items {
+		if e.opts.OnItemStart != nil {
+			e.opts.OnItemStart(idx, len(items))
+		}
+
 		run, err := e.walker.Walk(ctx, item, queries)
 		if err != nil {
 			return summary, fmt.Errorf("walker failed on item %d: %w", idx, err)

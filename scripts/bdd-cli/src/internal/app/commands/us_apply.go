@@ -51,10 +51,11 @@ func RunApply(
 		StoryNumber:   storyNumber,
 		Fix:           fix,
 
-		LoadItems:  loadScenarios(deps, storyNumber, requirementsFile, scratchPath),
-		PostFix:    scenarioPostFix,
-		Finalize:   commitApplyWalk(scratchPath, requirementsFile),
-		GetSubject: scenarioSubject,
+		LoadItems:   loadScenarios(deps, storyNumber, requirementsFile, scratchPath),
+		PostFix:     scenarioPostFix,
+		Finalize:    commitApplyWalk(scratchPath, requirementsFile),
+		GetSubject:  scenarioSubject,
+		OnItemStart: scenarioOnItemStart,
 
 		Evaluator:    deps.ApplyEvaluator,
 		FixGenerator: deps.ApplyFixPromptGenerator,
@@ -101,6 +102,17 @@ func scenarioSubject(item *template.ScenarioApplyData) (string, string) {
 	return item.LineageScenarioID, item.Description
 }
 
+// scenarioOnItemStart is the OnItemStart implementation for apply:
+// prints the "AC N/M: <description>" banner that the BDD fixture
+// (and any human watching) uses to track per-AC progress through
+// the outer walk.
+func scenarioOnItemStart(idx, total int, item *template.ScenarioApplyData) {
+	console.Header(
+		fmt.Sprintf("AC %d/%d: %s", idx+1, total, item.Description),
+		runner.SeparatorWidth,
+	)
+}
+
 // scenarioPostFix is the PostFix implementation for apply. The fix
 // already mutated the scratch file via the Edit tool, so the item
 // itself is unchanged — Run's next Query iteration will read the
@@ -135,6 +147,8 @@ func commitApplyWalk(
 
 			return nil
 		}
+
+		console.Header("ALL CHECKS PASSED!", runner.SeparatorWidth)
 
 		err := os.Rename(scratchPath, requirementsFile)
 		if err != nil {

@@ -65,6 +65,11 @@ type Spec[I any] struct {
 	// GetSubject reads the per-item (id, title) used for tmp file
 	// naming and the post-walk report table.
 	GetSubject func(item I) (subjectID, subjectTitle string)
+	// OnItemStart, if non-nil, is invoked before each item walk. us
+	// apply uses this to print the "AC N/M: <description>" banner so
+	// per-AC progress is visible in stdout. Story-based commands have
+	// a single item and typically leave this nil.
+	OnItemStart func(idx, total int, item I)
 
 	// Evaluator / FixGenerator / FixApplier together form the
 	// generator triple. us create/refine use the standard triple;
@@ -132,7 +137,7 @@ func Run[I any](ctx context.Context, spec Spec[I]) error {
 	)
 
 	builder := newReportBuilder()
-	eng := buildSpecEngine(spec, builder, maxAttempts)
+	eng := buildSpecEngine(spec, builder, items, maxAttempts)
 
 	result, err := eng.Run(ctx, items, prompts)
 	if err != nil {
@@ -141,8 +146,11 @@ func Run[I any](ctx context.Context, spec Spec[I]) error {
 
 	builder.RenderAll(spec.Renderer, spec.Fix)
 
+	// Trailing banner has no em-dash so fixture regexes like
+	// "APPLY COMPLETE" / "CREATE COMPLETE" match as a contiguous
+	// substring of the upper-cased command name.
 	console.Header(
-		strings.ToUpper(spec.Name)+" — COMPLETE",
+		strings.ToUpper(spec.Name)+" COMPLETE",
 		SeparatorWidth,
 	)
 
@@ -152,10 +160,12 @@ func Run[I any](ctx context.Context, spec Spec[I]) error {
 // buildSpecEngine wires the four-layer engine with closures whose
 // behaviour is determined entirely by the Spec's generator triple,
 // GetSubject, and PostFix. Per-command files never construct an
-// engine directly.
+// engine directly. `items` is captured so the engine's index-only
+// OnItemStart can dispatch to the spec's typed OnItemStart hook.
 func buildSpecEngine[I any](
 	spec Spec[I],
 	builder *reportBuilder,
+	items []I,
 	maxAttempts int,
 ) *engine.Engine[I, checklistmodels.PromptWithContext, *renderedPrompt] {
 	var latestResult checklistmodels.ValidationResult
@@ -171,8 +181,47 @@ func buildSpecEngine[I any](
 
 	return engine.New(
 		renderPrompt, walker,
-		engine.Options{MaxApplyAttempts: maxAttempts},
+		engine.Options{
+			MaxApplyAttempts: maxAttempts,
+			OnAttemptStart:   reWalkBanner,
+			OnItemStart:      itemBannerDispatcher(spec, items),
+		},
 	)
+}
+
+// reWalkBanner emits the "RE-WALK N/M (fixes applied — verifying)"
+// banner at the top of every outer-walk attempt past the first.
+// Attempt 1 is the initial walk; banners only make sense on retries.
+func reWalkBanner(attempt, maxAttempts int) {
+	if attempt <= 1 {
+		return
+	}
+
+	console.Header(
+		fmt.Sprintf("RE-WALK %d/%d (fixes applied — verifying)", attempt, maxAttempts),
+		SeparatorWidth,
+	)
+}
+
+// itemBannerDispatcher adapts the engine's index-only OnItemStart to
+// the spec's typed OnItemStart, looking up the live item from the
+// captured slice. Nil out → no-op so commands that omit the spec hook
+// pay nothing.
+func itemBannerDispatcher[I any](
+	spec Spec[I],
+	items []I,
+) func(idx, total int) {
+	if spec.OnItemStart == nil {
+		return nil
+	}
+
+	return func(idx, total int) {
+		if idx < 0 || idx >= len(items) {
+			return
+		}
+
+		spec.OnItemStart(idx, total, items[idx])
+	}
 }
 
 // buildQueryClosure produces the engine.QueryFn that calls the
