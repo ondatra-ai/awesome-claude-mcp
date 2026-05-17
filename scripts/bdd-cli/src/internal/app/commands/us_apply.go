@@ -123,7 +123,7 @@ func scenarioPostFix(
 	_ string,
 ) (*template.ScenarioApplyData, error) {
 	console.Printf(
-		"Fix applied to scratch %s. Re-running validation...\n",
+		"Fix applied to scratch %s — re-running validation...\n",
 		item.RequirementsScratchPath,
 	)
 

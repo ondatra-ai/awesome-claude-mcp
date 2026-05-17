@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"bdd-cli/src/internal/app/runner"
 	"bdd-cli/src/internal/domain/models/story"
 	"bdd-cli/src/internal/infrastructure/epic"
 	"bdd-cli/src/internal/infrastructure/fs"
-	"bdd-cli/src/internal/pkg/console"
 	pkgerrors "bdd-cli/src/internal/pkg/errors"
 )
 
@@ -34,16 +32,16 @@ func RunCreate(ctx context.Context, deps CreateDeps, storyNumber string, fix boo
 }
 
 // loadStoryFromEpic is the LoadItems factory for `us create`. Loads
-// the story from its epic, displays it, and seeds the version
-// manager with the initial snapshot.
+// the story from its epic and seeds the version manager with the
+// initial snapshot. The engine's first `US CREATE — Story <id>`
+// banner already announces the subject so we don't pretty-print the
+// loaded story body here.
 func loadStoryFromEpic(
 	loader *epic.EpicLoader,
 	storyNumber string,
 	versionMgr *fs.StoryVersionManager,
 ) func(ctx context.Context) ([]*story.Story, error) {
 	return func(_ context.Context) ([]*story.Story, error) {
-		console.Header("LOADING STORY FROM EPIC", runner.SeparatorWidth)
-
 		loaded, err := loader.LoadStoryFromEpic(storyNumber)
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -51,8 +49,6 @@ func loadStoryFromEpic(
 				pkgerrors.ErrLoadStoryFromEpicFailed(err),
 			)
 		}
-
-		runner.DisplayStory(loaded, "STORY FROM EPIC")
 
 		slog.Info("Story loaded", "id", loaded.ID, "title", loaded.Title)
 

@@ -73,30 +73,11 @@ func slugify(title string) string {
 	return strings.Trim(slug, "-")
 }
 
-// DisplayStory pretty-prints a story under a banner. Used during
-// load to confirm the engine is operating on the right subject.
-func DisplayStory(storyData *story.Story, header string) {
-	console.BlankLine()
-	console.Header(header, SeparatorWidth)
-
-	yamlBytes, err := yaml.Marshal(storyData)
-	if err != nil {
-		slog.Warn("Could not marshal story to YAML", "error", err)
-
-		return
-	}
-
-	console.Println(string(yamlBytes))
-	console.Separator("=", SeparatorWidth)
-}
-
 // displayFailureInfo prints the section / question / rationale /
 // context block for the first failed check.
 func displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
 	console.BlankLine()
-	console.Separator("=", SeparatorWidth)
-	console.Printf("CHECK FAILED: %s\n", failedCheck.SectionPath)
-	console.Separator("=", SeparatorWidth)
+	console.Header("CHECK FAILED: "+failedCheck.SectionPath, SeparatorWidth)
 	console.Printf("Question: %s\n", failedCheck.Question)
 
 	if failedCheck.Rationale != "" {
@@ -113,11 +94,13 @@ func displayFailureInfo(failedCheck *checklistmodels.ValidationResult) {
 }
 
 // displayFixPrompt prints the rendered fix prompt under a banner.
+// The opening banner is enough framing — the next thing on stdout is
+// the interactive apply/refine/exit prompt, which prints its own
+// separators.
 func displayFixPrompt(fixPrompt string) {
 	console.BlankLine()
 	console.Header("FIX PROMPT GENERATED", SeparatorWidth)
 	console.Println(fixPrompt)
-	console.Separator("=", SeparatorWidth)
 }
 
 // writeNewStoryFile writes a fresh story YAML under `<id>-<slug>.yaml`
@@ -274,7 +257,7 @@ func StoryPostFix(
 		}
 
 		console.Printf(
-			"\nFix applied. Saved as version %d. Re-running validation...\n",
+			"\nFix applied (v%d) — re-running validation...\n",
 			versionMgr.GetCurrentVersion(),
 		)
 
@@ -343,8 +326,6 @@ func writeConvergedStory(
 		return nil
 	}
 
-	displayFinalStory(latest)
-
 	var storyPath string
 
 	if writeNew {
@@ -363,22 +344,6 @@ func writeConvergedStory(
 	console.Printf("Story saved to: %s\n", storyPath)
 
 	return nil
-}
-
-// displayFinalStory prints the converged story under a banner.
-func displayFinalStory(storyData *story.Story) {
-	console.BlankLine()
-	console.Header("FINAL STORY VERSION", SeparatorWidth)
-
-	yamlBytes, err := yaml.Marshal(storyData)
-	if err != nil {
-		slog.Warn("Could not marshal story to YAML", "error", err)
-
-		return
-	}
-
-	console.Println(strings.TrimRight(string(yamlBytes), "\n"))
-	console.Separator("=", SeparatorWidth)
 }
 
 // CopyFile makes a byte-for-byte copy of src at dst, creating dst's
