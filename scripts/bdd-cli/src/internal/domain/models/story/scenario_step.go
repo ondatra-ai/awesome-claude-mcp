@@ -83,22 +83,3 @@ type ScenarioStep struct {
 	When  []StepStatement `json:"when,omitempty"  yaml:"when,omitempty"`
 	Then  []StepStatement `json:"then,omitempty"  yaml:"then,omitempty"`
 }
-
-// TestScenario represents a single BDD test scenario with Gherkin format
-// Supports standard scenarios and scenario outlines for data-driven testing.
-type TestScenario struct {
-	ID                 string                   `json:"id"                         yaml:"id"`
-	AcceptanceCriteria []string                 `json:"acceptance_criteria"        yaml:"acceptance_criteria"`
-	Steps              []ScenarioStep           `json:"steps"                      yaml:"steps"`
-	ScenarioOutline    bool                     `json:"scenario_outline,omitempty" yaml:"scenario_outline,omitempty"`
-	Examples           []map[string]interface{} `json:"examples,omitempty"         yaml:"examples,omitempty"`
-	Level              string                   `json:"level"                      yaml:"level"`
-	Priority           string                   `json:"priority"                   yaml:"priority"`
-	Service            string                   `json:"service"                    yaml:"service"`
-	MitigatesRisks     []string                 `json:"mitigates_risks,omitempty"  yaml:"mitigates_risks,omitempty"`
-}
-
-// Scenarios contains all test scenarios for a story.
-type Scenarios struct {
-	TestScenarios []TestScenario `json:"test_scenarios" yaml:"test_scenarios"`
-}
