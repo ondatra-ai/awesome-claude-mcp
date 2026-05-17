@@ -5,39 +5,4 @@ description: Merge the current branch's PR using squash merge, delete the remote
 
 # PR Merge
 
-Merge the current branch's pull request and clean up afterwards. This is a squash merge workflow that keeps the main branch history clean.
-
-## Steps
-
-1. Get the current branch name so you can clean it up later
-2. Run `gh pr merge --squash --delete-branch` to squash-merge and delete the remote branch
-3. Detect whether the main branch is called `main` or `master`
-4. Check out the main branch and pull latest changes
-5. Delete the local feature branch if it still exists (`gh pr merge --delete-branch` may have already removed it)
-
-## Implementation
-
-Run these commands in sequence. Stop and report if any step fails — don't continue blindly if the merge itself didn't succeed.
-
-```bash
-CURRENT_BRANCH=$(git branch --show-current)
-
-gh pr merge --squash --delete-branch
-
-MAIN_BRANCH="main"
-if git show-ref --verify --quiet refs/heads/master; then
-    MAIN_BRANCH="master"
-fi
-
-git checkout $MAIN_BRANCH
-git pull origin $MAIN_BRANCH || exit 1
-
-if git show-ref --verify --quiet "refs/heads/$CURRENT_BRANCH"; then
-    git branch -D "$CURRENT_BRANCH"
-fi
-```
-
-## Requirements
-
-- GitHub CLI (`gh`) must be installed and authenticated
-- The current branch must have an open pull request
+1. Run `./.claude/skills/pr-merge/merge.sh`.
