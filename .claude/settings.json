@@ -38,10 +38,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Reminder: never offer commits, commit breakdowns, or ready-to-commit narration unless the user has explicitly asked to commit. Wait for an explicit commit/push/merge instruction before invoking pr-commit/pr-merge skills.\"}}'"
+            "command": "printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"Reminder: never offer commits, commit breakdowns, or ready-to-commit narration unless the user has explicitly asked to commit. Wait for an explicit commit/push/merge instruction before invoking pr-commit/pr-merge skills. Reminder: when a question involves a library, framework, SDK, API, CLI tool, or external service, research first — use context7 (mcp__context7__*) for current docs and WebSearch for recent context — before reasoning from training data.\"}}'"
           }
         ]
       }
     ]
-  }
+  },
+  "enabledPlugins": {}
 }
