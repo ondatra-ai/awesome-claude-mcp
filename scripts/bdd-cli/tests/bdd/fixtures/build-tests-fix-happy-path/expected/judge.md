@@ -1,14 +1,12 @@
-# Expectations for `bdd-cli build tests`
+# Expectations for `bdd-cli build tests --fix`
 
 The seed registry (`input/docs/requirements.yaml`) has one scenario:
 `INT-900`. The `build tests` command's contract is: every scenario in
 `docs/requirements.yaml` must have a corresponding executable test in
-the codebase, and when a test is missing, `build tests` produces it.
-
-Today `build tests` is a stub that prints "not yet implemented". This
-fixture is the failing acceptance test for the eventual behavior — it
-must FAIL until the command actually generates tests, and turn PASS
-automatically when it does.
+the codebase, and when a test is missing, `build tests --fix`
+produces it. This fixture is the happy path for the fix loop: the
+walk finds no test for `INT-900`, the fix-generator + fix-applier
+write one, the re-walk converges, the CLI exits 0.
 
 ## What MUST be true after the run
 
@@ -40,5 +38,4 @@ automatically when it does.
 Reply `PASS` if all the MUST-be-true rules hold AND all the
 MUST-NOT-happen rules hold. Otherwise reply
 `FAIL: <one-sentence reason>` describing the first violation you
-find. While `build tests` is unimplemented, the expected failure is
-that no test file was created.
+find.

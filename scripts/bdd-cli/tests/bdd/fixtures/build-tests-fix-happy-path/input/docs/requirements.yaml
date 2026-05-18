@@ -1,19 +1,15 @@
-# Seed registry for the `build-tests-unimplemented` BDD fixture.
+# Seed registry for the `build-tests-fix-happy-path` BDD fixture.
 #
-# One scenario (INT-900). The `build tests` command's contract — once
-# implemented — is to walk every scenario here and, for any that lack
-# an executable test in the codebase, produce one. This fixture asserts
-# that contract: the judge fails the run if no test file referencing
-# `INT-900` is created during the run.
-#
-# Today `build tests` is a stub, so the fixture fails. It will pass
-# automatically once the command actually generates tests.
+# One scenario (INT-900). The `build tests --fix` happy path: the walk
+# finds no test referencing the scenario id, drives the fix-generator +
+# fix-applier loop, writes a test file under `tests/integration/` or a
+# sibling root, re-walks, converges, exits 0.
 
 metadata:
   title: "Test Requirements Registry (BDD fixture seed)"
   version: "2.0"
-  last_updated: "2026-05-14"
-  description: "Seed for build-tests-unimplemented fixture"
+  last_updated: "2026-05-18"
+  description: "Seed for build-tests-fix-happy-path fixture"
 
 scenarios:
   INT-900:

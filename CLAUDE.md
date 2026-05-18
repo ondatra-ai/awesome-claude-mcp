@@ -114,7 +114,7 @@ make lint-docs    # Validate YAML documentation
 
 #### Subcommands
 
-CLI commands are organized into two supergroups: `us` (story workflow) and `build` (build pipeline, stubbed).
+CLI commands are organized into two supergroups: `us` (story workflow) and `build` (build pipeline).
 
 `us` supergroup:
 
@@ -122,10 +122,10 @@ CLI commands are organized into two supergroups: `us` (story workflow) and `buil
 - `us refine <id>` — load a story from `docs/stories/` and run the `us-refine` checklist.
 - `us apply <id>` — walk every AC in a refined story, validate against `us-apply`, and merge scenarios into the central `docs/requirements.yaml` registry.
 
-`build` supergroup (stubs — bodies print "not yet implemented"). These are the future Spec-as-Source regeneration steps:
+`build` supergroup — Spec-as-Source regeneration steps:
 
-- `build tests` — will generate executable tests from the Gherkin scenarios in `docs/requirements.yaml`. Seed checklist already lives at `bdd-cli/checklists/build-tests.yaml` (one prompt: every registry scenario must be referenced by an executable test).
-- `build code` — will regenerate code from the requirements registry plus `bdd-cli/architecture.yaml`.
+- `build tests` — walks every scenario in `docs/requirements.yaml` against `bdd-cli/checklists/build-tests.yaml` and exits non-zero if any scenario lacks an executable test under `tests/integration/`, `tests/e2e/`, `services/backend/`, or `services/frontend/`. With `--fix`, the failed cells drive a Claude-mediated test-authoring loop that Writes the missing test referencing the scenario id; the canonical `docs/requirements.yaml` is never modified by the run.
+- `build code` — stub (prints "not yet implemented"). Will regenerate code from the requirements registry plus `bdd-cli/architecture.yaml`.
 
 Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenates the full command path: `us apply` → `us-apply.yaml`, `build tests` → `build-tests.yaml`. Resolution is by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
 

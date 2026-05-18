@@ -10,6 +10,7 @@ import (
 	"bdd-cli/src/internal/infrastructure/epic"
 	"bdd-cli/src/internal/infrastructure/fs"
 	"bdd-cli/src/internal/infrastructure/input"
+	"bdd-cli/src/internal/infrastructure/registry"
 	"bdd-cli/src/internal/infrastructure/story"
 	pkgerrors "bdd-cli/src/internal/pkg/errors"
 )
@@ -83,6 +84,13 @@ type Container struct {
 	ApplyEvaluator          *validate.ChecklistEvaluator
 	ApplyFixPromptGenerator *validate.FixPromptGenerator
 	ApplyFixApplier         *validate.FixApplier
+	// Build-tests triple drives `build tests`. Templates live under
+	// templates.prompts.build_tests_* and the fix-applier runs in
+	// EditMode so Claude can Write/Edit test files in place.
+	RegistryLoader               *registry.RegistryLoader
+	BuildTestsEvaluator          *validate.ChecklistEvaluator
+	BuildTestsFixPromptGenerator *validate.FixPromptGenerator
+	BuildTestsFixApplier         *validate.FixApplier
 }
 
 // NewContainer builds the Container.
@@ -114,21 +122,35 @@ func NewContainer() (*Container, error) {
 	})
 	applyTrip.fixApplier.UseEditMode()
 
+	buildTestsTrip := newScenarioTriple(claudeClient, cfg, scenarioTripleConfigKeys{
+		checklistSystem:    "templates.prompts.build_tests_checklist_system",
+		checklist:          "templates.prompts.build_tests_checklist",
+		fixGeneratorSystem: "templates.prompts.build_tests_fix_generator_system",
+		fixGenerator:       "templates.prompts.build_tests_fix_generator",
+		fixApplierSystem:   "templates.prompts.build_tests_fix_applier_system",
+		fixApplier:         "templates.prompts.build_tests_fix_applier",
+	})
+	buildTestsTrip.fixApplier.UseEditMode()
+
 	return &Container{
-		Config:                  cfg,
-		RunDir:                  runDir,
-		StoriesDir:              cfg.GetString("paths.stories_dir"),
-		EpicLoader:              epic.NewEpicLoader(cfg),
-		StoryLoader:             story.NewStoryLoader(cfg),
-		StoryScenarioParser:     story.NewStoryScenarioParser(cfg),
-		ChecklistLoader:         checklist.NewChecklistLoader(cfg),
-		UserInputCollector:      input.NewUserInputCollector(),
-		TableRenderer:           runner.NewTableRenderer(),
-		Evaluator:               validate.NewChecklistEvaluator(claudeClient, cfg),
-		FixGenerator:            validate.NewFixPromptGenerator(claudeClient, cfg),
-		FixApplier:              validate.NewFixApplier(claudeClient, cfg),
-		ApplyEvaluator:          applyTrip.evaluator,
-		ApplyFixPromptGenerator: applyTrip.fixGenerator,
-		ApplyFixApplier:         applyTrip.fixApplier,
+		Config:                       cfg,
+		RunDir:                       runDir,
+		StoriesDir:                   cfg.GetString("paths.stories_dir"),
+		EpicLoader:                   epic.NewEpicLoader(cfg),
+		StoryLoader:                  story.NewStoryLoader(cfg),
+		StoryScenarioParser:          story.NewStoryScenarioParser(cfg),
+		ChecklistLoader:              checklist.NewChecklistLoader(cfg),
+		UserInputCollector:           input.NewUserInputCollector(),
+		TableRenderer:                runner.NewTableRenderer(),
+		Evaluator:                    validate.NewChecklistEvaluator(claudeClient, cfg),
+		FixGenerator:                 validate.NewFixPromptGenerator(claudeClient, cfg),
+		FixApplier:                   validate.NewFixApplier(claudeClient, cfg),
+		ApplyEvaluator:               applyTrip.evaluator,
+		ApplyFixPromptGenerator:      applyTrip.fixGenerator,
+		ApplyFixApplier:              applyTrip.fixApplier,
+		RegistryLoader:               registry.NewRegistryLoader(),
+		BuildTestsEvaluator:          buildTestsTrip.evaluator,
+		BuildTestsFixPromptGenerator: buildTestsTrip.fixGenerator,
+		BuildTestsFixApplier:         buildTestsTrip.fixApplier,
 	}, nil
 }

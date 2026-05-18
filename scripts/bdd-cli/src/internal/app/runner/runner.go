@@ -102,15 +102,14 @@ type Spec[I any] struct {
 // The shared closures package up Evaluator/FixGenerator/FixApplier
 // calls so per-command code never touches them directly.
 func Run[I any](ctx context.Context, spec Spec[I]) error {
-	err := validateStoryNumber(spec.StoryNumber)
-	if err != nil {
-		return fmt.Errorf("invalid story number: %w", err)
+	if spec.StoryNumber != "" {
+		err := validateStoryNumber(spec.StoryNumber)
+		if err != nil {
+			return fmt.Errorf("invalid story number: %w", err)
+		}
 	}
 
-	console.Header(
-		strings.ToUpper(spec.Name)+" — Story "+spec.StoryNumber,
-		SeparatorWidth,
-	)
+	console.Header(headerLine(spec.Name, spec.StoryNumber), SeparatorWidth)
 
 	items, err := spec.LoadItems(ctx)
 	if err != nil {
@@ -309,6 +308,19 @@ func buildFixClosure[I any](spec Spec[I]) engine.FixFn[I] {
 
 		return spec.PostFix(ctx, item, content)
 	}
+}
+
+// headerLine builds the opening banner for one runner.Run. Story-based
+// commands append "— Story <number>"; story-less commands (build-*) get
+// just the upper-cased name.
+func headerLine(name, storyNumber string) string {
+	upper := strings.ToUpper(name)
+
+	if storyNumber == "" {
+		return upper
+	}
+
+	return upper + " — Story " + storyNumber
 }
 
 // flattenChecklistPrompts walks a Checklist's sections and emits the
