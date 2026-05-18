@@ -19,8 +19,9 @@ One-shot mirror from the monorepo to the standalone `ondatra-ai/true-bdd` repo. 
 | `scripts/bdd-cli/templates/**` | `templates/**` |
 | `scripts/bdd-cli/tests/**` | `tests/**` |
 | `bdd-cli/checklists/*.yaml` (excludes `*.tmp`) | `bdd-cli/checklists/*.yaml` |
+| `scripts/bdd-cli/README.md` | `README.md` |
 
-`rsync --delete` removes files in `true-bdd` that no longer exist in the monorepo.
+`rsync --delete` removes files inside the four mirrored trees that no longer exist in the monorepo. The README is mirrored as a single file (no `--delete`).
 
 ## What is not touched
 

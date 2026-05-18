@@ -48,13 +48,14 @@ else
   ALREADY_SYNCED=0
 fi
 
-# 3. Mirror the four trees.
+# 3. Mirror the four trees and the README.
 rsync -a --delete "$REPO/scripts/bdd-cli/src/" "$TARGET/src/"
 rsync -a --delete "$REPO/scripts/bdd-cli/templates/" "$TARGET/templates/"
 rsync -a --delete "$REPO/scripts/bdd-cli/tests/" "$TARGET/tests/"
 mkdir -p "$TARGET/bdd-cli/checklists"
 rsync -a --delete --exclude='*.tmp' \
   "$REPO/bdd-cli/checklists/" "$TARGET/bdd-cli/checklists/"
+rsync -a "$REPO/scripts/bdd-cli/README.md" "$TARGET/README.md"
 
 # 4. Patch tests/bdd/runner/runner.go: rewrite the one template path
 #    that differs between the monorepo's nested layout and true-bdd's
