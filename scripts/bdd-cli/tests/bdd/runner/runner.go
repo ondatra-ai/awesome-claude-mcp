@@ -1,7 +1,8 @@
 // Package runner drives BDD-style end-to-end fixtures for bdd-cli:
-// each fixture is a folder with `cmd`, `input/`, and `expected.yaml`;
-// the runner copies input into a tmpdir, execs the binary there, and
-// reports a structural diff plus a judge verdict.
+// each fixture is a folder with `fixture.yaml` (manifest) and the
+// referenced input directory; the runner overlays input into a tmpdir,
+// execs the binary there, and reports a structural diff plus a judge
+// verdict.
 package runner
 
 import (
@@ -24,10 +25,6 @@ const (
 	filePerm fs.FileMode = 0o644
 )
 
-// ErrEmptyCmdFile is returned when a fixture's `cmd` file exists but
-// has no executable invocation in it.
-var ErrEmptyCmdFile = errors.New("cmd file is empty")
-
 // ErrRepoRootNotFound is returned when findRepoRoot walks above cwd
 // without finding a .git directory.
 var ErrRepoRootNotFound = errors.New(
@@ -35,10 +32,10 @@ var ErrRepoRootNotFound = errors.New(
 )
 
 // repoLayer lists subtrees the runner pre-copies from the real repo
-// into each fixture's tmpdir BEFORE overlaying input/. These are the
-// live engine ingredients (checklists, prompt templates, engine
-// config). Anything outside this list must be provided by the fixture
-// itself under input/.
+// into each fixture's tmpdir BEFORE overlaying the fixture's input
+// tree. These are the live engine ingredients (checklists, prompt
+// templates, engine config). Anything outside this list must be
+// provided by the fixture itself under its input directory.
 func repoLayer() []string {
 	return []string{
 		"bdd-cli",
@@ -85,10 +82,11 @@ type Fixture struct {
 	Name             string
 	Dir              string
 	Cmd              string // single-line invocation, e.g. "us create 99.1"
+	InputPath        string // path (relative to Dir) of the directory tree overlaid onto the tmpdir
 	ExpectedExitCode int
 	StdoutRegexes    []*regexp.Regexp
-	JudgeSpec        string // judge rubric from expected.yaml
-	Stdin            []byte // contents of optional `answers` file, fed to subprocess stdin
+	JudgeSpec        string // judge rubric from fixture.yaml
+	Stdin            []byte // contents of optional `answers:` field, fed to subprocess stdin
 }
 
 // RunResult bundles everything we observed from one fixture run.
@@ -102,48 +100,26 @@ type RunResult struct {
 
 // LoadFixture parses a fixture folder.
 func LoadFixture(dir string) (*Fixture, error) {
-	cmdBytes, err := os.ReadFile(filepath.Join(dir, "cmd"))
-	if err != nil {
-		return nil, fmt.Errorf("read cmd: %w", err)
-	}
-
-	cmd := strings.TrimSpace(string(cmdBytes))
-	if cmd == "" {
-		return nil, ErrEmptyCmdFile
-	}
-
-	expected, regexes, err := LoadExpected(filepath.Join(dir, "expected.yaml"))
+	manifest, regexes, err := LoadFixtureManifest(filepath.Join(dir, "fixture.yaml"))
 	if err != nil {
 		return nil, err
 	}
 
-	stdinBytes, err := readStdin(filepath.Join(dir, "answers"))
-	if err != nil {
-		return nil, err
+	var stdinBytes []byte
+	if manifest.Answers != "" {
+		stdinBytes = []byte(manifest.Answers)
 	}
 
 	return &Fixture{
 		Name:             filepath.Base(dir),
 		Dir:              dir,
-		Cmd:              cmd,
-		ExpectedExitCode: expected.ExitCode,
+		Cmd:              strings.TrimSpace(manifest.Cmd),
+		InputPath:        strings.TrimSpace(manifest.Input),
+		ExpectedExitCode: manifest.Expected.ExitCode,
 		StdoutRegexes:    regexes,
-		JudgeSpec:        expected.Judge,
+		JudgeSpec:        manifest.Expected.Judge,
 		Stdin:            stdinBytes,
 	}, nil
-}
-
-func readStdin(path string) ([]byte, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("read answers: %w", err)
-	}
-
-	return data, nil
 }
 
 // Execute runs the fixture. Three-step prep:
@@ -233,7 +209,7 @@ func prepareRunDir(fixture *Fixture) (string, map[string][]byte, error) {
 		}
 	}
 
-	err = copyTree(filepath.Join(fixture.Dir, "input"), tmpDir)
+	err = copyTree(filepath.Join(fixture.Dir, fixture.InputPath), tmpDir)
 	if err != nil {
 		return tmpDir, nil, fmt.Errorf("overlay input tree: %w", err)
 	}
