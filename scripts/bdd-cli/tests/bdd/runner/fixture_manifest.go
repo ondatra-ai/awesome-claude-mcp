@@ -24,7 +24,7 @@ var ErrInputRequired = errors.New("fixture.yaml: input is required")
 var ErrJudgeSpecRequired = errors.New("fixture.yaml: expected.judge is required")
 
 // FixtureManifest is the on-disk shape of fixture.yaml: it declares
-// what to run (cmd, input, answers) and what to assert (expected).
+// what to run (cmd, input, answers, prep) and what to assert (expected).
 type FixtureManifest struct {
 	// Cmd is the single-line CLI invocation. Required.
 	Cmd string `yaml:"cmd"`
@@ -38,6 +38,14 @@ type FixtureManifest struct {
 	// per prompt for the `--fix` interactive loop). Empty means no
 	// stdin is piped.
 	Answers string `yaml:"answers"`
+
+	// Prep is a list of shell commands run in the tmpdir AFTER the
+	// input overlay and BEFORE the pre-run snapshot. Used to install
+	// dependencies (`npm install`, `playwright install`) so the
+	// fixture's CLI invocation can shell out to external test runners.
+	// Side effects of prep are excluded from the post-run diff handed
+	// to the judge. Each entry is executed via `bash -c`. Optional.
+	Prep []string `yaml:"prep,omitempty"`
 
 	// Expected is the bundle of assertion strategies applied after
 	// the CLI exits.

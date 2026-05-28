@@ -1,0 +1,61 @@
+cmd: build code --fix
+input: input
+
+prep:
+  - npm install --prefix services/frontend --no-audit --no-fund --silent
+  - npm install --prefix tests --no-audit --no-fund --silent
+  - ./tests/node_modules/.bin/playwright install chromium
+
+answers: |
+  1
+  1
+  1
+  1
+  1
+
+expected:
+  exit_code: 0
+
+  stdout_regex:
+    - "frontend/integration tests via playwright"
+    - "BUILD CODE COMPLETE"
+
+  judge: |
+    # Expectations for `bdd-cli build code --fix`
+
+    The fixture seeds:
+    - One service `frontend` declared in `bdd-cli/architecture.yaml`
+      with integration tests via Playwright under `tests/integration`.
+    - A failing Playwright spec at
+      `tests/integration/frontend-home.spec.ts` that asserts the home
+      page's `<h1>` reads "Hello world".
+    - A Next.js home page at `services/frontend/app/page.tsx` that
+      renders "Goodbye world" — so the spec fails on first run.
+
+    `build code --fix` must drive Claude to edit ONLY production source
+    under `services/frontend/` so the spec passes, leaving tests, docs,
+    architecture, and docker-compose untouched.
+
+    ## What MUST be true after the run
+
+    1. The file `services/frontend/app/page.tsx` is **modified**, and
+       its new content renders text matching "Hello world"
+       (case-insensitive OK if needed to make the spec pass).
+    2. The Playwright spec at
+       `tests/integration/frontend-home.spec.ts` is NOT modified.
+    3. `bdd-cli/architecture.yaml` is NOT modified.
+    4. `docker-compose.yaml` is NOT modified.
+    5. No file under `tests/`, `docs/`, or
+       `services/frontend/__tests__/` is modified.
+
+    ## Tolerances (ignore these as noise)
+
+    - Anything under `tmp/` — bdd-cli per-run scratch artifacts.
+    - Anything under `node_modules/`, `.next/`, `test-results/`,
+      `playwright-report/`, `.last-run.json` — installer / framework
+      side effects, not what `build code --fix` did.
+    - Optional creation of `next-env.d.ts` by the Next.js toolchain.
+    - Optional creation of `package-lock.json` files.
+
+    Reply `PASS` if every MUST-be-true rule holds. Otherwise reply
+    `FAIL: <one-sentence reason>` naming the first violation.

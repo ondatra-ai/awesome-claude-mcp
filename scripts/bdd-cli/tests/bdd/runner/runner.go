@@ -85,8 +85,9 @@ type Fixture struct {
 	InputPath        string // path (relative to Dir) of the directory tree overlaid onto the tmpdir
 	ExpectedExitCode int
 	StdoutRegexes    []*regexp.Regexp
-	JudgeSpec        string // judge rubric from fixture.yaml
-	Stdin            []byte // contents of optional `answers:` field, fed to subprocess stdin
+	JudgeSpec        string   // judge rubric from fixture.yaml
+	Stdin            []byte   // contents of optional `answers:` field, fed to subprocess stdin
+	PrepCmds         []string // optional `prep:` shell commands, run in tmpdir before snapshot
 }
 
 // RunResult bundles everything we observed from one fixture run.
@@ -119,26 +120,40 @@ func LoadFixture(dir string) (*Fixture, error) {
 		StdoutRegexes:    regexes,
 		JudgeSpec:        manifest.Expected.Judge,
 		Stdin:            stdinBytes,
+		PrepCmds:         manifest.Prep,
 	}, nil
 }
 
-// Execute runs the fixture. Three-step prep:
+// Execute runs the fixture. Four-step prep:
 //  1. Pre-populate the tmpdir from the repo allowlist (repoLayer).
 //     These are the live engine ingredients (checklists, templates,
 //     config) — pulled from the real repo so a checklist edit
 //     propagates to every fixture automatically.
 //  2. Overlay the fixture's input/ on top. Files in input/ win, so
 //     per-fixture overrides remain possible.
-//  3. Snapshot the post-prep state for the diff (so the judge only
+//  3. Run the fixture's `prep:` shell commands (npm install, etc.)
+//     against the tmpdir. Side effects are captured by the pre-run
+//     snapshot so they don't pollute the diff handed to the judge.
+//  4. Snapshot the post-prep state for the diff (so the judge only
 //     sees what the run itself did, not the prep).
 //
 // Then execs binPath in the tmpdir. The tmpdir is preserved on the
 // result so the caller can clean it up (or keep it for inspection on
 // failure).
 func Execute(ctx context.Context, fixture *Fixture, binPath string) (*RunResult, error) {
-	tmpDir, before, err := prepareRunDir(fixture)
+	tmpDir, err := prepareRunDir(fixture)
 	if err != nil {
 		return &RunResult{TmpDir: tmpDir}, err
+	}
+
+	err = runPrepCommands(ctx, tmpDir, fixture.PrepCmds)
+	if err != nil {
+		return &RunResult{TmpDir: tmpDir}, err
+	}
+
+	before, err := snapshotTree(tmpDir)
+	if err != nil {
+		return &RunResult{TmpDir: tmpDir}, fmt.Errorf("snapshot pre-run: %w", err)
 	}
 
 	args := strings.Fields(fixture.Cmd)
@@ -189,37 +204,61 @@ func Execute(ctx context.Context, fixture *Fixture, binPath string) (*RunResult,
 }
 
 // prepareRunDir creates the tmpdir, pre-populates it from the repo
-// allowlist, overlays the fixture's input/, and snapshots the result
-// as the "before-run" state for diffing.
-func prepareRunDir(fixture *Fixture) (string, map[string][]byte, error) {
+// allowlist, and overlays the fixture's input/ on top. Snapshotting
+// the "before" state is the caller's responsibility — Execute does it
+// after prep commands have a chance to mutate the tree, so prep side
+// effects don't pollute the diff.
+func prepareRunDir(fixture *Fixture) (string, error) {
 	tmpDir, err := os.MkdirTemp("", "bdd-cli-"+fixture.Name+"-")
 	if err != nil {
-		return "", nil, fmt.Errorf("mkdir tmp: %w", err)
+		return "", fmt.Errorf("mkdir tmp: %w", err)
 	}
 
 	repoRoot, err := findRepoRoot()
 	if err != nil {
-		return tmpDir, nil, fmt.Errorf("find repo root: %w", err)
+		return tmpDir, fmt.Errorf("find repo root: %w", err)
 	}
 
 	for _, sub := range repoLayer() {
 		err = copyTree(filepath.Join(repoRoot, sub), filepath.Join(tmpDir, sub))
 		if err != nil {
-			return tmpDir, nil, fmt.Errorf("pre-populate %s: %w", sub, err)
+			return tmpDir, fmt.Errorf("pre-populate %s: %w", sub, err)
 		}
 	}
 
 	err = copyTree(filepath.Join(fixture.Dir, fixture.InputPath), tmpDir)
 	if err != nil {
-		return tmpDir, nil, fmt.Errorf("overlay input tree: %w", err)
+		return tmpDir, fmt.Errorf("overlay input tree: %w", err)
 	}
 
-	before, err := snapshotTree(tmpDir)
-	if err != nil {
-		return tmpDir, nil, fmt.Errorf("snapshot pre-run: %w", err)
+	return tmpDir, nil
+}
+
+// runPrepCommands executes each fixture-provided prep command in the
+// tmpdir via `bash -c`. Stdin is unset; stdout and stderr are inherited
+// so progress streams to the calling `go test -v` output. Any non-zero
+// exit aborts the fixture. No per-command timeout — the parent
+// `go test -timeout=30m` is the only ceiling.
+func runPrepCommands(ctx context.Context, tmpDir string, prepCmds []string) error {
+	for idx, raw := range prepCmds {
+		trimmed := strings.TrimSpace(raw)
+		if trimmed == "" {
+			continue
+		}
+
+		cmd := exec.CommandContext(ctx, "bash", "-c", trimmed)
+		cmd.Dir = tmpDir
+		cmd.Env = envWithoutClaudeCode(os.Environ())
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("prep[%d] failed (%q): %w", idx, trimmed, err)
+		}
 	}
 
-	return tmpDir, before, nil
+	return nil
 }
 
 func envWithoutClaudeCode(env []string) []string {

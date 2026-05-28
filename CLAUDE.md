@@ -122,6 +122,17 @@ multi-line free text terminated by a blank line for refinement
 feedback. Surplus lines are harmless (EOF on stdin causes the CLI
 to exit cleanly).
 
+If the fixture's `cmd` needs the tmpdir to have project dependencies
+installed (e.g. `build code` shells out to `npx playwright test`),
+declare a `prep:` list in `fixture.yaml`. Each entry is a shell
+command executed via `bash -c` in the tmpdir, run after the input
+overlay and before the pre-run snapshot — so the side effects of
+`npm install`, `playwright install`, etc., do not pollute the diff
+handed to the judge. Stdout/stderr stream to the calling
+`go test -v` output, and a non-zero exit aborts the fixture. Prep
+shares the parent `go test -timeout=30m` ceiling; no per-command
+timeout.
+
 #### Development
 ```bash
 make init         # Install dependencies and build Docker images
