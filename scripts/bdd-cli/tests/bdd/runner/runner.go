@@ -1,11 +1,10 @@
 // Package runner drives BDD-style end-to-end fixtures for bdd-cli:
-// each fixture is a folder with `cmd`, `input/`, and `expected/`; the
-// runner copies input into a tmpdir, execs the binary there, and
+// each fixture is a folder with `cmd`, `input/`, and `expected.yaml`;
+// the runner copies input into a tmpdir, execs the binary there, and
 // reports a structural diff plus a judge verdict.
 package runner
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -17,7 +16,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -89,7 +87,7 @@ type Fixture struct {
 	Cmd              string // single-line invocation, e.g. "us create 99.1"
 	ExpectedExitCode int
 	StdoutRegexes    []*regexp.Regexp
-	JudgeSpec        string // contents of expected/judge.md
+	JudgeSpec        string // judge rubric from expected.yaml
 	Stdin            []byte // contents of optional `answers` file, fed to subprocess stdin
 }
 
@@ -114,19 +112,9 @@ func LoadFixture(dir string) (*Fixture, error) {
 		return nil, ErrEmptyCmdFile
 	}
 
-	exitCode, err := readExitCode(filepath.Join(dir, "expected", "exit_code"))
+	expected, regexes, err := LoadExpected(filepath.Join(dir, "expected.yaml"))
 	if err != nil {
 		return nil, err
-	}
-
-	regexes, err := readStdoutRegexes(filepath.Join(dir, "expected", "stdout.regex"))
-	if err != nil {
-		return nil, err
-	}
-
-	judgeBytes, err := os.ReadFile(filepath.Join(dir, "expected", "judge.md"))
-	if err != nil {
-		return nil, fmt.Errorf("read judge.md: %w", err)
 	}
 
 	stdinBytes, err := readStdin(filepath.Join(dir, "answers"))
@@ -138,9 +126,9 @@ func LoadFixture(dir string) (*Fixture, error) {
 		Name:             filepath.Base(dir),
 		Dir:              dir,
 		Cmd:              cmd,
-		ExpectedExitCode: exitCode,
+		ExpectedExitCode: expected.ExitCode,
 		StdoutRegexes:    regexes,
-		JudgeSpec:        string(judgeBytes),
+		JudgeSpec:        expected.Judge,
 		Stdin:            stdinBytes,
 	}, nil
 }
@@ -156,61 +144,6 @@ func readStdin(path string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func readExitCode(path string) (int, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return 0, nil
-	}
-
-	if err != nil {
-		return 0, fmt.Errorf("read exit_code: %w", err)
-	}
-
-	code, err := strconv.Atoi(strings.TrimSpace(string(data)))
-	if err != nil {
-		return 0, fmt.Errorf("parse exit_code: %w", err)
-	}
-
-	return code, nil
-}
-
-func readStdoutRegexes(path string) ([]*regexp.Regexp, error) {
-	file, err := os.Open(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("open stdout.regex: %w", err)
-	}
-
-	defer func() { _ = file.Close() }()
-
-	var regexes []*regexp.Regexp
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		re, compileErr := regexp.Compile(line)
-		if compileErr != nil {
-			return nil, fmt.Errorf("compile regex %q: %w", line, compileErr)
-		}
-
-		regexes = append(regexes, re)
-	}
-
-	err = scanner.Err()
-	if err != nil {
-		return nil, fmt.Errorf("scan stdout.regex: %w", err)
-	}
-
-	return regexes, nil
 }
 
 // Execute runs the fixture. Three-step prep:

@@ -60,8 +60,27 @@ make test-e2e-bdd-cli  # Run bdd-cli BDD fixtures (real Claude calls; opt-in, ~3
 The `test-e2e-bdd-cli` target drives end-to-end fixtures under
 `scripts/bdd-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
 folder with `cmd`, `input/` (designed test content — see below),
-`expected/{exit_code,stdout.regex,judge.md}`, and an optional
+`expected.yaml` (assertion strategies — see below), and an optional
 `answers` file.
+
+`expected.yaml` lists every assertion strategy for the fixture as
+flat top-level keys:
+
+```yaml
+# Optional. Exit status the CLI must return. Defaults to 0.
+exit_code: 0
+
+# Optional. Go regexp patterns asserted to match somewhere in stdout.
+# Absent or empty = no stdout assertions.
+stdout_regex:
+  - "ALL CHECKS PASSED!"
+  - 'RE-WALK 2/'
+
+# Required. Markdown rubric handed verbatim to the Claude judge.
+judge: |
+  # Expectations
+  ...
+```
 
 The runner builds each run's tmpdir in two layers: first it
 pre-populates the real-repo engine ingredients (`bdd-cli/` and
@@ -80,7 +99,7 @@ the diff fed to the judge only contains files the run itself
 created or modified — pre-populated and overlaid files that the
 run did not touch are not surfaced. After the CLI exits, the
 runner asks Claude (via the existing `claudecode/` wrapper) to
-compare the diff against `judge.md` and return PASS / FAIL.
+compare the diff against the `judge:` rubric and return PASS / FAIL.
 
 Tests are gated by a `//go:build bdd` tag so they're invisible to
 default `go test ./...`. Skipped if the `claude` CLI is not on
