@@ -1,0 +1,8 @@
+# Root help banner: short description, usage line, both subcommand groups, help flag.
+BDD CLI tool
+Usage:
+bdd-cli \[command\]
+Available Commands:
+\bbuild\b
+\bus\b
+-h, --help
