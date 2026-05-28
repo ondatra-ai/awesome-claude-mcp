@@ -137,11 +137,14 @@ go test -tags bdd ./tests/bdd/...
 ```
 
 Fixtures under `tests/bdd/fixtures/<scenario>/` are folders containing
-`cmd`, `input/`, optional `answers` (stdin for `--fix` runs), and
-`expected/{exit_code,stdout.regex,judge.md}`. The runner builds the
-CLI, copies `input/` into a tmpdir, executes `cmd`, and asks Claude
-to score the resulting diff against the `judge.md` rubric. The whole
-suite skips if `claude` is not on `$PATH`.
+a `fixture.yaml` manifest and the referenced input directory tree
+(conventionally `input/`). The manifest declares `cmd`, `input`,
+optional `answers` (stdin for `--fix` runs), and an `expected:`
+sub-block with the assertion strategies (`exit_code`, `stdout_regex`,
+`judge`). The runner builds the CLI, copies the input tree into a
+tmpdir, executes `cmd`, and asks Claude to score the resulting diff
+against the `judge:` rubric. The whole suite skips if `claude` is not
+on `$PATH`.
 
 ## How it compares
 

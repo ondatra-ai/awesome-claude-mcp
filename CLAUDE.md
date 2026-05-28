@@ -59,40 +59,68 @@ make test-e2e-bdd-cli  # Run bdd-cli BDD fixtures (real Claude calls; opt-in, ~3
 
 The `test-e2e-bdd-cli` target drives end-to-end fixtures under
 `scripts/bdd-cli/tests/bdd/fixtures/<scenario>/`. Each fixture is a
-folder with `cmd`, `input/` (designed test content — see below),
-`expected/{exit_code,stdout.regex,judge.md}`, and an optional
-`answers` file.
+folder containing exactly two things: `fixture.yaml` (the manifest)
+and the input directory it references (conventionally `input/`,
+designed test content — see below).
+
+`fixture.yaml` declares what to run and what to assert:
+
+```yaml
+# Required. Single-line invocation passed verbatim as arguments to bdd-cli.
+cmd: us apply 99.3 --fix
+
+# Required. Path (relative to the fixture's own dir) of the directory
+# tree overlaid onto the runner's tmpdir. Conventionally "input".
+input: input
+
+# Optional. Bytes piped to the subprocess's stdin (one line per prompt
+# for the `--fix` interactive loop). Absent means no stdin is piped.
+answers: |
+  1
+  1
+
+# Required. Assertion strategies applied after the CLI exits.
+expected:
+  exit_code: 0          # Optional. Defaults to 0.
+  stdout_regex:         # Optional. Go regexp patterns asserted against stdout.
+    - "ALL CHECKS PASSED!"
+    - 'RE-WALK 2/'
+  judge: |              # Required. Markdown rubric handed to the Claude judge.
+    # Expectations
+    ...
+```
 
 The runner builds each run's tmpdir in two layers: first it
 pre-populates the real-repo engine ingredients (`bdd-cli/` and
 `scripts/bdd-cli/templates/`) so every fixture exercises the live
 checklists and prompt templates; then it overlays the fixture's
-`input/` on top, which by convention contains **only `docs/`** —
-designed scenario content (synthetic prd, architecture, epic,
-story, seeded requirements registry). Files inside `input/` win
-over the pre-populated layer, so a fixture may deliberately
-override a real-repo file by shipping it under `input/<same path>`
-(rare; reserved for tests that pin a per-fixture variant of a
-checklist or config).
+input tree (the directory referenced by `input:`) on top, which by
+convention contains **only `docs/`** — designed scenario content
+(synthetic prd, architecture, epic, story, seeded requirements
+registry). Files inside the input tree win over the pre-populated
+layer, so a fixture may deliberately override a real-repo file by
+shipping it under `<input>/<same path>` (rare; reserved for tests
+that pin a per-fixture variant of a checklist or config).
 
 The runner snapshots the tmpdir after prep but before the run, so
 the diff fed to the judge only contains files the run itself
 created or modified — pre-populated and overlaid files that the
 run did not touch are not surfaced. After the CLI exits, the
 runner asks Claude (via the existing `claudecode/` wrapper) to
-compare the diff against `judge.md` and return PASS / FAIL.
+compare the diff against the `judge:` rubric and return PASS / FAIL.
 
 Tests are gated by a `//go:build bdd` tag so they're invisible to
 default `go test ./...`. Skipped if the `claude` CLI is not on
 `$PATH`.
 
 If the fixture's `cmd` invokes `--fix` (the interactive fix loop),
-add an `answers` file alongside `cmd`. Its contents are piped
-verbatim to the subprocess's stdin. Each line answers one prompt:
-`1`/`2`/`3` (or `apply`/`refine`/`exit`) for the choice prompt; a
-single line for clarifying-question answers; multi-line free text
-terminated by a blank line for refinement feedback. Surplus lines are
-harmless (EOF on stdin causes the CLI to exit cleanly).
+set `answers:` to a literal block scalar in `fixture.yaml`. Its
+contents are piped verbatim to the subprocess's stdin. Each line
+answers one prompt: `1`/`2`/`3` (or `apply`/`refine`/`exit`) for the
+choice prompt; a single line for clarifying-question answers;
+multi-line free text terminated by a blank line for refinement
+feedback. Surplus lines are harmless (EOF on stdin causes the CLI
+to exit cleanly).
 
 #### Development
 ```bash
