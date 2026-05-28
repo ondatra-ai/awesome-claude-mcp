@@ -2,7 +2,6 @@ cmd: build code --fix
 input: input
 
 prep:
-  - npm install --prefix services/frontend --no-audit --no-fund --silent
   - npm install --prefix tests --no-audit --no-fund --silent
   - ./tests/node_modules/.bin/playwright install chromium
 
@@ -26,36 +25,60 @@ expected:
     The fixture seeds:
     - One service `frontend` declared in `bdd-cli/architecture.yaml`
       with integration tests via Playwright under `tests/integration`.
-    - A failing Playwright spec at
-      `tests/integration/frontend-home.spec.ts` that asserts the home
-      page's `<h1>` reads "Hello world".
-    - A Next.js home page at `services/frontend/app/page.tsx` that
-      renders "Goodbye world" — so the spec fails on first run.
+    - A `docker-compose.yaml` whose `frontend` service builds from
+      `./services/frontend` — but the `services/frontend/` directory
+      does NOT exist on disk at the start of the run.
+    - A Playwright spec at `tests/integration/frontend-home.spec.ts`
+      that visits the home page and asserts `<h1>Hello world</h1>`.
+    - A `playwright.config.ts` whose `webServer.command` is
+      `docker compose up --build frontend` — so when no Dockerfile
+      exists, docker-compose fails to build and the spec cannot run.
 
-    `build code --fix` must drive Claude to edit ONLY production source
-    under `services/frontend/` so the spec passes, leaving tests, docs,
-    architecture, and docker-compose untouched.
+    `build code --fix` must drive Claude to SCAFFOLD the entire
+    `services/frontend/` Next.js service from scratch — using the
+    architecture spec, the docker-compose contract, the Playwright
+    config, and the failing spec as the only context — so that
+    `docker compose up --build frontend` succeeds, the Next.js dev
+    server starts, and the spec passes.
 
     ## What MUST be true after the run
 
-    1. The file `services/frontend/app/page.tsx` is **modified**, and
-       its new content renders text matching "Hello world"
-       (case-insensitive OK if needed to make the spec pass).
-    2. The Playwright spec at
-       `tests/integration/frontend-home.spec.ts` is NOT modified.
-    3. `bdd-cli/architecture.yaml` is NOT modified.
-    4. `docker-compose.yaml` is NOT modified.
-    5. No file under `tests/`, `docs/`, or
-       `services/frontend/__tests__/` is modified.
+    1. `services/frontend/Dockerfile` is CREATED — referenced by
+       `docker-compose.yaml`'s `build.context`. Must define a valid
+       Next.js build (typically `FROM node:*`, install deps, expose
+       port 3000, start the dev or production server).
+    2. `services/frontend/package.json` is CREATED, declaring Next.js
+       (and React) as dependencies and defining at least the `dev`
+       or `start` script that the Dockerfile uses to launch the
+       server.
+    3. `services/frontend/next.config.mjs` (or `next.config.js`) is
+       CREATED — a minimal Next.js config is acceptable.
+    4. `services/frontend/tsconfig.json` is CREATED with a Next.js-
+       compatible TypeScript configuration.
+    5. `services/frontend/app/layout.tsx` is CREATED — a minimal
+       root layout for the App Router.
+    6. `services/frontend/app/page.tsx` is CREATED, and the rendered
+       output contains a top-level `<h1>` whose text matches
+       "Hello world" (case-insensitive substring OK if it makes the
+       spec's `toHaveText('Hello world')` pass).
+
+    ## What MUST NOT happen
+
+    - No file under `tests/`, `docs/`, or `bdd-cli/` is modified.
+    - `docker-compose.yaml` is NOT modified.
+    - `tests/integration/frontend-home.spec.ts` is NOT modified
+       (the spec is the contract).
 
     ## Tolerances (ignore these as noise)
 
     - Anything under `tmp/` — bdd-cli per-run scratch artifacts.
     - Anything under `node_modules/`, `.next/`, `test-results/`,
-      `playwright-report/`, `.last-run.json` — installer / framework
-      side effects, not what `build code --fix` did.
+      `playwright-report/`, `.last-run.json`, browser caches —
+      installer / framework side effects, not what `build code --fix`
+      did.
     - Optional creation of `next-env.d.ts` by the Next.js toolchain.
     - Optional creation of `package-lock.json` files.
 
-    Reply `PASS` if every MUST-be-true rule holds. Otherwise reply
+    Reply `PASS` if every MUST-be-true rule holds AND every
+    MUST-NOT-happen rule holds. Otherwise reply
     `FAIL: <one-sentence reason>` naming the first violation.

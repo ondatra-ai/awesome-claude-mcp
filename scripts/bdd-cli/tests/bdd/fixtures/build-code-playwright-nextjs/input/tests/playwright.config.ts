@@ -10,10 +10,10 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:3000',
   },
   webServer: {
-    command: 'npm run dev -- --hostname 127.0.0.1 --port 3000',
-    cwd: '../services/frontend',
+    command: 'docker compose up --build frontend',
+    cwd: '..',
     url: 'http://127.0.0.1:3000',
-    timeout: 120_000,
+    timeout: 300_000,
     reuseExistingServer: true,
   },
   projects: [

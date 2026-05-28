@@ -28,6 +28,13 @@ const playwrightTitleSeparator = " > "
 // round-tripping through RunOne.
 const playwrightNameSeparator = "::"
 
+// playwrightStartupMarker is the FailingTest.TestName used for the
+// synthetic entry Discover emits when Playwright exits non-zero before
+// any per-test failure was captured — typically a webServer / fixture
+// setup failure. RunOne re-runs the whole suite for this marker rather
+// than trying to grep a non-existent test title.
+const playwrightStartupMarker = "<startup>"
+
 // ErrInvalidPlaywrightName signals that a FailingTest.TestName intended
 // for the Playwright runner is not in the expected
 // "<file>::<title chain>" shape.
@@ -47,7 +54,12 @@ func NewPlaywrightRunner() *PlaywrightRunner {
 }
 
 // Discover runs the full Playwright suite declared by cfg and returns
-// one FailingTest per failed test.
+// one FailingTest per failed test. When Playwright exits non-zero
+// without any per-test failure landing in the JSON report (typically
+// because the webServer command itself failed — e.g. `docker compose
+// up` couldn't build), Discover synthesizes one startup-marker
+// FailingTest so the engine has something to drive Claude against
+// instead of silently converging on zero items.
 func (r *PlaywrightRunner) Discover(
 	ctx context.Context,
 	cfg Config,
@@ -69,6 +81,10 @@ func (r *PlaywrightRunner) Discover(
 
 	failures := playwrightReportToFailingTests(report, service, layer)
 
+	if runErr != nil && len(failures) == 0 {
+		failures = append(failures, newPlaywrightStartupFailure(service, layer, cfg, stderr.String()))
+	}
+
 	for _, failure := range failures {
 		failure.RunnerConfig = cfg
 	}
@@ -78,13 +94,39 @@ func (r *PlaywrightRunner) Discover(
 	return failures, nil
 }
 
+// newPlaywrightStartupFailure builds the synthetic FailingTest for the
+// startup-failure case. The TestName is the well-known marker so RunOne
+// can dispatch to the whole-suite rerun branch.
+func newPlaywrightStartupFailure(
+	service, layer string,
+	cfg Config,
+	stderrText string,
+) *FailingTest {
+	return &FailingTest{
+		ID:            BuildID(service, layer, FrameworkPlaywright, playwrightStartupMarker),
+		Service:       service,
+		Layer:         layer,
+		Framework:     FrameworkPlaywright,
+		TestName:      playwrightStartupMarker,
+		FilePath:      cfg.Path,
+		FailureOutput: TruncateTail(stderrText, FailureOutputCap),
+	}
+}
+
 // RunOne re-executes a single failing test in isolation via `--grep`
 // regex (anchored to the escaped title) plus the spec file positional
-// argument.
+// argument. For the synthetic startup-marker FailingTest, RunOne
+// instead re-runs the whole suite — the test title is not a real
+// Playwright test name — and reports passed iff the rerun emits zero
+// per-test failures with a clean exit.
 func (r *PlaywrightRunner) RunOne(
 	ctx context.Context,
 	failingTest *FailingTest,
 ) (bool, string, error) {
+	if failingTest.TestName == playwrightStartupMarker {
+		return r.runOneStartup(ctx, failingTest)
+	}
+
 	file, title, err := splitPlaywrightName(failingTest.TestName)
 	if err != nil {
 		return false, "", err
@@ -120,6 +162,42 @@ func (r *PlaywrightRunner) RunOne(
 	}
 
 	return true, "", nil
+}
+
+// runOneStartup is the synthetic-marker branch of RunOne. Re-runs the
+// whole Playwright suite (no --grep, no file filter) and reports passed
+// iff the new run had no per-test failures AND the exec exited zero.
+func (r *PlaywrightRunner) runOneStartup(
+	ctx context.Context,
+	failingTest *FailingTest,
+) (bool, string, error) {
+	cfg := failingTest.RunnerConfig
+	cwd, configArg, pathArg := playwrightPaths(cfg)
+
+	stdout, stderr, runErr := r.exec(ctx, cwd, "test", "--reporter=json",
+		"--config", configArg, pathArg)
+	if runErr != nil && stdout.Len() == 0 {
+		return false, stderr.String(), fmt.Errorf("playwright startup rerun failed: %w", runErr)
+	}
+
+	report, parseErr := parsePlaywrightReport(stdout.Bytes())
+	if parseErr != nil {
+		slog.Warn("playwright startup rerun report parse failed", "error", parseErr)
+
+		return false, stdout.String(), nil
+	}
+
+	rerunFailures := playwrightReportToFailingTests(report, "", "")
+	if runErr == nil && len(rerunFailures) == 0 {
+		return true, "", nil
+	}
+
+	output := stderr.String()
+	if len(rerunFailures) > 0 {
+		output = rerunFailures[0].FailureOutput
+	}
+
+	return false, TruncateTail(output, FailureOutputCap), nil
 }
 
 // playwrightConfigGuess infers the Playwright config path from a spec
