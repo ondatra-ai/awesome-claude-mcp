@@ -122,6 +122,29 @@ multi-line free text terminated by a blank line for refinement
 feedback. Surplus lines are harmless (EOF on stdin causes the CLI
 to exit cleanly).
 
+If the fixture's `cmd` needs the tmpdir to have project dependencies
+installed (e.g. `build code` shells out to `npx playwright test`),
+declare a `prep:` list in `fixture.yaml`. Each entry is a shell
+command executed via `bash -c` in the tmpdir, run after the input
+overlay and before the pre-run snapshot — so the side effects of
+`npm install`, `playwright install`, etc., do not pollute the diff
+handed to the judge. Stdout/stderr stream to the calling
+`go test -v` output, and a non-zero exit aborts the fixture. Prep
+shares the parent `go test -timeout=30m` ceiling; no per-command
+timeout.
+
+If the fixture's `cmd` spawns long-lived external resources that
+outlive the CLI process (e.g. Playwright's `webServer` brings up a
+`docker compose` stack that keeps a port bound after the test
+exits), declare a `teardown:` list in `fixture.yaml`. Each entry is
+a shell command executed via `bash -c` in the tmpdir, run AFTER the
+post-run snapshot (so the diff handed to the judge is unaffected)
+and AFTER the CLI exits — regardless of success, failure, or
+timeout. Teardown runs against a fresh 2-minute context (independent
+of the fixture timeout, so it still fires when the CLI itself was
+killed). Failures are logged to stderr but never mask the primary
+verdict — teardown is best-effort hygiene.
+
 #### Development
 ```bash
 make init         # Install dependencies and build Docker images
@@ -170,6 +193,7 @@ Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenat
 - `docs/` — `architecture.md`, `prd.md`, `requirements.yaml` (the scenario registry that `us apply` writes to), `epics/`, `stories/`, `qa/`.
 - `tests/` — Playwright INT + E2E tests for the MCP product.
 - `tmp/` — runtime working dir for bdd-cli prompt/response artifacts.
+- `scripts/tmp/test_run/<YYYY-MM-DD_HH-MM-SS>/<fixture-name>/` — per-fixture working dir created by the BDD test harness. Predictable, never auto-cleaned; wipe manually when you want to reclaim disk.
 
 Note the two `bdd-cli/` directories: `bdd-cli/` at repo root is config/data; `scripts/bdd-cli/` is the Go module that consumes it.
 

@@ -24,6 +24,12 @@ templates:
     build_tests_fix_generator_system: "./scripts/bdd-cli/templates/build-tests.fix-generator.system.prompt.tpl"
     build_tests_fix_applier: "./scripts/bdd-cli/templates/build-tests.fix-applier.prompt.tpl"
     build_tests_fix_applier_system: "./scripts/bdd-cli/templates/build-tests.fix-applier.system.prompt.tpl"
+    build_code_checklist: "./scripts/bdd-cli/templates/build-code.checklist.prompt.tpl"
+    build_code_checklist_system: "./scripts/bdd-cli/templates/build-code.checklist.system.prompt.tpl"
+    build_code_fix_generator: "./scripts/bdd-cli/templates/build-code.fix-generator.prompt.tpl"
+    build_code_fix_generator_system: "./scripts/bdd-cli/templates/build-code.fix-generator.system.prompt.tpl"
+    build_code_fix_applier: "./scripts/bdd-cli/templates/build-code.fix-applier.prompt.tpl"
+    build_code_fix_applier_system: "./scripts/bdd-cli/templates/build-code.fix-applier.system.prompt.tpl"
 
 paths:
   tmp_dir: "./tmp"
