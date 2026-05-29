@@ -47,6 +47,18 @@ type FixtureManifest struct {
 	// to the judge. Each entry is executed via `bash -c`. Optional.
 	Prep []string `yaml:"prep,omitempty"`
 
+	// Teardown is a list of shell commands run in the tmpdir AFTER the
+	// post-run snapshot — so their side effects never reach the judge's
+	// diff — and AFTER the CLI exits, regardless of whether the run
+	// succeeded, failed, or hit the fixture timeout. Used to tear down
+	// long-lived external resources the fixture started (Docker compose
+	// stacks, background daemons) so the next run starts from a clean
+	// slate. Each entry is executed via `bash -c` against a fresh,
+	// teardown-only timeout (independent of the fixture timeout, so
+	// teardown still runs when the CLI itself was killed). Failures are
+	// logged to stderr but do NOT mask the primary run result. Optional.
+	Teardown []string `yaml:"teardown,omitempty"`
+
 	// Expected is the bundle of assertion strategies applied after
 	// the CLI exits.
 	Expected Expected `yaml:"expected"`

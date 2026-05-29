@@ -112,6 +112,9 @@ type Fixture struct {
 	JudgeSpec        string   // judge rubric from fixture.yaml
 	Stdin            []byte   // contents of optional `answers:` field, fed to subprocess stdin
 	PrepCmds         []string // optional `prep:` shell commands, run in tmpdir before snapshot
+	// TeardownCmds: optional `teardown:` shell commands run in tmpdir
+	// after the post-run snapshot. See FixtureManifest.Teardown.
+	TeardownCmds []string
 }
 
 // RunResult bundles everything we observed from one fixture run.
@@ -145,6 +148,7 @@ func LoadFixture(dir string) (*Fixture, error) {
 		JudgeSpec:        manifest.Expected.Judge,
 		Stdin:            stdinBytes,
 		PrepCmds:         manifest.Prep,
+		TeardownCmds:     manifest.Teardown,
 	}, nil
 }
 
@@ -165,11 +169,18 @@ func LoadFixture(dir string) (*Fixture, error) {
 // `<sessionRoot>/<fixture.Name>/`, is preserved on the result, and is
 // never auto-cleaned — callers can inspect or `docker compose up` inside
 // it after the test exits.
+//
+// After the run, fixture-declared `teardown:` commands run via a
+// deferred call against a fresh context, so long-lived external
+// resources (e.g. docker-compose stacks the CLI brought up) get torn
+// down even when the CLI itself failed or hit the fixture timeout.
 func Execute(ctx context.Context, fixture *Fixture, binPath, sessionRoot string) (*RunResult, error) {
 	tmpDir, err := prepareRunDir(fixture, sessionRoot)
 	if err != nil {
 		return &RunResult{TmpDir: tmpDir}, err
 	}
+
+	defer runTeardownCommands(tmpDir, fixture.TeardownCmds)
 
 	err = runPrepCommands(ctx, tmpDir, fixture.PrepCmds)
 	if err != nil {
@@ -294,6 +305,50 @@ func runPrepCommands(ctx context.Context, tmpDir string, prepCmds []string) erro
 	}
 
 	return nil
+}
+
+// teardownTimeout caps the *entire* teardown phase for one fixture
+// (all teardown commands share the budget). Decoupled from the
+// fixture's run ctx so teardown still fires when the run hit its
+// timeout — that is exactly when leftover resources are most likely
+// to be holding ports / state for the next run.
+const teardownTimeout = 2 * time.Minute
+
+// runTeardownCommands executes each fixture-provided teardown command
+// in the tmpdir via `bash -c`, against a fresh context independent of
+// the run timeout. Stdout/stderr are inherited so progress streams to
+// the calling `go test -v`. Failures are logged but never returned —
+// teardown is best-effort hygiene and must not mask the primary run
+// verdict.
+func runTeardownCommands(tmpDir string, teardownCmds []string) {
+	if len(teardownCmds) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), teardownTimeout)
+	defer cancel()
+
+	for idx, raw := range teardownCmds {
+		trimmed := strings.TrimSpace(raw)
+		if trimmed == "" {
+			continue
+		}
+
+		cmd := exec.CommandContext(ctx, "bash", "-c", trimmed)
+		cmd.Dir = tmpDir
+		cmd.Env = envWithoutClaudeCode(os.Environ())
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		err := cmd.Run()
+		if err != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"BDD runner: teardown[%d] failed (%q): %v\n",
+				idx, trimmed, err,
+			)
+		}
+	}
 }
 
 func envWithoutClaudeCode(env []string) []string {

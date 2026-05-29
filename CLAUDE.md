@@ -133,6 +133,18 @@ handed to the judge. Stdout/stderr stream to the calling
 shares the parent `go test -timeout=30m` ceiling; no per-command
 timeout.
 
+If the fixture's `cmd` spawns long-lived external resources that
+outlive the CLI process (e.g. Playwright's `webServer` brings up a
+`docker compose` stack that keeps a port bound after the test
+exits), declare a `teardown:` list in `fixture.yaml`. Each entry is
+a shell command executed via `bash -c` in the tmpdir, run AFTER the
+post-run snapshot (so the diff handed to the judge is unaffected)
+and AFTER the CLI exits — regardless of success, failure, or
+timeout. Teardown runs against a fresh 2-minute context (independent
+of the fixture timeout, so it still fires when the CLI itself was
+killed). Failures are logged to stderr but never mask the primary
+verdict — teardown is best-effort hygiene.
+
 #### Development
 ```bash
 make init         # Install dependencies and build Docker images

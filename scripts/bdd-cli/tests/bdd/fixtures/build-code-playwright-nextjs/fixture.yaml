@@ -5,6 +5,14 @@ prep:
   - npm install --prefix tests --no-audit --no-fund --silent
   - ./tests/node_modules/.bin/playwright install chromium
 
+# Tear down the docker-compose stack the CLI brings up via Playwright's
+# webServer. Without this, the `frontend` container keeps port 3000
+# bound after the run; the next invocation then matches Playwright's
+# `reuseExistingServer: true`, the spec trivially passes against the
+# leftover server, and the fix loop finds zero failing tests to walk.
+teardown:
+  - docker compose down -v --remove-orphans
+
 answers: |
   1
   1
