@@ -181,6 +181,7 @@ Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenat
 - `docs/` — `architecture.md`, `prd.md`, `requirements.yaml` (the scenario registry that `us apply` writes to), `epics/`, `stories/`, `qa/`.
 - `tests/` — Playwright INT + E2E tests for the MCP product.
 - `tmp/` — runtime working dir for bdd-cli prompt/response artifacts.
+- `scripts/tmp/test_run/<YYYY-MM-DD_HH-MM-SS>/<fixture-name>/` — per-fixture working dir created by the BDD test harness. Predictable, never auto-cleaned; wipe manually when you want to reclaim disk.
 
 Note the two `bdd-cli/` directories: `bdd-cli/` at repo root is config/data; `scripts/bdd-cli/` is the Go module that consumes it.
 

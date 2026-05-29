@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
@@ -41,6 +42,29 @@ func repoLayer() []string {
 		"bdd-cli",
 		"scripts/bdd-cli/templates",
 	}
+}
+
+// NewSessionRoot creates a fresh per-test-invocation directory under
+// `<repoRoot>/scripts/tmp/test_run/<YYYY-MM-DD_HH-MM-SS>/`. Each fixture
+// in the same `go test` run will get its own subdirectory beneath this
+// path (see prepareRunDir), so all fixtures from one invocation are
+// grouped together. The repo's existing `tmp/` .gitignore rule covers
+// this tree, so it is never accidentally committed.
+func NewSessionRoot() (string, error) {
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		return "", fmt.Errorf("find repo root: %w", err)
+	}
+
+	stamp := time.Now().Format("2006-01-02_15-04-05")
+	root := filepath.Join(repoRoot, "scripts", "tmp", "test_run", stamp)
+
+	err = os.MkdirAll(root, dirPerm)
+	if err != nil {
+		return "", fmt.Errorf("mkdir session root %s: %w", root, err)
+	}
+
+	return root, nil
 }
 
 // findRepoRoot walks up from cwd until it finds a directory containing
@@ -96,7 +120,7 @@ type RunResult struct {
 	Stdout   string
 	Stderr   string
 	Diff     []FileChange
-	TmpDir   string // preserved on failure for debugging
+	TmpDir   string // predictable per-fixture path under scripts/tmp/test_run/<session>/; preserved after every run
 }
 
 // LoadFixture parses a fixture folder.
@@ -137,11 +161,12 @@ func LoadFixture(dir string) (*Fixture, error) {
 //  4. Snapshot the post-prep state for the diff (so the judge only
 //     sees what the run itself did, not the prep).
 //
-// Then execs binPath in the tmpdir. The tmpdir is preserved on the
-// result so the caller can clean it up (or keep it for inspection on
-// failure).
-func Execute(ctx context.Context, fixture *Fixture, binPath string) (*RunResult, error) {
-	tmpDir, err := prepareRunDir(fixture)
+// Then execs binPath in the tmpdir. The tmpdir lives at
+// `<sessionRoot>/<fixture.Name>/`, is preserved on the result, and is
+// never auto-cleaned — callers can inspect or `docker compose up` inside
+// it after the test exits.
+func Execute(ctx context.Context, fixture *Fixture, binPath, sessionRoot string) (*RunResult, error) {
+	tmpDir, err := prepareRunDir(fixture, sessionRoot)
 	if err != nil {
 		return &RunResult{TmpDir: tmpDir}, err
 	}
@@ -208,10 +233,20 @@ func Execute(ctx context.Context, fixture *Fixture, binPath string) (*RunResult,
 // the "before" state is the caller's responsibility — Execute does it
 // after prep commands have a chance to mutate the tree, so prep side
 // effects don't pollute the diff.
-func prepareRunDir(fixture *Fixture) (string, error) {
-	tmpDir, err := os.MkdirTemp("", "bdd-cli-"+fixture.Name+"-")
+func prepareRunDir(fixture *Fixture, sessionRoot string) (string, error) {
+	tmpDir := filepath.Join(sessionRoot, fixture.Name)
+
+	// Wipe any leftover from a same-second collision (e.g. `go test
+	// -run X -count=2` re-entering within one second). MkdirAll alone
+	// would mix new content with stale files from the prior run.
+	err := os.RemoveAll(tmpDir)
 	if err != nil {
-		return "", fmt.Errorf("mkdir tmp: %w", err)
+		return "", fmt.Errorf("clean run dir %s: %w", tmpDir, err)
+	}
+
+	err = os.MkdirAll(tmpDir, dirPerm)
+	if err != nil {
+		return "", fmt.Errorf("create run dir %s: %w", tmpDir, err)
 	}
 
 	repoRoot, err := findRepoRoot()
