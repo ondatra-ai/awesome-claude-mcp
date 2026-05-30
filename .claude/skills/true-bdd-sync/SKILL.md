@@ -36,5 +36,5 @@ After mirroring, `sed` rewrites the one path inside `tests/bdd/runner/runner.go`
 
 - Working clone lives at `./tmp/sync/true-bdd/` and is reused across runs.
 - If nothing changed since the last sync, the script exits 0 without committing or pushing.
-- Branch name: `chore/sync-from-monorepo-<short-monorepo-sha>`. Re-running on the same monorepo HEAD updates the existing PR; running on a new HEAD opens a new one.
+- Branch selection: if any open sync PR (head ref starting with `chore/sync-from-monorepo`) already exists on the standalone repo, the new sync commit is appended to *that* PR's branch — one PR per review cycle, not one per monorepo SHA. If no open sync PR exists, the script branches off `main` as `chore/sync-from-monorepo` and opens a fresh PR.
 - The script outputs the PR URL — report that back to the user.
