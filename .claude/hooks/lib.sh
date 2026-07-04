@@ -103,16 +103,17 @@ slugify() {
     | sed -E 's/-$//'
 }
 
-# Open a fresh history file for a session (main transcript).
-# Handles same-second slug collisions with noclobber + numeric suffix.
-# Writes fresh state and echoes the created filename (basename).
+# Open a fresh history file for a session (main transcript). Naming:
+#   tmp/history/<ts>-main-<slug>.md
+# The "main" segment identifies the writer so main and sub-agent files
+# can coexist flat in the same directory.
 start_history_file() {
   local session_id="$1" first_prompt="$2"
   local ts slug base name n=0
   ts=$(date -u +"%Y%m%d-%H%M%S")
   slug=$(slugify "$first_prompt")
   [ -z "$slug" ] && slug="msg"
-  base="${ts}-${slug}"
+  base="${ts}-main-${slug}"
   name="${base}.md"
   while ! (set -o noclobber; : > "${HISTORY_DIR}/${name}") 2>/dev/null; do
     n=$((n + 1))
@@ -123,27 +124,78 @@ start_history_file() {
   printf '%s' "$name"
 }
 
-# Open a fresh history file for a sub-agent under
-#   tmp/history/subagents/<session_id>/<agent_type>-<agent_id_short>.md
+# Read the first user-type entry from a sub-agent transcript and echo
+#   "<ts-compact>\t<prompt-text>"
+# ts-compact is YYYYMMDD-HHMMSS derived from the entry's timestamp
+# field, or empty if unavailable. prompt-text is at most 200 chars.
+_subagent_first_user_entry() {
+  local transcript="$1"
+  python3 - "$transcript" <<'PY' 2>/dev/null
+import json, re, sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line: continue
+            try:
+                e = json.loads(line)
+            except Exception:
+                continue
+            if e.get("type") != "user":
+                continue
+            if e.get("isMeta"):
+                continue
+            content = (e.get("message") or {}).get("content")
+            if content is None:
+                content = e.get("content")
+            text = ""
+            if isinstance(content, str):
+                text = content
+            elif isinstance(content, list):
+                parts = []
+                for b in content:
+                    if isinstance(b, dict) and b.get("type") == "text":
+                        t = (b.get("text") or "").strip()
+                        if t: parts.append(t)
+                text = "\n".join(parts)
+            if not text.strip():
+                continue
+            ts_raw = (e.get("timestamp") or "").strip()
+            m = re.match(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})', ts_raw)
+            ts_compact = "".join(m.groups()[:3]) + "-" + "".join(m.groups()[3:]) if m else ""
+            print(ts_compact + "\t" + text[:200].replace("\t", " ").replace("\n", " "), end="")
+            sys.exit(0)
+except FileNotFoundError:
+    pass
+PY
+}
+
+# Open a fresh history file for a sub-agent at
+#   tmp/history/<sub-ts>-<agent-type>-<prompt-slug>.md
+# sub-ts and prompt-slug come from the sub-agent's own transcript
+# (first user entry). Falls back to now_ts + short agent_id.
 start_subagent_history_file() {
-  local session_id="$1" agent_id="$2" agent_type="$3"
-  local dir short base name n=0
-  dir="${HISTORY_DIR}/subagents/${session_id}"
-  mkdir -p "$dir"
-  short=$(printf '%s' "$agent_id" | tr -c 'a-zA-Z0-9' '-' | cut -c1-16)
-  [ -z "$agent_type" ] && agent_type="subagent"
-  base="$(slugify "$agent_type")-${short}"
-  [ -z "$base" ] && base="subagent-${short}"
+  local session_id="$1" agent_id="$2" agent_type="$3" transcript="$4"
+  local ts slug short atype base name n=0 first
+  first=$(_subagent_first_user_entry "$transcript")
+  ts="${first%%$'\t'*}"
+  slug=$(slugify "${first#*$'\t'}")
+  [ -z "$ts" ] && ts=$(date -u +"%Y%m%d-%H%M%S")
+  short=$(printf '%s' "$agent_id" | tr -c 'a-zA-Z0-9' '-' | cut -c1-8)
+  [ -z "$slug" ] && slug="$short"
+  atype=$(slugify "$agent_type")
+  [ -z "$atype" ] && atype="subagent"
+  base="${ts}-${atype}-${slug}"
   name="${base}.md"
-  while ! (set -o noclobber; : > "${dir}/${name}") 2>/dev/null; do
+  while ! (set -o noclobber; : > "${HISTORY_DIR}/${name}") 2>/dev/null; do
     n=$((n + 1))
     name="${base}-${n}.md"
     [ "$n" -gt 20 ] && return 1
   done
-  # Sub-agent state stores the relative path from HISTORY_DIR.
   write_state "$(subagent_state_file_for "$session_id" "$agent_id")" \
-              "subagents/${session_id}/${name}" ""
-  printf '%s' "subagents/${session_id}/${name}"
+              "$name" ""
+  printf '%s' "$name"
 }
 
 # Return the current git HEAD short SHA, or "-" if the repo is not a

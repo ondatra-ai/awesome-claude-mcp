@@ -2,10 +2,12 @@
 # SubagentStop hook (improvement #4).
 #
 # Sub-agents run in their own JSONL transcript (agent_transcript_path).
-# We capture that into a dedicated file under
-#   tmp/history/subagents/<session_id>/<agent-type>-<agent-id>.md
-# with its own per-subagent cursor so we don't tangle it with the
-# parent session's history.
+# We capture each one into a dedicated file at
+#   tmp/history/<sub-ts>-<agent-type>-<prompt-slug>.md
+# with its own per-subagent cursor so it doesn't tangle with the parent
+# session's history. Naming keeps main and sub-agent files coexisting
+# flat in the same directory: main files carry a "-main-" segment,
+# sub-agent files carry their agent type instead.
 set -u
 
 if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
@@ -53,9 +55,11 @@ fi
 
 sf=$(subagent_state_file_for "$session_id" "$agent_id")
 
-# Lazily open the sub-agent history file on first Stop.
+# Lazily open the sub-agent history file on first Stop. We pass the
+# transcript path so the helper can derive <ts> and <slug> from the
+# sub-agent's first user entry.
 if [ ! -f "$sf" ]; then
-  start_subagent_history_file "$session_id" "$agent_id" "$agent_type" >/dev/null \
+  start_subagent_history_file "$session_id" "$agent_id" "$agent_type" "$sub_transcript" >/dev/null \
     || { step "  ERROR: failed to open sub-agent history file"; emit_and_exit; }
 fi
 
