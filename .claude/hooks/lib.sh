@@ -1,0 +1,453 @@
+#!/bin/bash
+# Shared helpers for the conversation-history hooks.
+#
+# Design (differs from the original linkedin-ai port):
+#   1. Per-session state (improvement #1): state lives at
+#      tmp/hooks-state/<session_id>.json, so two Claude sessions in the
+#      same repo do not stomp on each other. Sub-agents have their own
+#      state file: tmp/hooks-state/<session_id>.subagent-<agent_id>.json.
+#
+#   2. UUID cursor (improvement #2): state carries the uuid of the last
+#      JSONL entry we processed. The Stop walk resumes from just past
+#      that cursor, so repeated Stop events (AskUserQuestion pauses,
+#      resumes, forced-continue) never double-write. Boundary detection
+#      by "last real user prompt" is gone.
+#
+#   3. Stability wait (improvement #3): before parsing the transcript we
+#      wait for its mtime+size to stop changing, so a partial flush
+#      cannot cause silent tail loss.
+#
+#   Sidechain / meta rows are filtered inside the walker (improvement #5
+#   groundwork for sub-agent isolation).
+#
+# All paths are relative to ${CLAUDE_PROJECT_DIR}.
+
+if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+  echo "history-hooks: CLAUDE_PROJECT_DIR not set, skipping" >&2
+  exit 0
+fi
+
+HISTORY_DIR="${CLAUDE_PROJECT_DIR}/tmp/history"
+STATE_DIR="${CLAUDE_PROJECT_DIR}/tmp/hooks-state"
+
+mkdir -p "$HISTORY_DIR" "$STATE_DIR"
+
+# ---------- payload helpers ----------
+
+# Extract a top-level string field from a JSON payload on stdin.
+# Usage:  echo "$payload" | extract_field session_id
+extract_field() {
+  local field="$1"
+  python3 -c "import json,sys; print(json.load(sys.stdin).get('$field',''), end='')" 2>/dev/null
+}
+
+# ---------- state files ----------
+
+state_file_for() {
+  printf '%s/%s.json' "$STATE_DIR" "$1"
+}
+
+subagent_state_file_for() {
+  printf '%s/%s.subagent-%s.json' "$STATE_DIR" "$1" "$2"
+}
+
+# Read fields from a state file. Empty output means "no state yet".
+read_state_filename() {
+  local sf="$1"
+  [ -f "$sf" ] || return 0
+  python3 - "$sf" <<'PY' 2>/dev/null
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        print(json.load(f).get("filename", ""), end="")
+except Exception:
+    pass
+PY
+}
+
+read_state_uuid() {
+  local sf="$1"
+  [ -f "$sf" ] || return 0
+  python3 - "$sf" <<'PY' 2>/dev/null
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        print(json.load(f).get("last_uuid", ""), end="")
+except Exception:
+    pass
+PY
+}
+
+# Atomically rewrite a state file with (filename, last_uuid).
+write_state() {
+  local sf="$1" filename="$2" last_uuid="$3"
+  python3 - "$sf" "$filename" "$last_uuid" <<'PY'
+import json, os, sys
+path, filename, last_uuid = sys.argv[1], sys.argv[2], sys.argv[3]
+tmp = path + ".tmp." + str(os.getpid())
+with open(tmp, "w") as f:
+    json.dump({"filename": filename, "last_uuid": last_uuid}, f)
+os.replace(tmp, path)
+PY
+}
+
+# ---------- filename generation ----------
+
+slugify() {
+  printf '%s' "$1" \
+    | head -c 120 \
+    | tr '[:upper:]' '[:lower:]' \
+    | tr -c 'a-z0-9' '-' \
+    | sed -E 's/-+/-/g; s/^-//; s/-$//' \
+    | cut -c1-40 \
+    | sed -E 's/-$//'
+}
+
+# Open a fresh history file for a session (main transcript).
+# Handles same-second slug collisions with noclobber + numeric suffix.
+# Writes fresh state and echoes the created filename (basename).
+start_history_file() {
+  local session_id="$1" first_prompt="$2"
+  local ts slug base name n=0
+  ts=$(date -u +"%Y%m%d-%H%M%S")
+  slug=$(slugify "$first_prompt")
+  [ -z "$slug" ] && slug="msg"
+  base="${ts}-${slug}"
+  name="${base}.md"
+  while ! (set -o noclobber; : > "${HISTORY_DIR}/${name}") 2>/dev/null; do
+    n=$((n + 1))
+    name="${base}-${n}.md"
+    [ "$n" -gt 20 ] && return 1
+  done
+  write_state "$(state_file_for "$session_id")" "$name" ""
+  printf '%s' "$name"
+}
+
+# Open a fresh history file for a sub-agent under
+#   tmp/history/subagents/<session_id>/<agent_type>-<agent_id_short>.md
+start_subagent_history_file() {
+  local session_id="$1" agent_id="$2" agent_type="$3"
+  local dir short base name n=0
+  dir="${HISTORY_DIR}/subagents/${session_id}"
+  mkdir -p "$dir"
+  short=$(printf '%s' "$agent_id" | tr -c 'a-zA-Z0-9' '-' | cut -c1-16)
+  [ -z "$agent_type" ] && agent_type="subagent"
+  base="$(slugify "$agent_type")-${short}"
+  [ -z "$base" ] && base="subagent-${short}"
+  name="${base}.md"
+  while ! (set -o noclobber; : > "${dir}/${name}") 2>/dev/null; do
+    n=$((n + 1))
+    name="${base}-${n}.md"
+    [ "$n" -gt 20 ] && return 1
+  done
+  # Sub-agent state stores the relative path from HISTORY_DIR.
+  write_state "$(subagent_state_file_for "$session_id" "$agent_id")" \
+              "subagents/${session_id}/${name}" ""
+  printf '%s' "subagents/${session_id}/${name}"
+}
+
+# Append a "## <heading>\n\n<body>\n\n" block to the file recorded in
+# the given state file. Fails if the state file has no filename yet.
+append_to_history_by_state() {
+  local sf="$1" heading="$2" body="$3"
+  local name
+  name=$(read_state_filename "$sf")
+  [ -z "$name" ] && return 1
+  {
+    printf '## %s\n\n' "$heading"
+    printf '%s\n\n' "$body"
+  } >> "${HISTORY_DIR}/${name}"
+}
+
+# ---------- transcript I/O ----------
+
+# Wait until $transcript's mtime+size are stable across 2 consecutive
+# ~100ms polls (or ~1.5s total). Guards against partial-flush tail loss.
+wait_transcript_stable() {
+  local transcript="$1"
+  python3 - "$transcript" <<'PY' >/dev/null 2>&1
+import os, sys, time
+path = sys.argv[1]
+prev = None
+stable = 0
+for _ in range(15):
+    try:
+        st = os.stat(path)
+        cur = (st.st_mtime, st.st_size)
+    except FileNotFoundError:
+        cur = None
+    if cur is not None and cur == prev:
+        stable += 1
+        if stable >= 2:
+            break
+    else:
+        stable = 0
+    prev = cur
+    time.sleep(0.1)
+PY
+}
+
+# Walk the transcript JSONL from just past $cursor_uuid, append captured
+# entries to $history_file, and echo "<new_last_uuid>\t<count>".
+#
+# What we capture (per non-sidechain, non-meta entry):
+#   - assistant text          → "## claude"
+#   - AskUserQuestion tool_use → "## claude (asked)"
+#   - AskUserQuestion tool_result → "## user (answered)"
+#
+# We DO NOT capture user text prompts here — prompt-submit.sh already
+# logs those the moment they arrive. Skipping avoids duplication.
+#
+# The cursor is advanced to the last transcript entry we saw, even for
+# entries that produced no records, so we never re-scan them.
+dump_from_cursor() {
+  local transcript="$1" history_file="$2" cursor_uuid="$3"
+  python3 - "$transcript" "$history_file" "$cursor_uuid" <<'PY'
+import json, re, sys
+
+transcript_path, history_path, cursor_uuid = sys.argv[1], sys.argv[2], sys.argv[3]
+
+entries = []
+try:
+    with open(transcript_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                # Partial tail; caller waited for stability so this is rare.
+                pass
+except FileNotFoundError:
+    sys.stdout.write("\t0")
+    sys.exit(0)
+
+def content_of(e):
+    c = (e.get("message") or {}).get("content")
+    if c is None:
+        c = e.get("content")
+    return c or []
+
+# Locate the cursor. Empty cursor → start from the beginning.
+start_idx = 0
+if cursor_uuid:
+    found = False
+    for i, e in enumerate(entries):
+        if e.get("uuid") == cursor_uuid:
+            start_idx = i + 1
+            found = True
+            break
+    if not found:
+        # Cursor not found (transcript replaced / cleared). Restart.
+        start_idx = 0
+
+# Build the AskUserQuestion tool_use id → questions lookup across the
+# replay window so we can reconstruct answers when their tool_result
+# lands.
+auq_inputs = {}
+for e in entries[start_idx:]:
+    if e.get("isSidechain") or e.get("isMeta"):
+        continue
+    c = content_of(e)
+    if not isinstance(c, list):
+        continue
+    for b in c:
+        if (isinstance(b, dict)
+                and b.get("type") == "tool_use"
+                and b.get("name") == "AskUserQuestion"):
+            auq_inputs[b.get("id")] = (b.get("input") or {}).get("questions") or []
+
+def format_questions(questions):
+    out = []
+    for q in questions:
+        qt = (q.get("question") or "").strip()
+        if not qt:
+            continue
+        out.append("- " + qt)
+        for opt in (q.get("options") or []):
+            lbl = (opt.get("label") or "").strip()
+            dsc = (opt.get("description") or "").strip()
+            if lbl and dsc:
+                out.append("  - " + lbl + " — " + dsc)
+            elif lbl:
+                out.append("  - " + lbl)
+    return "\n".join(out)
+
+def format_answers(questions, result_text):
+    # Observed result shape:
+    #   'Your questions have been answered: "Q1"="A1", "Q2"="A2". ...'
+    # Regex is best-effort; on miss we surface the raw text (truncated)
+    # instead of a silent "<skipped>" so format drift is visible.
+    out = []
+    for q in questions:
+        qt = (q.get("question") or "").strip()
+        if not qt:
+            continue
+        needle = re.escape(qt)
+        m = re.search(r'"' + needle + r'"\s*=\s*"((?:[^"\\]|\\.)*)"',
+                      result_text or "")
+        if m:
+            try:
+                ans = m.group(1).encode().decode("unicode_escape")
+            except Exception:
+                ans = m.group(1)
+        else:
+            raw = (result_text or "").strip().replace("\n", " ")[:200]
+            ans = "<unparsed — raw: " + raw + ">"
+        out.append("- " + qt + "\n  → " + ans)
+    return "\n".join(out)
+
+records = []
+last_uuid = cursor_uuid
+
+for e in entries[start_idx:]:
+    if e.get("isSidechain") or e.get("isMeta"):
+        # Skip sub-agent rows folded into the parent transcript, and
+        # compact/resume metadata rows. Still advance the cursor.
+        if e.get("uuid"):
+            last_uuid = e["uuid"]
+        continue
+
+    etype = e.get("type")
+    uuid = e.get("uuid") or ""
+    c = content_of(e)
+
+    if etype == "assistant":
+        if isinstance(c, str):
+            c = [{"type": "text", "text": c}]
+        if isinstance(c, list):
+            for b in c:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") == "text":
+                    text = (b.get("text") or "").strip()
+                    if text:
+                        records.append(("claude", text))
+                elif (b.get("type") == "tool_use"
+                      and b.get("name") == "AskUserQuestion"):
+                    questions = (b.get("input") or {}).get("questions") or []
+                    body = format_questions(questions)
+                    if body:
+                        records.append(("claude (asked)", body))
+    elif etype == "user":
+        # Skip pure user text — prompt-submit.sh logged it.
+        # Only fold in AskUserQuestion tool_result answers here.
+        if isinstance(c, list):
+            for b in c:
+                if not (isinstance(b, dict) and b.get("type") == "tool_result"):
+                    continue
+                tu_id = b.get("tool_use_id")
+                if tu_id not in auq_inputs:
+                    continue
+                rc = b.get("content")
+                if isinstance(rc, list):
+                    result_text = "".join(
+                        (x.get("text") or "") for x in rc
+                        if isinstance(x, dict) and x.get("type") == "text"
+                    )
+                else:
+                    result_text = rc or ""
+                body = format_answers(auq_inputs[tu_id], result_text)
+                if body:
+                    records.append(("user (answered)", body))
+
+    if uuid:
+        last_uuid = uuid
+
+with open(history_path, "a") as f:
+    for heading, body in records:
+        f.write("## " + heading + "\n\n" + body + "\n\n")
+
+sys.stdout.write((last_uuid or "") + "\t" + str(len(records)))
+PY
+}
+
+# Same as dump_from_cursor but with no user-prompt suppression — used
+# for sub-agent transcripts, which are complete little conversations
+# in their own right.
+dump_subagent_from_cursor() {
+  local transcript="$1" history_file="$2" cursor_uuid="$3"
+  python3 - "$transcript" "$history_file" "$cursor_uuid" <<'PY'
+import json, re, sys
+
+transcript_path, history_path, cursor_uuid = sys.argv[1], sys.argv[2], sys.argv[3]
+
+entries = []
+try:
+    with open(transcript_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+except FileNotFoundError:
+    sys.stdout.write("\t0")
+    sys.exit(0)
+
+def content_of(e):
+    c = (e.get("message") or {}).get("content")
+    if c is None:
+        c = e.get("content")
+    return c or []
+
+start_idx = 0
+if cursor_uuid:
+    found = False
+    for i, e in enumerate(entries):
+        if e.get("uuid") == cursor_uuid:
+            start_idx = i + 1
+            found = True
+            break
+    if not found:
+        start_idx = 0
+
+records = []
+last_uuid = cursor_uuid
+
+for e in entries[start_idx:]:
+    if e.get("isMeta"):
+        if e.get("uuid"):
+            last_uuid = e["uuid"]
+        continue
+    etype = e.get("type")
+    uuid = e.get("uuid") or ""
+    c = content_of(e)
+
+    if etype == "user":
+        if isinstance(c, str):
+            text = c.strip()
+            if text:
+                records.append(("user", text))
+        elif isinstance(c, list):
+            texts = []
+            for b in c:
+                if isinstance(b, dict) and b.get("type") == "text":
+                    t = (b.get("text") or "").strip()
+                    if t:
+                        texts.append(t)
+            if texts:
+                records.append(("user", "\n\n".join(texts)))
+    elif etype == "assistant":
+        if isinstance(c, str):
+            c = [{"type": "text", "text": c}]
+        if isinstance(c, list):
+            for b in c:
+                if isinstance(b, dict) and b.get("type") == "text":
+                    text = (b.get("text") or "").strip()
+                    if text:
+                        records.append(("claude", text))
+
+    if uuid:
+        last_uuid = uuid
+
+with open(history_path, "a") as f:
+    for heading, body in records:
+        f.write("## " + heading + "\n\n" + body + "\n\n")
+
+sys.stdout.write((last_uuid or "") + "\t" + str(len(records)))
+PY
+}
