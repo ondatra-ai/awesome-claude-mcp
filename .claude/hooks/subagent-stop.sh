@@ -69,7 +69,8 @@ HISTORY_FILE="${HISTORY_DIR}/${name}"
 wait_transcript_stable "$sub_transcript"
 
 cursor=$(read_state_uuid "$sf")
-result=$(dump_subagent_from_cursor "$sub_transcript" "$HISTORY_FILE" "$cursor" 2>/dev/null || true)
+sha=$(git_sha)
+result=$(dump_subagent_from_cursor "$sub_transcript" "$HISTORY_FILE" "$cursor" "$sha" 2>/dev/null || true)
 new_cursor=${result%%$'\t'*}
 count=${result##*$'\t'}
 case "$count" in ''|*[!0-9]*) count=0 ;; esac

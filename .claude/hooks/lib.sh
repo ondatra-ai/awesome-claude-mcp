@@ -146,15 +146,34 @@ start_subagent_history_file() {
   printf '%s' "subagents/${session_id}/${name}"
 }
 
-# Append a "## <heading>\n\n<body>\n\n" block to the file recorded in
-# the given state file. Fails if the state file has no filename yet.
+# Return the current git HEAD short SHA, or "-" if the repo is not a
+# git checkout / git is unavailable.
+git_sha() {
+  git -C "$CLAUDE_PROJECT_DIR" rev-parse --short HEAD 2>/dev/null || echo "-"
+}
+
+# Return current UTC timestamp in ISO8601 (seconds precision).
+now_ts() {
+  date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+# Append a captured message to the history file recorded in $sf.
+# Layout per message:
+#
+#   ## <heading>
+#
+#   _<timestamp> · <sha>_
+#
+#   <body>
+#
 append_to_history_by_state() {
-  local sf="$1" heading="$2" body="$3"
+  local sf="$1" heading="$2" timestamp="$3" sha="$4" body="$5"
   local name
   name=$(read_state_filename "$sf")
   [ -z "$name" ] && return 1
   {
     printf '## %s\n\n' "$heading"
+    printf '_%s · %s_\n\n' "$timestamp" "$sha"
     printf '%s\n\n' "$body"
   } >> "${HISTORY_DIR}/${name}"
 }
@@ -201,11 +220,19 @@ PY
 # The cursor is advanced to the last transcript entry we saw, even for
 # entries that produced no records, so we never re-scan them.
 dump_from_cursor() {
-  local transcript="$1" history_file="$2" cursor_uuid="$3"
-  python3 - "$transcript" "$history_file" "$cursor_uuid" <<'PY'
+  local transcript="$1" history_file="$2" cursor_uuid="$3" sha="$4"
+  python3 - "$transcript" "$history_file" "$cursor_uuid" "$sha" <<'PY'
 import json, re, sys
 
-transcript_path, history_path, cursor_uuid = sys.argv[1], sys.argv[2], sys.argv[3]
+transcript_path, history_path, cursor_uuid, sha = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+def norm_ts(t):
+    # "2026-07-04T16:32:02.911Z" → "2026-07-04T16:32:02Z"
+    if not t:
+        return "-"
+    t = t.strip()
+    m = re.match(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.\d+)?Z?$', t)
+    return (m.group(1) + "Z") if m else t
 
 entries = []
 try:
@@ -311,6 +338,7 @@ for e in entries[start_idx:]:
 
     etype = e.get("type")
     uuid = e.get("uuid") or ""
+    ts = norm_ts(e.get("timestamp"))
     c = content_of(e)
 
     if etype == "assistant":
@@ -323,13 +351,13 @@ for e in entries[start_idx:]:
                 if b.get("type") == "text":
                     text = (b.get("text") or "").strip()
                     if text:
-                        records.append(("claude", text))
+                        records.append(("claude", ts, text))
                 elif (b.get("type") == "tool_use"
                       and b.get("name") == "AskUserQuestion"):
                     questions = (b.get("input") or {}).get("questions") or []
                     body = format_questions(questions)
                     if body:
-                        records.append(("claude (asked)", body))
+                        records.append(("claude (asked)", ts, body))
     elif etype == "user":
         # Skip pure user text — prompt-submit.sh logged it.
         # Only fold in AskUserQuestion tool_result answers here.
@@ -350,14 +378,14 @@ for e in entries[start_idx:]:
                     result_text = rc or ""
                 body = format_answers(auq_inputs[tu_id], result_text)
                 if body:
-                    records.append(("user (answered)", body))
+                    records.append(("user (answered)", ts, body))
 
     if uuid:
         last_uuid = uuid
 
 with open(history_path, "a") as f:
-    for heading, body in records:
-        f.write("## " + heading + "\n\n" + body + "\n\n")
+    for heading, ts, body in records:
+        f.write("## " + heading + "\n\n_" + ts + " · " + sha + "_\n\n" + body + "\n\n")
 
 sys.stdout.write((last_uuid or "") + "\t" + str(len(records)))
 PY
@@ -367,11 +395,18 @@ PY
 # for sub-agent transcripts, which are complete little conversations
 # in their own right.
 dump_subagent_from_cursor() {
-  local transcript="$1" history_file="$2" cursor_uuid="$3"
-  python3 - "$transcript" "$history_file" "$cursor_uuid" <<'PY'
+  local transcript="$1" history_file="$2" cursor_uuid="$3" sha="$4"
+  python3 - "$transcript" "$history_file" "$cursor_uuid" "$sha" <<'PY'
 import json, re, sys
 
-transcript_path, history_path, cursor_uuid = sys.argv[1], sys.argv[2], sys.argv[3]
+transcript_path, history_path, cursor_uuid, sha = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+def norm_ts(t):
+    if not t:
+        return "-"
+    t = t.strip()
+    m = re.match(r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.\d+)?Z?$', t)
+    return (m.group(1) + "Z") if m else t
 
 entries = []
 try:
@@ -415,13 +450,14 @@ for e in entries[start_idx:]:
         continue
     etype = e.get("type")
     uuid = e.get("uuid") or ""
+    ts = norm_ts(e.get("timestamp"))
     c = content_of(e)
 
     if etype == "user":
         if isinstance(c, str):
             text = c.strip()
             if text:
-                records.append(("user", text))
+                records.append(("user", ts, text))
         elif isinstance(c, list):
             texts = []
             for b in c:
@@ -430,7 +466,7 @@ for e in entries[start_idx:]:
                     if t:
                         texts.append(t)
             if texts:
-                records.append(("user", "\n\n".join(texts)))
+                records.append(("user", ts, "\n\n".join(texts)))
     elif etype == "assistant":
         if isinstance(c, str):
             c = [{"type": "text", "text": c}]
@@ -439,14 +475,14 @@ for e in entries[start_idx:]:
                 if isinstance(b, dict) and b.get("type") == "text":
                     text = (b.get("text") or "").strip()
                     if text:
-                        records.append(("claude", text))
+                        records.append(("claude", ts, text))
 
     if uuid:
         last_uuid = uuid
 
 with open(history_path, "a") as f:
-    for heading, body in records:
-        f.write("## " + heading + "\n\n" + body + "\n\n")
+    for heading, ts, body in records:
+        f.write("## " + heading + "\n\n_" + ts + " · " + sha + "_\n\n" + body + "\n\n")
 
 sys.stdout.write((last_uuid or "") + "\t" + str(len(records)))
 PY
