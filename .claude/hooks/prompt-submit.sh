@@ -32,5 +32,7 @@ if [ ! -f "$sf" ]; then
   start_history_file "$session_id" "$prompt" >/dev/null || exit 0
 fi
 
-append_to_history_by_state "$sf" "user" "$prompt"
+ts=$(now_ts)
+sha=$(git_sha)
+append_to_history_by_state "$sf" "user" "$ts" "$sha" "$prompt"
 exit 0
