@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start.sh",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/history.py session-start",
             "timeout": 10
           }
         ]
@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/prompt-submit.sh",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/history.py prompt-submit",
             "timeout": 10
           }
         ]
@@ -71,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/assistant-stop.sh",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/history.py stop",
             "timeout": 15
           }
         ]
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/subagent-stop.sh",
+            "command": "python3 ${CLAUDE_PROJECT_DIR}/.claude/hooks/history.py subagent-stop",
             "timeout": 15
           }
         ]

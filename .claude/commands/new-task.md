@@ -1,5 +1,5 @@
 ---
 description: Start a new task — history rolls over on the next prompt
-allowed-tools: Bash(rm:*)
+allowed-tools: Bash(python3:*)
 ---
-!rm -f "${CLAUDE_PROJECT_DIR}/tmp/hooks-state/${CLAUDE_CODE_SESSION_ID}.json"
+!python3 "${CLAUDE_PROJECT_DIR}/.claude/hooks/history.py" new-task
