@@ -11,6 +11,10 @@ if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
   exit 0
 fi
 
+# CLAUDE_HISTORY_ROLE=0 → hooks no-op (used by tooling that spawns
+# `claude -p` and doesn't want a history file cluttering tmp/history).
+[ "${CLAUDE_HISTORY_ROLE:-}" = "0" ] && exit 0
+
 source "${CLAUDE_PROJECT_DIR}/.claude/hooks/lib.sh"
 
 payload=$(cat)

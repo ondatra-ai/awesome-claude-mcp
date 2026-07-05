@@ -15,6 +15,9 @@ if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
   exit 0
 fi
 
+# CLAUDE_HISTORY_ROLE=0 → no-op.
+[ "${CLAUDE_HISTORY_ROLE:-}" = "0" ] && exit 0
+
 source "${CLAUDE_PROJECT_DIR}/.claude/hooks/lib.sh"
 
 DIAG=""

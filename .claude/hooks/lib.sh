@@ -103,17 +103,37 @@ slugify() {
     | sed -E 's/-$//'
 }
 
+# Resolve the role segment for a history filename, in priority order:
+#   1. CLAUDE_HISTORY_ROLE explicit (non-empty, non-"0")
+#   2. CLAUDE_CODE_ENTRYPOINT=sdk-cli  → "sdk"   (auto-detected `claude -p`)
+#   3. "main"
+# CLAUDE_HISTORY_ROLE="0" is handled at each hook's top and never
+# reaches here.
+resolve_role() {
+  local r="${CLAUDE_HISTORY_ROLE:-}"
+  if [ -n "$r" ] && [ "$r" != "0" ]; then
+    printf '%s' "$r"
+    return
+  fi
+  if [ "${CLAUDE_CODE_ENTRYPOINT:-}" = "sdk-cli" ]; then
+    printf '%s' "sdk"
+    return
+  fi
+  printf '%s' "main"
+}
+
 # Open a fresh history file for a session (main transcript). Naming:
-#   tmp/history/<ts>-main-<slug>.md
-# The "main" segment identifies the writer so main and sub-agent files
-# can coexist flat in the same directory.
+#   tmp/history/<ts>-<role>-<slug>.md
+# The role is picked by resolve_role() — see comment there.
 start_history_file() {
   local session_id="$1" first_prompt="$2"
-  local ts slug base name n=0
+  local ts slug role base name n=0
   ts=$(date -u +"%Y%m%d-%H%M%S")
   slug=$(slugify "$first_prompt")
   [ -z "$slug" ] && slug="msg"
-  base="${ts}-main-${slug}"
+  role=$(slugify "$(resolve_role)")
+  [ -z "$role" ] && role="main"
+  base="${ts}-${role}-${slug}"
   name="${base}.md"
   while ! (set -o noclobber; : > "${HISTORY_DIR}/${name}") 2>/dev/null; do
     n=$((n + 1))
