@@ -176,7 +176,7 @@ CLI commands are organized into two supergroups: `us` (story workflow) and `buil
 `build` supergroup — Spec-as-Source regeneration steps:
 
 - `build tests` — walks every scenario in `docs/requirements.yaml` against `bdd-cli/checklists/build-tests.yaml` and exits non-zero if any scenario lacks an executable test under `tests/integration/`, `tests/e2e/`, `services/backend/`, or `services/frontend/`. With `--fix`, the failed cells drive a Claude-mediated test-authoring loop that Writes the missing test referencing the scenario id; the canonical `docs/requirements.yaml` is never modified by the run.
-- `build code` — stub (prints "not yet implemented"). Will regenerate code from the requirements registry plus `bdd-cli/architecture.yaml`.
+- `build code` — walks every `(service, layer)` pair declared in `bdd-cli/architecture.yaml` (override with `--architecture`), discovers currently-failing tests via each framework's runner, and walks each failure against `bdd-cli/checklists/build-code.yaml`, exiting non-zero if any test still fails. With `--fix`, each failed cell drives a Claude-mediated turn that Writes/Edits production source under `services/*` until the failing test passes; test files and `docs/requirements.yaml` are never modified by the run.
 
 Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenates the full command path: `us apply` → `us-apply.yaml`, `build tests` → `build-tests.yaml`. Resolution is by convention via `paths.checklists_dir` in `bdd-cli/bdd-cli.yaml`.
 
