@@ -6,7 +6,12 @@ Two subcommands:
                    with the same command.
   new-task       — invoked from .claude/commands/new-task.md.
 
-  UserPromptSubmit (payload has a `prompt`): append it as "## user".
+  UserPromptSubmit (payload has a `prompt`): append it under a heading
+  keyed on the writer's role. The main interactive session (default
+  role "claude") logs a real human turn as "## user"; a headless
+  worker (CLAUDE_HISTORY_ROLE=branch-name|commit-msg|pr-content ...)
+  is claude prompting that worker via `claude -p`, so it logs as
+  "## claude to @<role>".
   Stop (no prompt): append the whole assistant turn — every text
   block since the last user prompt, read from the transcript — under
   the writer's role heading (CLAUDE_HISTORY_ROLE, default "claude").
@@ -177,11 +182,17 @@ def prompt_submit(payload: dict) -> None:
 
     if prompt:
         # UserPromptSubmit: open a task file if none is active, log the prompt.
+        # The main interactive session runs with the default role ("claude"),
+        # so its prompt is a real human turn -> "## user". A headless worker
+        # (CLAUDE_HISTORY_ROLE=branch-name|commit-msg|pr-content ...) is driven
+        # by claude via `claude -p`, so its prompt is claude addressing that
+        # worker -> "## claude to @<role>".
+        heading = "user" if ROLE == "claude" else f"claude to @{ROLE}"
         filename = _load_current()
         if not filename:
             filename = _open_new_file(payload.get("session_id") or "", prompt)
             _save_current(filename)
-        _append(filename, "user", prompt)
+        _append(filename, heading, prompt)
         return
 
     # Stop: append the whole assistant turn (all text blocks since the
