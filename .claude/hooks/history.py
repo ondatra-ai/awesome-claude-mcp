@@ -22,7 +22,8 @@ History file: tmp/history/<UTC-ts>-<session8>-<slug>.md
 
 Off switch: CLAUDE_HISTORY_ROLE=0 skips all logging.
 Rollover: /new-task removes the state file so the next prompt opens
-    a fresh task file.
+    a fresh task file. Its own UserPromptSubmit (prompt == "/new-task")
+    is filtered so it doesn't recreate the state file it just deleted.
 """
 
 import json
@@ -34,7 +35,12 @@ import time
 from pathlib import Path
 
 
-REPO = Path(os.environ.get("CLAUDE_PROJECT_DIR", "")).resolve()
+# CLAUDE_PROJECT_DIR is set when Claude Code invokes the hooks, but NOT
+# for the `!`-invoked /new-task slash command — fall back to the script's
+# own location (<repo>/.claude/hooks/history.py).
+REPO = Path(
+    os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2]
+).resolve()
 HISTORY_DIR = REPO / "tmp" / "history"
 STATE_FILE = HISTORY_DIR / "hook-state"
 ROLE = os.environ.get("CLAUDE_HISTORY_ROLE", "") or "claude"
@@ -161,6 +167,14 @@ def prompt_submit(payload: dict) -> None:
         return
     prompt = (payload.get("prompt") or payload.get("user_message") or "").strip()
 
+    # /new-task fires UserPromptSubmit like any prompt, but its whole job is
+    # to roll history over — logging it would recreate the state file it just
+    # deleted (a fresh "...-new-task.md" holding only the command + ack). Drop
+    # it; the Stop that follows finds no active file and is skipped too, so the
+    # ack response is dropped for free.
+    if prompt.split(maxsplit=1)[:1] == ["/new-task"]:
+        return
+
     if prompt:
         # UserPromptSubmit: open a task file if none is active, log the prompt.
         filename = _load_current()
@@ -195,15 +209,20 @@ HANDLERS = {
 def main() -> None:
     if os.environ.get("CLAUDE_HISTORY_ROLE") == "0":
         return
-    if not os.environ.get("CLAUDE_PROJECT_DIR"):
-        return
     if len(sys.argv) < 2 or sys.argv[1] not in HANDLERS:
+        return
+    cmd = sys.argv[1]
+    # new-task ignores its payload — never touch stdin. The `!`-invoked slash
+    # command may inherit an interactive stdin, and json.load() would block on
+    # it forever, hanging the command so the state file is never deleted.
+    if cmd == "new-task":
+        HANDLERS[cmd]({})
         return
     try:
         payload = json.load(sys.stdin)
     except Exception:
         payload = {}
-    HANDLERS[sys.argv[1]](payload)
+    HANDLERS[cmd](payload)
 
 
 if __name__ == "__main__":
