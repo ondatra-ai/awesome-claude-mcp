@@ -430,9 +430,20 @@ for e in entries[start_idx:]:
                     body = format_questions(questions)
                     if body:
                         records.append(("claude (asked)", ts, body))
+                elif (b.get("type") == "tool_use"
+                      and b.get("name") == "Task"):
+                    inp = b.get("input") or {}
+                    sub_type = (inp.get("subagent_type") or "subagent").strip()
+                    prompt = (inp.get("prompt") or "").strip()
+                    if prompt:
+                        records.append(("claude to " + sub_type, ts, prompt))
     elif etype == "user":
         # Skip pure user text — prompt-submit.sh logged it.
-        # Only fold in AskUserQuestion tool_result answers here.
+        # Fold in only AskUserQuestion tool_result answers here.
+        # Task tool_result is intentionally skipped: sub-agent output is
+        # captured through SubagentStop against the sub-agent's own
+        # transcript (with a "## <agent_type>" heading), so logging the
+        # tool_result here would duplicate.
         if isinstance(c, list):
             for b in c:
                 if not (isinstance(b, dict) and b.get("type") == "tool_result"):
@@ -463,15 +474,19 @@ sys.stdout.write((last_uuid or "") + "\t" + str(len(records)))
 PY
 }
 
-# Same as dump_from_cursor but with no user-prompt suppression — used
-# for sub-agent transcripts, which are complete little conversations
-# in their own right.
+# Walk a sub-agent's transcript from cursor_uuid, emit its assistant
+# outputs to the task's shared history file with heading "## <agent_type>".
+#
+# We skip the sub-agent's own user-type entries — they represent input
+# from the main agent, which was already logged as "## claude to <agent_type>"
+# by dump_from_cursor.
 dump_subagent_from_cursor() {
-  local transcript="$1" history_file="$2" cursor_uuid="$3" sha="$4"
-  python3 - "$transcript" "$history_file" "$cursor_uuid" "$sha" <<'PY'
+  local transcript="$1" history_file="$2" cursor_uuid="$3" sha="$4" agent_type="$5"
+  python3 - "$transcript" "$history_file" "$cursor_uuid" "$sha" "$agent_type" <<'PY'
 import json, re, sys
 
-transcript_path, history_path, cursor_uuid, sha = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+transcript_path, history_path, cursor_uuid, sha, agent_type = \
+    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 
 def norm_ts(t):
     if not t:
@@ -525,21 +540,9 @@ for e in entries[start_idx:]:
     ts = norm_ts(e.get("timestamp"))
     c = content_of(e)
 
-    if etype == "user":
-        if isinstance(c, str):
-            text = c.strip()
-            if text:
-                records.append(("user", ts, text))
-        elif isinstance(c, list):
-            texts = []
-            for b in c:
-                if isinstance(b, dict) and b.get("type") == "text":
-                    t = (b.get("text") or "").strip()
-                    if t:
-                        texts.append(t)
-            if texts:
-                records.append(("user", ts, "\n\n".join(texts)))
-    elif etype == "assistant":
+    # Skip sub-agent's user-type entries — they mirror what the main
+    # already logged as "## claude to <agent_type>".
+    if etype == "assistant":
         if isinstance(c, str):
             c = [{"type": "text", "text": c}]
         if isinstance(c, list):
@@ -547,7 +550,7 @@ for e in entries[start_idx:]:
                 if isinstance(b, dict) and b.get("type") == "text":
                     text = (b.get("text") or "").strip()
                     if text:
-                        records.append(("claude", ts, text))
+                        records.append((agent_type, ts, text))
 
     if uuid:
         last_uuid = uuid

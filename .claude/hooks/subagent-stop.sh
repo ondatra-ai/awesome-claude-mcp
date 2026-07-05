@@ -1,13 +1,24 @@
 #!/bin/bash
-# SubagentStop hook (improvement #4).
+# SubagentStop hook.
 #
 # Sub-agents run in their own JSONL transcript (agent_transcript_path).
-# We capture each one into a dedicated file at
-#   tmp/history/<sub-ts>-<agent-type>-<prompt-slug>.md
-# with its own per-subagent cursor so it doesn't tangle with the parent
-# session's history. Naming keeps main and sub-agent files coexisting
-# flat in the same directory: main files carry a "-main-" segment,
-# sub-agent files carry their agent type instead.
+# Their captured entries are appended to the CURRENT TASK's history file
+# — the same file the main session writes to — so a task's history is
+# a single readable record of main + every sub-agent it spawned.
+#
+# The current task's filename is looked up from the main session's state
+# file (tmp/hooks-state/<session_id>.json). Sub-agent state is a cursor
+# only (last_uuid), no filename.
+#
+# Speaker attribution:
+#   - Sub-agent's assistant text → "## <agent_type>"
+#   - Sub-agent's own user-role entries are skipped — main's
+#     "## claude to <agent_type>" already captured that side.
+#
+# Edge cases:
+#   - Main state missing (user ran /new-task and hasn't typed the next
+#     prompt yet) → skip this batch and log; cursor unchanged so nothing
+#     is lost.
 set -u
 
 if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
@@ -56,40 +67,43 @@ if [ -z "$sub_transcript" ] || [ ! -f "$sub_transcript" ]; then
   emit_and_exit
 fi
 
-sf=$(subagent_state_file_for "$session_id" "$agent_id")
-
-# Lazily open the sub-agent history file on first Stop. We pass the
-# transcript path so the helper can derive <ts> and <slug> from the
-# sub-agent's first user entry.
-if [ ! -f "$sf" ]; then
-  start_subagent_history_file "$session_id" "$agent_id" "$agent_type" "$sub_transcript" >/dev/null \
-    || { step "  ERROR: failed to open sub-agent history file"; emit_and_exit; }
-fi
-
-name=$(read_state_filename "$sf")
+# Look up the current task's history file from the main session's state.
+main_sf=$(state_file_for "$session_id")
+name=$(read_state_filename "$main_sf")
 if [ -z "$name" ]; then
-  step "  state has no filename — skipped"
+  step "  main state missing (task rollover in progress?) — skipped; cursor preserved"
   emit_and_exit
 fi
 HISTORY_FILE="${HISTORY_DIR}/${name}"
+
+# Sub-agent state file holds the cursor only. Create empty state on
+# first Stop for this sub-agent so subsequent Stops can resume from
+# where we leave off.
+sf=$(subagent_state_file_for "$session_id" "$agent_id")
+if [ ! -f "$sf" ]; then
+  write_state "$sf" "" ""
+fi
 
 wait_transcript_stable "$sub_transcript"
 
 cursor=$(read_state_uuid "$sf")
 sha=$(git_sha)
-result=$(dump_subagent_from_cursor "$sub_transcript" "$HISTORY_FILE" "$cursor" "$sha" 2>/dev/null || true)
+[ -z "$agent_type" ] && agent_type="subagent"
+result=$(dump_subagent_from_cursor \
+  "$sub_transcript" "$HISTORY_FILE" "$cursor" "$sha" "$agent_type" 2>/dev/null || true)
 new_cursor=${result%%$'\t'*}
 count=${result##*$'\t'}
 case "$count" in ''|*[!0-9]*) count=0 ;; esac
 
 if [ -n "$new_cursor" ] && [ "$new_cursor" != "$cursor" ]; then
-  write_state "$sf" "$name" "$new_cursor"
+  # Preserve empty filename in state; we don't own a file.
+  write_state "$sf" "" "$new_cursor"
 fi
 
 if [ "$count" -eq 0 ]; then
   step "  nothing new to log (cursor: ${cursor:-<start>})"
 else
-  step "  Saved $count entries → $name (cursor → ${new_cursor:0:8}…)"
+  step "  Saved $count $agent_type entries → $name (cursor → ${new_cursor:0:8}…)"
 fi
 
 emit_and_exit
