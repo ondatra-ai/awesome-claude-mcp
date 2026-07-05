@@ -62,3 +62,6 @@ scripts/bdd-cli/bdd-cli
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Python bytecode cache
+__pycache__/
