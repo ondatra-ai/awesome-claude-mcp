@@ -123,13 +123,27 @@ env -u CLAUDECODE ./bdd-cli build code  --fix
 
 ## Configuration
 
-The host project supplies a `bdd-cli/` directory at its root holding
-`bdd-cli.yaml` (engine type, filesystem paths, prompt-template paths,
-and the documents the checklists are allowed to cite — PRD,
-architecture, coding standards, glossary), one checklist per command
-under `checklists/` (`us create` → `us-create.yaml`, `build tests` →
-`build-tests.yaml`, …), and the `architecture.yaml` that scopes
-`build code`.
+The host project supplies a `bdd-cli/` directory at its root:
+
+- `bdd-cli.yaml` — the engine type, filesystem paths (epics, stories,
+  checklists, tmp), per-command prompt-template paths, and a
+  `documents:` map naming the files a check may cite (PRD,
+  architecture docs, coding standards, BDD guidelines, terms
+  vocabulary). Each check in a checklist lists the document keys it
+  needs under `docs:`, and the engine embeds those files into the
+  prompt.
+- `checklists/` — one checklist per command, named by hyphenating the
+  command path (`us create` → `us-create.yaml`, `build tests` →
+  `build-tests.yaml`, …).
+- `architecture.yaml` — the architectural spec that scopes
+  `build code`: which `(service, layer)` pairs get walked.
+- `terms.yaml` — the domain vocabulary (user roles, allowed action
+  verbs, forbidden qualifiers) that checks cite via the `terms`
+  document key.
+- `*-schema.yaml` — Yamale schemas pinning the shape of the spec
+  artifacts (stories, epics, the requirements registry, checklists,
+  `architecture.yaml`); the host project validates them in its lint
+  step, outside the engine itself.
 
 Prompt templates live in [`templates/`](templates/) (Go `text/template`
 with sprig).
