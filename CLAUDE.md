@@ -189,7 +189,7 @@ Each checklist lives in `bdd-cli/checklists/<command>.yaml`. The loader hyphenat
 - `services/backend/` — Go backend (Fiber). Lint: `make lint-backend`.
 - `services/frontend/` — Next.js 16 + React 19 frontend. Lint config is **ESLint 9 flat config** in `services/frontend/eslint.config.mjs`; the rule set committed at `services/frontend/.eslintrc.json` is still authoritative and must not be changed without permission.
 - `scripts/bdd-cli/` — Go source for the bdd-cli tool. Entry point `src/main.go`, module name `bdd-cli`, builds to `./scripts/bdd-cli/bdd-cli`.
-- `bdd-cli/` — bdd-cli **configuration and data** (not source): `bdd-cli.yaml`, `checklists/us-{create,refine,apply}.yaml` and `checklists/build-tests.yaml`, schemas (`*-schema.yaml`), `architecture.yaml`, `terms.yaml`.
+- `bdd-cli/` — bdd-cli **configuration and data** (not source): `bdd-cli.yaml`, `checklists/us-{create,refine,apply}.yaml` and `checklists/build-{tests,code}.yaml`, schemas (`*-schema.yaml`), `architecture.yaml`, `terms.yaml`.
 - `docs/` — `architecture.md`, `prd.md`, `requirements.yaml` (the scenario registry that `us apply` writes to), `epics/`, `stories/`, `qa/`.
 - `tests/` — Playwright INT + E2E tests for the MCP product.
 - `tmp/` — runtime working dir for bdd-cli prompt/response artifacts.
